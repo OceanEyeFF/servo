@@ -7,7 +7,7 @@ last_verified: 2026-05-08
 ---
 # Claude Repo-local Usage Help
 
-> 目的：保留 `claude` backend 的 runtime 侧差异（skill root、smoke verify、支持边界）。先读通用 deploy 文档，再读本页。
+> 目的：保留 `claude` backend 的 runtime 侧差异（skill root、smoke verify、支持边界）。**新用户先读 [quickstart.md](./quickstart.md) 10 分钟快速入门**，再读本页了解 Claude backend 细节。
 
 ## 一、快速试用路径
 
@@ -20,7 +20,7 @@ AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" aw-installer install --backend claude
 AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" aw-installer verify --backend claude
 ```
 
-Claude backend 的 deploy 入口为 `aw-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Recommended Harness Usage](./recommended-usage.md) 的 Codex 口径为准。
+Claude backend 的 deploy 入口为 `aw-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。
 
 ## 二、Backend 标识与常见路径
 
