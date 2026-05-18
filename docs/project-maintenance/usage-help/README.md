@@ -4,7 +4,8 @@
 
 ## 推荐入口
 
-- [recommended-usage.md](./recommended-usage.md)：新用户先读，按推荐顺序完成 backend 选择、readiness/install check、Harness 初始化、bounded worktrack 推进、`SubAgent` 使用、verify/gate/closeout 和审批边界确认。
+- [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
+- [recommended-usage.md](./recommended-usage.md)：按场景路由，backend 选择、readiness/install check、Harness 初始化、bounded worktrack 推进、审批边界确认。
 
 ## 按 backend 进入
 
