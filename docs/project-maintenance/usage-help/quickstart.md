@@ -62,67 +62,65 @@ npx aw-installer verify --backend agents
 - `goal-charter.md` — 仓库目标与约束
 - `repo/` — Repo 级快照和 backlog
 
-## 第三步：启动 Harness 执行第一个 Worktrack
+## 第二步补充：理解 Milestone 和 Worktrack
 
-在 Coding CLI 中调用：
+在启动 Harness 之前，需要理解两个核心概念：
+
+- **Milestone（里程碑）**：一组相关 Worktrack 的集合，有明确的 `purpose`、`completion_signals` 和 `acceptance_criteria`。Milestone 不是凭空出现的 —— 它来自对仓库目标的分析和手动编排。
+- **Worktrack（工作追踪）**：单个受约束的执行单元，有独立的 Git 分支、Contract、Plan/Task Queue 和 Gate Evidence。
+
+**典型流程：**
 
 ```
-/harness-skill 请逐项推进MileStone的既定内容。
+1. 用 /repo-whats-next-skill 分析当前有哪些候选 Milestone
+2. 手动确认 Milestone brief（目的、范围、Worktrack 列表）
+3. Harness 逐个推进 Worktrack：Init → Dispatch → Verify → Judge → Close
+4. 所有 Worktrack 完成后，Harness handback 等待 programmer 验收 Milestone
+```
+
+每个 Worktrack 闭环后，Milestone 进度计数器更新；所有 Worktrack 关闭后触发 Milestone 验收边界。
+
+## 第三步：启动 Harness 执行 Worktrack
+
+确认 Milestone 和 Worktrack 列表后，用以下标准模板调用 Harness：
+
+```
+/harness-skill
+请逐项推进MileStone的既定内容。
+请逐项完成已经确定的Worktrack列表的任务。
 这一轮执行周期中我会给你批准30个连续执行任务的行动额度（Worktrack额度）。
+你有下列的权限：
+1. 开启SubAgent（AgentTeams）
+2. 低危险Worktrack审批可以自行通过
+3. 连续工作
+4. 按需增加Worktrack任务
+
+---
+
+你需要额外注意下列的情形需要通知我处理：
+1. 大量文件删除、系统配置修改等危险操作
+2. 上下文噪声明显，提示词明显遗忘
+3. 你觉得有必要由我来做决定的内容
+
+---
+
+如果评估到改动不完善任务明显没有完成，你可以添加Worktrack到backlog并且继续执行。
+特别的，针对这个任务，MileStone的验收必须由我来做决定
+
+---
+
+可以开始了！谢谢你
 ```
 
-**关键参数说明：**
-- `Worktrack额度`：本轮允许 Harness 连续执行的 Worktrack 数量
-- 权限声明：SubAgent 开关、低危险自动审批、连续工作、按需增加 Worktrack
+**模板关键要素：**
+- `Worktrack额度`：本轮允许连续执行的 Worktrack 数量（如 30、15）
+- 权限声明：SubAgent 开关、低危险自动审批、连续工作、按需追加 Worktrack
+- 危险操作通知：文件删除、配置修改等需要 programmer 介入
+- Milestone 验收边界：明确最终验收由 programmer 做决定
 
-Harness 收到指令后会按控制回路逐项推进：
+Harness 收到指令后会按控制回路逐项推进每个 Worktrack（Init → Dispatch → Verify → Judge → Close）。验证方式由仓库治理文档决定；默认走 gate 验证（implementation + validation + policy 三个正交校验面）。
 
-1. **状态估计（Observe）**：读取当前 Scope、Milestone 和 git 基线
-2. **初始化 Worktrack（Init）**：创建独立 Git 分支、Worktrack Contract、Plan/Task Queue
-3. **分派执行（Dispatch）**：编码或文档变更，可由 SubAgent 或当前载体执行
-4. **证据收集（Verify）**：运行治理检查三元组
-5. **Gate 裁决（Judge）**：三个正交校验面（implementation + validation + policy）
-6. **Closeout**：merge → refresh snapshot → cleanup → 回到 RepoScope
-7. 选择下一个 Worktrack 或触发 Milestone handback
-
-### 每个 Worktrack 的验证命令
-
-Harness 在 Verify 阶段自动运行以下治理检查：
-
-```bash
-# 路径治理：检查文档链接可达性、book spine 覆盖、inline path 有效
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
-
-# 目录逻辑：检查根目录分层、hidden/state/mount 层合规
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py
-
-# 语义治理：检查文档孤立、模板对齐、过期引用等
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py --json
-```
-
-所有检查通过（warnings 允许为 retained pre-existing）后，Gate 才会放行进入 Closeout。
-
-### 安装验证命令速查
-
-```bash
-# 诊断安装状态
-npx aw-installer diagnose --backend agents --json
-
-# 验证安装完整性
-npx aw-installer verify --backend agents
-
-# 查看 CLI 帮助
-npx aw-installer --help
-```
-
-### Backend 差异速查
-
-| Backend | 安装命令 | 部署路径 | 说明 |
-|---------|---------|---------|------|
-| `agents` | `npx aw-installer install --backend agents` | `.agents/skills/` | 主路径，Codex 默认 |
-| `claude` | `npx aw-installer install --backend claude` | `.claude/skills/` | Claude Code 兼容路径 |
-
-两者共享同一套 Harness 合同和验证标准，差异仅在部署目标目录和 runtime 配置。
+详细的控制回路说明见 [docs/harness/README.md](../../harness/README.md)；Worktrack 生命周期见 [docs/harness/scope/worktrack-scope.md](../../harness/scope/worktrack-scope.md)。
 
 ## 第四步：理解 Handback 和显式 Unlock 边界
 
