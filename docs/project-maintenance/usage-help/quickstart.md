@@ -16,6 +16,21 @@ last_verified: 2026-05-18
 - 一个 Git 仓库（已有代码或空项目均可）
 - 一个支持 slash command 的 Coding CLI（Codex 或 Claude Code）
 
+## 第零步：诊断当前仓库状态
+
+在安装前，先诊断目标仓库是否已安装过 Harness：
+
+```bash
+npx aw-installer diagnose --backend agents --json
+```
+
+输出示例：
+```json
+{"status":"not-installed","backend":"agents","target_root":"/path/to/repo"}
+```
+
+如果已安装，`diagnose` 会报告当前版本和 skill 清单。使用 `--backend claude` 检查 Claude Code 兼容路径。
+
 ## 第一步：安装 Harness Skills
 
 在目标仓库根目录执行：
@@ -60,15 +75,56 @@ npx aw-installer verify --backend agents
 - `Worktrack额度`：本轮允许 Harness 连续执行的 Worktrack 数量
 - 权限声明：SubAgent 开关、低危险自动审批、连续工作、按需增加 Worktrack
 
-Harness 收到指令后会：
-1. 状态估计（读取当前 Scope 和 Milestone）
-2. 初始化第一个 Worktrack（创建分支、Contract、Plan/Task Queue）
-3. 分派执行（Dispatch → 编码/文档 → Review → Verify）
-4. Gate 裁决（三个正交校验面）
-5. Closeout（merge → refresh snapshot → cleanup）
-6. 回到 RepoScope，选择下一个 Worktrack 或触发 Milestone handback
+Harness 收到指令后会按控制回路逐项推进：
 
-## 第四步：理解 Handback 和显式 Unlock
+1. **状态估计（Observe）**：读取当前 Scope、Milestone 和 git 基线
+2. **初始化 Worktrack（Init）**：创建独立 Git 分支、Worktrack Contract、Plan/Task Queue
+3. **分派执行（Dispatch）**：编码或文档变更，可由 SubAgent 或当前载体执行
+4. **证据收集（Verify）**：运行治理检查三元组
+5. **Gate 裁决（Judge）**：三个正交校验面（implementation + validation + policy）
+6. **Closeout**：merge → refresh snapshot → cleanup → 回到 RepoScope
+7. 选择下一个 Worktrack 或触发 Milestone handback
+
+### 每个 Worktrack 的验证命令
+
+Harness 在 Verify 阶段自动运行以下治理检查：
+
+```bash
+# 路径治理：检查文档链接可达性、book spine 覆盖、inline path 有效
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
+
+# 目录逻辑：检查根目录分层、hidden/state/mount 层合规
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py
+
+# 语义治理：检查文档孤立、模板对齐、过期引用等
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py --json
+```
+
+所有检查通过（warnings 允许为 retained pre-existing）后，Gate 才会放行进入 Closeout。
+
+### 安装验证命令速查
+
+```bash
+# 诊断安装状态
+npx aw-installer diagnose --backend agents --json
+
+# 验证安装完整性
+npx aw-installer verify --backend agents
+
+# 查看 CLI 帮助
+npx aw-installer --help
+```
+
+### Backend 差异速查
+
+| Backend | 安装命令 | 部署路径 | 说明 |
+|---------|---------|---------|------|
+| `agents` | `npx aw-installer install --backend agents` | `.agents/skills/` | 主路径，Codex 默认 |
+| `claude` | `npx aw-installer install --backend claude` | `.claude/skills/` | Claude Code 兼容路径 |
+
+两者共享同一套 Harness 合同和验证标准，差异仅在部署目标目录和 runtime 配置。
+
+## 第四步：理解 Handback 和显式 Unlock 边界
 
 ### 什么是 Handback
 
@@ -104,18 +160,6 @@ Handback 后，**裸"继续工作"或"继续"不构成有效的 unlock 信号**�
     ├─ 是 → "接受 MS-xxx，激活下一个 Milestone"
     └─ 否 → "拒绝 MS-xxx，原因：xxx。追加 Worktrack：WT-xxx"
 ```
-
-## 验证命令
-
-每个 Worktrack 闭环前，Harness 会运行以下治理检查：
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py --json
-```
-
-你也可以手动运行这些命令来验证当前仓库状态。
 
 ## 常见问题
 
