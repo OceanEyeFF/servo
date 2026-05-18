@@ -1,9 +1,9 @@
 ---
 title: "aw-installer Release Channel Governance"
 status: active
-updated: 2026-05-17
+updated: 2026-05-19
 owner: aw-kernel
-last_verified: 2026-05-17
+last_verified: 2026-05-19
 ---
 # aw-installer Release Channel Governance
 
@@ -15,7 +15,7 @@ last_verified: 2026-05-17
 
 ## 当前 registry 事实
 
-2026-05-17 已核对 npm registry：
+2026-05-19 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
 - npm registry 真实状态：`latest` -> `0.5.1`，`next` -> `0.5.2-rc.0`，历史已发布版本 `0.4.0-rc.1` ~ `0.5.2-rc.0`
@@ -30,15 +30,15 @@ last_verified: 2026-05-17
 
 ## 当前 source release tuple
 
-2026-05-17，本地 source tuple 已发布为 `v0.5.2-rc.0` 的 `next` channel release candidate：
+2026-05-19，本地 source tuple 已准备为 `v0.5.2-rc.1` 的 `next` channel release candidate；该 candidate 尚未写入 npm registry，当前 registry `next` 仍为 `0.5.2-rc.0`：
 
-- root `package.json` version：`0.5.2-rc.0`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.0`
-- approval lock：`approvedVersion=0.5.2-rc.0`、`approvedGitTag=v0.5.2-rc.0`、`approvedChannel=next`
-- GitHub Release 使用 prerelease，target commit `dd4094ce5dc9e7a76ba2e49db5cccdb3110aa875`，publish workflow run `25983658420` 已成功
-- npm `aw-installer@0.5.2-rc.0` 已发布到 `next` dist-tag，tarball URL：`https://registry.npmjs.org/aw-installer/-/aw-installer-0.5.2-rc.0.tgz`
+- root `package.json` version：`0.5.2-rc.1`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.1`
+- approval lock：`approvedVersion=0.5.2-rc.1`、`approvedGitTag=v0.5.2-rc.1`、`approvedChannel=next`
+- GitHub Release 必须使用 prerelease，并在 release body 中包含 `aw-installer-publish-approved: v0.5.2-rc.1`
+- npm `aw-installer@0.5.2-rc.1` 发布前必须保持未占用；发布后再同步 registry fact、workflow run 与 tarball URL
 
-注意：`0.5.2-rc.0` 是 prerelease，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。RC 试用必须显式使用 `aw-installer@next`。
+注意：`0.5.2-rc.1` 是 prerelease，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。RC 试用必须显式使用 `aw-installer@next`。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
