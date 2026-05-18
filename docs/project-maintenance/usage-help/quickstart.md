@@ -180,6 +180,6 @@ Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以�
 ## 下一步
 
 - 深入了解 Harness 控制回路：[docs/harness/README.md](../../harness/README.md)
-- 按场景选择使用路径：[recommended-usage.md](./recommended-usage.md)
-- 按 backend 查看差异：[codex.md](./codex.md) | [claude.md](./claude.md)
+- Skills 使用教程（backend 差异、调用方式、常见工作流）：[recommended-usage.md](./recommended-usage.md)
+- 按 backend 查看详细差异：[codex.md](./codex.md) | [claude.md](./claude.md)
 - 部署与安装详情：[deploy/README.md](../deploy/README.md)

@@ -5,7 +5,7 @@
 ## 推荐入口
 
 - [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
-- [recommended-usage.md](./recommended-usage.md)：按场景路由，backend 选择、readiness/install check、Harness 初始化、bounded worktrack 推进、审批边界确认。
+- [recommended-usage.md](./recommended-usage.md)：Skills 使用教程，覆盖 skill 调用方式、backend 差异（agents vs claude）、常见工作流和场景速查。
 
 ## 按 backend 进入
 
