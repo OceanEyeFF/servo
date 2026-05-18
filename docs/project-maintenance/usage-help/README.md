@@ -4,14 +4,15 @@
 
 ## 推荐入口
 
-- [recommended-usage.md](./recommended-usage.md)：新用户先读，按推荐顺序完成 backend 选择、readiness/install check、Harness 初始化、bounded worktrack 推进、`SubAgent` 使用、verify/gate/closeout 和审批边界确认。
+- [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
+- [recommended-usage.md](./recommended-usage.md)：Skills 使用教程，覆盖 skill 调用方式、backend 差异（agents vs claude）、常见工作流和场景速查。
 
 ## 按 backend 进入
 
 | backend | 页面 | 主要差异 |
 |---|---|---|
-| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、copy-paste quickstart、source 变更决策、Codex Harness manual run |
-| `claude` | [claude.md](./claude.md) | Claude runtime 路径、copy-paste quickstart、source 变更决策、冷启动 runbook |
+| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、[quickstart 快速入门](./quickstart.md)、source 变更决策、Codex Harness manual run |
+| `claude` | [claude.md](./claude.md) | Claude runtime 路径、[quickstart 快速入门](./quickstart.md)、source 变更决策、冷启动 runbook |
 
 ## 按初始化场景进入
 

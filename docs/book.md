@@ -59,7 +59,8 @@ Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路�
 30. [project-maintenance/usage-help/goal-change-guide.md](./project-maintenance/usage-help/goal-change-guide.md)
 31. [project-maintenance/usage-help/codex.md](./project-maintenance/usage-help/codex.md)
 32. [project-maintenance/usage-help/claude.md](./project-maintenance/usage-help/claude.md)
-33. [project-maintenance/repo-onboarding.md](./project-maintenance/repo-onboarding.md)
+33. [project-maintenance/usage-help/quickstart.md](./project-maintenance/usage-help/quickstart.md)
+34. [project-maintenance/repo-onboarding.md](./project-maintenance/repo-onboarding.md)
 
 ### 2. Harness
 

@@ -347,18 +347,28 @@ Gate 应汇总**正交校验面**的裁决：
    - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.aw/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 `docs/harness/artifact/control/control-state.md` 与初始化模板。
    - `.aw/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
-3. 根据当前 Scope 选择传感器组合：
+3. **分支环境检查（Branch Environment Guard）**：
+   - 从 `.aw/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（Harness 管理的目标分支）
+   - 执行 `git branch --show-current` 获取当前检出的分支
+   - 对比两个分支名：
+     - 若一致：通过，继续正常状态估计
+     - 若不一致：
+       - 如果当前 `Function` 为 `Init`、`Dispatch` 或任何会修改仓库状态的阶段：**必须阻断**。不得在非 Harness 管理分支上执行任何会改变代码状态的操作。返回 `branch_mismatch_blocked` 并明确要求切换到 `baseline_branch`。合法恢复路径只有 `git checkout <baseline_branch>`。
+       - 如果当前 `Function` 为 `Observe`（只读状态估计）：记录 `branch_mismatch_warning`，在状态估计结果中显式标记当前分支与预期基线分支的差异，并在 `proceed_blockers` 中加入 "在进入 Init/Dispatch 之前必须先切换到 baseline_branch"。允许只读 Observe 继续执行，但下游 Decide 在收到此 warning 时必须把分支切换作为前置条件。
+   - 此检查必须在 `git rev-parse HEAD`（步骤 4）之前执行，确保后续的 hash 对比基于正确的分支上下文
+   - 如果 `baseline_branch` 在 control-state 中缺失，按 `origin/HEAD` 动态解析（执行 `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`），并将解析结果写入 `config_hydration_gaps`。不得写死默认分支名
+4. 根据当前 Scope 选择传感器组合：
    - `RepoScope`：读取 `Repo Goal/Charter`、`Repo Snapshot/Status`
    - `WorktrackScope`：读取 `Worktrack Contract`、`Plan/Task Queue`、当前 evidence
-4. **Git Commit Hash 基线对比（幂等性守卫）**：
+5. **Git Commit Hash 基线对比（幂等性守卫）**：
    - 读取 `.aw/control-state.md` 的 `Baseline Traceability` 段，获取 `latest_observed_checkpoint`（即上次刷新时记录的 git commit hash）
    - 执行 `git rev-parse HEAD` 获取当前 HEAD hash
    - 对比两个 hash：若一致，说明 repo 代码基线自上次刷新后未变化，跳过 `repo-refresh-skill` 绑定，仅在状态估计中标记 `repo_baseline_unchanged: true`
    - 若 hash 不一致（或 `latest_observed_checkpoint` 缺失），说明代码基线已变化，必须在本轮合适阶段绑定 `repo-refresh-skill` 刷新 Repo 级慢变量
    - 此检查确保不会对同一基线重复执行 repo-refresh，避免不必要的刷新开销
-5. **文档 Freshness 基线对比**：如果发现本轮涉及 release、deploy、adapter、package、VCS baseline、CLI 版本或 operator-facing docs，且文档版本事实可能落后于代码/registry/VCS 证据，应标记 `doc_catch_up_needed: true`，并在合适阶段绑定 `doc-catch-up-worker-skill`；如果上次 `doc-catch-up` 执行时的 git hash 与当前 HEAD 一致且无新的文档变更，可跳过重复追平
-6. 如果标准快照缺失、过期或明显不足，只收集解释缺口所需的最小探查证据
-7. 产出结构化状态估计结果，而不是文字摘要
+6. **文档 Freshness 基线对比**：如果发现本轮涉及 release、deploy、adapter、package、VCS baseline、CLI 版本或 operator-facing docs，且文档版本事实可能落后于代码/registry/VCS 证据，应标记 `doc_catch_up_needed: true`，并在合适阶段绑定 `doc-catch-up-worker-skill`；如果上次 `doc-catch-up` 执行时的 git hash 与当前 HEAD 一致且无新的文档变更，可跳过重复追平
+7. 如果标准快照缺失、过期或明显不足，只收集解释缺口所需的最小探查证据
+8. 产出结构化状态估计结果，而不是文字摘要
 
 ### 10.2 算子选择阶段
 
@@ -627,6 +637,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 - **相邻系统的引用仅当本轮证据确实消费了其输出时才可包含**；否则 `adjacent_system_referenced` 必须为 `false`。
 - **Control State 仅保存控制面位置信息**（Scope/Function/Route）；业务真相必须保存在 `Repo` 与 `Worktrack` 的正式文档中，禁止写入 Control State。
 - **git hash 一致仅授权跳过重复刷新和重复文档追平**；首次验证和 Gate 裁决在任何情况下都不可跳过。
+- **分支环境守卫（Branch Environment Guard）**：任何会改变代码状态的 Function（Init、Dispatch 等）必须在 `baseline_branch` 上执行。当前分支与 control-state 的 `baseline_branch` 不一致时，只读 Observe 可继续但必须标记 warning；会改变状态的 Function 必须阻断。合法恢复路径只有 `git checkout <baseline_branch>`。`baseline_branch` 缺失时必须从 `origin/HEAD` 动态解析，不得写死默认值。
 
 ---
 

@@ -1,51 +1,97 @@
 ---
-title: "Recommended Harness Usage"
+title: "CodingAgent Skills Usage Guide"
 status: active
-updated: 2026-05-17
+updated: 2026-05-18
 owner: aw-kernel
-last_verified: 2026-05-17
+last_verified: 2026-05-18
 ---
-# Recommended Harness Usage
 
-> 本文档是 Harness 使用场景的路由入口。先判断你的场景，再跳转到对应的细化文档。
+# CodingAgent Skills 使用教程
+
+> 本文档面向已读过 [quickstart.md](./quickstart.md) 的 operator，深入介绍 Harness Skills 在 CodingAgent 中的调用方式、backend 差异和常见工作流。
+> **新用户先读 [quickstart.md](./quickstart.md) 10 分钟快速入门。**
+
+## Skill 调用方式
+
+Harness Skills 在 CodingAgent 中通过 slash command 调用：
+
+| Skill | 用途 | 调用方式 |
+|-------|------|---------|
+| `set-harness-goal-skill` | 初始化 `.aw/` 并生成 Goal Charter | `/set-harness-goal-skill` |
+| `harness-skill` | 启动 Harness 控制回路，逐项推进 Milestone | `/harness-skill` + 参数 |
+| `repo-whats-next-skill` | 分析仓库当前状态，列出候选 Milestone | `/repo-whats-next-skill` |
+| `repo-change-goal-skill` | 修改仓库目标（Goal Charter 变更） | `/repo-change-goal-skill` |
+| `repo-append-request-skill` | 追加临时任务或补充需求 | `/repo-append-request-skill` |
+
+`harness-skill` 的标准调用模板见 [quickstart.md 第三步](./quickstart.md#第三步启动-harness-执行-worktrack)。
+
+## Backend 差异
+
+Harness 支持两个 backend，共享同一套合同和验证标准，差异仅在部署目标目录。
+
+| Backend | 安装命令 | 部署路径 | 定位 |
+|---------|---------|---------|------|
+| `agents` | `npx aw-installer install --backend agents` | `.agents/skills/` | 主路径，Codex 默认 |
+| `claude` | `npx aw-installer install --backend claude` | `.claude/skills/` | Claude Code 兼容路径 |
+
+详细 backend 差异和 runtime 配置见：
+- [codex.md](./codex.md) — Codex / agents backend 专属
+- [claude.md](./claude.md) — Claude Code backend 专属
+
+## 常见工作流
+
+### 工作流一：初始化全新仓库
+
+```
+npx aw-installer diagnose --backend agents --json
+npx aw-installer install --backend agents
+npx aw-installer verify --backend agents
+/set-harness-goal-skill
+```
+→ 完整步骤见 [init-greenfield.md](./init-greenfield.md)
+
+### 工作流二：已有代码接入 Harness
+
+```
+npx aw-installer diagnose --backend agents --json
+/set-harness-goal-skill
+```
+→ 完整步骤见 [init-with-code.md](./init-with-code.md)
+
+### 工作流三：Milestone 编排与执行
+
+```
+/repo-whats-next-skill                    # 分析候选 Milestone
+（手动确认 Milestone brief 和 Worktrack 列表）
+/harness-skill                            # 启动 Harness 逐项推进
+  （Harness 自动执行 Init → Dispatch → Verify → Judge → Close）
+（Milestone 验收边界：programmer 做最终决定）
+```
+→ Harness 控制回路详解见 [docs/harness/README.md](../../harness/README.md)
+
+### 工作流四：追加需求或调整方向
+
+```
+/repo-append-request-skill               # 追加临时任务
+/repo-change-goal-skill                  # 调整仓库目标
+```
+→ 完整步骤见 [goal-change-guide.md](./goal-change-guide.md)
 
 ## 场景速查
 
-| 场景 | 适用条件 | 细化文档 |
-|------|---------|---------|
-| 新仓库，从零初始化 Harness | 空项目，无 `.aw/` 目录 | [init-greenfield.md](./init-greenfield.md) |
-| 已有代码，接入 Harness | 已有代码库，需要初始化 `.aw/` | [init-with-code.md](./init-with-code.md) |
-| 已有目标，需要追加功能或调整方向 | 现有 Goal Charter 需要修改 | [goal-change-guide.md](./goal-change-guide.md) |
-| 已有授权的工作项，需要完整走一个 Worktrack | 已有明确的请求，需要 contract → plan → 执行 → closeout | 通过 `$harness-skill` 进入 Harness 控制回路 |
-| 确认 backend 差异（Codex vs Claude） | Coding CLI 内切换 backend | [codex.md](./codex.md)、[claude.md](./claude.md) |
+以下场景表用于快速定位细化文档：
 
-## 场景摘要
-
-### 新仓库从零初始化
-1. 安装 Harness Skills（`npx aw-installer install --backend agents`）
-2. 调用 `$set-harness-goal-skill` 初始化 `.aw/` 并生成 Goal Charter
-3. 验证 `.aw/` 目录就绪
-→ 完整步骤见 [init-greenfield.md](./init-greenfield.md)
-
-### 已有代码接入 Harness
-1. 诊断当前仓库状态
-2. 生成 `.aw/repo/discovery-input.md`
-3. 初始化 Harness 控制面
-→ 完整步骤见 [init-with-code.md](./init-with-code.md)
-
-### 变更仓库目标
-1. 判断变更类型（追加目标 / 调整方向 / 修改验收标准）
-2. 调用 `$repo-append-request-skill` 或创建新 Goal Charter
-→ 完整步骤见 [goal-change-guide.md](./goal-change-guide.md)
-
-### 完整 Worktrack 闭环
-1. Harness 自动执行 Init → Dispatch → Verify → Judge → Close
-2. 程序员在 handback 点验收 Milestone
-→ 详细流程见 [../../harness/scope/repo-scope.md](../../harness/scope/repo-scope.md)
+| 场景 | 文档 |
+|------|------|
+| 新仓库从零初始化 | [init-greenfield.md](./init-greenfield.md) |
+| 已有代码接入 Harness | [init-with-code.md](./init-with-code.md) |
+| 调整目标 / 追加需求 | [goal-change-guide.md](./goal-change-guide.md) |
+| Codex backend 细节 | [codex.md](./codex.md) |
+| Claude Code backend 细节 | [claude.md](./claude.md) |
 
 ## 通用提示
 
-- 目标描述应包含：最终结果、非目标范围、验收标准、约束
-- 安装或重装前先跑 `aw-installer diagnose --backend agents --json`
+- 安装或重装前先跑 `npx aw-installer diagnose --backend agents --json`
 - 每个 Worktrack 在独立 Git 分支上执行，完成后合并回基线
-- Milestone 最终验收由程序员做决定
+- Milestone 最终验收由 programmer 做决定；handback 需要显式 unlock（不是裸"继续"）
+- 目标描述应包含：最终结果、非目标范围、验收标准、约束
