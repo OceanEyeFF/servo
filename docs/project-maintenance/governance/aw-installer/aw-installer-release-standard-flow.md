@@ -1,9 +1,9 @@
 ---
 title: "aw-installer Release Standard Flow"
 status: active
-updated: 2026-05-11
+updated: 2026-05-19
 owner: aw-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-19
 ---
 # aw-installer Release Standard Flow
 
@@ -53,11 +53,11 @@ gh pr checks <pr-number> --watch --interval 10 --fail-fast
 gh pr view <pr-number> --json number,url,isDraft,mergeable,reviewDecision,state,headRefName,baseRefName,headRefOid,statusCheckRollup
 ```
 
-If the authenticated GitHub account is also the PR author, do not attempt to self-approve. GitHub rejects author approvals even for repo owners. Record release readiness as a PR comment, then wait for an external review or an explicit owner/admin merge decision.
+If the authenticated GitHub account is also the PR author, do not attempt to self-approve. GitHub rejects author approvals even for repo owners, and self-approval is not required in this single-maintainer repository. Record release readiness as a PR comment, then continue once the PR is ready, checks pass, and the source tuple still matches the release candidate.
 
 ## 3. Merge To `master`
 
-Merge only after PR is not draft, checks pass, and review gates are satisfied.
+Merge only after PR is not draft, checks pass, the release-readiness evidence is recorded, and the source tuple still matches the release candidate. In single-maintainer mode, owner/admin self-merge is allowed; if a ruleset bypass is used, record whether checks passed and why bypass was necessary.
 
 ```bash
 gh pr view <pr-number> --json state,mergedAt,mergeCommit,url,baseRefName,headRefName
