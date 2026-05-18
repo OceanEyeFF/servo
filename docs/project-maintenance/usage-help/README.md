@@ -11,8 +11,8 @@
 
 | backend | 页面 | 主要差异 |
 |---|---|---|
-| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、copy-paste quickstart、source 变更决策、Codex Harness manual run |
-| `claude` | [claude.md](./claude.md) | Claude runtime 路径、copy-paste quickstart、source 变更决策、冷启动 runbook |
+| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、[quickstart 快速入门](./quickstart.md)、source 变更决策、Codex Harness manual run |
+| `claude` | [claude.md](./claude.md) | Claude runtime 路径、[quickstart 快速入门](./quickstart.md)、source 变更决策、冷启动 runbook |
 
 ## 按初始化场景进入
 
