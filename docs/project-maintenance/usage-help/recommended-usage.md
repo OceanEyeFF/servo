@@ -13,6 +13,7 @@ last_verified: 2026-05-17
 
 | 场景 | 适用条件 | 细化文档 |
 |------|---------|---------|
+| **新用户快速入门** | 第一次使用 Harness，需要 10 分钟上手指南 | [quickstart.md](./quickstart.md) |
 | 新仓库，从零初始化 Harness | 空项目，无 `.aw/` 目录 | [init-greenfield.md](./init-greenfield.md) |
 | 已有代码，接入 Harness | 已有代码库，需要初始化 `.aw/` | [init-with-code.md](./init-with-code.md) |
 | 已有目标，需要追加功能或调整方向 | 现有 Goal Charter 需要修改 | [goal-change-guide.md](./goal-change-guide.md) |

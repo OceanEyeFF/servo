@@ -40,6 +40,7 @@ npx aw-installer verify --backend agents
 
 进阶安装、TUI、文件软连接和 Claude Code backend 见：
 
+- [快速入门教程](docs/project-maintenance/usage-help/quickstart.md) — **新用户先读这里**
 - [推荐使用流程](docs/project-maintenance/usage-help/recommended-usage.md)
 - [Codex / agents 后端](docs/project-maintenance/usage-help/codex.md)
 - [Claude Code 后端](docs/project-maintenance/usage-help/claude.md)
@@ -84,6 +85,7 @@ Harness 会把请求分类为 new worktrack、scope expansion、design-only、de
 
 | 场景 | 文档 |
 |------|------|
+| **新用户快速入门** | [quickstart.md](docs/project-maintenance/usage-help/quickstart.md) |
 | 已有代码项目初始化 Harness | [init-with-code.md](docs/project-maintenance/usage-help/init-with-code.md) |
 | 空项目从零开始 | [init-greenfield.md](docs/project-maintenance/usage-help/init-greenfield.md) |
 | 推荐使用流程 | [recommended-usage.md](docs/project-maintenance/usage-help/recommended-usage.md) |
