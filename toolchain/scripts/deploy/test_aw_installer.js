@@ -1639,7 +1639,7 @@ test("aw-installer check_paths_exist agents is node-owned without Python and hon
     const completed = runNodeCheckPathsExist(root, ["--backend=agents", `--agents-root=${agentsRoot}`], fakeBin);
 
     assert.equal(completed.status, 0, completed.stderr);
-    assert.equal(completed.stdout, `[agents] ok: no conflicting target paths at ${agentsRoot}\n`);
+    assert.equal(completed.stdout, `[agents] ok: no pre-existing paths at ${agentsRoot}\n`);
     assert.equal(completed.stderr.includes("unexpected-python"), false);
     assert.equal(existsSync(agentsRoot), false);
   } finally {
@@ -1701,7 +1701,7 @@ test("aw-installer claude read-only lifecycle paths are node-owned without Pytho
 
     const check = runNodeCheckPathsExist(root, ["--backend=claude", `--claude-root=${claudeRoot}`], fakeBin);
     assert.equal(check.status, 0, check.stderr);
-    assert.equal(check.stdout, `[claude] ok: no conflicting target paths at ${claudeRoot}\n`);
+    assert.equal(check.stdout, `[claude] ok: no pre-existing paths at ${claudeRoot}\n`);
     assert.equal(check.stderr.includes("unexpected-python"), false);
 
     const updateJson = runNodeUpdate(root, ["--backend=claude", "--json", `--claude-root=${claudeRoot}`], fakeBin);
@@ -1913,11 +1913,10 @@ test("aw-installer check_paths_exist agents reports conflicts with Python-compat
     const completed = runNodeCheckPathsExist(root, ["--backend", "agents"], fakeBin);
 
     assert.equal(completed.status, 1);
-    assert.equal(completed.stdout, "");
-    assert.match(completed.stderr, /^error: \[agents\] found 1 conflicting target path\(s\)/);
-    assert.match(completed.stderr, /target path conflicts:/);
-    assert.match(completed.stderr, /demo-skill/);
-    assert.match(completed.stderr, /existing target path is a directory/);
+    assert.match(completed.stdout, /^\[agents\] found 1 existing path/);
+    assert.match(completed.stdout, /target path conflicts:/);
+    assert.match(completed.stdout, /demo-skill/);
+    assert.match(completed.stdout, /existing target path is a directory/);
     assert.equal(completed.stderr.includes("unexpected-python"), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -3337,7 +3336,7 @@ test("aw-installer update agents yes installs and verifies from missing root wit
       "blocking preflight issues: 0",
       "[agents] applying update",
       `no managed skill dirs found at ${targetRoot}`,
-      `[agents] ok: no conflicting target paths at ${targetRoot}`,
+      `[agents] ok: no pre-existing paths at ${targetRoot}`,
       `created target root ${targetRoot}`,
       `installed skill demo-skill -> ${join(targetRoot, "aw-demo-skill")}`,
       `[agents] ok: target root is ready at ${targetRoot}`,
@@ -3731,8 +3730,8 @@ test("aw-installer check_paths_exist bundle checks both backends", () => {
     const completed = runNodeCheckPathsExist(root, ["--backend=bundle"], fakeBin);
 
     assert.equal(completed.status, 0, completed.stderr);
-    assert.match(completed.stdout, /\[agents\] ok: no conflicting target paths/);
-    assert.match(completed.stdout, /\[claude\] ok: no conflicting target paths/);
+    assert.match(completed.stdout, /\[agents\] ok: no pre-existing paths/);
+    assert.match(completed.stdout, /\[claude\] ok: no pre-existing paths/);
     assert.equal(completed.stderr.includes("unexpected-python"), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -3937,7 +3936,7 @@ test("aw-installer check_paths_exist bundle merges conflicts from both roots", (
     const completed = runNodeCheckPathsExist(root, ["--backend=bundle"], fakeBin);
 
     assert.equal(completed.status, 1);
-    assert.match(completed.stderr, /conflicting target path/);
+    assert.match(completed.stdout, /existing path/);
     assert.equal(completed.stderr.includes("unexpected-python"), false);
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -3222,10 +3222,10 @@ function checkBackendTargetPaths(context) {
   const summary = checkPathsExistSummary(context);
   if (summary.conflicts.length > 0) {
     throw new Error(
-      `[${context.backend}] found ${summary.conflicts.length} conflicting target path(s)\n\n${formatPathConflicts(summary.conflicts)}`,
+      `[${context.backend}] found ${summary.conflicts.length} pre-existing path(s) — prune first\n\n${formatPathConflicts(summary.conflicts)}`,
     );
   }
-  console.log(`[${context.backend}] ok: no conflicting target paths at ${summary.targetRoot}`);
+  console.log(`[${context.backend}] ok: no pre-existing paths at ${summary.targetRoot}`);
 }
 
 async function runNodeUpdateYes(args) {
@@ -3249,12 +3249,12 @@ function runNodeCheckPathsExist(args) {
   try {
     const summary = checkPathsExistSummary(buildNodeBackendContext(parsed));
     if (summary.conflicts.length > 0) {
-      console.error(
-        `error: [${summary.backend}] found ${summary.conflicts.length} conflicting target path(s)\n\n${formatPathConflicts(summary.conflicts)}`,
+      console.log(
+        `[${summary.backend}] found ${summary.conflicts.length} existing path(s) — prune first to overwrite\n\n${formatPathConflicts(summary.conflicts)}`,
       );
       return 1;
     }
-    console.log(`[${summary.backend}] ok: no conflicting target paths at ${summary.targetRoot}`);
+    console.log(`[${summary.backend}] ok: no pre-existing paths at ${summary.targetRoot}`);
     return 0;
   } catch (error) {
     console.error(`error: ${error.message}`);
@@ -3969,7 +3969,7 @@ async function guidedPreviewPaths(rl, state) {
   let totalConflicts = 0;
   const perBackend = {};
   for (const line of captured) {
-    const m = line.match(/\[(\w+)\].*found (\d+) conflicting/);
+    const m = line.match(/\[(\w+)\].*found (\d+) existing/);
     if (m) {
       perBackend[m[1]] = parseInt(m[2], 10);
       totalConflicts += parseInt(m[2], 10);
