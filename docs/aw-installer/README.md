@@ -40,8 +40,9 @@ docs/aw-installer/
 │   ├── managed-files-ownership.md
 │   └── existing-code-adoption.md
 │
-└── tui/                            ← 预留：TUI 合同与实现（MS-003, MS-004）
-    └── (future)
+└── tui/                            ← TUI 合同与实现（MS-003, MS-004）
+    ├── README.md                   ← TUI 章节索引
+    └── human-cli-contract.md       ← TUI/CLI 职责分离合同
 ```
 
 ## 章节说明
@@ -76,9 +77,14 @@ operator 执行具体任务时使用。
 | `managed-files-ownership.md` | 文件所有权分类：installer payload / .aw/ 运行时 / deploy target / 用户自有 |
 | `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.aw/repo/discovery-input.md` 生成边界 |
 
-### tui/ — 预留
+### tui/ — TUI 合同与实现
 
-为 MS-20260519-003（Human-First TUI Contract）和 MS-20260519-004（TUI Full-Flow Implementation）预留的文档空间。具体章节结构由对应 milestone 确定。
+TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕模型和引导流程；实现由 MS-004 负责。
+
+| 文档 | 说明内容 |
+|------|---------|
+| `README.md` | TUI 章节索引与阅读路由 |
+| `human-cli-contract.md` | TUI/CLI 职责分离：角色定位、默认行为差异、屏幕模型、色彩语义、引导流程 |
 
 ## 阅读路由
 
@@ -90,6 +96,7 @@ operator 执行具体任务时使用。
 | operator（日常维护） | runbooks/skill-deployment-maintenance → runbooks/uninstall-remove-runbook |
 | operator（理解行为） | contracts/distribution-entrypoint-contract → reference/managed-files-ownership |
 | CI/脚本集成 | contracts/distribution-entrypoint-contract → contracts/deploy-mapping-spec |
+| 人类 operator（TUI 交互） | tui/human-cli-contract → runbooks/deploy-runbook |
 | Harness 开发者 | contracts/ (全部) → 回到 docs/harness/ |
 
 ### 按问题
@@ -106,6 +113,7 @@ operator 执行具体任务时使用。
 | 理解 payload 来源与信任边界 | contracts/payload-provenance-trust-boundary.md |
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |
+| 理解 TUI 和 CLI 的职责边界 | tui/human-cli-contract.md |
 
 ## 与旧路径的关系
 

@@ -68,6 +68,8 @@ Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路�
 8. [aw-installer/runbooks/uninstall-remove-runbook.md](./aw-installer/runbooks/uninstall-remove-runbook.md)
 9. [aw-installer/reference/managed-files-ownership.md](./aw-installer/reference/managed-files-ownership.md)
 10. [aw-installer/reference/existing-code-adoption.md](./aw-installer/reference/existing-code-adoption.md)
+11. [aw-installer/tui/README.md](./aw-installer/tui/README.md)
+12. [aw-installer/tui/human-cli-contract.md](./aw-installer/tui/human-cli-contract.md)
 
 ### 3. Harness
 
