@@ -3977,32 +3977,30 @@ async function guidedPreviewPaths(rl, state) {
   }
 
   if (totalConflicts > 0) {
-    console.log(`\n${SYM_FAIL} ${totalConflicts} path conflict(s) detected:`);
+    console.log(`\n${SYM_ARROW} ${totalConflicts} pre-existing path(s) — already installed:`);
     for (const [bk, count] of Object.entries(perBackend)) {
-      console.log(`  ${SYM_WARN} ${colorCyan(bk)}: ${count} conflicts`);
+      console.log(`    ${colorCyan(bk)}: ${count} paths`);
     }
 
-    // Split captured multi-line strings, extract only conflict detail lines
+    // Split captured multi-line strings, extract only pre-existing path detail lines
     const allLines = captured.flatMap((s) => s.split("\n"));
-    const conflictLines = allLines.filter((l) => l.includes("existing target path"));
-    if (conflictLines.length > 0) {
-      console.log(`\n  ${colorDim("Sample conflicts:")}`);
-      for (const cl of conflictLines.slice(0, 4)) {
-        // Keep only the relative part: "skill-name: ...path"
+    const existingLines = allLines.filter((l) => l.includes("existing target path"));
+    if (existingLines.length > 0) {
+      console.log(`\n  ${colorDim("Sample:")}`);
+      for (const cl of existingLines.slice(0, 4)) {
         const short = cl.replace(/^\s*-\s*/, "").replace(/ \(existing.*\)/, "").trim();
-        // Truncate path to last 2 segments for readability
         const parts = short.split("/");
         const compact = parts.length > 3 ? ".../" + parts.slice(-3).join("/") : short;
         console.log(`  ${colorDim("  " + compact)}`);
       }
-      if (conflictLines.length > 4) {
-        console.log(`  ${colorDim("  ... and " + (conflictLines.length - 4) + " more")}`);
+      if (existingLines.length > 4) {
+        console.log(`  ${colorDim("  ... and " + (existingLines.length - 4) + " more")}`);
       }
     }
 
     const choice = (await question(
       rl,
-      `${SYM_ARROW} Conflicts require ${colorYellow("prune --all")} before install. Continue? [${colorYellow("c")}=cancel / ${colorYellow("prune")}=prune first] `,
+      `${SYM_ARROW} Run ${colorYellow("prune --all")} to clear before install? [${colorYellow("c")}=cancel / ${colorYellow("prune")}=prune] `,
     )).trim().toLowerCase();
     if (choice === "prune") {
       console.log(`\n${SYM_ARROW} Running prune --all --backend ${state.backend}...`);
@@ -4014,7 +4012,7 @@ async function guidedPreviewPaths(rl, state) {
     return false;
   }
 
-  console.log(`${SYM_OK} All paths clear.`);
+  console.log(`${SYM_OK} No pre-existing paths — ready to install.`);
   return true;
 }
 
