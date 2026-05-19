@@ -3805,52 +3805,132 @@ async function guidedVerify(rl, state) {
   return true;
 }
 
+async function showRecoveryMenu(rl, state, failedStage, detail) {
+  state.currentStep = "recovery";
+  state.recoveryAttempts = (state.recoveryAttempts || 0) + 1;
+  refreshTui(state);
+  console.log("\n" + SYM_FAIL + " " + colorRed("Stage failed: " + failedStage));
+  if (detail) { console.log("  " + colorDim(detail)); }
+  console.log("\n" + colorBold("Recovery options:"));
+  console.log("  1. Retry this stage");
+  console.log("  2. Restart full guided flow");
+  if (state.backend === bundleBackend && failedStage === "install") {
+    console.log("  3. Retry single backend — " + colorYellow("aw-installer install --backend agents"));
+    console.log("  4. Retry single backend — " + colorYellow("aw-installer install --backend claude"));
+  }
+  console.log("  c. Cancel and return to menu");
+  const maxOpt = (state.backend === bundleBackend && failedStage === "install") ? "4" : "2";
+  const choice = (await question(
+    rl,
+    "\n" + SYM_ARROW + " Choose recovery action [1-" + maxOpt + "/c]: ",
+  )).trim().toLowerCase();
+  if (choice === "1") { return "retry"; }
+  if (choice === "2") { return "restart"; }
+  if (choice === "3" && state.backend === bundleBackend && failedStage === "install") { return "retry-agents"; }
+  if (choice === "4" && state.backend === bundleBackend && failedStage === "install") { return "retry-claude"; }
+  return "cancel";
+}
+
 async function guidedSummary(rl, state, results) {
   state.currentStep = "6/6 summary";
   refreshTui(state);
   const ok = results.every(Boolean);
-  console.log(`\n${"═".repeat(50)}`);
+  const sep = "=".repeat(50);
+  console.log("\n" + sep);
   if (ok) {
-    console.log(`${SYM_OK} ${colorBold("All stages completed successfully.")}`);
-    console.log(`  Backend:   ${colorCyan(state.backend)}`);
-    console.log(`  Version:   ${state.version}`);
-    console.log(`  Verify:    ${statusSymbol(results[4])} ${state.verifyResult}`);
+    console.log(SYM_OK + " " + colorBold("All stages completed successfully."));
+    console.log("  Backend:    " + colorCyan(state.backend));
+    console.log("  Version:    " + state.version);
+    console.log("  Target:     " + colorDim(state.targetRepo));
+    console.log("  Verify:     " + statusSymbol(results[4]) + " " + state.verifyResult);
+    console.log("\n  " + SYM_OK + " " + colorGreen("Installation ready."));
+    if (state.backend === bundleBackend) {
+      console.log("  " + colorDim("Both agents and claude backends are deployed."));
+    }
   } else {
-    console.log(`${SYM_FAIL} ${colorBold("Guided flow incomplete.")}`);
-    const stages = ["diagnose", "preview", "confirm", "install", "verify"];
-    results.forEach((pass, i) => {
-      console.log(`  ${statusSymbol(pass)} Stage ${i + 1}: ${stages[i]}`);
+    console.log(SYM_FAIL + " " + colorBold("Guided flow incomplete — partial state."));
+    var stageNames = ["diagnose", "preview", "confirm", "install", "verify"];
+    results.forEach(function(pass, i) {
+      console.log("  " + statusSymbol(pass) + " Stage " + (i + 1) + ": " + stageNames[i]);
     });
-    console.log(`\n${SYM_WARN} Recovery: re-run guided flow or use CLI commands directly.`);
+    console.log("\n" + SYM_WARN + " Recovery options:");
+    if (!results[3] && state.backend === bundleBackend) {
+      console.log("  → " + colorYellow("aw-installer install --backend agents") + "  (retry single backend)");
+      console.log("  → " + colorYellow("aw-installer install --backend claude") + "  (retry single backend)");
+    }
+    if (!results[4]) {
+      console.log("  → " + colorYellow("aw-installer verify --backend " + state.backend) + "  (re-verify)");
+    }
+    console.log("  → Re-run guided flow from TUI menu (option 1)");
+    state.recoveryHint = results[3] ? "verify" : "install";
+    state.failedStages = stageNames.filter(function(_, i) { return !results[i]; });
   }
-  console.log(`${"═".repeat(50)}`);
+  console.log(sep);
   return ok;
 }
 
 async function runGuidedFullFlow(rl, state) {
+  state.recoveryAttempts = 0;
+  state.recoveryHint = null;
   const results = [false, false, false, false, false];
 
   // Stage 1: Diagnose (non-blocking)
   results[0] = await guidedDiagnose(rl, state);
-  if (!results[0]) { await pause(rl); return; }
   await pause(rl);
 
-  // Stage 2: Preview paths (blocking — must pass)
+  // Stage 2: Preview paths (blocking)
   results[1] = await guidedPreviewPaths(rl, state);
-  if (!results[1]) { await pause(rl); return; }
+  if (!results[1]) {
+    const action = await showRecoveryMenu(rl, state, "preview", "Path conflicts must be resolved.");
+    if (action === "restart") { return runGuidedFullFlow(rl, state); }
+    return;
+  }
   await pause(rl);
 
-  // Stage 3: Confirm (explicit gate — must pass)
+  // Stage 3: Confirm (explicit gate)
   results[2] = await guidedConfirm(rl, state);
-  if (!results[2]) { await pause(rl); return; }
+  if (!results[2]) { return; }
 
-  // Stage 4: Install (must pass)
-  results[3] = await guidedInstall(rl, state);
-  if (!results[3]) { await pause(rl); return; }
-  await pause(rl);
+  // Stage 4: Install with recovery loop
+  let installOk = false;
+  while (!installOk) {
+    results[3] = await guidedInstall(rl, state);
+    if (!results[3]) {
+      const action = await showRecoveryMenu(rl, state, "install",
+        "Install failed for " + state.backend + ".");
+      if (action === "retry") { continue; }
+      if (action === "retry-agents") {
+        console.log("\n" + SYM_ARROW + " Retrying agents only...");
+        await runNodeOwned(["install", "--backend", "agents"]);
+        continue;
+      }
+      if (action === "retry-claude") {
+        console.log("\n" + SYM_ARROW + " Retrying claude only...");
+        await runNodeOwned(["install", "--backend", "claude"]);
+        continue;
+      }
+      if (action === "restart") { return runGuidedFullFlow(rl, state); }
+      break;
+    }
+    installOk = true;
+  }
 
-  // Stage 5: Verify
-  results[4] = await guidedVerify(rl, state);
+  if (installOk) {
+    await pause(rl);
+
+    // Stage 5: Verify with recovery
+    results[4] = await guidedVerify(rl, state);
+    if (!results[4]) {
+      const action = await showRecoveryMenu(rl, state, "verify",
+        "Verification found issues for " + state.backend + ".");
+      if (action === "retry") {
+        results[4] = await guidedVerify(rl, state);
+      } else if (action === "restart") {
+        return runGuidedFullFlow(rl, state);
+      }
+    }
+  }
+
   await pause(rl);
 
   // Stage 6: Summary
