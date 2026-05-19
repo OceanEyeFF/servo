@@ -162,56 +162,61 @@ function colorBold(text)   { return haveColor ? `${SGR_BOLD}${text}${SGR_RESET}`
 const STATUS_LINES = 7;
 
 // Raw-mode key reading for interactive TUI navigation
+// Uses stdin directly without touching readline to avoid state conflicts.
 const KEY_UP = "\x1b[A";
 const KEY_DOWN = "\x1b[B";
 const KEY_ENTER = "\r";
-const KEY_ESC = "\x1b";
-const KEY_q = "q";
-const KEY_b = "b";
 
-function readKey(rl) {
+function readKeyRaw() {
   return new Promise((resolve) => {
-    if (!ttyIn) {
-      // Fallback: read a line
-      rl.question("", (line) => resolve(line.trim()));
-      return;
-    }
-    const onData = (chunk) => {
-      const str = typeof chunk === "string" ? chunk : chunk.toString();
+    const onData = (buf) => {
+      const str = typeof buf === "string" ? buf : buf.toString();
       process.stdin.removeListener("data", onData);
-      process.stdin.setRawMode(false);
-      rl.resume();
+      if (ttyIn) { process.stdin.setRawMode(false); }
       resolve(str);
     };
-    rl.pause();
-    process.stdin.setRawMode(true);
+    if (ttyIn) { process.stdin.setRawMode(true); }
     process.stdin.once("data", onData);
   });
 }
 
 // Interactive arrow-key menu: returns selected index (0-based), or -1 on cancel
-// Non-TTY fallback: type number + Enter to select
 async function interactiveSelect(rl, options, prompt_) {
+  // Non-TTY: use numbered line-input fallback
+  if (!ttyIn) {
+    refreshTui(tuiState);
+    let menu = "\n";
+    for (let i = 0; i < options.length; i++) {
+      menu += `    ${i + 1}. ${options[i]}\n`;
+    }
+    menu += `\n${colorDim("1-" + options.length + " choose, q back")}`;
+    process.stdout.write(menu);
+    const line = await new Promise((resolve) => rl.question("> ", resolve));
+    const trimmed = line.trim();
+    if (trimmed === "q" || trimmed === "") { return -1; }
+    const num = parseInt(trimmed, 10);
+    if (num >= 1 && num <= options.length) { return num - 1; }
+    return -1;
+  }
+
+  // TTY: raw-mode arrow-key selection
   let selected = 0;
-  const promptStr = prompt_ || "Choose: ";
+  const promptStr = prompt_ || "";
 
   while (true) {
     refreshTui(tuiState);
     let menu = "\n";
     for (let i = 0; i < options.length; i++) {
-      const num = ttyIn ? "" : `${i + 1}. `;
       if (i === selected) {
-        menu += haveColor
-          ? `  \x1b[7m ${SYM_ARROW} ${num}${options[i]} \x1b[0m\n`
-          : `  ${SYM_ARROW} ${num}${options[i]}\n`;
+        menu += `  \x1b[7m   ${options[i]}   \x1b[0m\n`;
       } else {
-        menu += `    ${num}${options[i]}\n`;
+        menu += `    ${options[i]}\n`;
       }
     }
-    menu += `\n${colorDim(promptStr + (ttyIn ? "↑↓ move  Enter confirm  q back" : "1-" + options.length + " choose  q back"))}`;
+    menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
     process.stdout.write(menu);
 
-    const key = await readKey(rl);
+    const key = await readKeyRaw();
 
     if (key === KEY_UP) {
       selected = selected > 0 ? selected - 1 : options.length - 1;
@@ -219,16 +224,12 @@ async function interactiveSelect(rl, options, prompt_) {
       selected = selected < options.length - 1 ? selected + 1 : 0;
     } else if (key === KEY_ENTER || key === "\n") {
       return selected;
-    } else if (key === KEY_ESC || key === KEY_q || key === "q") {
+    } else if (key === "\x1b" || key === "q") {
       return -1;
-    } else if (key === KEY_b || key === "b") {
+    } else if (key === "b") {
       tuiState.backend = cycleBackend(tuiState.backend);
-    } else {
-      // Non-TTY fallback: accept number input; empty/EOF cancels
-      if (!key) { return -1; }
-      const num = parseInt(key, 10);
-      if (num >= 1 && num <= options.length) { return num - 1; }
     }
+    // Unknown key: ignore, re-render
   }
 }
 
