@@ -14,7 +14,7 @@ last_verified: 2026-05-19
 | 文档 | 内容 | 状态 |
 |------|------|------|
 | [human-cli-contract.md](./human-cli-contract.md) | TUI/CLI 职责分离合同：角色定位、默认行为、固定状态区 | active |
-| *(预留)* | TUI bundle 默认与 guided flow 合同 | MS-003 WT-2 |
+| [bundle-default-contract.md](./bundle-default-contract.md) | TUI bundle 默认与 guided flow 六阶段合同 | active |
 | *(预留)* | TUI 布局/色彩实现 | MS-004 |
 | *(预留)* | TUI PTY 与 package smoke | MS-004 |
 
