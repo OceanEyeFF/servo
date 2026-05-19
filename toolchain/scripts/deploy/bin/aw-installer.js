@@ -161,6 +161,77 @@ function colorBold(text)   { return haveColor ? `${SGR_BOLD}${text}${SGR_RESET}`
 
 const STATUS_LINES = 7;
 
+// Raw-mode key reading for interactive TUI navigation
+const KEY_UP = "\x1b[A";
+const KEY_DOWN = "\x1b[B";
+const KEY_ENTER = "\r";
+const KEY_ESC = "\x1b";
+const KEY_q = "q";
+const KEY_b = "b";
+
+function readKey(rl) {
+  return new Promise((resolve) => {
+    if (!ttyIn) {
+      // Fallback: read a line
+      rl.question("", (line) => resolve(line.trim()));
+      return;
+    }
+    const onData = (chunk) => {
+      const str = typeof chunk === "string" ? chunk : chunk.toString();
+      process.stdin.removeListener("data", onData);
+      process.stdin.setRawMode(false);
+      rl.resume();
+      resolve(str);
+    };
+    rl.pause();
+    process.stdin.setRawMode(true);
+    process.stdin.once("data", onData);
+  });
+}
+
+// Interactive arrow-key menu: returns selected index (0-based), or -1 on cancel
+// Non-TTY fallback: type number + Enter to select
+async function interactiveSelect(rl, options, prompt_) {
+  let selected = 0;
+  const promptStr = prompt_ || "Choose: ";
+
+  while (true) {
+    refreshTui(tuiState);
+    let menu = "\n";
+    for (let i = 0; i < options.length; i++) {
+      const num = ttyIn ? "" : `${i + 1}. `;
+      if (i === selected) {
+        menu += haveColor
+          ? `  \x1b[7m ${SYM_ARROW} ${num}${options[i]} \x1b[0m\n`
+          : `  ${SYM_ARROW} ${num}${options[i]}\n`;
+      } else {
+        menu += `    ${num}${options[i]}\n`;
+      }
+    }
+    menu += `\n${colorDim(promptStr + (ttyIn ? "↑↓ move  Enter confirm  q back" : "1-" + options.length + " choose  q back"))}`;
+    process.stdout.write(menu);
+
+    const key = await readKey(rl);
+
+    if (key === KEY_UP) {
+      selected = selected > 0 ? selected - 1 : options.length - 1;
+    } else if (key === KEY_DOWN) {
+      selected = selected < options.length - 1 ? selected + 1 : 0;
+    } else if (key === KEY_ENTER || key === "\n") {
+      return selected;
+    } else if (key === KEY_ESC || key === KEY_q || key === "q") {
+      return -1;
+    } else if (key === KEY_b || key === "b") {
+      tuiState.backend = cycleBackend(tuiState.backend);
+    } else {
+      // Non-TTY fallback: accept number input; empty/EOF cancels
+      if (!key) { return -1; }
+      const num = parseInt(key, 10);
+      if (num >= 1 && num <= options.length) { return num - 1; }
+    }
+  }
+}
+
 const crc32Table = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -4083,42 +4154,36 @@ async function runTui() {
     process.stdout.write(CSI_CLEAR_SCREEN);
     process.stdout.write(CSI_HIDE_CURSOR);
 
+    const menuOptions = [
+      "Guided install/update (6-stage: diagnose → preview → confirm → install → verify → summary)",
+      "Quick update (compact 4-step)",
+      "Diagnose current install",
+      "Verify current install",
+      "Show update dry-run plan",
+      "Exit",
+    ];
+
     while (true) {
+      tuiState.currentStep = "menu";
       refreshTui(tuiState);
+      process.stdout.write(`\n${colorBold("TUI Menu")}  ${colorDim("backend: " + tuiState.backend + "  |  b to cycle: " + backendCycle.join("/"))}\n`);
 
-      const menu = `
-${colorBold("TUI Menu")}
-${SYM_ARROW} 1. ${colorBold("Guided install/update")} (6-stage flow: diagnose → preview → confirm → install → verify → summary)
-  2. Quick update (compact 4-step: diagnose → preview → confirm → apply)
-  3. Diagnose current install
-  4. Verify current install
-  5. Show update dry-run plan
-  6. Show CLI help
-  7. Exit
+      const idx = await interactiveSelect(rl, menuOptions, " ");
 
-Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${backendCycle.join(" / ")})
-`;
+      if (idx === -1) { break; }
 
-      process.stdout.write(menu);
-      const choice = (await question(rl, `${SYM_ARROW} Select an action: `)).trim().toLowerCase();
-
-      if (choice === "b") {
-        tuiState.backend = cycleBackend(tuiState.backend);
-        continue;
-      }
-
-      if (choice === "1") {
+      if (idx === 0) {
         await runGuidedFullFlow(rl, tuiState);
-      } else if (choice === "2") {
+      } else if (idx === 1) {
         tuiState.currentStep = "guided-update";
         await runGuidedUpdateFlow(rl, tuiState);
-      } else if (choice === "3") {
+      } else if (idx === 2) {
         tuiState.currentStep = "diagnose";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
         await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
         await pause(rl);
-      } else if (choice === "4") {
+      } else if (idx === 3) {
         tuiState.currentStep = "verify";
         tuiState.verifyResult = "running...";
         refreshTui(tuiState);
@@ -4126,22 +4191,14 @@ Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${
         const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
         tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
         await pause(rl);
-      } else if (choice === "5") {
+      } else if (idx === 4) {
         tuiState.currentStep = "dry-run";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
         await runNodeOwned(["update", "--backend", tuiState.backend]);
         await pause(rl);
-      } else if (choice === "6") {
-        tuiState.currentStep = "help";
-        refreshTui(tuiState);
-        writeContent("");
-        printHelp();
-        await pause(rl);
-      } else if (choice === "7" || choice === "q" || choice === "quit" || choice === "exit") {
+      } else if (idx === 5) {
         break;
-      } else {
-        writeContent(`\n${SYM_WARN} Unknown selection.`);
       }
 
       tuiState.currentStep = "menu";
