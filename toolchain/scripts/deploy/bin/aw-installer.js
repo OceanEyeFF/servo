@@ -3719,10 +3719,150 @@ async function pause(rl) {
   await question(rl, "\nPress Enter to return to the installer menu...");
 }
 
+// ─── Six-stage guided flow (per TUI contract) ────────────────────────────
+// Contract: docs/aw-installer/tui/bundle-default-contract.md
+// Stages: diagnose → preview paths → confirm → install/update → verify → summary
+
+async function guidedDiagnose(rl, state) {
+  state.currentStep = "1/6 diagnose";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Diagnosing ${colorCyan(state.backend)} install...`);
+  const status = await runNodeOwned(["diagnose", "--backend", state.backend, "--json"]);
+  if (status !== 0) {
+    console.log(`${SYM_WARN} Diagnose found issues (see above). You may continue — diagnose is not a blocking gate.`);
+  } else {
+    console.log(`${SYM_OK} Diagnose complete.`);
+  }
+  return true; // diagnose never blocks — operator decides
+}
+
+async function guidedPreviewPaths(rl, state) {
+  state.currentStep = "2/6 preview";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Checking paths for ${colorCyan(state.backend)}...`);
+  const status = await runNodeOwned(["check_paths_exist", "--backend", state.backend]);
+  if (status !== 0) {
+    console.log(`\n${SYM_FAIL} Path conflicts detected.`);
+    const choice = (await question(
+      rl,
+      `${SYM_ARROW} Conflicts must be resolved before continuing. Cancel and fix? [${colorYellow("c")}=cancel / ${colorYellow("r")}=retry] `,
+    )).trim().toLowerCase();
+    if (choice === "r") { return guidedPreviewPaths(rl, state); }
+    console.log("Guided flow cancelled.");
+    return false;
+  }
+  console.log(`${SYM_OK} All paths clear.`);
+  return true;
+}
+
+async function guidedConfirm(rl, state) {
+  state.currentStep = "3/6 confirm";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Ready to install/update ${colorCyan(state.backend)}.`);
+  console.log(`  Target repo: ${colorDim(state.targetRepo)}`);
+  console.log(`  Source:      ${state.source}`);
+
+  const confirmation = (await question(
+    rl,
+    `\n${SYM_ARROW} Type ${colorYellow("yes")} to proceed, anything else to cancel: `,
+  )).trim();
+  if (confirmation !== "yes") {
+    console.log("Guided flow cancelled. No changes made.");
+    return false;
+  }
+  return true;
+}
+
+async function guidedInstall(rl, state) {
+  state.currentStep = "4/6 install";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Installing ${colorCyan(state.backend)}...`);
+  const status = await runNodeOwned(["install", "--backend", state.backend]);
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Install failed for ${state.backend}.`);
+    if (state.backend === bundleBackend) {
+      console.log(`${SYM_WARN} Bundle partial: try single-backend recovery with ${colorYellow("aw-installer install --backend agents")} or ${colorYellow("--backend claude")}.`);
+    }
+    return false;
+  }
+  console.log(`${SYM_OK} Install complete for ${state.backend}.`);
+  return true;
+}
+
+async function guidedVerify(rl, state) {
+  state.currentStep = "5/6 verify";
+  refreshTui(state);
+  state.verifyResult = "running...";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Verifying ${colorCyan(state.backend)}...`);
+  const status = await runNodeOwned(["verify", "--backend", state.backend]);
+  state.verifyResult = status === 0 ? "passed" : "failed";
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Verification failed. Summary will be marked incomplete.`);
+    return false;
+  }
+  console.log(`${SYM_OK} Verification passed.`);
+  return true;
+}
+
+async function guidedSummary(rl, state, results) {
+  state.currentStep = "6/6 summary";
+  refreshTui(state);
+  const ok = results.every(Boolean);
+  console.log(`\n${"═".repeat(50)}`);
+  if (ok) {
+    console.log(`${SYM_OK} ${colorBold("All stages completed successfully.")}`);
+    console.log(`  Backend:   ${colorCyan(state.backend)}`);
+    console.log(`  Version:   ${state.version}`);
+    console.log(`  Verify:    ${statusSymbol(results[4])} ${state.verifyResult}`);
+  } else {
+    console.log(`${SYM_FAIL} ${colorBold("Guided flow incomplete.")}`);
+    const stages = ["diagnose", "preview", "confirm", "install", "verify"];
+    results.forEach((pass, i) => {
+      console.log(`  ${statusSymbol(pass)} Stage ${i + 1}: ${stages[i]}`);
+    });
+    console.log(`\n${SYM_WARN} Recovery: re-run guided flow or use CLI commands directly.`);
+  }
+  console.log(`${"═".repeat(50)}`);
+  return ok;
+}
+
+async function runGuidedFullFlow(rl, state) {
+  const results = [false, false, false, false, false];
+
+  // Stage 1: Diagnose (non-blocking)
+  results[0] = await guidedDiagnose(rl, state);
+  if (!results[0]) { await pause(rl); return; }
+  await pause(rl);
+
+  // Stage 2: Preview paths (blocking — must pass)
+  results[1] = await guidedPreviewPaths(rl, state);
+  if (!results[1]) { await pause(rl); return; }
+  await pause(rl);
+
+  // Stage 3: Confirm (explicit gate — must pass)
+  results[2] = await guidedConfirm(rl, state);
+  if (!results[2]) { await pause(rl); return; }
+
+  // Stage 4: Install (must pass)
+  results[3] = await guidedInstall(rl, state);
+  if (!results[3]) { await pause(rl); return; }
+  await pause(rl);
+
+  // Stage 5: Verify
+  results[4] = await guidedVerify(rl, state);
+  await pause(rl);
+
+  // Stage 6: Summary
+  await guidedSummary(rl, state, results);
+  await pause(rl);
+}
+
+// Legacy compact guided update (single command: update --yes)
 async function runGuidedUpdateFlow(rl, state) {
   const backend = state.backend;
 
-  state.currentStep = "guided-update:diagnose";
+  state.currentStep = "update:diagnose";
   refreshTui(state);
   console.log(`\n${SYM_ARROW} Step 1: Diagnose current ${backend} install.`);
   const diagnoseStatus = await runNodeOwned(["diagnose", "--backend", backend, "--json"]);
@@ -3730,7 +3870,7 @@ async function runGuidedUpdateFlow(rl, state) {
     console.log(`${SYM_WARN} Diagnose found issues — update may not succeed as expected.`);
     const proceed = (await question(
       rl,
-      `${SYM_ARROW} Continue with update dry-run anyway? Type ${colorYellow("yes")} to continue: `,
+      `${SYM_ARROW} Continue anyway? Type ${colorYellow("yes")} to continue: `,
     )).trim();
     if (proceed !== "yes") {
       console.log("Update cancelled.");
@@ -3739,7 +3879,7 @@ async function runGuidedUpdateFlow(rl, state) {
     }
   }
 
-  state.currentStep = "guided-update:preview";
+  state.currentStep = "update:preview";
   refreshTui(state);
   console.log(`\n${SYM_ARROW} Step 2: Review update dry-run plan.`);
   const dryRunStatus = await runNodeOwned(["update", "--backend", backend]);
@@ -3749,18 +3889,18 @@ async function runGuidedUpdateFlow(rl, state) {
     return;
   }
 
-  state.currentStep = "guided-update:confirm";
+  state.currentStep = "update:confirm";
   refreshTui(state);
   const confirmation = (await question(
     rl,
-    `${SYM_ARROW} Step 3: Type ${colorYellow("yes")} to apply update (prune --all → check_paths_exist → install → verify): `,
+    `${SYM_ARROW} Step 3: Type ${colorYellow("yes")} to apply: `,
   )).trim();
   if (confirmation === "yes") {
-    state.currentStep = "guided-update:install";
+    state.currentStep = "update:install";
     refreshTui(state);
-    console.log(`\n${SYM_ARROW} Step 4: Applying update and running strict verify.`);
+    console.log(`\n${SYM_ARROW} Step 4: Applying update.`);
     await runNodeOwned(["update", "--backend", backend, "--yes"]);
-    state.currentStep = "guided-update:verify";
+    state.currentStep = "update:verify";
     refreshTui(state);
     state.verifyResult = "running...";
     const vStatus = await runNodeOwned(["verify", "--backend", backend]);
@@ -3868,12 +4008,13 @@ async function runTui() {
 
       const menu = `
 ${colorBold("TUI Menu")}
-${SYM_ARROW} 1. Guided update flow
-  2. Diagnose current install
-  3. Verify current install
-  4. Show update dry-run plan
-  5. Show CLI help
-  6. Exit
+${SYM_ARROW} 1. ${colorBold("Guided install/update")} (6-stage flow: diagnose → preview → confirm → install → verify → summary)
+  2. Quick update (compact 4-step: diagnose → preview → confirm → apply)
+  3. Diagnose current install
+  4. Verify current install
+  5. Show update dry-run plan
+  6. Show CLI help
+  7. Exit
 
 Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${backendCycle.join(" / ")})
 `;
@@ -3887,15 +4028,17 @@ Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${
       }
 
       if (choice === "1") {
+        await runGuidedFullFlow(rl, tuiState);
+      } else if (choice === "2") {
         tuiState.currentStep = "guided-update";
         await runGuidedUpdateFlow(rl, tuiState);
-      } else if (choice === "2") {
+      } else if (choice === "3") {
         tuiState.currentStep = "diagnose";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
         await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
         await pause(rl);
-      } else if (choice === "3") {
+      } else if (choice === "4") {
         tuiState.currentStep = "verify";
         tuiState.verifyResult = "running...";
         refreshTui(tuiState);
@@ -3903,19 +4046,19 @@ Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${
         const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
         tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
         await pause(rl);
-      } else if (choice === "4") {
+      } else if (choice === "5") {
         tuiState.currentStep = "dry-run";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
         await runNodeOwned(["update", "--backend", tuiState.backend]);
         await pause(rl);
-      } else if (choice === "5") {
+      } else if (choice === "6") {
         tuiState.currentStep = "help";
         refreshTui(tuiState);
         writeContent("");
         printHelp();
         await pause(rl);
-      } else if (choice === "6" || choice === "q" || choice === "quit" || choice === "exit") {
+      } else if (choice === "7" || choice === "q" || choice === "quit" || choice === "exit") {
         break;
       } else {
         writeContent(`\n${SYM_WARN} Unknown selection.`);
