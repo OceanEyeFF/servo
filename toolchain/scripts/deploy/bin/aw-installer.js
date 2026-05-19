@@ -118,6 +118,49 @@ const updateRecoverableIssueCodes = new Set([
 ]);
 let cachedPathSafetyPolicy = null;
 
+// ─── ANSI TUI rendering utilities ────────────────────────────────────────────
+// Color is always secondary to text/symbol — never the sole state carrier.
+// Contract: docs/aw-installer/tui/human-cli-contract.md
+
+const ttyOut = process.stdout.isTTY;
+const ttyIn = process.stdin.isTTY;
+const noColor = "NO_COLOR" in process.env && process.env.NO_COLOR.length > 0;
+const forceColor = "FORCE_COLOR" in process.env && process.env.FORCE_COLOR !== "0";
+const haveColor = !noColor && (forceColor || ttyOut);
+
+const ansi = (code) => haveColor ? `\x1b[${code}` : "";
+
+const SGR_RESET = ansi("0m");
+const SGR_BOLD = ansi("1m");
+const SGR_DIM = ansi("2m");
+const SGR_GREEN = ansi("32m");
+const SGR_YELLOW = ansi("33m");
+const SGR_RED = ansi("31m");
+const SGR_CYAN = ansi("36m");
+const SGR_WHITE = ansi("37m");
+
+const CSI_HIDE_CURSOR = haveColor ? "\x1b[?25l" : "";
+const CSI_SHOW_CURSOR = haveColor ? "\x1b[?25h" : "";
+const CSI_CLEAR_SCREEN = haveColor ? "\x1b[2J\x1b[H" : "";
+const CSI_SAVE_CURSOR = haveColor ? "\x1b[s" : "";
+const CSI_RESTORE_CURSOR = haveColor ? "\x1b[u" : "";
+function csiCursorTo(row, col) { return haveColor ? `\x1b[${row};${col}H` : ""; }
+function csiEraseToEnd() { return haveColor ? "\x1b[0J" : ""; }
+
+const SYM_OK = haveColor ? `${SGR_GREEN}[OK]${SGR_RESET}` : "[OK]";
+const SYM_WARN = haveColor ? `${SGR_YELLOW}[WARN]${SGR_RESET}` : "[WARN]";
+const SYM_FAIL = haveColor ? `${SGR_RED}[FAIL]${SGR_RESET}` : "[FAIL]";
+const SYM_ARROW = haveColor ? `${SGR_CYAN}>${SGR_RESET}` : ">";
+
+function colorGreen(text)  { return haveColor ? `${SGR_GREEN}${text}${SGR_RESET}` : text; }
+function colorYellow(text) { return haveColor ? `${SGR_YELLOW}${text}${SGR_RESET}` : text; }
+function colorRed(text)    { return haveColor ? `${SGR_RED}${text}${SGR_RESET}` : text; }
+function colorCyan(text)   { return haveColor ? `${SGR_CYAN}${text}${SGR_RESET}` : text; }
+function colorDim(text)    { return haveColor ? `${SGR_DIM}${text}${SGR_RESET}` : text; }
+function colorBold(text)   { return haveColor ? `${SGR_BOLD}${text}${SGR_RESET}` : text; }
+
+const STATUS_LINES = 7;
+
 const crc32Table = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -3676,15 +3719,18 @@ async function pause(rl) {
   await question(rl, "\nPress Enter to return to the installer menu...");
 }
 
-async function runGuidedUpdateFlow(rl, currentBackend) {
-  console.log("\nGuided update flow");
-  console.log(`Step 1: Diagnose current ${currentBackend} install.`);
-  const diagnoseStatus = await runNodeOwned(["diagnose", "--backend", currentBackend, "--json"]);
+async function runGuidedUpdateFlow(rl, state) {
+  const backend = state.backend;
+
+  state.currentStep = "guided-update:diagnose";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Step 1: Diagnose current ${backend} install.`);
+  const diagnoseStatus = await runNodeOwned(["diagnose", "--backend", backend, "--json"]);
   if (diagnoseStatus !== 0) {
-    console.log("Diagnose failed; update may not succeed as expected.");
+    console.log(`${SYM_WARN} Diagnose found issues — update may not succeed as expected.`);
     const proceed = (await question(
       rl,
-      "Continue with update dry-run anyway? Type yes to continue: ",
+      `${SYM_ARROW} Continue with update dry-run anyway? Type ${colorYellow("yes")} to continue: `,
     )).trim();
     if (proceed !== "yes") {
       console.log("Update cancelled.");
@@ -3693,21 +3739,32 @@ async function runGuidedUpdateFlow(rl, currentBackend) {
     }
   }
 
-  console.log("\nStep 2: Review update dry-run plan.");
-  const dryRunStatus = await runNodeOwned(["update", "--backend", currentBackend]);
+  state.currentStep = "guided-update:preview";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Step 2: Review update dry-run plan.`);
+  const dryRunStatus = await runNodeOwned(["update", "--backend", backend]);
   if (dryRunStatus !== 0) {
-    console.log("Update plan failed; not applying.");
+    console.log(`${SYM_FAIL} Update plan failed; not applying.`);
     await pause(rl);
     return;
   }
 
+  state.currentStep = "guided-update:confirm";
+  refreshTui(state);
   const confirmation = (await question(
     rl,
-    "Step 3: Type yes to apply update via prune --all -> check_paths_exist -> install -> verify: ",
+    `${SYM_ARROW} Step 3: Type ${colorYellow("yes")} to apply update (prune --all → check_paths_exist → install → verify): `,
   )).trim();
   if (confirmation === "yes") {
-    console.log("\nStep 4: Applying update and running strict verify.");
-    await runNodeOwned(["update", "--backend", currentBackend, "--yes"]);
+    state.currentStep = "guided-update:install";
+    refreshTui(state);
+    console.log(`\n${SYM_ARROW} Step 4: Applying update and running strict verify.`);
+    await runNodeOwned(["update", "--backend", backend, "--yes"]);
+    state.currentStep = "guided-update:verify";
+    refreshTui(state);
+    state.verifyResult = "running...";
+    const vStatus = await runNodeOwned(["verify", "--backend", backend]);
+    state.verifyResult = vStatus === 0 ? "passed" : "failed";
   } else {
     console.log("Update cancelled.");
   }
@@ -3721,63 +3778,160 @@ function cycleBackend(current) {
   return backendCycle[(index + 1) % backendCycle.length];
 }
 
+// Fixed-layout TUI state
+let tuiState = null;
+
+function initTuiState(backend, version, source, targetRepo) {
+  return {
+    version: version || "unknown",
+    source: source || packageSource,
+    targetRepo: targetRepo || process.cwd(),
+    backend: backend,
+    currentStep: "menu",
+    verifyResult: "not yet run",
+  };
+}
+
+const LINE_SEPARATOR = haveColor
+  ? `${SGR_DIM}${"─".repeat(Math.min(process.stdout.columns || 80, 120))}${SGR_RESET}`
+  : `${"-".repeat(Math.min(process.stdout.columns || 80, 120))}`;
+
+function renderStatusBar(state) {
+  const cols = process.stdout.columns || 80;
+  const width = Math.min(cols, 120);
+  const version = state.version.length > 20 ? state.version.slice(0, 19) + "…" : state.version;
+  const repo = state.targetRepo.length > width - 18
+    ? "..." + state.targetRepo.slice(-(width - 21))
+    : state.targetRepo;
+
+  const lines = [
+    `${colorBold("AW Installer")}  ${colorDim("v" + version)}`,
+    `${SYM_ARROW} ${state.currentStep}  |  backend: ${colorCyan(state.backend)}  |  source: ${state.source}`,
+    `repo: ${colorDim(repo)}`,
+    LINE_SEPARATOR,
+    "",
+    "",
+    "",
+  ];
+
+  // Pad status area to exactly STATUS_LINES
+  while (lines.length < STATUS_LINES) {
+    lines.push("");
+  }
+
+  process.stdout.write(
+    `${CSI_SAVE_CURSOR}${csiCursorTo(0, 0)}${CSI_HIDE_CURSOR}${
+      lines.slice(0, STATUS_LINES).join("\n")
+    }${CSI_SHOW_CURSOR}${CSI_RESTORE_CURSOR}`,
+  );
+}
+
+function writeContent(text) {
+  process.stdout.write(`${CSI_SAVE_CURSOR}${csiCursorTo(STATUS_LINES + 1, 0)}${csiEraseToEnd()}${text}${CSI_RESTORE_CURSOR}`);
+}
+
+function refreshTui(state) {
+  if (!ttyOut) return;
+  renderStatusBar(state);
+  process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
+  process.stdout.write(csiEraseToEnd());
+}
+
+function statusSymbol(pass) {
+  return pass ? SYM_OK : SYM_FAIL;
+}
+
 async function runTui() {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!ttyIn || !ttyOut) {
     console.error("aw-installer tui requires an interactive terminal.");
     return 1;
   }
 
+  const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
+  const targetRepo = process.env.AW_HARNESS_TARGET_REPO_ROOT || process.cwd();
+
+  // Bundle default per TUI contract
+  tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
+    terminal: true,
   });
 
-  let currentBackend = agentsBackend;
-
   try {
-    while (true) {
-      console.log(`
-AW Installer
-Backend: ${currentBackend}  (press b to switch: ${backendCycle.join(" / ")})
+    process.stdout.write(CSI_CLEAR_SCREEN);
+    process.stdout.write(CSI_HIDE_CURSOR);
 
-1. Guided update flow
-2. Diagnose current install
-3. Verify current install
-4. Show update dry-run plan
-5. Show CLI help
-6. Exit
-`);
-      const choice = (await question(rl, "Select an action: ")).trim().toLowerCase();
+    while (true) {
+      refreshTui(tuiState);
+
+      const menu = `
+${colorBold("TUI Menu")}
+${SYM_ARROW} 1. Guided update flow
+  2. Diagnose current install
+  3. Verify current install
+  4. Show update dry-run plan
+  5. Show CLI help
+  6. Exit
+
+Backend: ${colorCyan(tuiState.backend)}  (press ${colorYellow("b")} to cycle: ${backendCycle.join(" / ")})
+`;
+
+      process.stdout.write(menu);
+      const choice = (await question(rl, `${SYM_ARROW} Select an action: `)).trim().toLowerCase();
 
       if (choice === "b") {
-        currentBackend = cycleBackend(currentBackend);
+        tuiState.backend = cycleBackend(tuiState.backend);
         continue;
       }
 
       if (choice === "1") {
-        await runGuidedUpdateFlow(rl, currentBackend);
+        tuiState.currentStep = "guided-update";
+        await runGuidedUpdateFlow(rl, tuiState);
       } else if (choice === "2") {
-        await runNodeOwned(["diagnose", "--backend", currentBackend, "--json"]);
+        tuiState.currentStep = "diagnose";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
+        await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
         await pause(rl);
       } else if (choice === "3") {
-        await runNodeOwned(["verify", "--backend", currentBackend]);
+        tuiState.currentStep = "verify";
+        tuiState.verifyResult = "running...";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running verify --backend ${tuiState.backend}...\n`);
+        const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
+        tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
         await pause(rl);
       } else if (choice === "4") {
-        await runNodeOwned(["update", "--backend", currentBackend]);
+        tuiState.currentStep = "dry-run";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
+        await runNodeOwned(["update", "--backend", tuiState.backend]);
         await pause(rl);
       } else if (choice === "5") {
+        tuiState.currentStep = "help";
+        refreshTui(tuiState);
+        writeContent("");
         printHelp();
         await pause(rl);
       } else if (choice === "6" || choice === "q" || choice === "quit" || choice === "exit") {
-        return 0;
+        break;
       } else {
-        console.log("Unknown selection.");
+        writeContent(`\n${SYM_WARN} Unknown selection.`);
       }
+
+      tuiState.currentStep = "menu";
     }
+    return 0;
   } finally {
+    process.stdout.write(CSI_SHOW_CURSOR);
+    process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
+    process.stdout.write(csiEraseToEnd());
     rl.close();
   }
 }
+
 
 async function main() {
   const args = process.argv.slice(2);
