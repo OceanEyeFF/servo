@@ -4,8 +4,9 @@
 
 ## 推荐入口
 
-- [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
+- [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装（TUI 推荐 / CLI 备选）、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
 - [recommended-usage.md](./recommended-usage.md)：Skills 使用教程，覆盖 skill 调用方式、backend 差异（agents vs claude）、常见工作流和场景速查。
+- [TUI/CLI 合同](../../aw-installer/tui/human-cli-contract.md)：TUI 是人类推荐路径；CLI 是 AI/CI/脚本接口。理解两者的职责边界和引导流程。
 
 ## 按 backend 进入
 
@@ -22,9 +23,10 @@
 | 空项目从零开始 | [init-greenfield.md](./init-greenfield.md) |
 | 调整目标/追加需求 | [goal-change-guide.md](./goal-change-guide.md) |
 
-## 和 Deploy 文档的分工
+## 和 aw-installer 文档的分工
 
-- 通用 deploy 入口：[deploy/README.md](../deploy/README.md)
+- aw-installer 文档入口：[aw-installer/README.md](../../aw-installer/README.md)
+- TUI 引导流程：[bundle-default-contract.md](../../aw-installer/tui/bundle-default-contract.md)
 - destructive reinstall 主流程：[deploy-runbook.md](../../aw-installer/runbooks/deploy-runbook.md)
 - 外部试用复制粘贴路径：直接看当前 backend 的 usage-help 页面
 - 外部试用反馈模板：[trial feedback issue template](../../../.github/ISSUE_TEMPLATE/aw-installer-trial-feedback.yml) 与 [bug/blocker issue template](../../../.github/ISSUE_TEMPLATE/aw-installer-bug.yml)
