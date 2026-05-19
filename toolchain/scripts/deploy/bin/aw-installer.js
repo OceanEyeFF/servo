@@ -161,26 +161,24 @@ function colorBold(text)   { return haveColor ? `${SGR_BOLD}${text}${SGR_RESET}`
 
 const STATUS_LINES = 7;
 
-// Raw-mode key reading for interactive TUI navigation
-// Uses stdin directly without touching readline to avoid state conflicts.
-const KEY_UP = "\x1b[A";
-const KEY_DOWN = "\x1b[B";
-const KEY_ENTER = "\r";
+// Interactive arrow-key menu using readline.emitKeypressEvents for proper
+// terminal mode integration. Returns selected index (0-based), or -1 on cancel.
+let _keypressSetup = false;
+function _ensureKeypress() {
+  if (!_keypressSetup && ttyIn) {
+    readline.emitKeypressEvents(process.stdin);
+    _keypressSetup = true;
+  }
+}
 
-function readKeyRaw() {
+function _waitKey() {
   return new Promise((resolve) => {
-    const onData = (buf) => {
-      const str = typeof buf === "string" ? buf : buf.toString();
-      process.stdin.removeListener("data", onData);
-      if (ttyIn) { process.stdin.setRawMode(false); }
-      resolve(str);
-    };
-    if (ttyIn) { process.stdin.setRawMode(true); }
-    process.stdin.once("data", onData);
+    process.stdin.once("keypress", (str, key) => {
+      resolve({ str, key });
+    });
   });
 }
 
-// Interactive arrow-key menu: returns selected index (0-based), or -1 on cancel
 async function interactiveSelect(rl, options, prompt_) {
   // Non-TTY: use numbered line-input fallback
   if (!ttyIn) {
@@ -199,7 +197,9 @@ async function interactiveSelect(rl, options, prompt_) {
     return -1;
   }
 
-  // TTY: raw-mode arrow-key selection
+  // TTY: keypress-based arrow-key selection
+  // Raw mode is managed by runTui() lifecycle — do NOT toggle here.
+  _ensureKeypress();
   let selected = 0;
   const promptStr = prompt_ || "";
 
@@ -216,17 +216,17 @@ async function interactiveSelect(rl, options, prompt_) {
     menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
     process.stdout.write(menu);
 
-    const key = await readKeyRaw();
+    const ev = await _waitKey();
 
-    if (key === KEY_UP) {
+    if (ev.key && ev.key.name === "up") {
       selected = selected > 0 ? selected - 1 : options.length - 1;
-    } else if (key === KEY_DOWN) {
+    } else if (ev.key && ev.key.name === "down") {
       selected = selected < options.length - 1 ? selected + 1 : 0;
-    } else if (key === KEY_ENTER || key === "\n") {
+    } else if (ev.key && ev.key.name === "return") {
       return selected;
-    } else if (key === "\x1b" || key === "q") {
+    } else if (ev.str === "q" || (ev.key && ev.key.name === "escape")) {
       return -1;
-    } else if (key === "b") {
+    } else if (ev.str === "b") {
       tuiState.backend = cycleBackend(tuiState.backend);
     }
     // Unknown key: ignore, re-render
@@ -4209,6 +4209,7 @@ async function runTui() {
     process.stdout.write(CSI_SHOW_CURSOR);
     process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
     process.stdout.write(csiEraseToEnd());
+    try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
     rl.close();
   }
 }
