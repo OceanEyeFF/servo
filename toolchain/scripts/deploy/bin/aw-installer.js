@@ -3982,17 +3982,21 @@ async function guidedPreviewPaths(rl, state) {
       console.log(`  ${SYM_WARN} ${colorCyan(bk)}: ${count} conflicts`);
     }
 
-    // Show a condensed sample (max 3 per backend) from the raw output
-    const conflictLines = captured.filter((l) => l.includes("existing target path"));
+    // Split captured multi-line strings, extract only conflict detail lines
+    const allLines = captured.flatMap((s) => s.split("\n"));
+    const conflictLines = allLines.filter((l) => l.includes("existing target path"));
     if (conflictLines.length > 0) {
       console.log(`\n  ${colorDim("Sample conflicts:")}`);
-      for (const cl of conflictLines.slice(0, 6)) {
-        // Shorten: just show the skill name
-        const short = cl.replace(/.*- /, "").replace(/ \(.*\)/, "");
-        console.log(`  ${colorDim("  " + short)}`);
+      for (const cl of conflictLines.slice(0, 4)) {
+        // Keep only the relative part: "skill-name: ...path"
+        const short = cl.replace(/^\s*-\s*/, "").replace(/ \(existing.*\)/, "").trim();
+        // Truncate path to last 2 segments for readability
+        const parts = short.split("/");
+        const compact = parts.length > 3 ? ".../" + parts.slice(-3).join("/") : short;
+        console.log(`  ${colorDim("  " + compact)}`);
       }
-      if (conflictLines.length > 6) {
-        console.log(`  ${colorDim("  ... and " + (conflictLines.length - 6) + " more")}`);
+      if (conflictLines.length > 4) {
+        console.log(`  ${colorDim("  ... and " + (conflictLines.length - 4) + " more")}`);
       }
     }
 
