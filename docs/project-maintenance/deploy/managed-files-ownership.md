@@ -9,9 +9,11 @@ last_verified: 2026-05-19
 
 > 目的：明确 aw-installer 管理文件的所有权边界，区分 installer 管理的 skill payload、`.aw/` 运行时控制状态、deploy target 和用户自有仓库文件。
 
-本页管理文件所有权分类。deploy target 的角色与映射见 [deploy-mapping-spec.md](./deploy-mapping-spec.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md)。
+本页给出通用所有权分类方案，并以本仓库为实例说明每个分类在真实项目中的对应路径。deploy target 的角色与映射见 [deploy-mapping-spec.md](./deploy-mapping-spec.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md)。
 
-## 所有权分类
+## 通用所有权分类
+
+aw-installer 管理的 target repo 中存在四类文件所有权，按"谁写入、谁删除、谁持有真相"区分：
 
 ```
 target repo root/
@@ -70,7 +72,7 @@ target repo root/
 **重要约束：**
 - `.aw/` 不是 installer payload，不受 `prune --all` 影响
 - `.aw/` 不是 source of truth——真相在 `docs/` 和 `product/`
-- `.aw/` 是 gitignored 的运行时状态，不同步到 remote
+- `.aw/` 通常是 gitignored 的运行时状态，不同步到 remote
 - 删除 `.aw/` 后 Harness 需要重新初始化
 
 ### 3. Deploy target
@@ -107,6 +109,54 @@ target repo root/
 - `prune --all` 只删除受管目录
 - 任何 installer 操作都不会触及用户自有文件
 - `check_paths_exist` 在写入前检测冲突，但只读不写
+
+## 以本仓库为例
+
+以下将通用分类映射到 `vibecoding_autoworkflow` 仓库的实际路径，帮助 operator 理解各分类在真实项目中的对应关系。
+
+### 本仓库的文件所有权映射
+
+```
+vibecoding_autoworkflow/           ← 用户自有（target repo 本身）
+│
+├── .agents/skills/                ← deploy target（installer 管理）
+│   ├── aw-harness-skill/          ← 受管 skill payload
+│   ├── aw-close-worktrack-skill/  ← 受管 skill payload
+│   ├── aw-gate-skill/             ← 受管 skill payload
+│   └── aw-*                       ← 所有 aw- 前缀目录均为受管
+│
+├── .claude/skills/                ← deploy target（installer 管理）
+│   ├── harness-skill/             ← 受管 skill payload
+│   ├── close-worktrack-skill/     ← 受管 skill payload
+│   ├── gate-skill/                ← 受管 skill payload
+│   └── *                          ← 所有目录均为受管
+│
+├── .aw/                           ← 运行时控制状态（非 installer payload）
+│   ├── control-state.md           ← Harness 控制面配置
+│   ├── goal-charter.md            ← Repo 目标章程
+│   ├── repo/                      ← 仓库级快照与 backlog
+│   ├── worktrack/                 ← 当前 worktrack artifacts
+│   └── milestone/                 ← Milestone artifacts
+│
+├── .git/                          ← 用户自有（Git 仓库数据）
+├── docs/                          ← 用户自有（文档真相层）
+├── product/                       ← 用户自有（业务源码根）
+├── toolchain/                     ← 用户自有（脚本与工具）
+├── package.json                   ← 用户自有（npm 元数据）
+└── CLAUDE.md                      ← 用户自有（入口文档）
+```
+
+### 本仓库的操作对应
+
+| 如果你想... | 操作 | 影响范围 |
+|-----------|------|---------|
+| 重置所有受管 skill 到当前版本 | `aw-installer install --backend bundle` | 仅 `.agents/skills/` 和 `.claude/skills/` |
+| 完全清理 installer 部署产物 | `aw-installer prune --all --backend bundle` | 仅上述两个 skills 目录 |
+| 重置 Harness 控制状态 | `rm -rf .aw/` 然后重新 `set-harness-goal-skill` | 仅 `.aw/`，不影响源码和文档 |
+| 修改 skill 行为 | 编辑 `product/harness/skills/` 下的 canonical source | 下次 install 时生效 |
+| 修改文档 | 编辑 `docs/` 下的文件 | 正常的 git 工作流 |
+
+**关键记忆点：** `.agents/` 和 `.claude/` 是 installer 的写入目标（可随时重建）；`.aw/` 是 Harness 的运行时笔记（重置即清空）；其他一切都是你的代码和文档（installer 不会碰）。
 
 ## 非目标（Non-Goals）
 
