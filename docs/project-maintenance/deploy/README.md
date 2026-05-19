@@ -13,6 +13,7 @@
 | [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md) | payload source kind、source/target root、GitHub source trust boundary | release channel、任意 remote update |
 | [harness-version-marker-contract.md](./harness-version-marker-contract.md) | `product/harness/skills/harness-skill/VERSION` 标记的格式、语义与 operator 解读规则 | package version、npm publish、release channel |
 | [uninstall-remove-runbook.md](./uninstall-remove-runbook.md) | `prune --all` 安全卸载边界：删除/保留范围、bundle 模式行为与恢复场景 | npm 卸载、deploy target 删除 |
+| [managed-files-ownership.md](./managed-files-ownership.md) | installer 管理文件的所有权分类：skill payload、`.aw/` 运行时状态、deploy target、用户自有文件 | npm 全局路径、shell 配置、CI/CD |
 | [existing-code-adoption.md](./existing-code-adoption.md) | 既有代码库接入 Harness 时的 `.aw/repo/discovery-input.md` 生成边界 | artifact 正文、skill workflow 实现 |
 
 ## 按问题进入
@@ -26,6 +27,7 @@
 | 查看 payload provenance 与 update trust boundary | [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md) |
 | 查看 Harness payload 版本标记语义与 operator 解读规则 | [harness-version-marker-contract.md](./harness-version-marker-contract.md) |
 | 卸载或移除 aw-installer 部署产物 | [uninstall-remove-runbook.md](./uninstall-remove-runbook.md) |
+| 确认哪些文件由 installer 管理、哪些不是 | [managed-files-ownership.md](./managed-files-ownership.md) |
 | 既有代码库接入 Harness | [existing-code-adoption.md](./existing-code-adoption.md) |
 | 改 skills 或 `.aw_template/` 后的 operator 决策 | [Usage Help](../usage-help/README.md) |
 | package/registry smoke 或部署后行为观察 | [Testing Runbooks](../testing/README.md) |
