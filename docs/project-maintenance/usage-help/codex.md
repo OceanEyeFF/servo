@@ -73,5 +73,5 @@ aw-installer verify --backend agents --agents-root "$PWD/.agents/skills"
 ## 六、Source 变更后的 operator 决策
 
 - source of truth 在 `product/`，不改 `.agents/skills/` 已安装结果
-- 重新对齐 source 回 [Deploy Runbook](../deploy/deploy-runbook.md) 走三步主流程
+- 重新对齐 source 回 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md) 走三步主流程
 - source 出现重复 `target_dir`、改名、移除或 target naming 变化时先修 source contract 再重装

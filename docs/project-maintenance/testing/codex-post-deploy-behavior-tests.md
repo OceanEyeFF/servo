@@ -9,7 +9,7 @@ last_verified: 2026-05-10
 
 > 目的：固定 Codex 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.agents/skills/`、无交互 `codex exec`、多轮观察。
 
-本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../deploy/deploy-runbook.md)。
+本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)。
 
 ## 一、适用范围
 
@@ -108,6 +108,6 @@ codex exec --cd "$TMP_REPO" --skip-git-repo-check --output-last-message "$TMP_RU
 ## 十、相关文档
 
 - [Testing Runbooks](./README.md)
-- [Deploy Runbook](../deploy/deploy-runbook.md)
-- [Skill Deployment 维护流](../deploy/skill-deployment-maintenance.md)
+- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
+- [Skill Deployment 维护流](../../aw-installer/runbooks/skill-deployment-maintenance.md)
 - [Harness 运行协议](../../harness/foundations/Harness运行协议.md)

@@ -9,7 +9,7 @@ last_verified: 2026-05-08
 
 > 目的：固定本仓库运行 Python 验证、治理检查和 closeout gate 的 operator-facing 命令口径。
 
-本页属于 [Testing Runbooks](./README.md)。deploy 主流程见 [Deploy Runbook](../deploy/deploy-runbook.md)，review/verify 口径见 [Review / Verify Handbook](../governance/review-verify-handbook.md)。
+本页属于 [Testing Runbooks](./README.md)。deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)，review/verify 口径见 [Review / Verify Handbook](../governance/review-verify-handbook.md)。
 
 ## Command Rule
 

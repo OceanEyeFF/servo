@@ -27,7 +27,7 @@ aw-installer install --backend agents
 
 Python reference/parity 命令已随 P0-067 Python cleanup 移除。`adapter_deploy.py`、`harness_deploy.py` 等 Python deploy 文件不再存在于 repo 中，当前 deploy runtime 入口仅 `aw-installer`（Node-only distribution）。
 
-backend-specific target root override 见 [Codex Usage Help](../usage-help/codex.md) 和 [Claude Usage Help](../usage-help/claude.md)。package/local `aw-installer` 必须保持同一 deploy 语义；包装层命令面由 [Distribution Entrypoint Contract](./distribution-entrypoint-contract.md) 管理。
+backend-specific target root override 见 [Codex Usage Help](../../project-maintenance/usage-help/codex.md) 和 [Claude Usage Help](../../project-maintenance/usage-help/claude.md)。package/local `aw-installer` 必须保持同一 deploy 语义；包装层命令面由 [Distribution Entrypoint Contract](../contracts/distribution-entrypoint-contract.md) 管理。
 
 ## 三步停止线
 
@@ -45,4 +45,4 @@ backend-specific target root override 见 [Codex Usage Help](../usage-help/codex
 | `install` 在写入前失败 | 先修 source contract，再从 `prune --all` 重跑 |
 | 想确认重装后是否干净 | 转到 [Skill Deployment 维护流](./skill-deployment-maintenance.md) 跑 `diagnose` 或 `verify` |
 
-drift/conflict/unrecognized 见 [Skill Deployment 维护流](./skill-deployment-maintenance.md)；字段合同见 [Mapping Spec](./deploy-mapping-spec.md)；trust boundary 见 [Payload Provenance](./payload-provenance-trust-boundary.md)；pack/smoke/release 见 [Testing](../testing/README.md) 和 [Governance](../governance/README.md)。
+drift/conflict/unrecognized 见 [Skill Deployment 维护流](./skill-deployment-maintenance.md)；字段合同见 [Mapping Spec](../contracts/deploy-mapping-spec.md)；trust boundary 见 [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；pack/smoke/release 见 [Testing](../../project-maintenance/testing/README.md) 和 [Governance](../../project-maintenance/governance/README.md)。

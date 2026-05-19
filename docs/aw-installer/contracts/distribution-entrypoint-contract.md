@@ -15,7 +15,7 @@ last_verified: 2026-05-08
 
 - bin surface 是 `aw-installer`，当前支持 `agents`、`claude` 与聚合值 `bundle`；未支持 backend 或命令变体显式失败
 - `bundle` 是 `--backend` 枚举的第三个合法值；它不是新的 distribution，而是"在 `agents` 与 `claude` 两个 distribution 上同时执行同一 verb"的 dispatcher 别名
-- CLI 是稳定脚本接口；TUI 只能是同一合同上的交互层
+- CLI 是稳定的 AI、CI 和脚本接口；TUI 是推荐的人类 operator 交互路径，两者共享同一命令面合同，TUI 不引入独立的 mutating 语义。TUI/CLI 职责分离详见 [tui/human-cli-contract.md](../tui/human-cli-contract.md)
 
 ## 命令面合同
 

@@ -9,7 +9,7 @@ last_verified: 2026-05-06
 
 > 目的：提供 deploy target 的只读诊断与恢复分流入口，管理"先观察什么、怎么判断、何时转回三步重装"。
 
-首次安装/重装见 [Deploy Runbook](./deploy-runbook.md)；合同见 [Deploy Mapping Spec](./deploy-mapping-spec.md)。
+首次安装/重装见 [Deploy Runbook](./deploy-runbook.md)；合同见 [Deploy Mapping Spec](../contracts/deploy-mapping-spec.md)。
 
 ## 推荐维护循环
 
@@ -29,7 +29,7 @@ aw-installer verify --backend agents
 
 repo-local Python reference/parity commands remain available for adapter maintenance and comparison tests, but they are not the package/local operator runtime path.
 
-backend-specific target root override 见 [Codex Usage Help](../usage-help/codex.md) 和 [Claude Usage Help](../usage-help/claude.md)。
+backend-specific target root override 见 [Codex Usage Help](../../project-maintenance/usage-help/codex.md) 和 [Claude Usage Help](../../project-maintenance/usage-help/claude.md)。
 
 ## 信号分流
 
@@ -44,4 +44,4 @@ backend-specific target root override 见 [Codex Usage Help](../usage-help/codex
 | `unrecognized-target-directory` | 不让脚本猜测；人工确认保留、改名或删除 |
 | `target-payload-drift`/`missing-target-entry`/`missing-required-payload` | 默认完整重装，除非确认是更上游 source 问题 |
 
-已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](./deploy-mapping-spec.md) + [Payload Provenance](./payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../testing/README.md) + [Governance](../governance/README.md)。
+已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](../contracts/deploy-mapping-spec.md) + [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../../project-maintenance/testing/README.md) + [Governance](../../project-maintenance/governance/README.md)。

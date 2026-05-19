@@ -9,7 +9,7 @@ last_verified: 2026-05-08
 
 > 目的：定义把已有代码库接入 Harness 初始化流程时，operator-facing 的 `.aw/repo/discovery-input.md` 生成边界。
 
-本页属于 [Deploy Runbooks](./README.md)，覆盖 adoption 生成边界。artifact 正文见 [Repo Discovery Input](../../harness/artifact/repo/discovery-input.md)；skill workflow 与可执行资产见 [`set-harness-goal-skill`](../../../product/harness/skills/set-harness-goal-skill/SKILL.md)。
+本页属于 [Deploy Runbooks](../../project-maintenance/README.md)，覆盖 adoption 生成边界。artifact 正文见 [Repo Discovery Input](../../harness/artifact/repo/discovery-input.md)；skill workflow 与可执行资产见 [`set-harness-goal-skill`](../../../product/harness/skills/set-harness-goal-skill/SKILL.md)。
 
 ## 适用场景
 
