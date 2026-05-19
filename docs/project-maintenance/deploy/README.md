@@ -11,6 +11,7 @@
 | [distribution-entrypoint-contract.md](./distribution-entrypoint-contract.md) | `aw-installer` CLI/TUI 包装层语义 | operator runbook、发布步骤 |
 | [deploy-mapping-spec.md](./deploy-mapping-spec.md) | canonical source/payload/target 映射合同 | operator 执行步骤、release 流程 |
 | [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md) | payload source kind、source/target root、GitHub source trust boundary | release channel、任意 remote update |
+| [harness-version-marker-contract.md](./harness-version-marker-contract.md) | `product/harness/skills/harness-skill/VERSION` 标记的格式、语义与 operator 解读规则 | package version、npm publish、release channel |
 | [existing-code-adoption.md](./existing-code-adoption.md) | 既有代码库接入 Harness 时的 `.aw/repo/discovery-input.md` 生成边界 | artifact 正文、skill workflow 实现 |
 
 ## 按问题进入
@@ -22,6 +23,7 @@
 | 确认 canonical source 到 target 的正式映射 | [deploy-mapping-spec.md](./deploy-mapping-spec.md) |
 | 确认 package/CLI/TUI 必须保持的语义 | [distribution-entrypoint-contract.md](./distribution-entrypoint-contract.md) |
 | 查看 payload provenance 与 update trust boundary | [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md) |
+| 查看 Harness payload 版本标记语义与 operator 解读规则 | [harness-version-marker-contract.md](./harness-version-marker-contract.md) |
 | 既有代码库接入 Harness | [existing-code-adoption.md](./existing-code-adoption.md) |
 | 改 skills 或 `.aw_template/` 后的 operator 决策 | [Usage Help](../usage-help/README.md) |
 | package/registry smoke 或部署后行为观察 | [Testing Runbooks](../testing/README.md) |
