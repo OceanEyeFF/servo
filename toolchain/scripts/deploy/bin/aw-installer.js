@@ -3791,38 +3791,225 @@ async function pause(rl) {
   await question(rl, "\nPress Enter to return to the installer menu...");
 }
 
+// ─── Console capture for TUI-friendly output ──────────────────────────────
+
+function captureConsole(fn) {
+  const origLog = console.log;
+  const origError = console.error;
+  const captured = [];
+  console.log = (...args) => captured.push(args.join(" "));
+  console.error = (...args) => captured.push(args.join(" "));
+  try {
+    const result = fn();
+    // Async: restore in Promise continuation (after async work completes)
+    if (result && typeof result.then === "function") {
+      return result.then(
+        (v) => { console.log = origLog; console.error = origError; return { value: v, captured }; },
+        (e) => { console.log = origLog; console.error = origError; throw e; },
+      );
+    }
+    // Sync: restore now
+    console.log = origLog;
+    console.error = origError;
+    return { value: result, captured };
+  } catch (e) {
+    console.log = origLog;
+    console.error = origError;
+    throw e;
+  }
+}
+
 // ─── Six-stage guided flow (per TUI contract) ────────────────────────────
 // Contract: docs/aw-installer/tui/bundle-default-contract.md
 // Stages: diagnose → preview paths → confirm → install/update → verify → summary
 
+function buildDiagnoseSummary(capturedOutput, backend) {
+  // Try to parse JSON from captured output
+  let diagnosis = null;
+  for (const line of capturedOutput) {
+    try { diagnosis = JSON.parse(line); break; } catch (_) { /* not JSON */ }
+  }
+
+  if (!diagnosis || !diagnosis.backends) {
+    return { ok: false, summary: `${SYM_FAIL} Could not parse diagnose output.`, backends: [] };
+  }
+
+  const results = [];
+  const targetBackends = backend === bundleBackend
+    ? [agentsBackend, claudeBackend]
+    : [backend];
+
+  for (const bk of targetBackends) {
+    const bd = diagnosis.backends[bk];
+    if (!bd) {
+      results.push({ backend: bk, ok: false, skillCount: 0, issueCount: 0, issues: [] });
+      continue;
+    }
+    results.push({
+      backend: bk,
+      ok: bd.issue_count === 0,
+      skillCount: bd.managed_install_count || 0,
+      issueCount: bd.issue_count || 0,
+      conflictCount: bd.conflict_count || 0,
+      issues: (bd.issues || []).slice(0, 5),
+    });
+  }
+  return { ok: results.every((r) => r.ok), summary: null, backends: results };
+}
+
+function checkAwHealth() {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const awDir = path.join(process.cwd(), ".aw");
+  const checks = [];
+
+  // .aw directory existence
+  if (!fs.existsSync(awDir)) {
+    return [{ item: ".aw directory", ok: false, detail: "missing — Harness not initialized" }];
+  }
+
+  // milestone dir
+  const msDir = path.join(awDir, "milestone");
+  if (fs.existsSync(msDir)) {
+    try {
+      const files = fs.readdirSync(msDir).filter((f) => f.endsWith(".md") && f !== "milestone-template.md");
+      checks.push({ item: "milestones", ok: true, detail: `${files.length} artifacts` });
+    } catch (_) {
+      checks.push({ item: "milestones", ok: false, detail: "unreadable" });
+    }
+  } else {
+    checks.push({ item: "milestones", ok: false, detail: "missing" });
+  }
+
+  // control-state
+  const cs = path.join(awDir, "control-state.md");
+  checks.push({
+    item: "control-state",
+    ok: fs.existsSync(cs),
+    detail: fs.existsSync(cs) ? "present" : "missing",
+  });
+
+  // worktrack dir
+  const wtDir = path.join(awDir, "worktrack");
+  if (fs.existsSync(wtDir)) {
+    try {
+      const wts = fs.readdirSync(wtDir).filter((f) => f.endsWith(".md"));
+      checks.push({ item: "worktrack artifacts", ok: true, detail: `${wts.length} files` });
+    } catch (_) {
+      checks.push({ item: "worktrack artifacts", ok: false, detail: "unreadable" });
+    }
+  } else {
+    checks.push({ item: "worktrack artifacts", ok: false, detail: "missing" });
+  }
+
+  // repo backlogs
+  const repoDir = path.join(awDir, "repo");
+  if (fs.existsSync(repoDir)) {
+    const backlogs = ["milestone-backlog.md", "worktrack-backlog.md", "snapshot-status.md"];
+    for (const bl of backlogs) {
+      const exists = fs.existsSync(path.join(repoDir, bl));
+      checks.push({ item: bl.replace(".md", ""), ok: exists, detail: exists ? "present" : "missing" });
+    }
+  }
+
+  return checks;
+}
+
 async function guidedDiagnose(rl, state) {
   state.currentStep = "1/6 diagnose";
   refreshTui(state);
-  console.log(`\n${SYM_ARROW} Diagnosing ${colorCyan(state.backend)} install...`);
-  const status = await runNodeOwned(["diagnose", "--backend", state.backend, "--json"]);
-  if (status !== 0) {
-    console.log(`${SYM_WARN} Diagnose found issues (see above). You may continue — diagnose is not a blocking gate.`);
-  } else {
-    console.log(`${SYM_OK} Diagnose complete.`);
+  console.log(`${SYM_ARROW} Diagnosing ${colorCyan(state.backend)} install...`);
+
+  const { captured } = await captureConsole(
+    () => runNodeOwned(["diagnose", "--backend", state.backend, "--json"]),
+  );
+
+  const diag = buildDiagnoseSummary(captured, state.backend);
+  const awChecks = checkAwHealth();
+
+  // ── Backend health ──
+  console.log(`\n  ${colorBold("Backend Health")}`);
+  for (const bk of diag.backends) {
+    const icon = bk.ok ? SYM_OK : (bk.conflictCount > 0 ? SYM_WARN : SYM_FAIL);
+    console.log(`  ${icon} ${colorCyan(bk.backend)}: ${bk.skillCount} skills installed, ${bk.issueCount} issues, ${bk.conflictCount} conflicts`);
+    if (!bk.ok && bk.issues.length > 0) {
+      for (const iss of bk.issues.slice(0, 3)) {
+        console.log(`     ${colorDim("- " + (iss.skill || iss.code || JSON.stringify(iss)))}`);
+      }
+      if (bk.issues.length > 3) console.log(`     ${colorDim("... and " + (bk.issues.length - 3) + " more")}`);
+    }
   }
-  return true; // diagnose never blocks — operator decides
+
+  // ── .aw health ──
+  console.log(`\n  ${colorBold(".aw Control-plane Health")}`);
+  for (const ck of awChecks) {
+    const icon = ck.ok ? SYM_OK : SYM_FAIL;
+    console.log(`  ${icon} ${ck.item}: ${ck.detail}`);
+  }
+
+  const overallOk = diag.ok && awChecks.every((c) => c.ok);
+  if (overallOk) {
+    console.log(`\n${SYM_OK} All checks passed.`);
+  } else {
+    console.log(`\n${SYM_WARN} Some checks found issues. Diagnose is not a blocking gate — you may continue.`);
+  }
+  return true;
 }
 
 async function guidedPreviewPaths(rl, state) {
   state.currentStep = "2/6 preview";
   refreshTui(state);
-  console.log(`\n${SYM_ARROW} Checking paths for ${colorCyan(state.backend)}...`);
-  const status = await runNodeOwned(["check_paths_exist", "--backend", state.backend]);
-  if (status !== 0) {
-    console.log(`\n${SYM_FAIL} Path conflicts detected.`);
+  console.log(`${SYM_ARROW} Checking paths for ${colorCyan(state.backend)}...`);
+
+  const { captured } = await captureConsole(
+    () => runNodeOwned(["check_paths_exist", "--backend", state.backend]),
+  );
+
+  // Parse conflict summary from captured output
+  let totalConflicts = 0;
+  const perBackend = {};
+  for (const line of captured) {
+    const m = line.match(/\[(\w+)\].*found (\d+) conflicting/);
+    if (m) {
+      perBackend[m[1]] = parseInt(m[2], 10);
+      totalConflicts += parseInt(m[2], 10);
+    }
+  }
+
+  if (totalConflicts > 0) {
+    console.log(`\n${SYM_FAIL} ${totalConflicts} path conflict(s) detected:`);
+    for (const [bk, count] of Object.entries(perBackend)) {
+      console.log(`  ${SYM_WARN} ${colorCyan(bk)}: ${count} conflicts`);
+    }
+
+    // Show a condensed sample (max 3 per backend) from the raw output
+    const conflictLines = captured.filter((l) => l.includes("existing target path"));
+    if (conflictLines.length > 0) {
+      console.log(`\n  ${colorDim("Sample conflicts:")}`);
+      for (const cl of conflictLines.slice(0, 6)) {
+        // Shorten: just show the skill name
+        const short = cl.replace(/.*- /, "").replace(/ \(.*\)/, "");
+        console.log(`  ${colorDim("  " + short)}`);
+      }
+      if (conflictLines.length > 6) {
+        console.log(`  ${colorDim("  ... and " + (conflictLines.length - 6) + " more")}`);
+      }
+    }
+
     const choice = (await question(
       rl,
-      `${SYM_ARROW} Conflicts must be resolved before continuing. Cancel and fix? [${colorYellow("c")}=cancel / ${colorYellow("r")}=retry] `,
+      `${SYM_ARROW} Conflicts require ${colorYellow("prune --all")} before install. Continue? [${colorYellow("c")}=cancel / ${colorYellow("prune")}=prune first] `,
     )).trim().toLowerCase();
-    if (choice === "r") { return guidedPreviewPaths(rl, state); }
+    if (choice === "prune") {
+      console.log(`\n${SYM_ARROW} Running prune --all --backend ${state.backend}...`);
+      await runNodeOwned(["prune", "--all", "--backend", state.backend]);
+      console.log(`${SYM_OK} Prune complete. Re-checking paths...`);
+      return guidedPreviewPaths(rl, state);
+    }
     console.log("Guided flow cancelled.");
     return false;
   }
+
   console.log(`${SYM_OK} All paths clear.`);
   return true;
 }
