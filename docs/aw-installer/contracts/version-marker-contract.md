@@ -1,5 +1,5 @@
 ---
-title: "Harness Version Marker Contract"
+title: "Version Marker Contract"
 status: active
 updated: 2026-05-19
 owner: aw-kernel
