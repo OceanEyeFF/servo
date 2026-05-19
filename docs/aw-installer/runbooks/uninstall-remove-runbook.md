@@ -9,7 +9,7 @@ last_verified: 2026-05-19
 
 > 目的：为 operator 提供安全卸载 aw-installer 部署产物的操作指南，明确 `prune --all` 的受管边界、删除范围、保留内容和 bundle 模式行为。
 
-本页管理卸载与移除的安全边界。`prune --all` 的合同语义见 [distribution-entrypoint-contract.md](./distribution-entrypoint-contract.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md)。
+本页管理卸载与移除的安全边界。`prune --all` 的合同语义见 [distribution-entrypoint-contract.md](../contracts/distribution-entrypoint-contract.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](../contracts/payload-provenance-trust-boundary.md)。
 
 ## 快速决策
 

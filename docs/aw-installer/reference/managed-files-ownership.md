@@ -9,7 +9,7 @@ last_verified: 2026-05-19
 
 > 目的：明确 aw-installer 管理文件的所有权边界，区分 installer 管理的 skill payload、`.aw/` 运行时控制状态、deploy target 和用户自有仓库文件。
 
-本页给出通用所有权分类方案，并以本仓库为实例说明每个分类在真实项目中的对应路径。deploy target 的角色与映射见 [deploy-mapping-spec.md](./deploy-mapping-spec.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](./payload-provenance-trust-boundary.md)。
+本页给出通用所有权分类方案，并以本仓库为实例说明每个分类在真实项目中的对应路径。deploy target 的角色与映射见 [deploy-mapping-spec.md](../contracts/deploy-mapping-spec.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](../contracts/payload-provenance-trust-boundary.md)。
 
 ## 通用所有权分类
 

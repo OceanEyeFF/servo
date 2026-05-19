@@ -76,6 +76,6 @@ docs restructuring closeout 必须记录 reader-coherence evidence，至少说�
 
 - [AGENTS.md](../../../AGENTS.md)
 - [路径与文档治理检查运行说明](./path-governance-checks.md)
-- [Deploy Runbook](../deploy/deploy-runbook.md)
-- [Skill Deployment 维护流](../deploy/skill-deployment-maintenance.md)
+- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
+- [Skill Deployment 维护流](../../aw-installer/runbooks/skill-deployment-maintenance.md)
 - [Branch / PR 治理规则](./branch-pr-governance.md)

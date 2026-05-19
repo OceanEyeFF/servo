@@ -9,7 +9,7 @@ last_verified: 2026-05-05
 
 > 目的：固定 Claude Code 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.claude/skills/`、无交互 `claude --bare -p`、多轮观察。
 
-本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../deploy/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
+本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
 
 ## 一、适用范围
 
@@ -121,6 +121,6 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 
 - [Testing Runbooks](./README.md)
 - [Codex Post-Deploy Behavior Tests](./codex-post-deploy-behavior-tests.md)
-- [Deploy Runbook](../deploy/deploy-runbook.md)
+- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
 - [Claude Repo-local Usage Help](../usage-help/claude.md)
 - [Harness 运行协议](../../harness/foundations/Harness运行协议.md)
