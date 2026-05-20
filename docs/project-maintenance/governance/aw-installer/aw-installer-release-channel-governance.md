@@ -32,17 +32,18 @@ last_verified: 2026-05-20
 
 ## 当前 source release tuple
 
-2026-05-20，source tuple 已发布为 `v0.5.2-rc.2` 的 `next` channel release candidate：
+2026-05-20，source tuple 已准备为 `v0.5.2-rc.3` 的 `next` channel release candidate；该 candidate 尚未发布到 npm registry：
 
-- root `package.json` version：`0.5.2-rc.2`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.2`
-- approval lock：`approvedVersion=0.5.2-rc.2`、`approvedGitTag=v0.5.2-rc.2`、`approvedChannel=next`
-- CLI `--version` 输出：`aw-installer 0.5.2-rc.2`
-- GitHub Release `v0.5.2-rc.2`：prerelease，target commit `df2167139849d02c4d89f09a1b013856bbd1c9b2`
-- publish workflow run：`26137806266`，conclusion `success`
-- npm `aw-installer@0.5.2-rc.2`：已发布到 `next` dist-tag，`gitHead=df2167139849d02c4d89f09a1b013856bbd1c9b2`
+- root `package.json` version：`0.5.2-rc.3`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.3`
+- Harness payload `product/harness/skills/harness-skill/VERSION`：`0.5.2-rc.3`
+- approval lock：`approvedVersion=0.5.2-rc.3`、`approvedGitTag=v0.5.2-rc.3`、`approvedChannel=next`
+- CLI `--version` 输出：`aw-installer 0.5.2-rc.3`
+- GitHub Release `v0.5.2-rc.3`：pending
+- publish workflow run：pending
+- npm `aw-installer@0.5.2-rc.3`：pending; current registry `next` remains `0.5.2-rc.2` until release
 
-注意：`0.5.2-rc.2` 是 prerelease，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。RC 试用必须显式使用 `aw-installer@next`，当前解析到 `0.5.2-rc.2`。
+注意：`0.5.2-rc.3` 是 prerelease candidate，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。发布完成前，RC 试用 selector `aw-installer@next` 仍解析到已发布的 `0.5.2-rc.2`；发布完成后才应验证 `next` 移动到 `0.5.2-rc.3`。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
