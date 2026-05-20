@@ -115,6 +115,8 @@ After publish, run registry `npx` smoke through [npx Command Test Execution](../
 node toolchain/scripts/test/aw_installer_registry_npx_smoke.js --package aw-installer@next --skip-remote
 ```
 
+The registry smoke runner is a Node script. Do not invoke it through `python3`.
+
 Use full remote mode when the release window requires cross-target evidence; `--skip-remote` is sufficient for immediate post-publish package/selector verification.
 
 ## 8. Sync Version Facts
