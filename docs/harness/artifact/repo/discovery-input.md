@@ -2,7 +2,7 @@
 title: "Repo Discovery Input"
 status: active
 updated: 2026-04-25
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-04-25
 ---
 # Repo Discovery Input

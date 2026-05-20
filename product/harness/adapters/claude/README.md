@@ -16,7 +16,7 @@
 当前成熟度边界：
 
 - `claude` payload 当前覆盖 `product/harness/skills/` 下的完整 Harness skill set，不再是 startup-only 分发。
-- 当前 checkout/local package 的 Node-owned `aw-installer --backend claude` 已承接 package/local diagnose、check_paths_exist、verify、update dry-run、install、prune --all 和 update --yes lifecycle。
+- 当前 checkout/local package 的 Node-owned `servo-installer --backend claude` 已承接 package/local diagnose、check_paths_exist、verify、update dry-run、install、prune --all 和 update --yes lifecycle。
 - 该成熟度只表示 Claude compatibility lane 已可按完整 payload 处理；它不自动升级为 `agents` 主线替代、默认 backend、stable/latest release claim、TUI 一等选择或 registry public smoke 结论。
 - 后续若改变 payload set、target dir policy、frontmatter policy、legacy cleanup 或 marker 语义，必须同步更新本页、deploy 合同页和对应测试。
 

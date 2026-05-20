@@ -212,7 +212,7 @@ description: 当 Harness 系统尚未初始化，或 `.aw/goal-charter.md` 不�
 最小用法：
 
 ```bash
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner aw-kernel
+node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
 node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
 node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
 node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"

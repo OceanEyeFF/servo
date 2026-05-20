@@ -2,7 +2,7 @@
 title: "初始化 Harness：空项目（Greenfield）"
 status: active
 updated: 2026-05-07
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-07
 ---
 
@@ -20,13 +20,13 @@ last_verified: 2026-05-07
 
 ```bash
 # 只读诊断
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 
 # 安装
-npx aw-installer install --backend agents
+npx servo-installer install --backend agents
 
 # 验证
-npx aw-installer verify --backend agents
+npx servo-installer verify --backend agents
 ```
 
 ## 二、设置项目目标

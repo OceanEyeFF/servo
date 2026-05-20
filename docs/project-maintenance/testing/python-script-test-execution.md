@@ -2,14 +2,14 @@
 title: "Python Script Test Execution"
 status: active
 updated: 2026-05-08
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-08
 ---
 # Python Script Test Execution
 
 > 目的：固定本仓库运行 Python 验证、治理检查和 closeout gate 的 operator-facing 命令口径。
 
-本页属于 [Testing Runbooks](./README.md)。deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)，review/verify 口径见 [Review / Verify Handbook](../governance/review-verify-handbook.md)。
+本页属于 [Testing Runbooks](./README.md)。deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)，review/verify 口径见 [Review / Verify Handbook](../governance/review-verify-handbook.md)。
 
 ## Command Rule
 
@@ -27,7 +27,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 
 ## Deploy Regression Tests
 
-涉及 `toolchain/scripts/deploy/` 或 wrapper 时：`node toolchain/scripts/deploy/bin/aw-installer.js verify --backend agents`；同时影响治理脚本/closeout 测试时补 `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test -q`。
+涉及 `toolchain/scripts/deploy/` 或 wrapper 时：`node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents`；同时影响治理脚本/closeout 测试时补 `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test -q`。
 
 ## Closeout Gate
 
@@ -55,7 +55,7 @@ git diff --check
 deploy/adapter/package wrapper 改动：
 
 ```bash
-node toolchain/scripts/deploy/bin/aw-installer.js verify --backend agents
+node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py

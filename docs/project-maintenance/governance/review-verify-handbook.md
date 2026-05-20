@@ -2,7 +2,7 @@
 title: "Review / Verify 治理入口"
 status: active
 updated: 2026-05-14
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-14
 ---
 # Review / Verify 治理入口
@@ -76,6 +76,6 @@ docs restructuring closeout 必须记录 reader-coherence evidence，至少说�
 
 - [AGENTS.md](../../../AGENTS.md)
 - [路径与文档治理检查运行说明](./path-governance-checks.md)
-- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
-- [Skill Deployment 维护流](../../aw-installer/runbooks/skill-deployment-maintenance.md)
+- [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
+- [Skill Deployment 维护流](../../servo-installer/runbooks/skill-deployment-maintenance.md)
 - [Branch / PR 治理规则](./branch-pr-governance.md)

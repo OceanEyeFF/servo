@@ -2,7 +2,7 @@
 title: "Contributing"
 status: active
 updated: 2026-05-06
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-06
 ---
 # Contributing

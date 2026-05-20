@@ -2,7 +2,7 @@
 title: "WorktrackScope 状态机"
 status: active
 updated: 2026-05-17
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-17
 ---
 # WorktrackScope 状态机

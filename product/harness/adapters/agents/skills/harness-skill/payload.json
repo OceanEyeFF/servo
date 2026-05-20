@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/harness-skill/SKILL.md"
   ],
-  "target_dir": "aw-harness-skill",
+  "target_dir": "servo-harness-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [

@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills"
 CLAUDE_ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
-AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "aw-installer.js"
+AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
 EXPECTED_AGENTS_SKILLS = {
     "close-worktrack-skill",
     "dispatch-skills",
@@ -237,7 +237,7 @@ class AgentsAdapterContractTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             target_root = Path(temp_dir) / "agents-skills"
             target_root.mkdir()
-            (target_root / "aw-harness-skill").write_text("not a directory\n", encoding="utf-8")
+            (target_root / "servo-harness-skill").write_text("not a directory\n", encoding="utf-8")
 
             completed = subprocess.run(
                 [

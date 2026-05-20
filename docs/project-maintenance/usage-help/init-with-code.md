@@ -2,7 +2,7 @@
 title: "初始化 Harness：已有代码项目"
 status: active
 updated: 2026-05-07
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-07
 ---
 
@@ -22,21 +22,21 @@ last_verified: 2026-05-07
 
 ```bash
 # 只读诊断：确认当前状态和目标路径
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 
 # 安装（写入 skills 到 .agents/skills/）
-npx aw-installer install --backend agents
+npx servo-installer install --backend agents
 
 # 验证安装完整性
-npx aw-installer verify --backend agents
+npx servo-installer verify --backend agents
 ```
 
 其他 backend 使用对应 `--backend` 参数：
 
 ```bash
-npx aw-installer diagnose --backend claude --json
-npx aw-installer install --backend claude
-npx aw-installer verify --backend claude
+npx servo-installer diagnose --backend claude --json
+npx servo-installer install --backend claude
+npx servo-installer verify --backend claude
 ```
 
 ## 二、初始化 Harness 控制面

@@ -33,7 +33,7 @@
 示例：
 
 ```bash
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner aw-kernel
+node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
 node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
 node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
 node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"

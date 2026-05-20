@@ -2,7 +2,7 @@
 title: "根目录分层"
 status: active
 updated: 2026-05-14
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-14
 ---
 # 根目录分层
@@ -58,7 +58,7 @@ Repo-local Harness runtime control-plane state，可被治理检查识别为合�
 
 ### 6. `package.json`
 
-只承接 `aw-installer` 的 npm/npx 分发包络元数据，可从根目录打包 `product/` 中的 canonical Harness payload 和 `toolchain/scripts/deploy/` 中的 wrapper 工具，不得把业务源码真相迁出 `product/`。发布动作由 deploy/release 合同控制。
+只承接 `servo-installer` 的 npm/npx 分发包络元数据，可从根目录打包 `product/` 中的 canonical Harness payload 和 `toolchain/scripts/deploy/` 中的 wrapper 工具，不得把业务源码真相迁出 `product/`。发布动作由 deploy/release 合同控制。
 
 ## 四、新增根目录对象规则
 

@@ -2,7 +2,7 @@
 title: "RepoScope 管理文档"
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 # RepoScope 管理文档

@@ -62,7 +62,7 @@ def test_node_deploy_aw_generates_existing_code_adoption_profile(tmp_path: Path)
         "--baseline-branch",
         "main",
         "--owner",
-        "aw-kernel",
+        "servo-kernel",
         "--updated",
         "2026-05-03",
         "--adoption-mode",

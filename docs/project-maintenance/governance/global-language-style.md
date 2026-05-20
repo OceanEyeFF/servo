@@ -2,7 +2,7 @@
 title: "全局语言风格"
 status: active
 updated: 2026-04-19
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-04-19
 ---
 # 全局语言风格

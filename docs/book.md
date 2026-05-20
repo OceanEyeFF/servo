@@ -2,14 +2,14 @@
 title: "Docs Book Spine"
 status: active
 updated: 2026-05-16
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-16
 ---
 # Docs Book Spine
 
 `docs/book.md` 是 `docs/` 的 canonical book-style spine：它定义当前版本中实际存在的完整阅读顺序、章节边界、文档分组关系和路径维护规则。`docs/README.md` 只做入口导航；具体规则正文仍以对应章节内的承接文档为准。
 
-Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路线，不替代 `AGENTS.md` 的 agent boot 规则，不承接 `product/` 源码合同或 `toolchain/` 脚本合同，不把未来迁移计划或后续 Worktrack seed 写成 docs truth。
+Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路线，不替代 `AGENTS.md` 的 agent boot 规则，不承接 `product/` 源码合同或 `toolchain/` 脚本合同，不把未来迁移计划或后续 Worktrack seed 写成 docs truth。
 
 ## How To Read
 

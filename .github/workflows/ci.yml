@@ -72,18 +72,18 @@ jobs:
           tmpdir="$(mktemp -d)"
           trap 'rm -rf "$tmpdir"' EXIT
           package_path="$(bash "$GITHUB_WORKSPACE/toolchain/scripts/test/npm_pack_tarball.sh" "$tmpdir")"
-          npm exec --yes --package "$package_path" -- aw-installer --help
-          npm exec --yes --package "$package_path" -- aw-installer --version
-          AW_HARNESS_REPO_ROOT="$GITHUB_WORKSPACE" npm exec --yes --package "$package_path" -- aw-installer diagnose --backend agents --json
-          AW_HARNESS_REPO_ROOT="$GITHUB_WORKSPACE" npm exec --yes --package "$package_path" -- aw-installer update --backend agents --json
+          npm exec --yes --package "$package_path" -- servo-installer --help
+          npm exec --yes --package "$package_path" -- servo-installer --version
+          AW_HARNESS_REPO_ROOT="$GITHUB_WORKSPACE" npm exec --yes --package "$package_path" -- servo-installer diagnose --backend agents --json
+          AW_HARNESS_REPO_ROOT="$GITHUB_WORKSPACE" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --json
 
-      - name: Root aw-installer package pack dry-run
+      - name: Root servo-installer package pack dry-run
         run: npm pack --dry-run --json
 
-      - name: Root aw-installer publish dry-run
+      - name: Root servo-installer publish dry-run
         run: npm run publish:dry-run --silent
 
-      - name: Root aw-installer package tarball smoke
+      - name: Root servo-installer package tarball smoke
         run: |
           tmpdir="$(mktemp -d)"
           trap 'rm -rf "$tmpdir"' EXIT
@@ -92,17 +92,17 @@ jobs:
           mkdir -p "$target_repo"
           (
             cd "$target_repo"
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer --help
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer --version
-            if AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer tui > "$tmpdir/tui.out" 2> "$tmpdir/tui.err"; then
-              echo "expected aw-installer tui to require an interactive terminal" >&2
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --help
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --version
+            if AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer tui > "$tmpdir/tui.out" 2> "$tmpdir/tui.err"; then
+              echo "expected servo-installer tui to require an interactive terminal" >&2
               exit 1
             fi
             test ! -s "$tmpdir/tui.out"
-            grep -F "aw-installer tui requires an interactive terminal" "$tmpdir/tui.err"
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer diagnose --backend agents --json
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer update --backend agents --json
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer install --backend agents
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer verify --backend agents
-            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- aw-installer update --backend agents --yes
+            grep -F "servo-installer tui requires an interactive terminal" "$tmpdir/tui.err"
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer diagnose --backend agents --json
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --json
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer install --backend agents
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer verify --backend agents
+            AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --yes
           )

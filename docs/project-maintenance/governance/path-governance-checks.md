@@ -2,7 +2,7 @@
 title: "路径与文档治理检查运行说明"
 status: active
 updated: 2026-05-16
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-16
 ---
 # 路径与文档治理检查运行说明

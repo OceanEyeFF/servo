@@ -60,7 +60,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gate.py --json
 
 # adapter / deploy
-node --test toolchain/scripts/deploy/test_aw_installer.js
+node --test toolchain/scripts/deploy/test_servo_installer.js
 ```
 
 Python 命令默认使用 `PYTHONDONTWRITEBYTECODE=1 python3 ...`，避免生成 `__pycache__` 和 `.pyc` 缓存。

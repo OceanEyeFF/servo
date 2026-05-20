@@ -2,14 +2,14 @@
 title: "Codex Post-Deploy Behavior Tests"
 status: active
 updated: 2026-05-10
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-10
 ---
 # Codex Post-Deploy Behavior Tests
 
 > 目的：固定 Codex 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.agents/skills/`、无交互 `codex exec`、多轮观察。
 
-本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)。
+本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)。
 
 ## 一、适用范围
 
@@ -43,10 +43,10 @@ printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 ## 四、安装隔离 agents payload
 
 ```bash
-node toolchain/scripts/deploy/bin/aw-installer.js prune --all --backend agents --agents-root "$TMP_AGENTS_ROOT"
-node toolchain/scripts/deploy/bin/aw-installer.js check_paths_exist --backend agents --agents-root "$TMP_AGENTS_ROOT"
-node toolchain/scripts/deploy/bin/aw-installer.js install --backend agents --agents-root "$TMP_AGENTS_ROOT"
-node toolchain/scripts/deploy/bin/aw-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
+node toolchain/scripts/deploy/bin/servo-installer.js prune --all --backend agents --agents-root "$TMP_AGENTS_ROOT"
+node toolchain/scripts/deploy/bin/servo-installer.js check_paths_exist --backend agents --agents-root "$TMP_AGENTS_ROOT"
+node toolchain/scripts/deploy/bin/servo-installer.js install --backend agents --agents-root "$TMP_AGENTS_ROOT"
+node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
 ```
 
 当前 `agents` install 已包含全部 21 个 skills（RepoScope/WorktrackScope/验证/裁决/恢复/收尾/通用执行/Milestone）；`set-harness-goal-skill` 自带 `.aw/` 初始化资产。
@@ -108,6 +108,6 @@ codex exec --cd "$TMP_REPO" --skip-git-repo-check --output-last-message "$TMP_RU
 ## 十、相关文档
 
 - [Testing Runbooks](./README.md)
-- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
-- [Skill Deployment 维护流](../../aw-installer/runbooks/skill-deployment-maintenance.md)
+- [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
+- [Skill Deployment 维护流](../../servo-installer/runbooks/skill-deployment-maintenance.md)
 - [Harness 运行协议](../../harness/foundations/Harness运行协议.md)

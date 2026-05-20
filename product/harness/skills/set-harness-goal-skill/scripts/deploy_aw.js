@@ -495,7 +495,7 @@ function usage() {
     "",
     "Examples:",
     "  node deploy_aw.js validate",
-    "  node deploy_aw.js generate --deploy-path \"$DEPLOY_PATH\" --owner aw-kernel",
+    "  node deploy_aw.js generate --deploy-path \"$DEPLOY_PATH\" --owner servo-kernel",
     "  node deploy_aw.js generate --deploy-path \"$DEPLOY_PATH\" --install-claude-skill",
     "  node deploy_aw.js install-claude-skill --deploy-path \"$DEPLOY_PATH\"",
   ].join("\n");

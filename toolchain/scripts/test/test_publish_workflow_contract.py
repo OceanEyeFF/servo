@@ -24,7 +24,7 @@ def test_publish_workflow_uses_release_published_trigger_and_oidc() -> None:
     assert re.search(r"\bcontents:\s*read\b", workflow)
     assert "persist-credentials: false" in workflow
     assert "concurrency:" in workflow
-    assert "aw-installer-publish-${{ github.event.release.tag_name }}" in workflow
+    assert "servo-installer-publish-${{ github.event.release.tag_name }}" in workflow
     assert "cancel-in-progress: false" in workflow
     assert re.search(r"\btimeout-minutes:\s*30\b", workflow)
 
@@ -53,7 +53,7 @@ def test_publish_workflow_resolves_and_checks_release_metadata_before_publish() 
     assert "GITHUB_RELEASE_TAG" in workflow
     assert "GITHUB_RELEASE_BODY" in workflow
     assert "NPM_CONFIG_TAG" in workflow
-    assert "aw-installer-publish-approved:" in resolver
+    assert "servo-installer-publish-approved:" in resolver
     assert "node toolchain/scripts/deploy/bin/resolve-release-metadata.js" in workflow
     assert "node toolchain/scripts/deploy/bin/check-root-publish.js" in workflow
 
@@ -99,21 +99,21 @@ def test_release_metadata_resolver_accepts_rc_stable_and_canary_shapes() -> None
             "version": "1.2.3-rc.1",
             "releaseTag": "v1.2.3-rc.1",
             "releasePrerelease": "TRUE",
-            "releaseBody": "aw-installer-publish-approved: v1.2.3-rc.1",
+            "releaseBody": "servo-installer-publish-approved: v1.2.3-rc.1",
             "expected": '"releaseChannel":"next"',
         },
         {
             "version": "1.2.3",
             "releaseTag": "v1.2.3",
             "releasePrerelease": "False",
-            "releaseBody": "aw-installer-publish-approved: v1.2.3",
+            "releaseBody": "servo-installer-publish-approved: v1.2.3",
             "expected": '"releaseChannel":"latest"',
         },
         {
             "version": "1.2.3-canary.1",
             "releaseTag": "v1.2.3-canary.1",
             "releasePrerelease": True,
-            "releaseBody": "aw-installer-publish-approved: v1.2.3-canary.1",
+            "releaseBody": "servo-installer-publish-approved: v1.2.3-canary.1",
             "expected": '"releaseChannel":"canary"',
         },
     ]
@@ -174,7 +174,7 @@ def test_release_metadata_resolver_rejects_unsafe_shapes() -> None:
                 "version": "1.2.3-rc.1",
                 "releaseTag": "v1.2.3",
                 "releasePrerelease": True,
-                "releaseBody": "aw-installer-publish-approved: v1.2.3",
+                "releaseBody": "servo-installer-publish-approved: v1.2.3",
             },
             "must match package version",
         ),
@@ -183,7 +183,7 @@ def test_release_metadata_resolver_rejects_unsafe_shapes() -> None:
                 "version": "1.2.3",
                 "releaseTag": "v1.2.3",
                 "releasePrerelease": True,
-                "releaseBody": "aw-installer-publish-approved: v1.2.3",
+                "releaseBody": "servo-installer-publish-approved: v1.2.3",
             },
             "cannot publish to latest",
         ),
@@ -192,7 +192,7 @@ def test_release_metadata_resolver_rejects_unsafe_shapes() -> None:
                 "version": "1.2.3-rc.1",
                 "releaseTag": "v1.2.3-rc.1",
                 "releasePrerelease": False,
-                "releaseBody": "aw-installer-publish-approved: v1.2.3-rc.1",
+                "releaseBody": "servo-installer-publish-approved: v1.2.3-rc.1",
             },
             "cannot publish prerelease channel",
         ),
@@ -201,7 +201,7 @@ def test_release_metadata_resolver_rejects_unsafe_shapes() -> None:
                 "version": "1.2.3-preview.1",
                 "releaseTag": "v1.2.3-preview.1",
                 "releasePrerelease": True,
-                "releaseBody": "aw-installer-publish-approved: v1.2.3-preview.1",
+                "releaseBody": "servo-installer-publish-approved: v1.2.3-preview.1",
             },
             "does not map to a release channel",
         ),

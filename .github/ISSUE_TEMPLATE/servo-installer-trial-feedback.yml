@@ -1,0 +1,229 @@
+name: servo-installer trial feedback
+description: Structured feedback from an external servo-installer trial.
+title: "[servo-installer trial]: "
+labels:
+  - servo-installer
+  - trial-feedback
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use a sanitized target alias. Do not include private repository names, tokens, credentials, customer names, private URLs, or full logs with secrets.
+  - type: input
+    id: target_alias
+    attributes:
+      label: Target alias
+      description: Use a sanitized alias such as owned-alpha, forum-alpha, or unsupported-alpha.
+      placeholder: owned-alpha
+    validations:
+      required: true
+  - type: dropdown
+    id: target_category
+    attributes:
+      label: Target category
+      options:
+        - programmer-owned repository
+        - forum volunteer repository
+        - intentionally unsupported repository
+        - other sanitized trial target
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, shell, Node/npm version, and agent runtime if relevant.
+      placeholder: "Ubuntu 24.04, bash, Node 22, npm 10, Codex"
+    validations:
+      required: true
+  - type: textarea
+    id: repo_shape
+    attributes:
+      label: Target repository shape
+      description: Sanitized language/framework/build details. Do not include private identifiers.
+      placeholder: "TypeScript library with package.json and existing docs; no private names."
+    validations:
+      required: true
+  - type: dropdown
+    id: candidate_source
+    attributes:
+      label: Candidate source
+      options:
+        - registry npx servo-installer
+        - registry servo-installer@next
+        - local .tgz
+        - explicit source checkout
+        - other
+    validations:
+      required: true
+  - type: input
+    id: candidate_version
+    attributes:
+      label: Candidate version observed
+      placeholder: "0.4.0-rc.1, 0.0.0-local, or unknown"
+    validations:
+      required: true
+  - type: textarea
+    id: command_used
+    attributes:
+      label: Install or trial command used
+      description: Redact paths if needed. Keep only commands required to reproduce the issue or result.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: npx_run_log
+    attributes:
+      label: npx run log
+      description: Attach or paste the relevant sanitized excerpt from servo-installer-npx-run.log if you used the registry npx smoke runner. Remove private paths, secrets, private repo names, and user handles.
+      placeholder: "Attached servo-installer-npx-run.log, or: not used; manual terminal transcript summarized below."
+      render: shell
+    validations:
+      required: false
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      options:
+        - agents
+        - Claude Code project-level helper
+        - other / unsupported
+    validations:
+      required: true
+  - type: textarea
+    id: command_results
+    attributes:
+      label: Command results
+      description: Summarize help/version/tui guard/diagnose/update dry-run/install/verify/update apply results.
+      placeholder: |
+        help:
+        version:
+        tui guard:
+        diagnose before:
+        update dry-run:
+        install:
+        verify:
+        update --yes:
+        diagnose after:
+    validations:
+      required: true
+  - type: textarea
+    id: aw_initialization
+    attributes:
+      label: .aw initialization result
+      description: Say whether Codex or Claude Code initialized `.aw/`, which files were created or reused, and what questions remain.
+      placeholder: ".aw/goal-charter.md created; .aw/control-state.md created; baseline branch detected as main."
+    validations:
+      required: true
+  - type: dropdown
+    id: final_verdict
+    attributes:
+      label: Final verdict
+      options:
+        - passed
+        - partial
+        - failed
+        - blocked
+    validations:
+      required: true
+  - type: dropdown
+    id: operator_confusion
+    attributes:
+      label: Main operator confusion label
+      options:
+        - no-confusion-observed
+        - entrypoint-confusion
+        - backend-confusion
+        - target-root-confusion
+        - update-boundary-confusion
+        - approval-boundary-confusion
+        - diagnose-output-confusion
+        - docs-navigation-confusion
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: operator_confusion_summary
+    attributes:
+      label: Operator confusion summary
+      description: Short free-text summary of the first hesitation, confusion, or no-confusion observation.
+      placeholder: "No confusion observed, or: I was unsure whether update --yes would write outside .agents/skills."
+    validations:
+      required: true
+  - type: dropdown
+    id: adoption_blocker
+    attributes:
+      label: Adoption blocker
+      options:
+        - none
+        - trust
+        - workflow fit
+        - install risk
+        - unclear value
+        - unsupported environment
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: reuse_intent
+    attributes:
+      label: Reuse intent
+      options:
+        - would reuse
+        - would retry after fix
+        - would not reuse
+        - undecided
+    validations:
+      required: true
+  - type: dropdown
+    id: trust_concern
+    attributes:
+      label: Trust concern
+      options:
+        - none
+        - package provenance
+        - target writes
+        - update behavior
+        - npm availability
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow_fit_concern
+    attributes:
+      label: Workflow-fit concern
+      options:
+        - none
+        - command ergonomics
+        - docs fit
+        - team process fit
+        - backend fit
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: recovery_attempted
+    attributes:
+      label: Recovery attempted
+      description: Command or documentation path used to recover, or "none".
+      placeholder: "Re-ran diagnose; checked public quickstart; no recovery attempted."
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix or next step
+      description: What should change before you would retry or reuse this?
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy_check
+    attributes:
+      label: Privacy and redaction check
+      options:
+        - label: I removed private repository names, organization names, private URLs, and user handles unless explicitly consented.
+          required: true
+        - label: I removed tokens, secrets, credentials, and full logs containing sensitive values.
+          required: true
+        - label: I understand stable release semantics and any future npm publish still require separate approval.
+          required: true

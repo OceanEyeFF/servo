@@ -5,10 +5,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OceanEyeFF/vibecoding_autoworkflow"
+    "url": "https://github.com/OceanEyeFF/servo"
   },
   "bin": {
-    "aw-installer": "toolchain/scripts/deploy/bin/aw-installer.js"
+    "servo-installer": "toolchain/scripts/deploy/bin/servo-installer.js"
   },
   "files": [
     "README.md",
@@ -18,12 +18,12 @@
     "product/harness/adapters/claude/skills",
     "toolchain/scripts/deploy/README.md",
     "toolchain/scripts/deploy/path_safety_policy.json",
-    "toolchain/scripts/deploy/bin/aw-installer.js",
+    "toolchain/scripts/deploy/bin/servo-installer.js",
     "toolchain/scripts/deploy/bin/publish-dry-run.js",
     "toolchain/scripts/deploy/bin/check-root-publish.js"
   ],
   "scripts": {
-    "smoke": "node toolchain/scripts/deploy/bin/aw-installer.js --help",
+    "smoke": "node toolchain/scripts/deploy/bin/servo-installer.js --help",
     "pack:dry-run": "npm pack --dry-run --json",
     "prepublishOnly": "node toolchain/scripts/deploy/bin/check-root-publish.js",
     "publish:dry-run": "node toolchain/scripts/deploy/bin/publish-dry-run.js"

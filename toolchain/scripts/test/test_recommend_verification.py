@@ -29,14 +29,14 @@ def test_deploy_package_recommendations_use_node_owned_checks() -> None:
 
         assert "adapter_deploy.py verify" not in checks
         assert "adapter_deploy.py" not in rendered
-        assert checks["node --test test_aw_installer.js"]["argv"] == [
+        assert checks["node --test test_servo_installer.js"]["argv"] == [
             "node",
             "--test",
-            "toolchain/scripts/deploy/test_aw_installer.js",
+            "toolchain/scripts/deploy/test_servo_installer.js",
         ]
-        assert checks["aw-installer.js verify --backend bundle"]["argv"] == [
+        assert checks["servo-installer.js verify --backend bundle"]["argv"] == [
             "node",
-            "toolchain/scripts/deploy/bin/aw-installer.js",
+            "toolchain/scripts/deploy/bin/servo-installer.js",
             "verify",
             "--backend",
             "bundle",
@@ -114,7 +114,7 @@ def test_full_verification_escalation_with_multi_domain() -> None:
         "docs/harness/artifact/control/milestone.md",
         "product/harness/skills/harness-skill/SKILL.md",
         "toolchain/scripts/test/recommend_verification.py",
-        "toolchain/scripts/deploy/bin/aw-installer.js",
+        "toolchain/scripts/deploy/bin/servo-installer.js",
     ]
     result = recommend_verification.recommend(changed_files)
 

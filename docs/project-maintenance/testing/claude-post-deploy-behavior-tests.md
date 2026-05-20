@@ -2,14 +2,14 @@
 title: "Claude Post-Deploy Behavior Tests"
 status: active
 updated: 2026-05-05
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-05
 ---
 # Claude Post-Deploy Behavior Tests
 
 > 目的：固定 Claude Code 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.claude/skills/`、无交互 `claude --bare -p`、多轮观察。
 
-本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
+本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
 
 ## 一、适用范围
 
@@ -52,13 +52,13 @@ printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 验证本地 candidate 时优先用 `.tgz`：
 
 ```bash
-PACKAGE_TGZ="/path/to/aw-installer-<version>.tgz"
+PACKAGE_TGZ="/path/to/servo-installer-<version>.tgz"
 (
   cd "$TMP_REPO"
   AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
-    npx --yes --package "$PACKAGE_TGZ" -- aw-installer install --backend claude
+    npx --yes --package "$PACKAGE_TGZ" -- servo-installer install --backend claude
   AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
-    npx --yes --package "$PACKAGE_TGZ" -- aw-installer verify --backend claude
+    npx --yes --package "$PACKAGE_TGZ" -- servo-installer verify --backend claude
 )
 ```
 
@@ -121,6 +121,6 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 
 - [Testing Runbooks](./README.md)
 - [Codex Post-Deploy Behavior Tests](./codex-post-deploy-behavior-tests.md)
-- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
+- [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
 - [Claude Repo-local Usage Help](../usage-help/claude.md)
 - [Harness 运行协议](../../harness/foundations/Harness运行协议.md)

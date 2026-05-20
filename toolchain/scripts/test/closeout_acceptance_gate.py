@@ -28,7 +28,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW_ID = "closeout-governance-task-list-20260402"
 EXPECTED_NPM_PACKAGE_FILES = {
     "README.md",
-    "bin/aw-installer.js",
+    "bin/servo-installer.js",
     "package.json",
     "path_safety_policy.json",
 }
@@ -49,7 +49,7 @@ ROOT_NPM_REQUIRED_PACKAGE_FILES = {
     "README.md",
     "LICENSE",
     "toolchain/scripts/deploy/path_safety_policy.json",
-    "toolchain/scripts/deploy/bin/aw-installer.js",
+    "toolchain/scripts/deploy/bin/servo-installer.js",
     "toolchain/scripts/deploy/bin/check-root-publish.js",
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/adapters/agents/skills/harness-skill/payload.json",
@@ -61,7 +61,7 @@ ROOT_NPM_FORBIDDEN_PACKAGE_FILES = {
     "toolchain/scripts/deploy/adapter_deploy.py",
     "toolchain/scripts/deploy/harness_deploy.py",
     "toolchain/scripts/deploy/aw_scaffold.py",
-    "toolchain/scripts/deploy/bin/aw-harness-deploy.js",
+    "toolchain/scripts/deploy/bin/servo-harness-deploy.js",
     "product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.py",
 }
 @dataclass
@@ -195,7 +195,7 @@ def run_scope_gate(repo_root: Path, python: str) -> dict:
             "--allowed-prefix",
             "toolchain/scripts/deploy/path_safety_policy.json",
             "--allowed-prefix",
-            "toolchain/scripts/deploy/test_aw_installer.js",
+            "toolchain/scripts/deploy/test_servo_installer.js",
             # TRANSITIONAL: allow deleted Python deploy files through scope gate.
             # These files were removed in P0-067 (Python cleanup). The allowlist
             # entries exist only to let the deletion diff pass scope validation.
@@ -356,9 +356,9 @@ def root_package_version_metadata_check(repo_root: Path) -> tuple[dict, str]:
                     or "root package.json version must match toolchain/scripts/deploy/package.json: "
                     f"{package_version} != {deploy_package_version}"
                 )
-        expected_version_output = f"aw-installer {package_version}" if isinstance(package_version, str) else ""
+        expected_version_output = f"servo-installer {package_version}" if isinstance(package_version, str) else ""
     else:
-        expected_version_output = "aw-installer 0.0.0-local"
+        expected_version_output = "servo-installer 0.0.0-local"
 
     version_metadata_check = {
         "command": ["read-root-package-version", "package.json"],
@@ -467,7 +467,7 @@ def pack_npm_tarball_for_smoke(
     return package_dir_path / package_filename, subchecks, failures
 
 
-def run_tarball_aw_installer(
+def run_tarball_servo_installer(
     package_file: Path,
     args: list[str],
     *,
@@ -485,7 +485,7 @@ def run_tarball_aw_installer(
             "--package",
             str(package_file),
             "--",
-            "aw-installer",
+            "servo-installer",
             *args,
         ],
         cwd=cwd,
@@ -540,12 +540,12 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 validate_no_python(exec_result, help_failures)
                 if not exec_result["passed"]:
                     return
-                for required_text in ("aw-installer", "Node.js distribution", "tui", "diagnose", "verify", "install", "update"):
+                for required_text in ("servo-installer", "Node.js distribution", "tui", "diagnose", "verify", "install", "update"):
                     if required_text not in exec_result["stdout"]:
                         help_failures.append(f"tarball help omitted {required_text!r}")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["--help"],
                     cwd=target_repo,
@@ -562,7 +562,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                     version_failures.append("tarball version probe omitted package version")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["--version"],
                     cwd=target_repo,
@@ -577,7 +577,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 validate_no_python(tui_result, tui_failures)
                 tui_guard_passed = (
                     tui_result["returncode"] == 1
-                    and "aw-installer tui requires an interactive terminal" in tui_result["stderr"]
+                    and "servo-installer tui requires an interactive terminal" in tui_result["stderr"]
                     and tui_result["stdout"] == ""
                 )
                 if not tui_guard_passed:
@@ -585,7 +585,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 tui_result["passed"] = tui_guard_passed
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["tui"],
                     cwd=target_repo,
@@ -614,7 +614,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                     diagnose_failures.append("packaged diagnose did not use isolated target repo")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["diagnose", "--backend", "agents", "--json"],
                     cwd=target_repo,
@@ -645,7 +645,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                     update_failures.append("packaged update dry-run did not use isolated target repo")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["update", "--backend", "agents", "--json"],
                     cwd=target_repo,
@@ -659,12 +659,12 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 validate_no_python(install_result, install_failures)
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("packaged install did not write aw-harness-skill")
+                        install_failures.append("packaged install did not write servo-harness-skill")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["install", "--backend", "agents"],
                     cwd=target_repo,
@@ -676,7 +676,7 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
             )
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["verify", "--backend", "agents"],
                     cwd=target_repo,
@@ -691,14 +691,14 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 validate_no_python(update_apply_result, update_apply_failures)
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("packaged update apply did not write aw-harness-skill")
+                    update_apply_failures.append("packaged update apply did not write servo-harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("packaged update apply did not run verify")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["update", "--backend", "agents", "--yes"],
                     cwd=target_repo,
@@ -789,8 +789,8 @@ def run_root_npm_publish_dry_run(repo_root: Path) -> dict:
     packed_files = {entry["path"] for entry in payload.get("files", [])}
     package_filename = payload.get("filename")
     failures: list[str] = []
-    if payload.get("name") != "aw-installer":
-        failures.append("publish dry-run package name is not aw-installer")
+    if payload.get("name") != "servo-installer":
+        failures.append("publish dry-run package name is not servo-installer")
     missing_files = sorted(ROOT_NPM_REQUIRED_PACKAGE_FILES - packed_files)
     if missing_files:
         failures.append(f"root npm publish dry-run missing required files: {missing_files}")
@@ -839,12 +839,12 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             def validate_root_help(exec_result: dict, help_failures: list[str]) -> None:
                 if not exec_result["passed"]:
                     return
-                for required_text in ("aw-installer", "Node.js distribution", "tui", "diagnose", "update"):
+                for required_text in ("servo-installer", "Node.js distribution", "tui", "diagnose", "update"):
                     if required_text not in exec_result["stdout"]:
                         help_failures.append(f"root tarball help omitted {required_text!r}")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["--help"],
                     cwd=target_repo,
@@ -860,7 +860,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     version_failures.append("root tarball version probe omitted package version")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["--version"],
                     cwd=target_repo,
@@ -874,7 +874,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             def validate_tui_guard(tui_result: dict, tui_failures: list[str]) -> None:
                 tui_guard_passed = (
                     tui_result["returncode"] == 1
-                    and "aw-installer tui requires an interactive terminal" in tui_result["stderr"]
+                    and "servo-installer tui requires an interactive terminal" in tui_result["stderr"]
                     and tui_result["stdout"] == ""
                 )
                 if not tui_guard_passed:
@@ -882,7 +882,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                 tui_result["passed"] = tui_guard_passed
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["tui"],
                     cwd=target_repo,
@@ -912,7 +912,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     diagnose_failures.append("root packaged diagnose used target repo as source root")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["diagnose", "--backend", "agents", "--json"],
                     cwd=target_repo,
@@ -944,7 +944,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     update_failures.append("root packaged update used target repo as source root")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["update", "--backend", "agents", "--json"],
                     cwd=target_repo,
@@ -957,12 +957,12 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
 
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("root packaged install did not write aw-harness-skill")
+                        install_failures.append("root packaged install did not write servo-harness-skill")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["install", "--backend", "agents"],
                     cwd=target_repo,
@@ -974,7 +974,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             )
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["verify", "--backend", "agents"],
                     cwd=target_repo,
@@ -990,7 +990,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not install_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
@@ -1013,7 +1013,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     install_failures.append("root packaged claude install did not write harness skill")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["install", "--backend", "claude"],
                     cwd=target_repo,
@@ -1025,7 +1025,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             )
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["verify", "--backend", "claude"],
                     cwd=target_repo,
@@ -1057,7 +1057,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     diagnose_failures.append("root packaged bundle diagnose reported issues after install")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["diagnose", "--backend", "bundle", "--json"],
                     cwd=target_repo,
@@ -1080,7 +1080,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     verify_failures.append("root packaged bundle verify did not verify claude")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["verify", "--backend", "bundle"],
                     cwd=target_repo,
@@ -1097,7 +1097,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not update_apply_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
@@ -1130,7 +1130,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     )
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["update", "--backend", "claude", "--yes"],
                     cwd=target_repo,
@@ -1144,14 +1144,14 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             def validate_update_apply(update_apply_result: dict, update_apply_failures: list[str]) -> None:
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "aw-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("root packaged update apply did not write aw-harness-skill")
+                    update_apply_failures.append("root packaged update apply did not write servo-harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("root packaged update apply did not run verify")
 
             subchecks.append(
-                run_tarball_aw_installer(
+                run_tarball_servo_installer(
                     package_file,
                     ["update", "--backend", "agents", "--yes"],
                     cwd=target_repo,
@@ -1196,12 +1196,12 @@ def run_test_gate_subchecks(repo_root: Path, python: str, version_metadata_check
             run_command([python, "-m", "pytest", "toolchain/scripts/test/test_agents_adapter_contract.py"], cwd=repo_root),
         ),
         (
-            "aw_installer_cli_tests",
-            run_command([python, "-m", "pytest", "toolchain/scripts/test/aw_installer_cli"], cwd=repo_root),
+            "servo_installer_cli_tests",
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/servo_installer_cli"], cwd=repo_root),
         ),
         (
-            "aw_installer_tui_tests",
-            run_command([python, "-m", "pytest", "toolchain/scripts/test/aw_installer_tui"], cwd=repo_root),
+            "servo_installer_tui_tests",
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/servo_installer_tui"], cwd=repo_root),
         ),
         (
             "deploy_package_unit_tests",
@@ -1212,23 +1212,23 @@ def run_test_gate_subchecks(repo_root: Path, python: str, version_metadata_check
             run_command([python, "toolchain/scripts/test/repo_analysis_contract_check.py"], cwd=repo_root),
         ),
         (
-            "npm_pack_dry_run_aw_installer",
+            "npm_pack_dry_run_servo_installer",
             run_npm_package_packlist(repo_root),
         ),
         (
-            "npm_tarball_smoke_aw_installer",
+            "npm_tarball_smoke_servo_installer",
             run_npm_package_tarball_smoke(repo_root, expected_version_output),
         ),
         (
-            "root_npm_pack_dry_run_aw_installer",
+            "root_npm_pack_dry_run_servo_installer",
             run_root_npm_package_packlist(repo_root),
         ),
         (
-            "root_npm_publish_dry_run_aw_installer",
+            "root_npm_publish_dry_run_servo_installer",
             run_root_npm_publish_dry_run(repo_root),
         ),
         (
-            "root_npm_tarball_smoke_aw_installer",
+            "root_npm_tarball_smoke_servo_installer",
             run_root_npm_package_tarball_smoke(repo_root, expected_version_output),
         ),
     ]

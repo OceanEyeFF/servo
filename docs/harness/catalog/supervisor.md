@@ -2,7 +2,7 @@
 title: "Harness Skill Catalog / Supervisor"
 status: active
 updated: 2026-05-07
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-07
 ---
 # Supervisor Skill Catalog

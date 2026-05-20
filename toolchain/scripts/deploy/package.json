@@ -4,14 +4,14 @@
   "private": true,
   "description": "Local package scaffold for the AW Harness installer wrapper.",
   "bin": {
-    "aw-installer": "bin/aw-installer.js"
+    "servo-installer": "bin/servo-installer.js"
   },
   "files": [
     "path_safety_policy.json",
-    "bin/aw-installer.js"
+    "bin/servo-installer.js"
   ],
   "scripts": {
-    "smoke": "node bin/aw-installer.js --help",
-    "test": "node --test test_aw_installer.js"
+    "smoke": "node bin/servo-installer.js --help",
+    "test": "node --test test_servo_installer.js"
   }
 }
