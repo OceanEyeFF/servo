@@ -438,6 +438,13 @@ Gate 应汇总**正交校验面**的裁决：
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.aw/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
 5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.aw/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
+   - **Final Acceptance 事务边界**：
+     - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
+     - programmer 明确接受 goal-driven milestone 后，acceptance writeback 必须作为一个逻辑事务处理：预先校验 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 与 worktrack status 输入；再写入所有相关 artifact；最后做提交后校验。
+     - 该事务的最小写入集合为 `.aw/milestone/{milestone_id}.md`、`.aw/repo/milestone-backlog.md`、`.aw/control-state.md`，以及必要时 `.aw/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
+     - 对 goal-driven milestone，programmer final acceptance 后 backlog 中该 milestone 的所有已闭环 worktrack 不得继续标记为 `(planned)` 或 `(active)`；必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
+     - 写回后必须校验：同一时刻最多一个 active milestone；control-state 的 `active_milestone` 与 backlog 唯一 active 条目一致；`milestone_status` 与 active milestone 状态一致；`milestone_pipeline_summary` 与 backlog 计数一致；completed/accepted milestone 不含未完成 worktrack 标记。
+     - 任一写入或提交后校验失败时，不得伪装成已完成验收；必须标记 `writeback_incomplete` / `milestone_pipeline_stale`，返回 `proceed_blockers`，并停在 RepoScope.Observe 或 handback，等待恢复或 programmer 决策。
    - **Milestone Artifact 更新**（`.aw/milestone/{milestone_id}.md`）：
      - 将 `progress_counter` 更新为 milestone-status-skill 计算的值（total/completed/blocked/deferred）
      - goal-driven 且 `milestone_acceptance_verdict == "achieved"`、`milestone_gate_verdict == "pass"` 且双重验收通过：将 `status` 从 `active` 更新为 `completed`

@@ -30,6 +30,7 @@ from governance_semantic_check import (
     check_review_evidence_four_lane_contract,
     check_review_verify_docs_list_closeout_steps,
     check_root_tool_shims_disable_bytecode,
+    check_runtime_artifact_consistency,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
     is_bytecode_free_command_excluded,
@@ -906,3 +907,145 @@ def test_check_artifact_skill_alignment_missing_skill_file(tmp_path: Path) -> No
 
     assert len(report.failures) > 0
     assert any("missing skill file" in f for f in report.failures)
+
+
+def _write_runtime_artifacts(
+    tmp_path: Path,
+    *,
+    active_milestone: str = "MS-001",
+    milestone_status: str = "active",
+    summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
+    backlog_entries: str | None = None,
+) -> None:
+    write_doc(
+        tmp_path / ".aw/control-state.md",
+        "\n".join(
+            [
+                "# Harness Control State",
+                "",
+                "## Milestone Pipeline",
+                f"- active_milestone: {active_milestone}",
+                f"- milestone_status: {milestone_status}",
+                f"- milestone_pipeline_summary: {summary}",
+                "",
+            ]
+        ),
+    )
+    if backlog_entries is None:
+        backlog_entries = "\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+                "- milestone_id: MS-000",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-000 (done)",
+                "",
+            ]
+        )
+    write_doc(
+        tmp_path / ".aw/repo/milestone-backlog.md",
+        "# Repo Milestone Backlog\n\n## Pipeline Entries\n\n" + backlog_entries,
+    )
+
+
+def test_check_runtime_artifact_consistency_noops_without_aw(tmp_path: Path) -> None:
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+    assert any(".aw/ directory missing" in item for item in report.infos)
+
+
+def test_check_runtime_artifact_consistency_accepts_consistent_state(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path)
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_runtime_artifact_consistency_flags_missing_active_pointer(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, active_milestone="MS-MISSING")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_milestone MS-MISSING is missing" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_summary_mismatch(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, summary="planned=1 / active=0 / completed=1 / superseded=0")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("milestone_pipeline_summary mismatch" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_multiple_active_milestones(tmp_path: Path) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        summary="planned=0 / active=2 / completed=0 / superseded=0",
+        backlog_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+                "- milestone_id: MS-002",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-002 (planned)",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("multiple active milestones" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_completed_milestone_planned_worktrack(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_milestone="none",
+        milestone_status="none",
+        summary="planned=0 / active=0 / completed=1 / superseded=0",
+        backlog_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("unfinished worktrack markers" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_malformed_summary(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, summary="active milestone only")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("milestone_pipeline_summary is missing or malformed" in item for item in report.failures)

@@ -228,3 +228,5 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - 若不存在：清空 control-state 的 `active_milestone`
 
 `harness-skill` 不得跳过以上写回步骤。若本技能输出标记 `writeback_required: false`，可跳过。若标记 `writeback_required: true` 但 `harness-skill` 无法安全执行全部写回（如文件写入失败），必须作为 `proceed_blockers` 返回。
+
+对于 goal-driven milestone，本技能输出的 `achieved` 是 programmer final acceptance 的前置信号，不等于已获得最终验收。programmer final acceptance 发生后，`harness-skill` 必须把 acceptance writeback 当作一个逻辑事务执行：milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 和相关 worktrack 状态必须一起校验、写入并提交后复核。若任何写入失败或提交后出现 completed/accepted milestone 仍含 `(planned)` / `(active)` worktrack、control-state pipeline summary 与 backlog 计数不一致、或 active pointer 不一致，必须返回 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞项，而不是继续推进。

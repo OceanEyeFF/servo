@@ -1011,6 +1011,158 @@ def check_artifact_skill_alignment(repo_root: Path, report: SemanticReport) -> N
     report.add_info(f"checked {checked} artifact contracts for skill alignment")
 
 
+def _parse_control_state(text: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    in_milestone_pipeline = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_milestone_pipeline = line.strip() == "## Milestone Pipeline"
+            continue
+        if not in_milestone_pipeline:
+            continue
+        stripped = line.strip()
+        for key in ("active_milestone", "milestone_status", "milestone_pipeline_summary"):
+            prefix = f"- {key}:"
+            if stripped.startswith(prefix):
+                fields[key] = stripped.removeprefix(prefix).strip()
+    return fields
+
+
+def _parse_pipeline_summary(value: str) -> dict[str, int] | None:
+    summary: dict[str, int] = {}
+    for status in ("planned", "active", "completed", "superseded"):
+        match = re.search(rf"\b{status}\s*=\s*(\d+)\b", value)
+        if match is None:
+            return None
+        summary[status] = int(match.group(1))
+    return summary
+
+
+def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    current: dict[str, object] | None = None
+    in_worktrack_list = False
+
+    for line in text.splitlines():
+        if line.startswith("- milestone_id:"):
+            if current is not None:
+                entries.append(current)
+            current = {
+                "milestone_id": line.split(":", 1)[1].strip(),
+                "status": "",
+                "worktrack_list": [],
+                "accepted": False,
+            }
+            in_worktrack_list = False
+            continue
+
+        if current is None:
+            continue
+
+        stripped = line.strip()
+        if line.startswith("  - "):
+            in_worktrack_list = stripped.startswith("- worktrack_list:")
+            if stripped.startswith("- status:"):
+                current["status"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("- verdict:") and "accepted" in stripped:
+                current["accepted"] = True
+            elif stripped.startswith("- acceptance:"):
+                current["accepted"] = True
+            continue
+
+        if in_worktrack_list and line.startswith("    - "):
+            worktracks = current["worktrack_list"]
+            assert isinstance(worktracks, list)
+            worktracks.append(stripped.removeprefix("- ").strip())
+
+    if current is not None:
+        entries.append(current)
+    return entries
+
+
+def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
+    aw_dir = repo_root / ".aw"
+    if not aw_dir.exists():
+        report.add_info("checked 0 runtime artifacts for consistency, .aw/ directory missing")
+        return
+
+    control_path = aw_dir / "control-state.md"
+    milestone_backlog_path = aw_dir / "repo/milestone-backlog.md"
+    if not control_path.exists() or not milestone_backlog_path.exists():
+        report.add_info("checked 0 runtime artifacts for consistency, control-state or milestone backlog missing")
+        return
+
+    control_text = control_path.read_text(encoding="utf-8")
+    backlog_text = milestone_backlog_path.read_text(encoding="utf-8")
+    control = _parse_control_state(control_text)
+    entries = _parse_milestone_backlog(backlog_text)
+    if not entries:
+        report.add_failure("runtime artifact consistency: milestone backlog has no parseable entries")
+        return
+
+    counts = {status: 0 for status in ("planned", "active", "completed", "superseded")}
+    active_entries: list[dict[str, object]] = []
+    by_id: dict[str, dict[str, object]] = {}
+    for entry in entries:
+        milestone_id = str(entry["milestone_id"])
+        by_id[milestone_id] = entry
+        status = str(entry.get("status", ""))
+        if status in counts:
+            counts[status] += 1
+        if status == "active":
+            active_entries.append(entry)
+        if status in {"completed", "superseded"} or entry.get("accepted") is True:
+            worktracks = entry.get("worktrack_list", [])
+            if isinstance(worktracks, list):
+                stale = [
+                    str(worktrack)
+                    for worktrack in worktracks
+                    if re.search(r"\((planned|active)\)", str(worktrack))
+                ]
+                if stale:
+                    report.add_failure(
+                        "runtime artifact consistency: completed/accepted milestone "
+                        f"{milestone_id} has unfinished worktrack markers: {', '.join(stale)}"
+                    )
+
+    if len(active_entries) > 1:
+        report.add_failure("runtime artifact consistency: milestone backlog has multiple active milestones")
+
+    active_milestone = control.get("active_milestone", "")
+    milestone_status = control.get("milestone_status", "")
+    if active_milestone and active_milestone != "none":
+        active_entry = by_id.get(active_milestone)
+        if active_entry is None:
+            report.add_failure(
+                "runtime artifact consistency: control-state active_milestone "
+                f"{active_milestone} is missing from milestone backlog"
+            )
+        elif active_entry.get("status") != "active":
+            report.add_failure(
+                "runtime artifact consistency: control-state active_milestone "
+                f"{active_milestone} points to non-active milestone status {active_entry.get('status')!r}"
+            )
+        elif milestone_status and milestone_status != "active":
+            report.add_failure(
+                "runtime artifact consistency: control-state milestone_status does not match active milestone"
+            )
+    elif active_entries:
+        report.add_failure(
+            "runtime artifact consistency: milestone backlog has active milestone but control-state active_milestone is none"
+        )
+
+    summary = _parse_pipeline_summary(control.get("milestone_pipeline_summary", ""))
+    if summary is None:
+        report.add_failure("runtime artifact consistency: control-state milestone_pipeline_summary is missing or malformed")
+    elif summary != counts:
+        report.add_failure(
+            "runtime artifact consistency: milestone_pipeline_summary mismatch: "
+            f"control-state={summary}, backlog={counts}"
+        )
+
+    report.add_info(f"checked {len(entries)} runtime milestone entries for consistency")
+
+
 def _is_readme_or_excluded(rel_path: str) -> bool:
     """Check if a doc path is a README, in archive/, or in ideas/."""
     if rel_path.endswith("/README.md"):
@@ -1132,6 +1284,7 @@ def main() -> int:
     check_closeout_record_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
+    check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
 
     payload = {

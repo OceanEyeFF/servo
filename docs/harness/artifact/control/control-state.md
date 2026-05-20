@@ -1,9 +1,9 @@
 ---
 title: "Harness Control State"
 status: active
-updated: 2026-05-16
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-10
+last_verified: 2026-05-20
 ---
 # Harness Control State
 
@@ -23,6 +23,8 @@ Milestone 是 `RepoScope` 下的聚合对象，control-state 应在 Linked Forma
 - `milestone_pipeline_summary`: Pipeline 快照（planned/active/completed/superseded 计数）
 
 `active_milestone` 缺失但 `milestone_pipeline_path` 存在且 pipeline 非空时，表示 pipeline 中有 planned milestone 但尚未激活。设置后 Milestone 进度由 `milestone-status-skill` 独立分析，Pipeline 推进由 `harness-skill` 在收到 `milestone_acceptance_verdict` 后执行，不替代 `RepoScope.Decide` 的决策权。
+
+Milestone final acceptance 写回后，Control State 必须与 `.aw/repo/milestone-backlog.md` 保持一致：`active_milestone` 只能指向 backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active/completed/superseded 计数必须等于 backlog 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
 
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
