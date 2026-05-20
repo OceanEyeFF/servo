@@ -1,6 +1,6 @@
 {
   "name": "servo-installer",
-  "version": "0.5.1-rc.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Local package scaffold for the AW Harness installer wrapper.",
   "bin": {

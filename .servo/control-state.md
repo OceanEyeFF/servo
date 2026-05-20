@@ -21,15 +21,15 @@ owner: "servo-kernel"
 
 ## Active Worktrack
 
-- active_worktrack: WT-20260520-servo-external-rename
-- latest_closed_worktrack: WT-20260520-runtime-dispatch-profile-claude-deepseek
+- active_worktrack: none
+- latest_closed_worktrack: WT-20260520-servo-runtime-governance-closeout
 
 ## Milestone Pipeline
 
-- active_milestone: MS-20260520-002
-- milestone_status: active
+- active_milestone: none
+- milestone_status: handback
 - milestone_pipeline_path: .servo/repo/milestone-backlog.md
-- milestone_pipeline_summary: planned=0 / active=1 / completed=15 / superseded=0
+- milestone_pipeline_summary: planned=0 / active=0 / completed=16 / superseded=0
 
 ## Baseline Branch
 
@@ -44,7 +44,7 @@ owner: "servo-kernel"
 
 - recommended_next_route: RepoScope.Observe
 - recommended_next_scope: RepoScope
-- current_next_action: RepoScope.Observe — MS-20260520-001 accepted; no active milestone remains
+- current_next_action: RepoScope.Observe — MS-20260520-002 completed; awaiting programmer acceptance
 
 ## Handback Guard
 
