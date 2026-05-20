@@ -1,9 +1,9 @@
 ---
 title: "aw-installer Release Standard Flow"
 status: active
-updated: 2026-05-19
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-20
 ---
 # aw-installer Release Standard Flow
 
@@ -53,7 +53,11 @@ gh pr checks <pr-number> --watch --interval 10 --fail-fast
 gh pr view <pr-number> --json number,url,isDraft,mergeable,reviewDecision,state,headRefName,baseRefName,headRefOid,statusCheckRollup
 ```
 
+The PR body must include the candidate version/tag/channel, PR head SHA, local release-readiness SHA, local preflight results, source-version docs freshness, candidate npm/tag conflict check, CI run/job URL, and release readiness comment URL. It must separate passed evidence from pending, skipped, or not-run checks.
+
 If the authenticated GitHub account is also the PR author, do not attempt to self-approve. GitHub rejects author approvals even for repo owners, and self-approval is not required in this single-maintainer repository. Record release readiness as a PR comment, then continue once the PR is ready, checks pass, and the source tuple still matches the release candidate.
+
+An empty `reviewDecision` is normal in single-maintainer mode and is not a release blocker by itself. Draft status, any required check failure, pending/skipped required checks, missing release-readiness evidence, PR head SHA drift, or stale source-version docs are blockers; keep the PR draft and fix `develop-main` before merging or creating a release.
 
 ## 3. Merge To `master`
 

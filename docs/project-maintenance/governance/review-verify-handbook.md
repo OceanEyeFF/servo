@@ -1,9 +1,9 @@
 ---
 title: "Review / Verify 治理入口"
 status: active
-updated: 2026-05-19
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-20
 ---
 # Review / Verify 治理入口
 
@@ -35,7 +35,8 @@ last_verified: 2026-05-19
 - package/release/version/VCS baseline 事实变更需调用 `doc-catch-up-worker-skill` 做 version fact sync；pre-publish 只同步 source version facts 与 VCS tracking facts，post-publish registry verification 后才能同步 published version facts；canonical skill source baseline 由 repo snapshot 的 `source_baselines.product_harness_skills` 和 control-state Baseline Traceability 承接，长期 docs 不手写分散 git hash
 - docs/harness/、product/harness/skills/ 或 adapters 变更需保持合同层与 executable layer 分工
 - branch/PR/baseline 规则变更需从 `origin/HEAD` 或 Worktrack Contract 的 `baseline_branch` 取值，不写死默认分支名
-- 单人维护模式下 release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作
+- 单人维护模式下 release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作；`reviewDecision` 为空不是失败，draft、required check failure、pending/skipped required check 或 release-readiness 证据缺失才是阻断信号
+- release PR 正文只能声明实际运行且有本地输出或 CI run/job URL 支撑的验证结果；被 CI 跳过、尚未运行或只计划运行的检查必须标成 pending/not-run，不能写成 passed
 - 退役/删除文档域需同步入口页、旧路径引用和治理检查
 - SKILL.md 变更需保持最小 executable body；已退役 references 需同步清理
 - product/.aw_template/ 变更只承接 scaffold 模板，不生长 canonical truth 或运行状态

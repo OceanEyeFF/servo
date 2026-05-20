@@ -4160,16 +4160,27 @@ test("aw-installer verify bundle collect-then-report on dual-root drift", () => 
 const tuiInstallerPath = join(__dirname, "bin", "aw-installer.js");
 
 function runTui(args, input, env) {
-  return spawnSync(
-    process.execPath,
-    [tuiInstallerPath, ...args],
-    {
-      encoding: "utf8",
-      input,
-      env: { ...process.env, ...env },
-      timeout: 15000,
-    },
-  );
+  const targetRepo = mkdtempSync(join(tmpdir(), "aw-installer-cli-"));
+  try {
+    return spawnSync(
+      process.execPath,
+      [tuiInstallerPath, ...args],
+      {
+        cwd: targetRepo,
+        encoding: "utf8",
+        input,
+        env: {
+          ...process.env,
+          AW_HARNESS_REPO_ROOT: "",
+          AW_HARNESS_TARGET_REPO_ROOT: targetRepo,
+          ...env,
+        },
+        timeout: 15000,
+      },
+    );
+  } finally {
+    rmSync(targetRepo, { recursive: true, force: true });
+  }
 }
 
 // TUI guard: non-TTY with explicit "tui" arg must print error
