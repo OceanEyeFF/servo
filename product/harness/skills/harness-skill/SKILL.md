@@ -408,6 +408,7 @@ Gate 应汇总**正交校验面**的裁决：
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
+9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason`。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
 
 ### 10.5 证据收集阶段
 

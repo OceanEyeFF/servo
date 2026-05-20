@@ -35,8 +35,9 @@ Milestone final acceptance 写回后，Control State 必须与 `.aw/repo/milesto
 - `subagent_dispatch_mode`: `auto`（默认）/`delegated`/`current-carrier`；repo 级默认值，不遮蔽 worktrack 级策略
 - `subagent_dispatch_mode_override_scope`: 默认 `worktrack-contract-primary`；仅 `global-override` 才压过 worktrack contract
 - `subagent_default_model`: 可选，不改变权限边界
+- `runtime_dispatch_profile`: 最近一次 dispatch 能力画像摘要，可包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`
 
-以上字段属于 control policy，不回答 repo 目标，不替代 `WorktrackContract`。`subagent_dispatch_mode` 是 SubAgent 委派的 repo 级默认策略，语义与 worktrack 级 `runtime_dispatch_mode` 一致：`auto` 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；`delegated` 必须委派否则返回 gap/block；`current-carrier` 关闭委派。若权限边界、运行时缺口或 `dispatch package unsafe` 阻止委派，fallback 原因须写入执行结果或 `gate evidence`，并使用 `runtime fallback` 标记运行时回退。
+以上字段属于 control policy，不回答 repo 目标，不替代 `WorktrackContract`。`subagent_dispatch_mode` 是 SubAgent 委派的 repo 级默认策略，语义与 worktrack 级 `runtime_dispatch_mode` 一致：`auto` 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；`delegated` 必须委派否则返回 gap/block；`current-carrier` 关闭委派。若权限边界、运行时缺口或 `dispatch package unsafe` 阻止委派，fallback 原因须写入执行结果或 `gate evidence`，并使用 `runtime fallback` 标记运行时回退。若 runtime 为 ClaudeCodeCLI 或 model family 为 Deepseek 且无法证明 SubAgent shell 可用，必须把 `runtime_dispatch_profile`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason` 写入本轮 evidence，不得静默使用 current-carrier。
 
 程序员授予的长期权限、自动性或分派策略变更必须写回本 artifact 对应配置段，不得仅停留于对话记忆。一次性审批仅对当前 worktrack、gate 或 destructive action 生效，应写入本轮 `evidence`/`handoff`，不得改变长期默认值。仅当用户明确表达持久授权或更改默认策略时，才可更新 `post_contract_autonomy`、`max_auto_new_worktracks`、`stop_after_autonomous_slice`、`subagent_dispatch_mode`、`subagent_dispatch_mode_override_scope` 或其他长期 authority 字段。若字段语义或默认值改变，须同步更新初始化模板和 canonical skill 说明。
 

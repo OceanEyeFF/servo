@@ -245,6 +245,37 @@ DISPATCH_CONTEXT_REQUIRED_TERMS = [
     "may_read",
     "do_not_read",
 ]
+RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS = [
+    "docs/harness/foundations/dispatch-decision-policy.md",
+    "docs/harness/foundations/runtime-dispatch-contract.md",
+    "docs/harness/artifact/worktrack/dispatch-packet.md",
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/dispatch-skills/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/.aw_template/control-state.md",
+]
+RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS = [
+    "runtime_dispatch_profile",
+    "backend_runtime",
+    "model_family",
+    "subagent_dispatch_shell",
+    "runtime_supports_subagent",
+    "subagent_permission_state",
+    "permission_allows_delegation",
+    "dispatch_package_safety",
+    "delegation_attempted",
+    "attempted_carrier",
+    "carrier_decision",
+    "fallback_reason",
+]
+RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
+    "ClaudeCodeCLI",
+    "Deepseek",
+    "runtime fallback",
+    "permission blocked",
+    "dispatch package unsafe",
+]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
@@ -894,6 +925,36 @@ def check_dispatch_context_contract(repo_root: Path, report: SemanticReport) -> 
     report.add_info(f"checked {checked} dispatch context contract sources")
 
 
+def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing runtime dispatch profile source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"runtime dispatch profile contract missing required term {term!r}: {relative_path}"
+                )
+        if relative_path in {
+            "docs/harness/foundations/dispatch-decision-policy.md",
+            "docs/harness/foundations/runtime-dispatch-contract.md",
+            "docs/harness/artifact/worktrack/dispatch-packet.md",
+            "product/harness/skills/harness-skill/SKILL.md",
+            "product/harness/skills/dispatch-skills/SKILL.md",
+        }:
+            for term in RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "runtime dispatch profile contract missing compatibility term "
+                        f"{term!r}: {relative_path}"
+                    )
+    report.add_info(f"checked {checked} runtime dispatch profile contract sources")
+
+
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
@@ -1343,6 +1404,7 @@ def main() -> int:
     check_manual_runbook_agents_skill_count(repo_root, report)
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
+    check_runtime_dispatch_profile_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)

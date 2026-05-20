@@ -52,6 +52,18 @@
 - subagent_dispatch_mode: auto
 - subagent_dispatch_mode_override_scope: worktrack-contract-primary
 - subagent_default_model:
+- runtime_dispatch_profile:
+  - backend_runtime:
+  - model_family:
+  - subagent_dispatch_shell:
+  - runtime_supports_subagent:
+  - subagent_permission_state:
+  - permission_allows_delegation:
+  - dispatch_package_safety:
+  - delegation_attempted:
+  - attempted_carrier:
+  - carrier_decision:
+  - fallback_reason:
 - persistent_authority_notes:
 
 ## Handback Guard

@@ -31,6 +31,7 @@ from governance_semantic_check import (
     check_review_verify_docs_list_closeout_steps,
     check_root_tool_shims_disable_bytecode,
     check_runtime_artifact_consistency,
+    check_runtime_dispatch_profile_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
     check_worktrack_intake_review_contract,
@@ -287,6 +288,63 @@ def test_check_dispatch_context_contract_flags_missing_budget_term(tmp_path: Pat
     check_dispatch_context_contract(tmp_path, report)
 
     assert any("do_not_read" in item for item in report.failures)
+
+
+def _write_runtime_dispatch_profile_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/foundations/dispatch-decision-policy.md",
+        "docs/harness/foundations/runtime-dispatch-contract.md",
+        "docs/harness/artifact/worktrack/dispatch-packet.md",
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/dispatch-skills/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+        "product/.aw_template/control-state.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_runtime_dispatch_profile_contract_flags_missing_field(tmp_path: Path) -> None:
+    _write_runtime_dispatch_profile_sources(
+        tmp_path,
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\ndispatch_package_safety\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+    write_doc(
+        tmp_path / "docs/harness/artifact/worktrack/dispatch-packet.md",
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+
+    report = SemanticReport()
+    check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert any("dispatch_package_safety" in item for item in report.failures)
+
+
+def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_path: Path) -> None:
+    _write_runtime_dispatch_profile_sources(
+        tmp_path,
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\ndispatch_package_safety\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+
+    report = SemanticReport()
+    check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_review_evidence_four_lane_contract_flags_missing_lane(tmp_path: Path) -> None:
