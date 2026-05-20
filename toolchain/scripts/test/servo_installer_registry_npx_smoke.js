@@ -224,8 +224,8 @@ function makeNpmEnv(npmStateRoot) {
     NPM_CONFIG_CACHE: path.join(npmStateRoot, "cache"),
     NPM_CONFIG_TMP: path.join(npmStateRoot, "tmp"),
     NPM_CONFIG_USERCONFIG: path.join(npmStateRoot, "npmrc"),
-    AW_HARNESS_REPO_ROOT: "",
-    AW_HARNESS_TARGET_REPO_ROOT: "",
+    SERVO_HARNESS_REPO_ROOT: "",
+    SERVO_HARNESS_TARGET_REPO_ROOT: "",
   };
 }
 

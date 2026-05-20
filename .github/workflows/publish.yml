@@ -98,12 +98,12 @@ jobs:
 
       - name: Real publish guard
         env:
-          AW_INSTALLER_PUBLISH_APPROVED: "1"
+          SERVO_INSTALLER_PUBLISH_APPROVED: "1"
           CI: "true"
         run: npm_config_tag="$NPM_CONFIG_TAG" node toolchain/scripts/deploy/bin/check-root-publish.js
 
       - name: Publish to npm
         env:
-          AW_INSTALLER_PUBLISH_APPROVED: "1"
+          SERVO_INSTALLER_PUBLISH_APPROVED: "1"
           CI: "true"
-        run: npm publish --provenance --access public --tag "$AW_INSTALLER_RELEASE_CHANNEL"
+        run: npm publish --provenance --access public --tag "$SERVO_INSTALLER_RELEASE_CHANNEL"

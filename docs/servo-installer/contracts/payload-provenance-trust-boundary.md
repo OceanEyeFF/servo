@@ -17,8 +17,8 @@ last_verified: 2026-05-06
 
 ## Source Root 与 Target Root
 
-- 未设 `AW_HARNESS_REPO_ROOT` 时 source root 来自 package 解压根或当前 checkout；设置时显式指向该 checkout
-- 未设 `AW_HARNESS_TARGET_REPO_ROOT` 时 target repo root 默认为当前工作目录；设置时显式指向该目录
+- 未设 `SERVO_HARNESS_REPO_ROOT` 时 source root 来自 package 解压根或当前 checkout；设置时显式指向该 checkout
+- 未设 `SERVO_HARNESS_TARGET_REPO_ROOT` 时 target repo root 默认为当前工作目录；设置时显式指向该目录
 - `--agents-root`/`--claude-root` 只覆盖对应 backend 的 target root，不改 source root
 
 必须保持：source/target root 分离；target root 不是 source of truth；package/`.tgz` smoke 须证明 package payload 与临时 target repo 分离。

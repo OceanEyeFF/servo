@@ -658,7 +658,7 @@ function gitRefExists(repoRoot, ref) {
 
 function resolveBaselineBranch(args, deployPath) {
   if (args.baselineBranch && args.baselineBranch.trim()) return args.baselineBranch.trim();
-  const envValue = (process.env.AW_BASELINE_BRANCH || "").trim();
+  const envValue = (process.env.SERVO_BASELINE_BRANCH || "").trim();
   if (envValue) return envValue;
 
   const originHead = runGitOutput(deployPath, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]);
@@ -684,7 +684,7 @@ function resolveBaselineBranch(args, deployPath) {
   }
 
   throw new DeployAwError(
-    "unable to resolve baseline branch: pass --baseline-branch or set AW_BASELINE_BRANCH; origin/HEAD is unavailable and no unique main/master branch ref could verify a baseline",
+    "unable to resolve baseline branch: pass --baseline-branch or set SERVO_BASELINE_BRANCH; origin/HEAD is unavailable and no unique main/master branch ref could verify a baseline",
   );
 }
 

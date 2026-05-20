@@ -547,8 +547,8 @@ function checkPathsExistEnv(root, fakeBin = null) {
   const pathSeparator = process.platform === "win32" ? ";" : ":";
   return {
     ...process.env,
-    AW_HARNESS_REPO_ROOT: root,
-    AW_HARNESS_TARGET_REPO_ROOT: root,
+    SERVO_HARNESS_REPO_ROOT: root,
+    SERVO_HARNESS_TARGET_REPO_ROOT: root,
     PATH: fakeBin === null ? process.env.PATH || "" : `${fakeBin}${pathSeparator}${process.env.PATH || ""}`,
     PYTHONDONTWRITEBYTECODE: "1",
   };
@@ -783,11 +783,11 @@ test("computePayloadFingerprint matches the Python payload contract order", () =
 
 test("buildNodeBackendContext keeps backend target root defaults and override flags in parity", () => {
   const root = mkdtempSync(join(tmpdir(), "servo-installer-test-"));
-  const originalTargetRepoRoot = process.env.AW_HARNESS_TARGET_REPO_ROOT;
+  const originalTargetRepoRoot = process.env.SERVO_HARNESS_TARGET_REPO_ROOT;
   try {
     seedMinimalAgentsSource(root, "agents-demo");
     seedMinimalClaudeSource(root, "claude-demo");
-    process.env.AW_HARNESS_TARGET_REPO_ROOT = root;
+    process.env.SERVO_HARNESS_TARGET_REPO_ROOT = root;
 
     const agentsDefault = installer.buildNodeBackendContext({
       backend: "agents",
@@ -830,9 +830,9 @@ test("buildNodeBackendContext keeps backend target root defaults and override fl
     );
   } finally {
     if (originalTargetRepoRoot === undefined) {
-      delete process.env.AW_HARNESS_TARGET_REPO_ROOT;
+      delete process.env.SERVO_HARNESS_TARGET_REPO_ROOT;
     } else {
-      process.env.AW_HARNESS_TARGET_REPO_ROOT = originalTargetRepoRoot;
+      process.env.SERVO_HARNESS_TARGET_REPO_ROOT = originalTargetRepoRoot;
     }
     rmSync(root, { recursive: true, force: true });
   }
@@ -876,9 +876,9 @@ test("parseNodeDiagnoseArgs accepts agents and claude human diagnose forms", () 
 });
 
 test("parseNodeUpdateJsonArgs accepts agents and claude package JSON update dry-runs", () => {
-  const originalAwRepo = process.env.AW_INSTALLER_GITHUB_REPO;
+  const originalAwRepo = process.env.SERVO_INSTALLER_GITHUB_REPO;
   const originalGithubRepository = process.env.GITHUB_REPOSITORY;
-  delete process.env.AW_INSTALLER_GITHUB_REPO;
+  delete process.env.SERVO_INSTALLER_GITHUB_REPO;
   delete process.env.GITHUB_REPOSITORY;
   try {
     assert.deepEqual(
@@ -945,9 +945,9 @@ test("parseNodeUpdateJsonArgs accepts agents and claude package JSON update dry-
     );
   } finally {
     if (originalAwRepo === undefined) {
-      delete process.env.AW_INSTALLER_GITHUB_REPO;
+      delete process.env.SERVO_INSTALLER_GITHUB_REPO;
     } else {
-      process.env.AW_INSTALLER_GITHUB_REPO = originalAwRepo;
+      process.env.SERVO_INSTALLER_GITHUB_REPO = originalAwRepo;
     }
     if (originalGithubRepository === undefined) {
       delete process.env.GITHUB_REPOSITORY;

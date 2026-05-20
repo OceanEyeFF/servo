@@ -18,12 +18,12 @@
 - 默认初始化会生成 [repo/analysis.md](./repo/analysis.md)，作为 RepoScope 的阶段性决策支撑 artifact
 - Existing Code Project Adoption 模式可以额外生成 [repo/discovery-input.md](./repo/discovery-input.md)，把既有代码库观察结果写入 `.servo/repo/discovery-input.md`
 - `repo/discovery-input.md` 是只读事实输入，不是 goal truth；它只能作为 `goal-charter.md` 和 `snapshot-status.md` 的候选来源
-- 建议通过 [../scripts/deploy_aw.js](../scripts/deploy_aw.js) 生成 `.servo/` 样例，而不是手工复制这些文件
+- 建议通过 [../scripts/deploy_servo.js](../scripts/deploy_servo.js) 生成 `.servo/` 样例，而不是手工复制这些文件
 - 用法固定为把目标 repo / worktree 根作为 `--deploy-path` 传入；脚本会在 `<deploy-path>/.servo/` 下生成文件
 - 如果目标 repo 也要给 Claude Code 暴露本技能，可在 `generate` 时追加 `--install-claude-skill`，或单独运行 `install-claude-skill` 子命令；目标路径是 `<deploy-path>/.claude/skills/aw-set-harness-goal-skill/`
 - Claude install 允许 root 层 symlink / mount，但拒绝目标 skill 目录本身或其内部已有 symlink；完整边界见 `SKILL.md` 与 Claude usage help
 - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为 already installed 并 no-op
-- 需要完整参数说明时，直接运行 `node scripts/deploy_aw.js generate --help`
+- 需要完整参数说明时，直接运行 `node scripts/deploy_servo.js generate --help`
 - 资产 owner 已固定在本技能；不要再为它们建立独立的 `.aw` 模板源码根
 - goal 修正文档不进入 `.servo/` 路径，只作为 Codex 对话回答流模板存在
 - 不要把 doctrine、运行协议或 backend wrapper 写到这里
@@ -33,9 +33,9 @@
 示例：
 
 ```bash
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
-node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --force --dry-run
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
+node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --force --dry-run
 ```

@@ -293,7 +293,7 @@ options:
   --agents-root PATH          override the managed agents skills target root
   --claude-root PATH          override the managed Claude skills target root
   --github-repo OWNER/REPO    GitHub source repository for --source github
-                              defaults from AW_INSTALLER_GITHUB_REPO,
+                              defaults from SERVO_INSTALLER_GITHUB_REPO,
                               GITHUB_REPOSITORY, then upstream repo
   --github-ref REF            GitHub branch/ref for --source github
   --github-archive-sha256 SHA256
@@ -487,7 +487,7 @@ function validateSourceRepoRoot(path) {
 }
 
 function resolveSourceRoot() {
-  const override = process.env.AW_HARNESS_REPO_ROOT;
+  const override = process.env.SERVO_HARNESS_REPO_ROOT;
   if (override) {
     return validateSourceRepoRoot(override);
   }
@@ -495,7 +495,7 @@ function resolveSourceRoot() {
 }
 
 function resolveTargetRepoRoot(sourceRoot, sourceRootFromEnv) {
-  const targetOverride = process.env.AW_HARNESS_TARGET_REPO_ROOT;
+  const targetOverride = process.env.SERVO_HARNESS_TARGET_REPO_ROOT;
   if (targetOverride) {
     return validateTargetRepoRoot(targetOverride, sourceRoot);
   }
@@ -520,7 +520,7 @@ function buildNodeBackendContext(options = {}) {
     throw new Error(`Unsupported backend for Node-owned path: ${backend}`);
   }
   const sourceRootOverride = options.sourceRootOverride;
-  const sourceRootFromEnv = sourceRootOverride === undefined && Boolean(process.env.AW_HARNESS_REPO_ROOT);
+  const sourceRootFromEnv = sourceRootOverride === undefined && Boolean(process.env.SERVO_HARNESS_REPO_ROOT);
   const sourceRoot =
     sourceRootOverride === undefined
       ? resolveSourceRoot()
@@ -862,7 +862,7 @@ function validateSha256Digest(value) {
 }
 
 function defaultGithubSourceRepo() {
-  return process.env.AW_INSTALLER_GITHUB_REPO || process.env.GITHUB_REPOSITORY || defaultGithubRepo;
+  return process.env.SERVO_INSTALLER_GITHUB_REPO || process.env.GITHUB_REPOSITORY || defaultGithubRepo;
 }
 
 function githubArchiveRefPath(ref) {
@@ -4329,7 +4329,7 @@ async function runTui() {
   }
 
   const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
-  const targetRepo = process.env.AW_HARNESS_TARGET_REPO_ROOT || process.cwd();
+  const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
 
   // Bundle default per TUI contract
   tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);

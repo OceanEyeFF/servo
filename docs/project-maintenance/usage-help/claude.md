@@ -16,8 +16,8 @@ last_verified: 2026-05-08
 受管路径：
 
 ```bash
-AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer install --backend claude
-AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer verify --backend claude
+SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer install --backend claude
+SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer verify --backend claude
 ```
 
 Claude backend 的 deploy 入口为 `servo-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。

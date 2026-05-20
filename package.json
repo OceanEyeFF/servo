@@ -32,7 +32,7 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "awInstallerRelease": {
+  "servoInstallerRelease": {
     "realPublishApproval": "approved",
     "approvedVersion": "0.5.1-rc.1",
     "approvedGitTag": "v0.5.1-rc.1",

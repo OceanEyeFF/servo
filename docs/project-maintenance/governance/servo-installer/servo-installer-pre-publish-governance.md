@@ -53,10 +53,10 @@ npm pkg set awInstallerRelease.approvedChannel="<latest|next|canary>"
 ```bash
 node toolchain/scripts/deploy/bin/servo-installer.js --version
 node toolchain/scripts/deploy/bin/check-root-publish.js
-AW_INSTALLER_RELEASE_GIT_TAG="v<version>" \
-  AW_INSTALLER_RELEASE_CHANNEL="<latest|next|canary>" \
+SERVO_INSTALLER_RELEASE_GIT_TAG="v<version>" \
+  SERVO_INSTALLER_RELEASE_CHANNEL="<latest|next|canary>" \
   npm_config_tag="<latest|next|canary>" \
-  AW_INSTALLER_PUBLISH_APPROVED=1 \
+  SERVO_INSTALLER_PUBLISH_APPROVED=1 \
   CI=true \
   node toolchain/scripts/deploy/bin/check-root-publish.js
 ```

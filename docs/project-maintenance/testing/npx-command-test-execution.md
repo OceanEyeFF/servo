@@ -88,16 +88,16 @@ for target_name in target-alpha target-beta; do
   mkdir -p "$target_repo"
   (
     cd "$target_repo"
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --help
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --version
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer diagnose --backend agents --json
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --json
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer install --backend agents
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer verify --backend agents
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --yes
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer install --backend claude
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer verify --backend claude
-    AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend claude --yes
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --help
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer --version
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer diagnose --backend agents --json
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --json
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer install --backend agents
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer verify --backend agents
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend agents --yes
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer install --backend claude
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer verify --backend claude
+    SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npm exec --yes --package "$package_path" -- servo-installer update --backend claude --yes
   )
 done
 ```

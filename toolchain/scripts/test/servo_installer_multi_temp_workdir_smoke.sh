@@ -99,8 +99,8 @@ run_aw() {
       NPM_CONFIG_CACHE="$npm_state_root/cache" \
       NPM_CONFIG_TMP="$npm_state_root/tmp" \
       NPM_CONFIG_USERCONFIG="$npm_state_root/npmrc" \
-      AW_HARNESS_REPO_ROOT="" \
-      AW_HARNESS_TARGET_REPO_ROOT="" \
+      SERVO_HARNESS_REPO_ROOT="" \
+      SERVO_HARNESS_TARGET_REPO_ROOT="" \
       npm exec --yes --package "$package_path" -- servo-installer "$@"
   )
 }

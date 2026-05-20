@@ -16,10 +16,10 @@ last_verified: 2026-05-07
 public/stable 主路径是 `agents`，推荐 `servo-installer` selector：
 
 ```bash
-AW_INSTALLER_PACKAGE="servo-installer"
-AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$AW_INSTALLER_PACKAGE" -- servo-installer diagnose --backend agents --json
-AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$AW_INSTALLER_PACKAGE" -- servo-installer update --backend agents --yes
-AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$AW_INSTALLER_PACKAGE" -- servo-installer verify --backend agents
+SERVO_INSTALLER_PACKAGE="servo-installer"
+SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$SERVO_INSTALLER_PACKAGE" -- servo-installer diagnose --backend agents --json
+SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$SERVO_INSTALLER_PACKAGE" -- servo-installer update --backend agents --yes
+SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$SERVO_INSTALLER_PACKAGE" -- servo-installer verify --backend agents
 ```
 
 然后在目标仓库用 Codex `set-harness-goal-skill` 初始化 `.servo/`。

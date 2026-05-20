@@ -55,9 +55,9 @@ printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 PACKAGE_TGZ="/path/to/servo-installer-<version>.tgz"
 (
   cd "$TMP_REPO"
-  AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
+  SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
     npx --yes --package "$PACKAGE_TGZ" -- servo-installer install --backend claude
-  AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
+  SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
     npx --yes --package "$PACKAGE_TGZ" -- servo-installer verify --backend claude
 )
 ```

@@ -56,19 +56,19 @@ function main() {
   const scaffoldPackageMetadata = existsSync(scaffoldPackagePath)
     ? readPackageMetadata(scaffoldPackagePath)
     : null;
-  const packageJsonOverride = process.env.AW_INSTALLER_PACKAGE_JSON || "";
+  const packageJsonOverride = process.env.SERVO_INSTALLER_PACKAGE_JSON || "";
   const version = packageMetadata.version || "";
   const isDryRun = process.env.npm_config_dry_run === "true";
   const isLocalVersion = version === "0.0.0-local" || version.includes("-local");
   const prerelease = (version.match(semverPattern) || [])[4] || "";
-  const releaseTag = process.env.AW_INSTALLER_RELEASE_GIT_TAG || "";
-  const envReleaseChannel = process.env.AW_INSTALLER_RELEASE_CHANNEL || "";
+  const releaseTag = process.env.SERVO_INSTALLER_RELEASE_GIT_TAG || "";
+  const envReleaseChannel = process.env.SERVO_INSTALLER_RELEASE_CHANNEL || "";
   const derivedReleaseChannel = deriveReleaseChannelFromTag(releaseTag, version, prerelease);
   const releaseChannel = derivedReleaseChannel || envReleaseChannel;
   const npmDistTag = process.env.npm_config_tag || "latest";
-  const publishApproved = process.env.AW_INSTALLER_PUBLISH_APPROVED === "1";
+  const publishApproved = process.env.SERVO_INSTALLER_PUBLISH_APPROVED === "1";
   const isCiRelease = process.env.CI === "true";
-  const releaseApprovalMetadata = packageMetadata.awInstallerRelease || {};
+  const releaseApprovalMetadata = packageMetadata.servoInstallerRelease || {};
   const metadataPublishApproval = releaseApprovalMetadata.realPublishApproval || "";
   const metadataApprovedVersion = releaseApprovalMetadata.approvedVersion || "";
   const metadataApprovedGitTag = releaseApprovalMetadata.approvedGitTag || "";
@@ -82,7 +82,7 @@ function main() {
     {
       test: () => !packageJsonOverride,
       message: () =>
-        "refusing to publish servo-installer; AW_INSTALLER_PACKAGE_JSON override is not supported",
+        "refusing to publish servo-installer; SERVO_INSTALLER_PACKAGE_JSON override is not supported",
     },
     {
       test: () =>
@@ -116,7 +116,7 @@ function main() {
     {
       test: () => publishApproved,
       message: () =>
-        "refusing to publish servo-installer; set AW_INSTALLER_PUBLISH_APPROVED=1 after release approval",
+        "refusing to publish servo-installer; set SERVO_INSTALLER_PUBLISH_APPROVED=1 after release approval",
     },
     {
       test: () => metadataPublishApproval === "approved",
@@ -145,7 +145,7 @@ function main() {
     {
       test: () => ["latest", "next", "canary"].includes(releaseChannel),
       message: () =>
-        "refusing to publish servo-installer; release channel must derive from AW_INSTALLER_RELEASE_GIT_TAG or use AW_INSTALLER_RELEASE_CHANNEL latest, next, or canary",
+        "refusing to publish servo-installer; release channel must derive from SERVO_INSTALLER_RELEASE_GIT_TAG or use SERVO_INSTALLER_RELEASE_CHANNEL latest, next, or canary",
     },
     {
       test: () => npmDistTag === releaseChannel,
@@ -168,7 +168,7 @@ function main() {
     },
     {
       test: () => releaseTag === `v${version}`,
-      message: () => `refusing to publish servo-installer; AW_INSTALLER_RELEASE_GIT_TAG must be v${version}`,
+      message: () => `refusing to publish servo-installer; SERVO_INSTALLER_RELEASE_GIT_TAG must be v${version}`,
     },
   ]);
 

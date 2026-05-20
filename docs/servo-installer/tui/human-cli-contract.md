@@ -50,7 +50,7 @@ TUI 必须包含以下固定状态信息，在整个交互过程中持续可见�
 |------|------|------|
 | **版本** | canonical VERSION 标记或 payload descriptor | 当前 servo-installer 版本 |
 | **source** | package-local 或 checkout-local | payload 来源类型 |
-| **target repo** | 当前工作目录或 `AW_HARNESS_TARGET_REPO_ROOT` | 安装目标仓库路径 |
+| **target repo** | 当前工作目录或 `SERVO_HARNESS_TARGET_REPO_ROOT` | 安装目标仓库路径 |
 | **当前 backend** | 用户选择或默认 `bundle` | 当前操作的 backend |
 | **当前步骤** | 流程阶段 | `diagnose → preview → confirm → install → verify → done` |
 | **验证结果** | `verify` 命令输出 | 最后验证的状态（通过/失败/未执行） |
