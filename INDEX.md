@@ -34,7 +34,7 @@ Agent 默认只读 [`AGENTS.md`](./AGENTS.md)、本页，以及当前任务命�
 | 改阅读路由或写回规则 | [`AGENTS.md`](./AGENTS.md) / [`review-verify-handbook.md`](./docs/project-maintenance/governance/review-verify-handbook.md) |
 | 改业务源码 | [`product/README.md`](./product/README.md) |
 | 改工具脚本、部署或评测 | [`toolchain/README.md`](./toolchain/README.md) |
-| 使用或排查 `aw-installer` 分发 | [`docs/project-maintenance/deploy/README.md`](./docs/project-maintenance/deploy/README.md) |
+| 使用或排查 `aw-installer` 分发 | [`docs/aw-installer/README.md`](./docs/aw-installer/README.md) |
 | 查看 Codex / Claude backend 使用差异 | [`docs/project-maintenance/usage-help/README.md`](./docs/project-maintenance/usage-help/README.md) |
 | 运行 npx / package smoke 或部署后行为观察 | [`docs/project-maintenance/testing/README.md`](./docs/project-maintenance/testing/README.md) |
 | 确认 release channel、publish 或外部试用治理 | [`docs/project-maintenance/governance/README.md`](./docs/project-maintenance/governance/README.md) |

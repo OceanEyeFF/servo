@@ -1,9 +1,9 @@
 ---
 title: "aw-installer Release Channel Governance"
 status: active
-updated: 2026-05-19
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-20
 ---
 # aw-installer Release Channel Governance
 
@@ -31,15 +31,16 @@ last_verified: 2026-05-19
 
 ## 当前 source release tuple
 
-2026-05-19，本地 source tuple 已发布为 `v0.5.2-rc.1` 的 `next` channel release candidate：
+2026-05-20，本地 source tuple 已准备为 `v0.5.2-rc.2` 的 `next` channel release candidate；该 candidate 尚未创建 GitHub Release，尚未发布到 npm registry：
 
-- root `package.json` version：`0.5.2-rc.1`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.1`
-- approval lock：`approvedVersion=0.5.2-rc.1`、`approvedGitTag=v0.5.2-rc.1`、`approvedChannel=next`
-- GitHub Release 使用 prerelease，target commit `34b07d93fad1b03423e36881ba7f269e55a1cceb`，publish workflow run `26047860242` 已成功
-- npm `aw-installer@0.5.2-rc.1` 已发布到 `next` dist-tag，tarball URL：`https://registry.npmjs.org/aw-installer/-/aw-installer-0.5.2-rc.1.tgz`
+- root `package.json` version：`0.5.2-rc.2`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.2-rc.2`
+- approval lock：`approvedVersion=0.5.2-rc.2`、`approvedGitTag=v0.5.2-rc.2`、`approvedChannel=next`
+- CLI `--version` 输出：`aw-installer 0.5.2-rc.2`
+- GitHub Release `v0.5.2-rc.2`：未创建；release PR 合并后必须 target `master` merge commit
+- npm `aw-installer@0.5.2-rc.2`：未发布；发布前必须确认 registry 仍未占用该 version
 
-注意：`0.5.2-rc.1` 是 prerelease，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。RC 试用必须显式使用 `aw-installer@next`。
+注意：`0.5.2-rc.2` 是 prerelease，不改变 stable selector；默认 `aw-installer` 仍解析到 `latest` 的 `0.5.1`。RC 试用必须显式使用 `aw-installer@next`；在 `v0.5.2-rc.2` 发布前，`aw-installer@next` 仍应解析到最近已发布的 RC。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 

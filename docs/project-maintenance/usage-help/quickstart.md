@@ -33,7 +33,15 @@ npx aw-installer diagnose --backend agents --json
 
 ## 第一步：安装 Harness Skills
 
-在目标仓库根目录执行：
+**人类 operator 推荐使用 TUI 引导流程：**
+
+```bash
+npx aw-installer
+```
+
+不带参数启动 TUI，默认使用 `bundle` backend（同时部署 agents + claude）。TUI 提供六阶段引导：diagnose → preview → confirm → install → verify → summary。详见 [TUI/CLI 合同](../../aw-installer/tui/human-cli-contract.md)。
+
+**AI agent、CI 或脚本使用 CLI：**
 
 ```bash
 npx aw-installer install --backend agents
@@ -45,7 +53,7 @@ npx aw-installer install --backend agents
 npx aw-installer verify --backend agents
 ```
 
-`agents` 是当前主路径 backend。Claude Code 用户将 `--backend agents` 替换为 `--backend claude`。
+`agents` 是当前主路径 backend。Claude Code 用户将 `--backend agents` 替换为 `--backend claude`。CLI 必须显式指定 `--backend`。
 
 ## 第二步：初始化 Harness 控制面
 

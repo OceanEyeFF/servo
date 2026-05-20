@@ -127,7 +127,7 @@ def test_cli_agents_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 
     check_paths = run_aw_installer(repo_root, node_path, target_repo, "check_paths_exist", "--backend", "agents")
     assert_success(check_paths)
-    assert "[agents] ok: no conflicting target paths" in check_paths.stdout
+    assert "[agents] ok: no pre-existing paths" in check_paths.stdout
 
     prune_empty = run_aw_installer(repo_root, node_path, target_repo, "prune", "--all", "--backend", "agents")
     assert_success(prune_empty)
@@ -176,7 +176,7 @@ def test_cli_claude_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 
     check_paths = run_aw_installer(repo_root, node_path, target_repo, "check_paths_exist", "--backend", "claude")
     assert_success(check_paths)
-    assert "[claude] ok: no conflicting target paths" in check_paths.stdout
+    assert "[claude] ok: no pre-existing paths" in check_paths.stdout
 
     prune_empty = run_aw_installer(repo_root, node_path, target_repo, "prune", "--all", "--backend", "claude")
     assert_success(prune_empty)

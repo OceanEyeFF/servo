@@ -54,4 +54,4 @@ node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --install-claude
 
 ## 七、Source 变更后的 operator 决策
 
-与 `agents` 一致：source of truth 在 `product/`，不改 `.claude/skills/` 已安装结果；重新对齐 source 回 [Deploy Runbook](../deploy/deploy-runbook.md) 走三步流程；source 命名/cleanup/contract 变化先修 source 再重装。
+与 `agents` 一致：source of truth 在 `product/`，不改 `.claude/skills/` 已安装结果；重新对齐 source 回 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md) 走三步流程；source 命名/cleanup/contract 变化先修 source 再重装。

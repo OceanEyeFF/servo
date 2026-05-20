@@ -1,9 +1,9 @@
 ---
 title: "Branch / PR 治理规则"
 status: active
-updated: 2026-05-19
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-20
 ---
 # Branch / PR 治理规则
 
@@ -36,12 +36,16 @@ Decision time: 2026-04-25
 - `v<package.version>` tag 不存在，npm registry 中 `aw-installer@<package.version>` 不存在
 - RC PR 明确使用 `next` channel；stable PR 明确使用 `latest` channel
 - PR head SHA 与本地 release-readiness 验证所用 SHA 一致
+- PR 正文必须区分本地已跑证据、远端 CI 证据、pending/skipped/not-run 项；未运行或被跳过的检查不得写成 passed
+- source-version docs freshness 已完成或明确说明不适用；若 release channel governance、testing/usage docs 或 root README 仍指向旧 source tuple，PR 必须保持 draft
 
 ## 四、Review 规则
 
 `CODEOWNERS` 生效时以远端规则集为准；参考 `docs/project-maintenance/governance/review-verify-handbook.md`。
 
 本仓库当前按单人维护模式运行：PR author 不需要等待外部 reviewer 才能合并。GitHub 仍不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin 可在 CI 通过、PR 内容与本地验证证据一致、release tuple 无冲突时直接 self-merge。release PR 的 handoff 需记录已通过检查、PR head SHA、merge commit SHA 和后续 release/tag/publish 动作。
+
+`reviewDecision` 为空不等于审核失败；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
 
 ## 五、CI 最小检查链
 

@@ -118,6 +118,148 @@ const updateRecoverableIssueCodes = new Set([
 ]);
 let cachedPathSafetyPolicy = null;
 
+// ─── ANSI TUI rendering utilities ────────────────────────────────────────────
+// Color is always secondary to text/symbol — never the sole state carrier.
+// Contract: docs/aw-installer/tui/human-cli-contract.md
+
+const ttyOut = process.stdout.isTTY;
+const ttyIn = process.stdin.isTTY;
+const noColor = "NO_COLOR" in process.env && process.env.NO_COLOR.length > 0;
+const forceColor = "FORCE_COLOR" in process.env && process.env.FORCE_COLOR !== "0";
+const haveColor = !noColor && (forceColor || ttyOut);
+
+const ansi = (code) => haveColor ? `\x1b[${code}` : "";
+
+const SGR_RESET = ansi("0m");
+const SGR_BOLD = ansi("1m");
+const SGR_DIM = ansi("2m");
+const SGR_GREEN = ansi("32m");
+const SGR_YELLOW = ansi("33m");
+const SGR_RED = ansi("31m");
+const SGR_CYAN = ansi("36m");
+const SGR_WHITE = ansi("37m");
+
+const CSI_HIDE_CURSOR = haveColor ? "\x1b[?25l" : "";
+const CSI_SHOW_CURSOR = haveColor ? "\x1b[?25h" : "";
+const CSI_CLEAR_SCREEN = haveColor ? "\x1b[2J\x1b[H" : "";
+const CSI_SAVE_CURSOR = haveColor ? "\x1b[s" : "";
+const CSI_RESTORE_CURSOR = haveColor ? "\x1b[u" : "";
+function csiCursorTo(row, col) { return haveColor ? `\x1b[${row};${col}H` : ""; }
+function csiEraseToEnd() { return haveColor ? "\x1b[0J" : ""; }
+
+const SYM_OK = haveColor ? `${SGR_GREEN}[OK]${SGR_RESET}` : "[OK]";
+const SYM_WARN = haveColor ? `${SGR_YELLOW}[WARN]${SGR_RESET}` : "[WARN]";
+const SYM_FAIL = haveColor ? `${SGR_RED}[FAIL]${SGR_RESET}` : "[FAIL]";
+const SYM_ARROW = haveColor ? `${SGR_CYAN}>${SGR_RESET}` : ">";
+
+function colorGreen(text)  { return haveColor ? `${SGR_GREEN}${text}${SGR_RESET}` : text; }
+function colorYellow(text) { return haveColor ? `${SGR_YELLOW}${text}${SGR_RESET}` : text; }
+function colorRed(text)    { return haveColor ? `${SGR_RED}${text}${SGR_RESET}` : text; }
+function colorCyan(text)   { return haveColor ? `${SGR_CYAN}${text}${SGR_RESET}` : text; }
+function colorDim(text)    { return haveColor ? `${SGR_DIM}${text}${SGR_RESET}` : text; }
+function colorBold(text)   { return haveColor ? `${SGR_BOLD}${text}${SGR_RESET}` : text; }
+
+const STATUS_LINES = 7;
+
+// Interactive arrow-key menu using readline.emitKeypressEvents for proper
+// terminal mode integration. Returns selected index (0-based), or -1 on cancel.
+let _keypressSetup = false;
+let _captureKeypress = false;
+const _keypressQueue = [];
+const _keypressWaiters = [];
+function _ensureKeypress() {
+  if (!_keypressSetup && ttyIn) {
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.on("keypress", (str, key) => {
+      if (!_captureKeypress) { return; }
+      const ev = { str, key };
+      const waiter = _keypressWaiters.shift();
+      if (waiter) {
+        waiter(ev);
+      } else {
+        _keypressQueue.push(ev);
+      }
+    });
+    _keypressSetup = true;
+  }
+}
+
+function _waitKey() {
+  const queued = _keypressQueue.shift();
+  if (queued) {
+    return Promise.resolve(queued);
+  }
+  return new Promise((resolve) => {
+    _keypressWaiters.push(resolve);
+  });
+}
+
+async function interactiveSelect(rl, options, prompt_) {
+  // Non-TTY: use numbered line-input fallback
+  if (!ttyIn) {
+    refreshTui(tuiState);
+    let menu = "\n";
+    for (let i = 0; i < options.length; i++) {
+      menu += `    ${i + 1}. ${options[i]}\n`;
+    }
+    menu += `\n${colorDim("1-" + options.length + " choose, q back")}`;
+    process.stdout.write(menu);
+    const line = await new Promise((resolve) => rl.question("> ", resolve));
+    const trimmed = line.trim();
+    if (trimmed === "q" || trimmed === "") { return -1; }
+    const num = parseInt(trimmed, 10);
+    if (num >= 1 && num <= options.length) { return num - 1; }
+    return -1;
+  }
+
+  // TTY: keypress-based arrow-key selection. Raw mode is scoped to this menu
+  // so later readline.question() prompts keep normal line-input behavior.
+  _ensureKeypress();
+  try { process.stdin.setRawMode(true); } catch (_) { /* ignore */ }
+  process.stdin.resume();
+  _keypressQueue.length = 0;
+  _keypressWaiters.length = 0;
+  _captureKeypress = true;
+  let selected = 0;
+  const promptStr = prompt_ || "";
+
+  try {
+    while (true) {
+      refreshTui(tuiState);
+      let menu = "\n";
+      for (let i = 0; i < options.length; i++) {
+        if (i === selected) {
+          menu += `  \x1b[7m   ${options[i]}   \x1b[0m\n`;
+        } else {
+          menu += `    ${options[i]}\n`;
+        }
+      }
+      menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
+      process.stdout.write(menu);
+
+      const ev = await _waitKey();
+
+      if (ev.key && ev.key.name === "up") {
+        selected = selected > 0 ? selected - 1 : options.length - 1;
+      } else if (ev.key && ev.key.name === "down") {
+        selected = selected < options.length - 1 ? selected + 1 : 0;
+      } else if (ev.key && ev.key.name === "return") {
+        return selected;
+      } else if (ev.str === "q" || (ev.key && ev.key.name === "escape")) {
+        return -1;
+      } else if (ev.str === "b") {
+        tuiState.backend = cycleBackend(tuiState.backend);
+      }
+      // Unknown key: ignore, re-render
+    }
+  } finally {
+    _captureKeypress = false;
+    _keypressQueue.length = 0;
+    _keypressWaiters.length = 0;
+    try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
+  }
+}
+
 const crc32Table = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -3107,10 +3249,10 @@ function checkBackendTargetPaths(context) {
   const summary = checkPathsExistSummary(context);
   if (summary.conflicts.length > 0) {
     throw new Error(
-      `[${context.backend}] found ${summary.conflicts.length} conflicting target path(s)\n\n${formatPathConflicts(summary.conflicts)}`,
+      `[${context.backend}] found ${summary.conflicts.length} pre-existing path(s) — prune first\n\n${formatPathConflicts(summary.conflicts)}`,
     );
   }
-  console.log(`[${context.backend}] ok: no conflicting target paths at ${summary.targetRoot}`);
+  console.log(`[${context.backend}] ok: no pre-existing paths at ${summary.targetRoot}`);
 }
 
 async function runNodeUpdateYes(args) {
@@ -3134,12 +3276,12 @@ function runNodeCheckPathsExist(args) {
   try {
     const summary = checkPathsExistSummary(buildNodeBackendContext(parsed));
     if (summary.conflicts.length > 0) {
-      console.error(
-        `error: [${summary.backend}] found ${summary.conflicts.length} conflicting target path(s)\n\n${formatPathConflicts(summary.conflicts)}`,
+      console.log(
+        `[${summary.backend}] found ${summary.conflicts.length} existing path(s) — prune first to overwrite\n\n${formatPathConflicts(summary.conflicts)}`,
       );
       return 1;
     }
-    console.log(`[${summary.backend}] ok: no conflicting target paths at ${summary.targetRoot}`);
+    console.log(`[${summary.backend}] ok: no pre-existing paths at ${summary.targetRoot}`);
     return 0;
   } catch (error) {
     console.error(`error: ${error.message}`);
@@ -3676,15 +3818,427 @@ async function pause(rl) {
   await question(rl, "\nPress Enter to return to the installer menu...");
 }
 
-async function runGuidedUpdateFlow(rl, currentBackend) {
-  console.log("\nGuided update flow");
-  console.log(`Step 1: Diagnose current ${currentBackend} install.`);
-  const diagnoseStatus = await runNodeOwned(["diagnose", "--backend", currentBackend, "--json"]);
+// ─── Console capture for TUI-friendly output ──────────────────────────────
+
+function captureConsole(fn) {
+  const origLog = console.log;
+  const origError = console.error;
+  const captured = [];
+  console.log = (...args) => captured.push(args.join(" "));
+  console.error = (...args) => captured.push(args.join(" "));
+  try {
+    const result = fn();
+    // Async: restore in Promise continuation (after async work completes)
+    if (result && typeof result.then === "function") {
+      return result.then(
+        (v) => { console.log = origLog; console.error = origError; return { value: v, captured }; },
+        (e) => { console.log = origLog; console.error = origError; throw e; },
+      );
+    }
+    // Sync: restore now
+    console.log = origLog;
+    console.error = origError;
+    return { value: result, captured };
+  } catch (e) {
+    console.log = origLog;
+    console.error = origError;
+    throw e;
+  }
+}
+
+// ─── Six-stage guided flow (per TUI contract) ────────────────────────────
+// Contract: docs/aw-installer/tui/bundle-default-contract.md
+// Stages: diagnose → preview paths → confirm → install/update → verify → summary
+
+function buildDiagnoseSummary(capturedOutput, backend) {
+  // Try to parse JSON from captured output
+  let diagnosis = null;
+  for (const line of capturedOutput) {
+    try { diagnosis = JSON.parse(line); break; } catch (_) { /* not JSON */ }
+  }
+
+  if (!diagnosis || !diagnosis.backends) {
+    return { ok: false, summary: `${SYM_FAIL} Could not parse diagnose output.`, backends: [] };
+  }
+
+  const results = [];
+  const targetBackends = backend === bundleBackend
+    ? [agentsBackend, claudeBackend]
+    : [backend];
+
+  for (const bk of targetBackends) {
+    const bd = diagnosis.backends[bk];
+    if (!bd) {
+      results.push({ backend: bk, ok: false, skillCount: 0, issueCount: 0, issues: [] });
+      continue;
+    }
+    results.push({
+      backend: bk,
+      ok: bd.issue_count === 0,
+      skillCount: bd.managed_install_count || 0,
+      issueCount: bd.issue_count || 0,
+      conflictCount: bd.conflict_count || 0,
+      issues: (bd.issues || []).slice(0, 5),
+    });
+  }
+  return { ok: results.every((r) => r.ok), summary: null, backends: results };
+}
+
+function checkAwHealth() {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const awDir = path.join(process.cwd(), ".aw");
+  const checks = [];
+
+  // .aw directory existence
+  if (!fs.existsSync(awDir)) {
+    return [{ item: ".aw directory", ok: false, detail: "missing — Harness not initialized" }];
+  }
+
+  // milestone dir
+  const msDir = path.join(awDir, "milestone");
+  if (fs.existsSync(msDir)) {
+    try {
+      const files = fs.readdirSync(msDir).filter((f) => f.endsWith(".md") && f !== "milestone-template.md");
+      checks.push({ item: "milestones", ok: true, detail: `${files.length} artifacts` });
+    } catch (_) {
+      checks.push({ item: "milestones", ok: false, detail: "unreadable" });
+    }
+  } else {
+    checks.push({ item: "milestones", ok: false, detail: "missing" });
+  }
+
+  // control-state
+  const cs = path.join(awDir, "control-state.md");
+  checks.push({
+    item: "control-state",
+    ok: fs.existsSync(cs),
+    detail: fs.existsSync(cs) ? "present" : "missing",
+  });
+
+  // worktrack dir
+  const wtDir = path.join(awDir, "worktrack");
+  if (fs.existsSync(wtDir)) {
+    try {
+      const wts = fs.readdirSync(wtDir).filter((f) => f.endsWith(".md"));
+      checks.push({ item: "worktrack artifacts", ok: true, detail: `${wts.length} files` });
+    } catch (_) {
+      checks.push({ item: "worktrack artifacts", ok: false, detail: "unreadable" });
+    }
+  } else {
+    checks.push({ item: "worktrack artifacts", ok: false, detail: "missing" });
+  }
+
+  // repo backlogs
+  const repoDir = path.join(awDir, "repo");
+  if (fs.existsSync(repoDir)) {
+    const backlogs = ["milestone-backlog.md", "worktrack-backlog.md", "snapshot-status.md"];
+    for (const bl of backlogs) {
+      const exists = fs.existsSync(path.join(repoDir, bl));
+      checks.push({ item: bl.replace(".md", ""), ok: exists, detail: exists ? "present" : "missing" });
+    }
+  }
+
+  return checks;
+}
+
+async function guidedDiagnose(rl, state) {
+  state.currentStep = "1/6 diagnose";
+  refreshTui(state);
+  console.log(`${SYM_ARROW} Diagnosing ${colorCyan(state.backend)} install...`);
+
+  const { captured } = await captureConsole(
+    () => runNodeOwned(["diagnose", "--backend", state.backend, "--json"]),
+  );
+
+  const diag = buildDiagnoseSummary(captured, state.backend);
+  const awChecks = checkAwHealth();
+
+  // ── Backend health ──
+  console.log(`\n  ${colorBold("Backend Health")}`);
+  for (const bk of diag.backends) {
+    const icon = bk.ok ? SYM_OK : (bk.conflictCount > 0 ? SYM_WARN : SYM_FAIL);
+    console.log(`  ${icon} ${colorCyan(bk.backend)}: ${bk.skillCount} skills installed, ${bk.issueCount} issues, ${bk.conflictCount} conflicts`);
+    if (!bk.ok && bk.issues.length > 0) {
+      for (const iss of bk.issues.slice(0, 3)) {
+        console.log(`     ${colorDim("- " + (iss.skill || iss.code || JSON.stringify(iss)))}`);
+      }
+      if (bk.issues.length > 3) console.log(`     ${colorDim("... and " + (bk.issues.length - 3) + " more")}`);
+    }
+  }
+
+  // ── .aw health ──
+  console.log(`\n  ${colorBold(".aw Control-plane Health")}`);
+  for (const ck of awChecks) {
+    const icon = ck.ok ? SYM_OK : SYM_FAIL;
+    console.log(`  ${icon} ${ck.item}: ${ck.detail}`);
+  }
+
+  const overallOk = diag.ok && awChecks.every((c) => c.ok);
+  if (overallOk) {
+    console.log(`\n${SYM_OK} All checks passed.`);
+  } else {
+    console.log(`\n${SYM_WARN} Some checks found issues. Diagnose is not a blocking gate — you may continue.`);
+  }
+  return true;
+}
+
+async function guidedPreviewPaths(rl, state) {
+  state.currentStep = "2/6 preview";
+  refreshTui(state);
+  console.log(`${SYM_ARROW} Checking paths for ${colorCyan(state.backend)}...`);
+
+  const { captured } = await captureConsole(
+    () => runNodeOwned(["check_paths_exist", "--backend", state.backend]),
+  );
+
+  // Parse conflict summary from captured output
+  let totalConflicts = 0;
+  const perBackend = {};
+  for (const line of captured) {
+    const m = line.match(/\[(\w+)\].*found (\d+) existing/);
+    if (m) {
+      perBackend[m[1]] = parseInt(m[2], 10);
+      totalConflicts += parseInt(m[2], 10);
+    }
+  }
+
+  if (totalConflicts > 0) {
+    console.log(`\n${SYM_ARROW} ${totalConflicts} pre-existing path(s) — already installed:`);
+    for (const [bk, count] of Object.entries(perBackend)) {
+      console.log(`    ${colorCyan(bk)}: ${count} paths`);
+    }
+
+    // Split captured multi-line strings, extract only pre-existing path detail lines
+    const allLines = captured.flatMap((s) => s.split("\n"));
+    const existingLines = allLines.filter((l) => l.includes("existing target path"));
+    if (existingLines.length > 0) {
+      console.log(`\n  ${colorDim("Sample:")}`);
+      for (const cl of existingLines.slice(0, 4)) {
+        const short = cl.replace(/^\s*-\s*/, "").replace(/ \(existing.*\)/, "").trim();
+        const parts = short.split("/");
+        const compact = parts.length > 3 ? ".../" + parts.slice(-3).join("/") : short;
+        console.log(`  ${colorDim("  " + compact)}`);
+      }
+      if (existingLines.length > 4) {
+        console.log(`  ${colorDim("  ... and " + (existingLines.length - 4) + " more")}`);
+      }
+    }
+
+    const choice = (await question(
+      rl,
+      `${SYM_ARROW} Run ${colorYellow("prune --all")} to clear before install? [${colorYellow("c")}=cancel / ${colorYellow("prune")}=prune] `,
+    )).trim().toLowerCase();
+    if (choice === "prune") {
+      console.log(`\n${SYM_ARROW} Running prune --all --backend ${state.backend}...`);
+      await runNodeOwned(["prune", "--all", "--backend", state.backend]);
+      console.log(`${SYM_OK} Prune complete. Re-checking paths...`);
+      return guidedPreviewPaths(rl, state);
+    }
+    console.log("Guided flow cancelled.");
+    return false;
+  }
+
+  console.log(`${SYM_OK} No pre-existing paths — ready to install.`);
+  return true;
+}
+
+async function guidedConfirm(rl, state) {
+  state.currentStep = "3/6 confirm";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Ready to install/update ${colorCyan(state.backend)}.`);
+  console.log(`  Target repo: ${colorDim(state.targetRepo)}`);
+  console.log(`  Source:      ${state.source}`);
+
+  const confirmation = (await question(
+    rl,
+    `\n${SYM_ARROW} Type ${colorYellow("yes")} to proceed, anything else to cancel: `,
+  )).trim();
+  if (confirmation !== "yes") {
+    console.log("Guided flow cancelled. No changes made.");
+    return false;
+  }
+  return true;
+}
+
+async function guidedInstall(rl, state) {
+  state.currentStep = "4/6 install";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Installing ${colorCyan(state.backend)}...`);
+  const status = await runNodeOwned(["install", "--backend", state.backend]);
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Install failed for ${state.backend}.`);
+    if (state.backend === bundleBackend) {
+      console.log(`${SYM_WARN} Bundle partial: try single-backend recovery with ${colorYellow("aw-installer install --backend agents")} or ${colorYellow("--backend claude")}.`);
+    }
+    return false;
+  }
+  console.log(`${SYM_OK} Install complete for ${state.backend}.`);
+  return true;
+}
+
+async function guidedVerify(rl, state) {
+  state.currentStep = "5/6 verify";
+  refreshTui(state);
+  state.verifyResult = "running...";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Verifying ${colorCyan(state.backend)}...`);
+  const status = await runNodeOwned(["verify", "--backend", state.backend]);
+  state.verifyResult = status === 0 ? "passed" : "failed";
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Verification failed. Summary will be marked incomplete.`);
+    return false;
+  }
+  console.log(`${SYM_OK} Verification passed.`);
+  return true;
+}
+
+async function showRecoveryMenu(rl, state, failedStage, detail) {
+  state.currentStep = "recovery";
+  state.recoveryAttempts = (state.recoveryAttempts || 0) + 1;
+  refreshTui(state);
+  console.log("\n" + SYM_FAIL + " " + colorRed("Stage failed: " + failedStage));
+  if (detail) { console.log("  " + colorDim(detail)); }
+  console.log("\n" + colorBold("Recovery options:"));
+  console.log("  1. Retry this stage");
+  console.log("  2. Restart full guided flow");
+  if (state.backend === bundleBackend && failedStage === "install") {
+    console.log("  3. Retry single backend — " + colorYellow("aw-installer install --backend agents"));
+    console.log("  4. Retry single backend — " + colorYellow("aw-installer install --backend claude"));
+  }
+  console.log("  c. Cancel and return to menu");
+  const maxOpt = (state.backend === bundleBackend && failedStage === "install") ? "4" : "2";
+  const choice = (await question(
+    rl,
+    "\n" + SYM_ARROW + " Choose recovery action [1-" + maxOpt + "/c]: ",
+  )).trim().toLowerCase();
+  if (choice === "1") { return "retry"; }
+  if (choice === "2") { return "restart"; }
+  if (choice === "3" && state.backend === bundleBackend && failedStage === "install") { return "retry-agents"; }
+  if (choice === "4" && state.backend === bundleBackend && failedStage === "install") { return "retry-claude"; }
+  return "cancel";
+}
+
+async function guidedSummary(rl, state, results) {
+  state.currentStep = "6/6 summary";
+  refreshTui(state);
+  const ok = results.every(Boolean);
+  const sep = "=".repeat(50);
+  console.log("\n" + sep);
+  if (ok) {
+    console.log(SYM_OK + " " + colorBold("All stages completed successfully."));
+    console.log("  Backend:    " + colorCyan(state.backend));
+    console.log("  Version:    " + state.version);
+    console.log("  Target:     " + colorDim(state.targetRepo));
+    console.log("  Verify:     " + statusSymbol(results[4]) + " " + state.verifyResult);
+    console.log("\n  " + SYM_OK + " " + colorGreen("Installation ready."));
+    if (state.backend === bundleBackend) {
+      console.log("  " + colorDim("Both agents and claude backends are deployed."));
+    }
+  } else {
+    console.log(SYM_FAIL + " " + colorBold("Guided flow incomplete — partial state."));
+    var stageNames = ["diagnose", "preview", "confirm", "install", "verify"];
+    results.forEach(function(pass, i) {
+      console.log("  " + statusSymbol(pass) + " Stage " + (i + 1) + ": " + stageNames[i]);
+    });
+    console.log("\n" + SYM_WARN + " Recovery options:");
+    if (!results[3] && state.backend === bundleBackend) {
+      console.log("  → " + colorYellow("aw-installer install --backend agents") + "  (retry single backend)");
+      console.log("  → " + colorYellow("aw-installer install --backend claude") + "  (retry single backend)");
+    }
+    if (!results[4]) {
+      console.log("  → " + colorYellow("aw-installer verify --backend " + state.backend) + "  (re-verify)");
+    }
+    console.log("  → Re-run guided flow from TUI menu (option 1)");
+    state.recoveryHint = results[3] ? "verify" : "install";
+    state.failedStages = stageNames.filter(function(_, i) { return !results[i]; });
+  }
+  console.log(sep);
+  return ok;
+}
+
+async function runGuidedFullFlow(rl, state) {
+  state.recoveryAttempts = 0;
+  state.recoveryHint = null;
+  const results = [false, false, false, false, false];
+
+  // Stage 1: Diagnose (non-blocking)
+  results[0] = await guidedDiagnose(rl, state);
+  await pause(rl);
+
+  // Stage 2: Preview paths (blocking)
+  results[1] = await guidedPreviewPaths(rl, state);
+  if (!results[1]) {
+    const action = await showRecoveryMenu(rl, state, "preview", "Path conflicts must be resolved.");
+    if (action === "restart") { return runGuidedFullFlow(rl, state); }
+    return;
+  }
+  await pause(rl);
+
+  // Stage 3: Confirm (explicit gate)
+  results[2] = await guidedConfirm(rl, state);
+  if (!results[2]) { return; }
+
+  // Stage 4: Install with recovery loop
+  let installOk = false;
+  while (!installOk) {
+    results[3] = await guidedInstall(rl, state);
+    if (!results[3]) {
+      const action = await showRecoveryMenu(rl, state, "install",
+        "Install failed for " + state.backend + ".");
+      if (action === "retry") { continue; }
+      if (action === "retry-agents") {
+        console.log("\n" + SYM_ARROW + " Retrying agents only...");
+        await runNodeOwned(["install", "--backend", "agents"]);
+        continue;
+      }
+      if (action === "retry-claude") {
+        console.log("\n" + SYM_ARROW + " Retrying claude only...");
+        await runNodeOwned(["install", "--backend", "claude"]);
+        continue;
+      }
+      if (action === "restart") { return runGuidedFullFlow(rl, state); }
+      break;
+    }
+    installOk = true;
+  }
+
+  if (installOk) {
+    await pause(rl);
+
+    // Stage 5: Verify with recovery
+    results[4] = await guidedVerify(rl, state);
+    if (!results[4]) {
+      const action = await showRecoveryMenu(rl, state, "verify",
+        "Verification found issues for " + state.backend + ".");
+      if (action === "retry") {
+        results[4] = await guidedVerify(rl, state);
+      } else if (action === "restart") {
+        return runGuidedFullFlow(rl, state);
+      }
+    }
+  }
+
+  await pause(rl);
+
+  // Stage 6: Summary
+  await guidedSummary(rl, state, results);
+  await pause(rl);
+}
+
+// Legacy compact guided update (single command: update --yes)
+async function runGuidedUpdateFlow(rl, state) {
+  const backend = state.backend;
+
+  state.currentStep = "update:diagnose";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Step 1: Diagnose current ${backend} install.`);
+  const diagnoseStatus = await runNodeOwned(["diagnose", "--backend", backend, "--json"]);
   if (diagnoseStatus !== 0) {
-    console.log("Diagnose failed; update may not succeed as expected.");
+    console.log(`${SYM_WARN} Diagnose found issues — update may not succeed as expected.`);
     const proceed = (await question(
       rl,
-      "Continue with update dry-run anyway? Type yes to continue: ",
+      `${SYM_ARROW} Continue anyway? Type ${colorYellow("yes")} to continue: `,
     )).trim();
     if (proceed !== "yes") {
       console.log("Update cancelled.");
@@ -3693,21 +4247,32 @@ async function runGuidedUpdateFlow(rl, currentBackend) {
     }
   }
 
-  console.log("\nStep 2: Review update dry-run plan.");
-  const dryRunStatus = await runNodeOwned(["update", "--backend", currentBackend]);
+  state.currentStep = "update:preview";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Step 2: Review update dry-run plan.`);
+  const dryRunStatus = await runNodeOwned(["update", "--backend", backend]);
   if (dryRunStatus !== 0) {
-    console.log("Update plan failed; not applying.");
+    console.log(`${SYM_FAIL} Update plan failed; not applying.`);
     await pause(rl);
     return;
   }
 
+  state.currentStep = "update:confirm";
+  refreshTui(state);
   const confirmation = (await question(
     rl,
-    "Step 3: Type yes to apply update via prune --all -> check_paths_exist -> install -> verify: ",
+    `${SYM_ARROW} Step 3: Type ${colorYellow("yes")} to apply: `,
   )).trim();
   if (confirmation === "yes") {
-    console.log("\nStep 4: Applying update and running strict verify.");
-    await runNodeOwned(["update", "--backend", currentBackend, "--yes"]);
+    state.currentStep = "update:install";
+    refreshTui(state);
+    console.log(`\n${SYM_ARROW} Step 4: Applying update.`);
+    await runNodeOwned(["update", "--backend", backend, "--yes"]);
+    state.currentStep = "update:verify";
+    refreshTui(state);
+    state.verifyResult = "running...";
+    const vStatus = await runNodeOwned(["verify", "--backend", backend]);
+    state.verifyResult = vStatus === 0 ? "passed" : "failed";
   } else {
     console.log("Update cancelled.");
   }
@@ -3721,63 +4286,150 @@ function cycleBackend(current) {
   return backendCycle[(index + 1) % backendCycle.length];
 }
 
+// Fixed-layout TUI state
+let tuiState = null;
+
+function initTuiState(backend, version, source, targetRepo) {
+  return {
+    version: version || "unknown",
+    source: source || packageSource,
+    targetRepo: targetRepo || process.cwd(),
+    backend: backend,
+    currentStep: "menu",
+    verifyResult: "not yet run",
+  };
+}
+
+const LINE_SEPARATOR = haveColor
+  ? `${SGR_DIM}${"─".repeat(Math.min(process.stdout.columns || 80, 120))}${SGR_RESET}`
+  : `${"-".repeat(Math.min(process.stdout.columns || 80, 120))}`;
+
+function renderStatusBar(state) {
+  const cols = process.stdout.columns || 80;
+  const width = Math.min(cols, 120);
+  const version = state.version.length > 20 ? state.version.slice(0, 19) + "…" : state.version;
+  const repo = state.targetRepo.length > width - 18
+    ? "..." + state.targetRepo.slice(-(width - 21))
+    : state.targetRepo;
+
+  const lines = [
+    `${colorBold("AW Installer")}  ${colorDim("v" + version)}`,
+    `${SYM_ARROW} ${state.currentStep}  |  backend: ${colorCyan(state.backend)}  |  source: ${state.source}`,
+    `repo: ${colorDim(repo)}`,
+    LINE_SEPARATOR,
+    "",
+    "",
+    "",
+  ];
+
+  // Pad status area to exactly STATUS_LINES
+  while (lines.length < STATUS_LINES) {
+    lines.push("");
+  }
+
+  process.stdout.write(
+    `${CSI_SAVE_CURSOR}${csiCursorTo(0, 0)}${CSI_HIDE_CURSOR}${
+      lines.slice(0, STATUS_LINES).join("\n")
+    }${CSI_SHOW_CURSOR}${CSI_RESTORE_CURSOR}`,
+  );
+}
+
+function writeContent(text) {
+  process.stdout.write(`${CSI_SAVE_CURSOR}${csiCursorTo(STATUS_LINES + 1, 0)}${csiEraseToEnd()}${text}${CSI_RESTORE_CURSOR}`);
+}
+
+function refreshTui(state) {
+  if (!ttyOut) return;
+  renderStatusBar(state);
+  process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
+  process.stdout.write(csiEraseToEnd());
+}
+
+function statusSymbol(pass) {
+  return pass ? SYM_OK : SYM_FAIL;
+}
+
 async function runTui() {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!ttyIn || !ttyOut) {
     console.error("aw-installer tui requires an interactive terminal.");
     return 1;
   }
 
+  const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
+  const targetRepo = process.env.AW_HARNESS_TARGET_REPO_ROOT || process.cwd();
+
+  // Bundle default per TUI contract
+  tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
+    terminal: true,
   });
 
-  let currentBackend = agentsBackend;
-
   try {
+    process.stdout.write(CSI_CLEAR_SCREEN);
+    process.stdout.write(CSI_HIDE_CURSOR);
+
+    const menuOptions = [
+      "Guided install/update (6-stage: diagnose → preview → confirm → install → verify → summary)",
+      "Quick update (compact 4-step)",
+      "Diagnose current install",
+      "Verify current install",
+      "Show update dry-run plan",
+      "Exit",
+    ];
+
     while (true) {
-      console.log(`
-AW Installer
-Backend: ${currentBackend}  (press b to switch: ${backendCycle.join(" / ")})
+      tuiState.currentStep = "menu";
+      refreshTui(tuiState);
+      process.stdout.write(`\n${colorBold("TUI Menu")}  ${colorDim("backend: " + tuiState.backend + "  |  b to cycle: " + backendCycle.join("/"))}\n`);
 
-1. Guided update flow
-2. Diagnose current install
-3. Verify current install
-4. Show update dry-run plan
-5. Show CLI help
-6. Exit
-`);
-      const choice = (await question(rl, "Select an action: ")).trim().toLowerCase();
+      const idx = await interactiveSelect(rl, menuOptions, " ");
 
-      if (choice === "b") {
-        currentBackend = cycleBackend(currentBackend);
-        continue;
+      if (idx === -1) { break; }
+
+      if (idx === 0) {
+        await runGuidedFullFlow(rl, tuiState);
+      } else if (idx === 1) {
+        tuiState.currentStep = "guided-update";
+        await runGuidedUpdateFlow(rl, tuiState);
+      } else if (idx === 2) {
+        tuiState.currentStep = "diagnose";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
+        await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
+        await pause(rl);
+      } else if (idx === 3) {
+        tuiState.currentStep = "verify";
+        tuiState.verifyResult = "running...";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running verify --backend ${tuiState.backend}...\n`);
+        const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
+        tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
+        await pause(rl);
+      } else if (idx === 4) {
+        tuiState.currentStep = "dry-run";
+        refreshTui(tuiState);
+        process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
+        await runNodeOwned(["update", "--backend", tuiState.backend]);
+        await pause(rl);
+      } else if (idx === 5) {
+        break;
       }
 
-      if (choice === "1") {
-        await runGuidedUpdateFlow(rl, currentBackend);
-      } else if (choice === "2") {
-        await runNodeOwned(["diagnose", "--backend", currentBackend, "--json"]);
-        await pause(rl);
-      } else if (choice === "3") {
-        await runNodeOwned(["verify", "--backend", currentBackend]);
-        await pause(rl);
-      } else if (choice === "4") {
-        await runNodeOwned(["update", "--backend", currentBackend]);
-        await pause(rl);
-      } else if (choice === "5") {
-        printHelp();
-        await pause(rl);
-      } else if (choice === "6" || choice === "q" || choice === "quit" || choice === "exit") {
-        return 0;
-      } else {
-        console.log("Unknown selection.");
-      }
+      tuiState.currentStep = "menu";
     }
+    return 0;
   } finally {
+    process.stdout.write(CSI_SHOW_CURSOR);
+    process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
+    process.stdout.write(csiEraseToEnd());
+    try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
     rl.close();
   }
 }
+
 
 async function main() {
   const args = process.argv.slice(2);
