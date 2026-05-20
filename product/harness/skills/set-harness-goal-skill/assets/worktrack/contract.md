@@ -24,6 +24,20 @@
 - gate_criteria:
 - if_interrupted_strategy:
 
+## Worktrack Intake Review
+
+> Milestone 派生 worktrack 必须引用 RepoScope.Decide 的 pre-init intake review。
+
+- worktrack_intake_review:
+- repo_fundamentals:
+- snapshot_freshness:
+- milestone_purpose_alignment:
+- historical_conflict_risk:
+- worktrack_adjustment_recommendations:
+- add_remove_worktrack_recommendations:
+- intake_review_verdict:
+- ready_for_worktrack_init:
+
 ## Execution Policy
 
 > Execution Policy canonical semantics are not repeated here. Use `execution_policy_contract_ref` as the authority reference.

@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Control Loop
 status: active
-updated: 2026-05-16
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-16
+last_verified: 2026-05-20
 ---
 
 # Harness Runtime Control Loop
@@ -38,6 +38,7 @@ Milestone Pipeline 是 RepoScope 下的中短期目标队列：多个 milestone 
 ```text
 RepoScope.Observe
 -> RepoScope.Decide
+-> Worktrack Intake Review
 -> WorktrackScope.Init
 -> WorktrackScope.Observe
 -> WorktrackScope.Decide
@@ -51,6 +52,19 @@ RepoScope.Observe
 ```
 
 有 active milestone 时，每个 current worktrack 都走自己的完整闭环；milestone 通过这些独立闭环的累计结果形成聚合进度、Milestone Gate 输入和最终完成判定。
+
+`Worktrack Intake Review` 是 RepoScope.Decide 输出的一部分，不是 WorktrackScope 内部执行步骤。从 active milestone 派生 current worktrack 前，必须形成 `worktrack_intake_review`，并覆盖：
+
+- `repo_fundamentals`
+- `snapshot_freshness`
+- `milestone_purpose_alignment`
+- `historical_conflict_risk`
+- `worktrack_adjustment_recommendations`
+- `add_remove_worktrack_recommendations`
+- `intake_review_verdict`
+- `ready_for_worktrack_init`
+
+只有 `intake_review_verdict = ready_for_worktrack_init` 且 `ready_for_worktrack_init = true` 时，才允许进入 `WorktrackScope.Init`。`refresh_required` 回到 RepoScope 观察/刷新；`adjust_worktracks` 回到 milestone/worktrack backlog 调整或 programmer 审批；`blocked` 停止并暴露继续阻塞项。
 
 ## Continuous Execution
 
@@ -66,6 +80,7 @@ RepoScope.Observe
 
 - 需要 programmer 批准的 goal change、scope expansion、destructive action 或 authority boundary
 - goal-driven milestone 激活前的结构化 brief 需要 programmer 确认
+- `worktrack_intake_review` 缺失、过时、字段不全，或 `intake_review_verdict` 为 `refresh_required` / `adjust_worktracks` / `blocked`
 - 必需 artifact / evidence 缺失、过时或互相冲突
 - `Gate` 给出 `soft-fail`、`hard-fail` 或 `blocked`
 - host runtime 没有合法 execution carrier / dispatch shell

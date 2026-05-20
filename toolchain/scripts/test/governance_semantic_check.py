@@ -346,6 +346,36 @@ REPO_WHATS_NEXT_OVERVIEW_FALLBACK_REQUIRED_TERMS = [
     "不创建工作追踪",
     "不改变 Harness 控制状态",
 ]
+WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/artifact/worktrack/contract.md",
+]
+WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS = [
+    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
+    "product/.aw_template/worktrack/contract.md",
+]
+WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS = [
+    "worktrack_intake_review",
+    "repo_fundamentals",
+    "snapshot_freshness",
+    "milestone_purpose_alignment",
+    "historical_conflict_risk",
+    "worktrack_adjustment_recommendations",
+    "add_remove_worktrack_recommendations",
+    "intake_review_verdict",
+    "ready_for_worktrack_init",
+]
+WORKTRACK_INTAKE_REVIEW_VERDICTS = [
+    "ready_for_worktrack_init",
+    "refresh_required",
+    "adjust_worktracks",
+    "blocked",
+]
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -968,6 +998,41 @@ def check_repo_whats_next_overview_fallback_contract(
     report.add_info(f"checked {checked} repo whats-next overview fallback sources")
 
 
+def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack intake review contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack intake review contract missing required term {term!r}: {relative_path}"
+                )
+        for verdict in WORKTRACK_INTAKE_REVIEW_VERDICTS:
+            if verdict not in text:
+                report.add_failure(
+                    f"worktrack intake review contract missing verdict {verdict!r}: {relative_path}"
+                )
+
+    for relative_path in WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack intake review template source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack intake review template missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} worktrack intake review contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1283,6 +1348,7 @@ def main() -> int:
     check_decision_traceability_contract(repo_root, report)
     check_closeout_record_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
+    check_worktrack_intake_review_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)

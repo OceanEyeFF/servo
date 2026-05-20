@@ -33,6 +33,7 @@ from governance_semantic_check import (
     check_runtime_artifact_consistency,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
+    check_worktrack_intake_review_contract,
     is_bytecode_free_command_excluded,
 )
 
@@ -368,6 +369,61 @@ def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(tmp
     check_repo_whats_next_overview_fallback_contract(tmp_path, report)
 
     assert any("不改变 Harness 控制状态" in item for item in report.failures)
+
+
+def _write_worktrack_intake_review_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/artifact/worktrack/contract.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
+        "product/.aw_template/worktrack/contract.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_worktrack_intake_review_contract_flags_missing_field(tmp_path: Path) -> None:
+    _write_worktrack_intake_review_sources(
+        tmp_path,
+        "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\nready_for_worktrack_init\n"
+        "ready_for_worktrack_init\nrefresh_required\nadjust_worktracks\nblocked\n",
+    )
+    write_doc(
+        tmp_path / "docs/harness/artifact/worktrack/contract.md",
+        "worktrack_intake_review\nrepo_fundamentals\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\n"
+        "ready_for_worktrack_init\nrefresh_required\nadjust_worktracks\nblocked\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_intake_review_contract(tmp_path, report)
+
+    assert any("snapshot_freshness" in item for item in report.failures)
+
+
+def test_check_worktrack_intake_review_contract_accepts_complete_sources(tmp_path: Path) -> None:
+    _write_worktrack_intake_review_sources(
+        tmp_path,
+        "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\nready_for_worktrack_init\n"
+        "refresh_required\nadjust_worktracks\nblocked\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_intake_review_contract(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_adapter_wrappers_are_thin_ignores_absent_adapter_layer(tmp_path: Path) -> None:

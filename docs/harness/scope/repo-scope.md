@@ -1,9 +1,9 @@
 ---
 title: "RepoScope 管理文档"
 status: active
-updated: 2026-05-17
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-17
+last_verified: 2026-05-20
 ---
 # RepoScope 管理文档
 
@@ -65,13 +65,14 @@ RepoScope.Decide 基于观测结果做出以下判定：
 | 判定 | 条件 | 动作 |
 |------|------|------|
 | 保持观察 | 无活跃 milestone，或无待执行 worktrack | 回到 Observe |
-| 进入 WorktrackScope | 存在活跃 milestone 且有待执行 worktrack | Init WorktrackScope，派生当前 worktrack |
+| 进入 WorktrackScope | 存在活跃 milestone、有待执行 worktrack，且 `worktrack_intake_review.ready_for_worktrack_init == true` | Init WorktrackScope，派生当前 worktrack |
 | Handback | Milestone 所有 worktrack 已完成，等待 programmer 验收 | 停止，返回控制权 |
 
 **关键约束**：
 - `ChangeGoal` 不由常规 Decide 选择；目标变更由外部 `GoalChangeRequest` 触发
 - Milestone brief 必须经 programmer 确认后才能激活 goal-driven milestone
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
+- 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 
 ## RepoScope ↔ WorktrackScope 切换
 
@@ -80,12 +81,23 @@ RepoScope.Decide 基于观测结果做出以下判定：
 触发条件：
 1. `repo-whats-next-skill` 输出建议进入 WorktrackScope
 2. 存在活跃 milestone 且有待初始化的 worktrack
-3. 当前无阻塞条件（审批、证据缺失、运行时缺口）
+3. `worktrack_intake_review.intake_review_verdict` 为 `ready_for_worktrack_init`
+4. 当前无阻塞条件（审批、证据缺失、运行时缺口）
+
+进入前审查：
+- `repo_fundamentals`：确认当前 milestone、目标/非目标、baseline、已闭环 worktrack 与禁止项仍一致
+- `snapshot_freshness`：确认 Repo Snapshot/Status、Control State、milestone-backlog、worktrack-backlog 与 git HEAD 足够新鲜；否则 verdict 为 `refresh_required`
+- `milestone_purpose_alignment`：确认候选 worktrack 仍服务于 active milestone 的 purpose、completion signals 与 acceptance criteria
+- `historical_conflict_risk`：确认候选 worktrack 不与已关闭 worktrack、既有决策、文档真相或 handback 边界冲突
+- `worktrack_adjustment_recommendations`：说明保持、拆分、合并、改写、推迟或阻塞建议
+- `add_remove_worktrack_recommendations`：说明是否需要新增、移除或重排 worktrack；无变化时写 `none`
+- `intake_review_verdict`：只允许 `ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`
 
 进入动作：
-1. `init-worktrack-skill` 创建 worktrack branch、contract、plan-task-queue、gate-evidence
-2. Control State 切换到 `worktrack_scope`
-3. 控制权移交 WorktrackScope 控制回路
+1. `init-worktrack-skill` 校验并写入 `worktrack_intake_review`
+2. `init-worktrack-skill` 创建 worktrack branch、contract、plan-task-queue、gate-evidence
+3. Control State 切换到 `worktrack_scope`
+4. 控制权移交 WorktrackScope 控制回路
 
 ### WorktrackScope → RepoScope
 
