@@ -1,6 +1,6 @@
 # AW Template / Repo
 
-`product/.aw_template/repo/` 承接 `.aw/repo/` 下的 repo 级管理文档模板。
+`product/.servo_template/repo/` 承接 `.servo/repo/` 下的 repo 级管理文档模板。
 
 当前入口：
 

@@ -1,6 +1,6 @@
 # Repo Discovery Input
 
-> 这是 `.aw/repo/discovery-input.md` 的模板来源，用于 Existing Code Project Adoption 模式下记录既有代码库的只读事实输入。它不是 goal truth，不替代 `.aw/goal-charter.md`，也不替代 `.aw/repo/snapshot-status.md`。
+> 这是 `.servo/repo/discovery-input.md` 的模板来源，用于 Existing Code Project Adoption 模式下记录既有代码库的只读事实输入。它不是 goal truth，不替代 `.servo/goal-charter.md`，也不替代 `.servo/repo/snapshot-status.md`。
 
 ## Metadata
 
@@ -56,7 +56,7 @@
 
 ## Candidate Goal Signals
 
-> 只记录从既有代码、文档或用户说明中可追溯的候选目标信号。不要把这些条目写成已确认目标；确认后的长期目标只能进入 `.aw/goal-charter.md`。
+> 只记录从既有代码、文档或用户说明中可追溯的候选目标信号。不要把这些条目写成已确认目标；确认后的长期目标只能进入 `.servo/goal-charter.md`。
 
 -
 

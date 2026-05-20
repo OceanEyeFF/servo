@@ -14,7 +14,7 @@
 | [runtime-dispatch-contract.md](./runtime-dispatch-contract.md) | Dispatch / Implement 边界、执行载体选择、dispatch packet 与 fallback 语义 |
 | [runtime-evidence-gate-recovery.md](./runtime-evidence-gate-recovery.md) | Verify / Judge 分离、Gate verdict、Recover route、handback 与交接锁 |
 | [runtime-closeout-refresh.md](./runtime-closeout-refresh.md) | closeout、repo refresh、milestone progress 写回与 pipeline advancement |
-| [runtime-state-hydration.md](./runtime-state-hydration.md) | `.aw/control-state.md` 恢复、authority 配置、baseline traceability 与 autonomy ledger |
+| [runtime-state-hydration.md](./runtime-state-hydration.md) | `.servo/control-state.md` 恢复、authority 配置、baseline traceability 与 autonomy ledger |
 | [dispatch-decision-policy.md](./dispatch-decision-policy.md) | `dispatch_mode: auto` 的执行载体选择策略 |
 | [skill-common-constraints.md](./skill-common-constraints.md) | 所有 Harness Skills 的公共约束定义（C-1 至 C-7） |
 

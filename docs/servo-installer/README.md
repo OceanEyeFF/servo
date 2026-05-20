@@ -74,8 +74,8 @@ operator 执行具体任务时使用。
 
 | 文档 | 说明内容 |
 |------|---------|
-| `managed-files-ownership.md` | 文件所有权分类：installer payload / .aw/ 运行时 / deploy target / 用户自有 |
-| `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.aw/repo/discovery-input.md` 生成边界 |
+| `managed-files-ownership.md` | 文件所有权分类：installer payload / .servo/ 运行时 / deploy target / 用户自有 |
+| `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.servo/repo/discovery-input.md` 生成边界 |
 
 ### tui/ — TUI 合同与实现
 

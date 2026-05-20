@@ -17,7 +17,7 @@
 4. `install --backend agents`
 5. 如需只读复验，再跑 `diagnose --backend agents --json` 或 `verify --backend agents`
 
-`.aw_template` legacy scaffold profile 相关说明：
+`.servo_template` legacy scaffold profile 相关说明：
 
 `first-wave-minimal` 是 legacy profile，生成 `control-state.md`、`goal-charter.md`、`repo/analysis.md`、`repo/snapshot-status.md`、`worktrack/contract.md` 和 `worktrack/plan-task-queue.md`。`worktrack/gate-evidence.md` 可通过单独 template 生成。
 
@@ -58,6 +58,6 @@ GitHub CI 的 `Governance Checks` workflow 也会运行同一组 deploy regressi
 - `diagnose --backend agents --json` 在发现 issue 时仍以 0 退出，并输出结构化摘要
 - `verify` 的 missing / broken symlink / wrong root type 结构错误
 - `verify` 的 source drift、missing payload files、target payload drift 与 conflict / unrecognized 目录
-- `.aw_template` 到 `.aw/` 的 legacy scaffold profile 生成
-- `.aw_template` 的最小结构校验与 overwrite guard
-- `.aw_template` 的 `Engineering Node Map` / `Node Type` 字段漂移校验
+- `.servo_template` 到 `.servo/` 的 legacy scaffold profile 生成
+- `.servo_template` 的最小结构校验与 overwrite guard
+- `.servo_template` 的 `Engineering Node Map` / `Node Type` 字段漂移校验

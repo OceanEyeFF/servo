@@ -45,7 +45,7 @@ const TEMPLATE_SPECS = {
     artifactType: "control-state",
     title: "Harness Control State",
     instanceNote:
-      "这是 `.aw/control-state.md` 的运行样例，用来维护当前 Harness supervisor 的控制面状态，不要把业务真相写进来。",
+      "这是 `.servo/control-state.md` 的运行样例，用来维护当前 Harness supervisor 的控制面状态，不要把业务真相写进来。",
     requiredSections: [
       "Metadata",
       "Current Control Level",
@@ -90,7 +90,7 @@ const TEMPLATE_SPECS = {
     artifactType: "goal-charter",
     title: "Repo Goal / Charter",
     instanceNote:
-      "这是 `.aw/goal-charter.md` 的运行样例，用来记录当前 repo 的长期目标和方向。最终内容应与 `docs/harness/artifact/repo/goal-charter.md` 的定义一致。",
+      "这是 `.servo/goal-charter.md` 的运行样例，用来记录当前 repo 的长期目标和方向。最终内容应与 `docs/harness/artifact/repo/goal-charter.md` 的定义一致。",
     requiredSections: [
       "Metadata",
       "Project Vision",
@@ -122,7 +122,7 @@ const TEMPLATE_SPECS = {
     artifactType: "repo-snapshot-status",
     title: "Repo Snapshot / Status",
     instanceNote:
-      "这是 `.aw/repo/snapshot-status.md` 的运行样例，用来记录当前 repo 的慢变量观测面。最终内容应与 `docs/harness/artifact/repo/snapshot-status.md` 的定义一致。",
+      "这是 `.servo/repo/snapshot-status.md` 的运行样例，用来记录当前 repo 的慢变量观测面。最终内容应与 `docs/harness/artifact/repo/snapshot-status.md` 的定义一致。",
     requiredSections: [
       "Metadata",
       "Mainline Status",
@@ -149,7 +149,7 @@ const TEMPLATE_SPECS = {
     artifactType: "repo-analysis",
     title: "Repo Analysis",
     instanceNote:
-      "这是 `.aw/repo/analysis.md` 的运行样例，用来记录 RepoScope 的阶段性分析与优先级判断。它是决策支撑 artifact，不是 goal truth。",
+      "这是 `.servo/repo/analysis.md` 的运行样例，用来记录 RepoScope 的阶段性分析与优先级判断。它是决策支撑 artifact，不是 goal truth。",
     requiredSections: [
       "Metadata",
       "Facts",
@@ -186,7 +186,7 @@ const TEMPLATE_SPECS = {
     artifactType: "repo-discovery-input",
     title: "Repo Discovery Input",
     instanceNote:
-      "这是 `.aw/repo/discovery-input.md` 的运行样例，用于 Existing Code Project Adoption 模式下记录既有代码库的只读事实输入。它不是 goal truth。",
+      "这是 `.servo/repo/discovery-input.md` 的运行样例，用于 Existing Code Project Adoption 模式下记录既有代码库的只读事实输入。它不是 goal truth。",
     requiredSections: [
       "Metadata",
       "Source Materials",
@@ -247,7 +247,7 @@ const TEMPLATE_SPECS = {
     artifactType: "worktrack-contract",
     title: "Worktrack Contract",
     instanceNote:
-      "这是 `.aw/worktrack/contract.md` 的运行样例，用来填写单个 worktrack 的局部状态转移合同。最终内容应与 `docs/harness/artifact/worktrack/contract.md` 的定义一致。",
+      "这是 `.servo/worktrack/contract.md` 的运行样例，用来填写单个 worktrack 的局部状态转移合同。最终内容应与 `docs/harness/artifact/worktrack/contract.md` 的定义一致。",
     requiredSections: [
       "Metadata",
       "Node Type",
@@ -289,7 +289,7 @@ const TEMPLATE_SPECS = {
     artifactType: "worktrack-plan-task-queue",
     title: "Plan / Task Queue",
     instanceNote:
-      "这是 `.aw/worktrack/plan-task-queue.md` 的运行样例，用来把 worktrack contract 展开成当前执行队列。",
+      "这是 `.servo/worktrack/plan-task-queue.md` 的运行样例，用来把 worktrack contract 展开成当前执行队列。",
     requiredSections: [
       "Metadata",
       "Task List",
@@ -331,7 +331,7 @@ const TEMPLATE_SPECS = {
     artifactType: "worktrack-gate-evidence",
     title: "Gate Evidence",
     instanceNote:
-      "这是 `.aw/worktrack/gate-evidence.md` 的运行样例，用来记录当前 worktrack 的 gate 证据与裁决依据。",
+      "这是 `.servo/worktrack/gate-evidence.md` 的运行样例，用来记录当前 worktrack 的 gate 证据与裁决依据。",
     requiredSections: [
       "Metadata",
       "Review Lane",

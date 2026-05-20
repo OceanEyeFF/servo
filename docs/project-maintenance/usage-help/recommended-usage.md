@@ -17,7 +17,7 @@ Harness Skills 在 CodingAgent 中通过 slash command 调用：
 
 | Skill | 用途 | 调用方式 |
 |-------|------|---------|
-| `set-harness-goal-skill` | 初始化 `.aw/` 并生成 Goal Charter | `/set-harness-goal-skill` |
+| `set-harness-goal-skill` | 初始化 `.servo/` 并生成 Goal Charter | `/set-harness-goal-skill` |
 | `harness-skill` | 启动 Harness 控制回路，逐项推进 Milestone | `/harness-skill` + 参数 |
 | `repo-whats-next-skill` | 分析仓库当前状态，列出候选 Milestone | `/repo-whats-next-skill` |
 | `repo-change-goal-skill` | 修改仓库目标（Goal Charter 变更） | `/repo-change-goal-skill` |

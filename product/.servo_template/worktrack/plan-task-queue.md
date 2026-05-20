@@ -1,6 +1,6 @@
 # Plan / Task Queue
 
-> 这是 `.aw/worktrack/plan-task-queue.md` 的模板来源，用来把 worktrack contract 展开成当前执行队列。
+> 这是 `.servo/worktrack/plan-task-queue.md` 的模板来源，用来把 worktrack contract 展开成当前执行队列。
 
 ## Metadata
 

@@ -39,10 +39,10 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
 ## 工作流
 
 1. **读取当前状态**
-   - 当前 `.aw/goal-charter.md`
+   - 当前 `.servo/goal-charter.md`
    - 当前 Goal Charter 中的 `Engineering Node Map`
-   - 当前 `.aw/repo/snapshot-status.md`
-   - 当前 `.aw/control-state.md`
+   - 当前 `.servo/repo/snapshot-status.md`
+   - 当前 `.servo/control-state.md`
    - 用户提出的变更请求文本
    - 需要时读取活跃 worktrack 产物作为影响面参考
 
@@ -58,7 +58,7 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
 
 3. **生成草案**
    - 输出 `目标变更分析报告`（结构化，使用 `templates/goal-change-request.template.md` 格式）
-   - 输出 `goal-charter 草案`：可直接写入 `.aw/goal-charter.md` 的完整内容
+   - 输出 `goal-charter 草案`：可直接写入 `.servo/goal-charter.md` 的完整内容
    - `goal-charter 草案` 必须保留或重建 `Engineering Node Map`，并显式列出本次变更后的节点类型、baseline 策略、gate 标准和中断处理策略
    - 如果变更幅度为 `major`，额外输出 `baseline 重建建议`
 
@@ -71,12 +71,12 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
    - 如果用户拒绝，返回 `变更被拒绝`，并建议回到 `RepoScope.Observe`
 
 5. **执行改写**（用户确认后）
-   - 改写 `.aw/goal-charter.md` 为确认的草案版本
-   - 更新 `.aw/repo/snapshot-status.md` 的已有字段：
+   - 改写 `.servo/goal-charter.md` 为确认的草案版本
+   - 更新 `.servo/repo/snapshot-status.md` 的已有字段：
      - 更新 `Metadata` 中的 `updated` 和 `status`
      - 在 `Known Issues And Risks` 中追加变更引入的新风险
      - 在 `Notes` 中追加本次变更的简要记录（时间、原因、幅度）
-   - 重置 `.aw/control-state.md` 的控制状态（参考信号已变，所有下游状态必须重新观测）：
+   - 重置 `.servo/control-state.md` 的控制状态（参考信号已变，所有下游状态必须重新观测）：
      - 更新 `Metadata` 中的 `updated`
      - 在 `Notes` 中记录目标变更摘要
      - 将 `Current Control Level` 重置为：
@@ -132,7 +132,7 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
 
 ### goal-charter 草案
 
-- 可直接写入 `.aw/goal-charter.md` 的完整内容
+- 可直接写入 `.servo/goal-charter.md` 的完整内容
 - 与当前版本的差异高亮
 
 ### 执行结果
@@ -147,7 +147,7 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
 
 ## 资源
 
-使用当前 `.aw/goal-charter.md`、`.aw/repo/snapshot-status.md`、`.aw/control-state.md` 与用户提出的变更请求作为分析依据。需要时读取活跃 worktrack 产物作为影响面参考，但不把它们当成 repo 意图的主来源。
+使用当前 `.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md` 与用户提出的变更请求作为分析依据。需要时读取活跃 worktrack 产物作为影响面参考，但不把它们当成 repo 意图的主来源。
 
 当需要整理 `目标变更分析报告` 时，使用 `templates/goal-change-request.template.md` 作为格式参考。
 

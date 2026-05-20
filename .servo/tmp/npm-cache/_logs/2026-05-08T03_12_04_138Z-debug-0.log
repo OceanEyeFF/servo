@@ -1,0 +1,20 @@
+0 verbose cli /home/oceaneye/.nvm/versions/node/v20.20.2/bin/node /home/oceaneye/.nvm/versions/node/v20.20.2/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.20.2
+3 silly config load:file:/home/oceaneye/.nvm/versions/node/v20.20.2/lib/node_modules/npm/npmrc
+4 silly config load:file:/mnt/e/repos/WSL/personal/vibecoding_autoworkflow/.npmrc
+5 silly config load:file:/home/oceaneye/.npmrc
+6 silly config load:file:/home/oceaneye/.nvm/versions/node/v20.20.2/etc/npmrc
+7 verbose title npm pack
+8 verbose argv "pack" "--dry-run" "--json"
+9 verbose logfile logs-max:10 dir:/mnt/e/repos/WSL/personal/vibecoding_autoworkflow/.aw/tmp/npm-cache/_logs/2026-05-08T03_12_04_138Z-
+10 verbose logfile /mnt/e/repos/WSL/personal/vibecoding_autoworkflow/.aw/tmp/npm-cache/_logs/2026-05-08T03_12_04_138Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+14 verbose cwd /mnt/e/repos/WSL/personal/vibecoding_autoworkflow
+15 verbose os Linux 6.6.87.2-microsoft-standard-WSL2
+16 verbose node v20.20.2
+17 verbose npm  v10.8.2
+18 verbose exit 0
+19 info ok

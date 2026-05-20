@@ -45,11 +45,11 @@ canonical executable source：
 
 | 输入 | 来源 | 说明 |
 |------|------|------|
-| Milestone artifact | `.aw/milestone/{milestone_id}.md` | 当前 active Milestone |
-| Milestone backlog | `.aw/repo/milestone-backlog.md` | Pipeline 全集，获取前置依赖状态和下一个候选 milestone |
-| Worktrack backlog | `.aw/repo/worktrack-backlog.md` | 已关闭和待办 worktrack；按 milestone_id 过滤；缺失视为空 backlog，存在但损坏或不可解析时必须停止 |
-| Gate evidence | `.aw/worktrack/gate-evidence.md` | 最近关闭 worktrack 的 evidence |
-| Repo snapshot | `.aw/repo/snapshot-status.md` | 当前 repo 状态 |
+| Milestone artifact | `.servo/milestone/{milestone_id}.md` | 当前 active Milestone |
+| Milestone backlog | `.servo/repo/milestone-backlog.md` | Pipeline 全集，获取前置依赖状态和下一个候选 milestone |
+| Worktrack backlog | `.servo/repo/worktrack-backlog.md` | 已关闭和待办 worktrack；按 milestone_id 过滤；缺失视为空 backlog，存在但损坏或不可解析时必须停止 |
+| Gate evidence | `.servo/worktrack/gate-evidence.md` | 最近关闭 worktrack 的 evidence |
+| Repo snapshot | `.servo/repo/snapshot-status.md` | 当前 repo 状态 |
 
 ## 输出
 

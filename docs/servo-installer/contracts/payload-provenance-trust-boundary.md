@@ -13,7 +13,7 @@ last_verified: 2026-05-06
 
 ## 当前允许的 payload 来源
 
-只允许 package-local、checkout-local 与显式 `--source github`。不包含 registry/dist-tag 自动解析 remote payload、任意 HTTP URL、target root 反向生成 source truth、隐式 self-update/自动回滚/增量 patch。`.aw/`、`.agents/`、`.claude/`、`.autoworkflow/` 都不是 package payload。
+只允许 package-local、checkout-local 与显式 `--source github`。不包含 registry/dist-tag 自动解析 remote payload、任意 HTTP URL、target root 反向生成 source truth、隐式 self-update/自动回滚/增量 patch。`.servo/`、`.agents/`、`.claude/`、`.autoworkflow/` 都不是 package payload。
 
 ## Source Root 与 Target Root
 

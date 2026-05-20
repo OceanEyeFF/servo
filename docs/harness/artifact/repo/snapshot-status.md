@@ -86,4 +86,4 @@ Snapshot/Status 的 contract 正确性由 contract check 验证（检查 require
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/repo_snapshot_contract_check.py
 ```
 
-该检查只验证 markdown 结构和关键字段存在性，不替代 `repo-refresh-skill` 的实际观测与写入逻辑，也不把运行时 `.aw/` 产物提升为 canonical source。
+该检查只验证 markdown 结构和关键字段存在性，不替代 `repo-refresh-skill` 的实际观测与写入逻辑，也不把运行时 `.servo/` 产物提升为 canonical source。

@@ -9,7 +9,7 @@ last_verified: 2026-05-20
 
 保存控制面所处模式，不保存业务真相。最少应包含控制级别、活跃 worktrack、`baseline_branch`、下一动作和关联正式文档路径。不替代 `RepoSnapshot/Status` 或 `WorktrackContract`。
 
-Harness 每轮启动时先读取 `.aw/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 与 `Autonomy Ledger`。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
+Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 与 `Autonomy Ledger`。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
 
 ## Linked Formal Documents
 
@@ -19,12 +19,12 @@ Milestone 是 `RepoScope` 下的聚合对象，control-state 应在 Linked Forma
 
 - `active_milestone`: 当前活跃 Milestone 的 `milestone_id`（单数，同一时刻仅一个 active）
 - `milestone_status`: 当前活跃 Milestone 的状态（`planned`/`active`/`completed`/`superseded`）
-- `milestone_pipeline_path`: 指向 `.aw/repo/milestone-backlog.md` 的路径指针
+- `milestone_pipeline_path`: 指向 `.servo/repo/milestone-backlog.md` 的路径指针
 - `milestone_pipeline_summary`: Pipeline 快照（planned/active/completed/superseded 计数）
 
 `active_milestone` 缺失但 `milestone_pipeline_path` 存在且 pipeline 非空时，表示 pipeline 中有 planned milestone 但尚未激活。设置后 Milestone 进度由 `milestone-status-skill` 独立分析，Pipeline 推进由 `harness-skill` 在收到 `milestone_acceptance_verdict` 后执行，不替代 `RepoScope.Decide` 的决策权。
 
-Milestone final acceptance 写回后，Control State 必须与 `.aw/repo/milestone-backlog.md` 保持一致：`active_milestone` 只能指向 backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active/completed/superseded 计数必须等于 backlog 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
+Milestone final acceptance 写回后，Control State 必须与 `.servo/repo/milestone-backlog.md` 保持一致：`active_milestone` 只能指向 backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active/completed/superseded 计数必须等于 backlog 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
 
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
@@ -62,14 +62,14 @@ Canonical skill source version facts are owned by repo-level checkpoint artifact
 
 - canonical source root: `product/harness/skills/`
 - docs/catalog owner: `docs/harness/catalog/`
-- current source checkpoint owner: `.aw/repo/snapshot-status.md` after `repo-refresh-skill`
-- current control-plane idempotency owner: `.aw/control-state.md` `Baseline Traceability`
+- current source checkpoint owner: `.servo/repo/snapshot-status.md` after `repo-refresh-skill`
+- current control-plane idempotency owner: `.servo/control-state.md` `Baseline Traceability`
 
 When a verified worktrack changes canonical skill source, source-side skill indexes, or docs/source traceability, closeout records the evidence and merge commit in its closeout record, then `repo-refresh-skill` writes the refreshed git HEAD to `latest_observed_checkpoint` and `checkpoint_ref`. If the same change also updates operator-facing docs or version facts, `doc-catch-up-worker-skill` records the HEAD as `last_doc_catch_up_checkpoint`.
 
 Long-term docs should link to the source root or catalog owner, not embed one-off commit hashes for each skill. If a commit hash is needed for an audit handoff, keep it in runtime artifacts such as closeout records, repo snapshot, or release/version evidence. Deploy targets remain consumers of the source baseline and must not become the baseline owner.
 
-`milestone_input_checkpoint` 是 Milestone 输入指纹锚点，由 `milestone-status-skill` 按 `milestone-input-checkpoint/v1` 计算（格式 `sha256:<64 位小写 hex>`）。算法对 milestone artifact、worktrack backlog、gate evidence、repo snapshot 的已纳入字段取 SHA-256，使用字典键排序、repo-relative POSIX path、稳定列表顺序和显式 `null` 值。不得纳入文件 mtime、时间戳、绝对路径、上次 checkpoint 或 progress counter 等易变/派生值。该指纹与 git HEAD 独立（`.aw/` 下 artifact 变化不产生 git commit）。下一轮 `Observe` 仅当 `milestone_input_checkpoint` 与新指纹一致且 `latest_observed_checkpoint` 与 `git rev-parse HEAD` 一致时，才可跳过 Milestone 进度重算。
+`milestone_input_checkpoint` 是 Milestone 输入指纹锚点，由 `milestone-status-skill` 按 `milestone-input-checkpoint/v1` 计算（格式 `sha256:<64 位小写 hex>`）。算法对 milestone artifact、worktrack backlog、gate evidence、repo snapshot 的已纳入字段取 SHA-256，使用字典键排序、repo-relative POSIX path、稳定列表顺序和显式 `null` 值。不得纳入文件 mtime、时间戳、绝对路径、上次 checkpoint 或 progress counter 等易变/派生值。该指纹与 git HEAD 独立（`.servo/` 下 artifact 变化不产生 git commit）。下一轮 `Observe` 仅当 `milestone_input_checkpoint` 与新指纹一致且 `latest_observed_checkpoint` 与 `git rev-parse HEAD` 一致时，才可跳过 Milestone 进度重算。
 
 `milestone_pipeline_checkpoint` 是 Milestone Pipeline 指纹锚点，由 `milestone-status-skill` 在 pipeline 存在多条目时计算。算法对 `milestone-backlog.md` 中所有条目的 (`milestone_id`, `status`, `priority`, `depends_on_milestones`, `worktrack_list`) 取 SHA-256，使用字典键排序。该指纹用于判断 pipeline 结构是否变化（新增/移除/重排 milestone），与单个 milestone 的进度指纹（`milestone_input_checkpoint`）互补。当 `milestone_pipeline_checkpoint` 与已存指纹一致时，可跳过 pipeline 结构重分析；但单个 milestone 的 progress counter 仍由 `milestone_input_checkpoint` 独立判定。
 

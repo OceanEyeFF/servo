@@ -7,7 +7,7 @@ last_verified: 2026-05-19
 ---
 # Managed Files Ownership
 
-> 目的：明确 servo-installer 管理文件的所有权边界，区分 installer 管理的 skill payload、`.aw/` 运行时控制状态、deploy target 和用户自有仓库文件。
+> 目的：明确 servo-installer 管理文件的所有权边界，区分 installer 管理的 skill payload、`.servo/` 运行时控制状态、deploy target 和用户自有仓库文件。
 
 本页给出通用所有权分类方案，并以本仓库为实例说明每个分类在真实项目中的对应路径。deploy target 的角色与映射见 [deploy-mapping-spec.md](../contracts/deploy-mapping-spec.md)。payload 来源与写入边界见 [payload-provenance-trust-boundary.md](../contracts/payload-provenance-trust-boundary.md)。
 
@@ -23,7 +23,7 @@ target repo root/
 ├── .claude/           ← deploy target（installer 写入，派生自 canonical source）
 │   └── skills/        ← installer 管理的 skill payload
 │       └── */         ← 受管目录（含 marker）
-├── .aw/               ← 运行时控制状态（Harness 管理，非 installer payload）
+├── .servo/               ← 运行时控制状态（Harness 管理，非 installer payload）
 ├── src/               ← 用户自有
 ├── docs/              ← 用户自有
 ├── package.json       ← 用户自有（npm package 元数据）
@@ -52,17 +52,17 @@ target repo root/
 - 不应把受管文件当作配置模板来修改——修改应回到 canonical source
 - 不应将 deploy target 内容视为版本真相
 
-### 2. 运行时控制状态（`.aw/`）
+### 2. 运行时控制状态（`.servo/`）
 
 | 属性 | 值 |
 |------|-----|
-| 路径 | `<targetRepoRoot>/.aw/` |
+| 路径 | `<targetRepoRoot>/.servo/` |
 | 创建者 | Harness 初始化流程（`set-harness-goal-skill`） |
 | 管理方式 | Harness 控制回路在运行时读写 |
-| 是否受 installer 管理 | **否**——`prune --all` 不删除 `.aw/` |
+| 是否受 installer 管理 | **否**——`prune --all` 不删除 `.servo/` |
 | 生命周期 | 独立于 installer payload；可手动删除以重置 Harness 状态 |
 
-`.aw/` 目录包含：
+`.servo/` 目录包含：
 - `control-state.md` — Harness 控制面配置与状态
 - `goal-charter.md` — Repo 目标章程
 - `repo/` — 仓库级快照与 backlog
@@ -70,10 +70,10 @@ target repo root/
 - `milestone/` — Milestone artifact 文件
 
 **重要约束：**
-- `.aw/` 不是 installer payload，不受 `prune --all` 影响
-- `.aw/` 不是 source of truth——真相在 `docs/` 和 `product/`
-- `.aw/` 通常是 gitignored 的运行时状态，不同步到 remote
-- 删除 `.aw/` 后 Harness 需要重新初始化
+- `.servo/` 不是 installer payload，不受 `prune --all` 影响
+- `.servo/` 不是 source of truth——真相在 `docs/` 和 `product/`
+- `.servo/` 通常是 gitignored 的运行时状态，不同步到 remote
+- 删除 `.servo/` 后 Harness 需要重新初始化
 
 ### 3. Deploy target
 
@@ -131,7 +131,7 @@ servo/           ← 用户自有（target repo 本身）
 │   ├── gate-skill/                ← 受管 skill payload
 │   └── *                          ← 所有目录均为受管
 │
-├── .aw/                           ← 运行时控制状态（非 installer payload）
+├── .servo/                           ← 运行时控制状态（非 installer payload）
 │   ├── control-state.md           ← Harness 控制面配置
 │   ├── goal-charter.md            ← Repo 目标章程
 │   ├── repo/                      ← 仓库级快照与 backlog
@@ -152,11 +152,11 @@ servo/           ← 用户自有（target repo 本身）
 |-----------|------|---------|
 | 重置所有受管 skill 到当前版本 | `servo-installer install --backend bundle` | 仅 `.agents/skills/` 和 `.claude/skills/` |
 | 完全清理 installer 部署产物 | `servo-installer prune --all --backend bundle` | 仅上述两个 skills 目录 |
-| 重置 Harness 控制状态 | `rm -rf .aw/` 然后重新 `set-harness-goal-skill` | 仅 `.aw/`，不影响源码和文档 |
+| 重置 Harness 控制状态 | `rm -rf .servo/` 然后重新 `set-harness-goal-skill` | 仅 `.servo/`，不影响源码和文档 |
 | 修改 skill 行为 | 编辑 `product/harness/skills/` 下的 canonical source | 下次 install 时生效 |
 | 修改文档 | 编辑 `docs/` 下的文件 | 正常的 git 工作流 |
 
-**关键记忆点：** `.agents/` 和 `.claude/` 是 installer 的写入目标（可随时重建）；`.aw/` 是 Harness 的运行时笔记（重置即清空）；其他一切都是你的代码和文档（installer 不会碰）。
+**关键记忆点：** `.agents/` 和 `.claude/` 是 installer 的写入目标（可随时重建）；`.servo/` 是 Harness 的运行时笔记（重置即清空）；其他一切都是你的代码和文档（installer 不会碰）。
 
 ## 非目标（Non-Goals）
 
@@ -168,12 +168,12 @@ servo/           ← 用户自有（target repo 本身）
 | `node_modules/` | npm/pnpm/yarn 管理 | 包管理器 |
 | `.git/` | Git 管理 | `git` |
 | shell profile / PATH | 系统配置 | 手动编辑 |
-| `.aw_template/` | repo-local 模板，非 deploy target | 项目维护 |
+| `.servo_template/` | repo-local 模板，非 deploy target | 项目维护 |
 
 ## 不变量
 
 - installer 只写入 deploy target（`.agents/skills/`、`.claude/skills/`）
-- `.aw/` 与 installer payload 生命周期独立
+- `.servo/` 与 installer payload 生命周期独立
 - 用户自有文件永远不会被 installer 修改或删除
 - deploy target 不是 source of truth
 - 单一真相源保持在 `product/harness/skills/` 和 `docs/`

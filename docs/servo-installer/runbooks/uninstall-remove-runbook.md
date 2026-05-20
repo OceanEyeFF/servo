@@ -30,7 +30,7 @@ last_verified: 2026-05-19
 ### `prune --all` 不做什么
 
 - **不删除** target repo 的工作目录（如 `src/`、`docs/` 等）
-- **不删除** `.aw/` 运行时控制状态目录
+- **不删除** `.servo/` 运行时控制状态目录
 - **不删除** `.git/` 仓库数据
 - **不删除** `package.json`、`node_modules/` 等 npm 相关文件
 - **不删除** 用户在 target repo 中手动创建的任何非受管文件
@@ -50,7 +50,7 @@ servo-installer prune --all --backend agents
 
 **保留内容：**
 - `<targetRepoRoot>/.agents/` 目录本身（如果为空则保留空目录）
-- `<targetRepoRoot>/.aw/` 运行时状态
+- `<targetRepoRoot>/.servo/` 运行时状态
 - 用户手动添加到 `.agents/` 的非受管文件
 
 ### claude backend
@@ -65,7 +65,7 @@ servo-installer prune --all --backend claude
 
 **保留内容：**
 - `<targetRepoRoot>/.claude/` 目录本身
-- `<targetRepoRoot>/.aw/` 运行时状态
+- `<targetRepoRoot>/.servo/` 运行时状态
 - 用户手动添加到 `.claude/` 的非受管文件
 
 ## bundle 模式卸载
@@ -116,7 +116,7 @@ servo-installer diagnose --backend bundle --json
 | 2. 删除 agents 产物 | `servo-installer prune --all --backend agents` | 清理 agents backend |
 | 3. 删除 claude 产物 | `servo-installer prune --all --backend claude` | 清理 claude backend |
 | 4. 验证清理 | `servo-installer verify --backend bundle` | 应报告 no managed install |
-| 5. 移除 .aw/（可选） | `rm -rf .aw/` | 删除运行时控制状态 |
+| 5. 移除 .servo/（可选） | `rm -rf .servo/` | 删除运行时控制状态 |
 | 6. 卸载 npm package | `npm uninstall -g servo-installer` | 移除 servo-installer 命令 |
 
 > `bundle` 模式下步骤 2 和 3 可合并为 `servo-installer prune --all --backend bundle`。分步执行可在 partial 失败时独立重试。
@@ -126,7 +126,7 @@ servo-installer diagnose --backend bundle --json
 ### 误删后重装
 
 如果误执行了 `prune --all`：
-1. 不要 panic——`.aw/` 运行时状态未被删除
+1. 不要 panic——`.servo/` 运行时状态未被删除
 2. 运行 `servo-installer install --backend <backend>` 重新部署
 3. 运行 `servo-installer verify --backend <backend>` 验证完整性
 
@@ -142,7 +142,7 @@ servo-installer diagnose --backend bundle --json
 
 - `prune --all` 只删除通过 `aw.marker` 识别的受管目录
 - 非受管文件和用户数据永远不会被 prune 触及
-- `.aw/` 运行时状态不受 prune 影响
+- `.servo/` 运行时状态不受 prune 影响
 - bundle 模式的删除顺序固定为 agents → claude
 
 ## 停止线

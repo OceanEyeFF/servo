@@ -27,7 +27,7 @@ last_verified: 2026-05-07
 | `docs/` | 真相层：project-maintenance / harness / analysis / ideas / archive |
 | `product/` | 业务源码根：harness skills + adapters |
 | `toolchain/` | 脚本/评测/测试/打包/部署工具 |
-| `.aw/` | runtime control-plane state（非长期真相层） |
+| `.servo/` | runtime control-plane state（非长期真相层） |
 | `.agents/` `.claude/` | deploy target（非源码层） |
 | `.autoworkflow/` `.spec-workflow/` | repo-local state layer |
 | `.nav/` | compatibility navigation layer（非真实结构定义） |

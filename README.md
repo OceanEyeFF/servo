@@ -51,7 +51,7 @@ npx servo-installer verify --backend agents
 
 ### 初始化仓库
 
-目标仓库还没有 `.aw/` 时，先初始化 Harness 控制面：
+目标仓库还没有 `.servo/` 时，先初始化 Harness 控制面：
 
 ```txt
 $harness-skill 初始化当前工作目录的 harness 环境，初始化当前工作目录的 git 环境。

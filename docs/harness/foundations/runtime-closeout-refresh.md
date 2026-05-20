@@ -43,7 +43,7 @@ Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量�
 - milestone progress counter
 - next legal route
 
-刷新完成后，Harness 记录当前 `git rev-parse HEAD` 到 `.aw/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint`，作为下轮跳过重复 refresh 的幂等性锚点。
+刷新完成后，Harness 记录当前 `git rev-parse HEAD` 到 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint`，作为下轮跳过重复 refresh 的幂等性锚点。
 
 ## Milestone Progress
 

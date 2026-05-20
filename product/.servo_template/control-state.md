@@ -1,6 +1,6 @@
 # Harness Control State
 
-> 这是 `.aw/control-state.md` 的模板来源，用来维护当前 Harness supervisor 的控制面状态，不要把业务真相写进来。
+> 这是 `.servo/control-state.md` 的模板来源，用来维护当前 Harness supervisor 的控制面状态，不要把业务真相写进来。
 > 每轮 Harness 启动必须先读取本文件，恢复 linked artifact、审批边界、自动性、交接守卫、基线追溯和预算配置；缺失字段只能按 artifact 合同默认值降级解释，不能扩大权限。
 
 ## Metadata

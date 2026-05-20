@@ -207,7 +207,7 @@ ENTRYPOINT_LINK_RULES = {
     ],
 }
 REQUIRED_GITIGNORE_ENTRIES = [
-    ".aw/",
+    ".servo/",
     ".agents/",
     ".claude/",
     ".autoworkflow/",

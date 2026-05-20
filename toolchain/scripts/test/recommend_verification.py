@@ -210,7 +210,7 @@ DOMAIN_RULES: List[Tuple[str, List[CheckRule]]] = [
         ],
     ),
     (
-        ".aw/",
+        ".servo/",
         [
             ("path_governance_check.py", _python_check(f"{_TEST}/path_governance_check.py")),
         ],

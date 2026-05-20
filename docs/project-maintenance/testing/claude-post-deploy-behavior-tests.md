@@ -45,7 +45,7 @@ printf '.claude/\n' >> "$TMP_REPO/.git/info/exclude"
 printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 ```
 
-默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.aw/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。宿主 `$HOME/.claude` 不可写时用临时 Claude home，只复制登录状态；外发日志前确认不泄露认证文件。
+默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.servo/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。宿主 `$HOME/.claude` 不可写时用临时 Claude home，只复制登录状态；外发日志前确认不泄露认证文件。
 
 ## 四、安装隔离 Claude payload
 
@@ -78,17 +78,17 @@ mkdir -p "$TMP_RUN_ROOT/round-000"
 
 ```text
 Use only `harness-skill` as the top-level control entry.
-This is a cold-start scenario: the repo is empty and `.aw/` does not exist.
+This is a cold-start scenario: the repo is empty and `.servo/` does not exist.
 User requirement: Build a CLI Slay the Spire-lite. Reach full core system with combat, cards, deck, map, and events.
 Working rules: non-interactive test, each subsystem separate Worktrack, complete only first bounded slice unless continuous autonomy, use real files/tests.
-If `.aw/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
+If `.servo/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
 ```
 
 ```bash
 HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "$(cat "$TMP_RUN_ROOT/round-000/init.prompt.md")" --cwd "$TMP_REPO" 2>&1 | tee "$TMP_RUN_ROOT/round-000/session.log"
 ```
 
-保留：`session.log`、Claude 最终输出、`.aw/`、`git status --short`、`git diff --stat`。
+保留：`session.log`、Claude 最终输出、`.servo/`、`git status --short`、`git diff --stat`。
 
 ## 七、后续轮次
 
@@ -96,7 +96,7 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 mkdir -p "$TMP_RUN_ROOT/round-001"
 cat > "$TMP_RUN_ROOT/round-001/continue.prompt.md" <<'EOF'
 Continue via `harness-skill`.
-Respect the current `.aw/control-state.md`, Worktrack artifacts, handback guard, and autonomy budget.
+Respect the current `.servo/control-state.md`, Worktrack artifacts, handback guard, and autonomy budget.
 Do not unlock handback unless the control state already grants continuous autonomy.
 EOF
 
@@ -107,9 +107,9 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 
 ## 八、监督方式
 
-读取每轮完整产物：`session.log`、Claude 最终输出、`.aw/control-state.md`、`.aw/repo/*`、`.aw/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
+读取每轮完整产物：`session.log`、Claude 最终输出、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
 
-观察点：是否从 `.aw/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、策略表现一致。
+观察点：是否从 `.servo/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、策略表现一致。
 
 ## 九、继续与停止
 

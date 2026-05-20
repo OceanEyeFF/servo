@@ -37,7 +37,7 @@ Debug Evidence 不替代 Gate Evidence。它只回答"调试观察到什么、�
 
 ## Raw Log Boundary
 
-- 原始日志应保存在 `.aw/tmp/`、外部 CI、测试报告或明确 artifact 路径中。
+- 原始日志应保存在 `.servo/tmp/`、外部 CI、测试报告或明确 artifact 路径中。
 - 主上下文只接收 `observed_error`、`confirmed_facts`、`discarded_hypotheses` 和 `remaining_unknowns`。
 - 单条原始日志超过当前 `context_budget` 时，必须先由 log-extract worker 或 current-carrier 摘要成 Debug Evidence。
 - 不得把 unrelated historical logs 作为默认上下文传入 dispatch packet。

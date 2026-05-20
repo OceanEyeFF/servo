@@ -23,11 +23,11 @@ RepoScope 维护以下慢变量：
 
 | 控制对象 | 存储位置 | 说明 |
 |---------|---------|------|
-| Goal / Charter | `.aw/goal-charter.md` | 长期参考信号，定义 Repo 的目标状态和 Engineering Node Map |
-| Repo Snapshot / Status | `.aw/repo/snapshot-status.md` | RepoScope.Observe 的观测面，记录 `baseline_ref`、`source_baselines`、governance 信号 |
-| Milestone Pipeline | `.aw/repo/milestone-backlog.md` | 所有 milestone 的聚合管线，含 planned/active/completed/superseded 状态 |
-| Control State | `.aw/control-state.md` | 控制面配置与位置信息（Scope/Function/Route），不承载业务真相 |
-| Worktrack Backlog | `.aw/repo/worktrack-backlog.md` | 所有 worktrack 的执行记录与状态追踪 |
+| Goal / Charter | `.servo/goal-charter.md` | 长期参考信号，定义 Repo 的目标状态和 Engineering Node Map |
+| Repo Snapshot / Status | `.servo/repo/snapshot-status.md` | RepoScope.Observe 的观测面，记录 `baseline_ref`、`source_baselines`、governance 信号 |
+| Milestone Pipeline | `.servo/repo/milestone-backlog.md` | 所有 milestone 的聚合管线，含 planned/active/completed/superseded 状态 |
+| Control State | `.servo/control-state.md` | 控制面配置与位置信息（Scope/Function/Route），不承载业务真相 |
+| Worktrack Backlog | `.servo/repo/worktrack-backlog.md` | 所有 worktrack 的执行记录与状态追踪 |
 
 正式对象字段定义见 [../artifact/README.md](../artifact/README.md)。
 
@@ -117,7 +117,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 
 | 算子 | 触发条件 | 说明 |
 |------|---------|------|
-| `SetGoal` | `.aw/` 未初始化，首次设定参考信号 | 仅执行一次，建立 Goal/Charter |
+| `SetGoal` | `.servo/` 未初始化，首次设定参考信号 | 仅执行一次，建立 Goal/Charter |
 | `ChangeGoal` | 外部 `GoalChangeRequest` 触发 | 目标变更走独立控制路径，不属于常规循环 |
 
 目标变更的完整流程见 [../artifact/control/goal-change-request.md](../artifact/control/goal-change-request.md)。在 RepoScope 正常循环中，Goal 是不可变的参考信号。

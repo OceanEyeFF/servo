@@ -111,8 +111,8 @@ body:
     id: aw_initialization
     attributes:
       label: .aw initialization result
-      description: Say whether Codex or Claude Code initialized `.aw/`, which files were created or reused, and what questions remain.
-      placeholder: ".aw/goal-charter.md created; .aw/control-state.md created; baseline branch detected as main."
+      description: Say whether Codex or Claude Code initialized `.servo/`, which files were created or reused, and what questions remain.
+      placeholder: ".servo/goal-charter.md created; .servo/control-state.md created; baseline branch detected as main."
     validations:
       required: true
   - type: dropdown

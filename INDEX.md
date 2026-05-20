@@ -47,7 +47,7 @@ Agent 默认只读 [`AGENTS.md`](./AGENTS.md)、本页，以及当前任务命�
 - `product/`：业务代码唯一源码根
 - `docs/`：文档真相与知识主线
 - `toolchain/`：脚本、部署、测试、评测工具
-- `.aw/`：runtime control-plane state，只有运行 Harness 控制回路时按需读取
+- `.servo/`：runtime control-plane state，只有运行 Harness 控制回路时按需读取
 - `.agents/`、`.claude/`：repo-local mount / deploy target
 - `.autoworkflow/`、`.spec-workflow/`：repo-local state / config
 - `.nav/`：compatibility navigation
@@ -57,7 +57,7 @@ Agent 默认只读 [`AGENTS.md`](./AGENTS.md)、本页，以及当前任务命�
 
 - `.agents/`
 - `.claude/`
-- `.aw/`（除非当前任务是 Harness control state hydration / runtime artifact 读写）
+- `.servo/`（除非当前任务是 Harness control state hydration / runtime artifact 读写）
 - `.autoworkflow/`
 - `.spec-workflow/`
 - `.nav/`

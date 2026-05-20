@@ -751,7 +751,7 @@ def run_root_npm_package_packlist(repo_root: Path) -> dict:
     forbidden_files = sorted(ROOT_NPM_FORBIDDEN_PACKAGE_FILES & packed_files)
     if forbidden_files:
         failures.append(f"root npm package included forbidden files: {forbidden_files}")
-    for disallowed_prefix in (".aw/", ".agents/", ".autoworkflow/", ".claude/"):
+    for disallowed_prefix in (".servo/", ".agents/", ".autoworkflow/", ".claude/"):
         if any(path.startswith(disallowed_prefix) for path in packed_files):
             failures.append(f"root npm package included {disallowed_prefix} content")
     if not package_filename:

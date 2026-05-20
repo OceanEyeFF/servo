@@ -20,10 +20,10 @@ description: 当 Harness 处于代码仓库范围，且需要一轮限定范围�
 - `代码仓库目标/章程`
 - `代码仓库快照/状态`
 - 当前 `Harness 控制状态`
-- 当前活跃 Milestone artifact（`.aw/milestone/{milestone_id}.md`）
-- Milestone Backlog（`.aw/repo/milestone-backlog.md`）— Pipeline 上下文
+- 当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）
+- Milestone Backlog（`.servo/repo/milestone-backlog.md`）— Pipeline 上下文
 
-`工作追踪约定`、`计划/任务队列` 以及其他工作追踪本地产物都不是代码仓库基准。只有在当前代码仓库观察依赖于理解一个活动中或刚关闭的工作追踪边界时才读取它们，并且必须明确让这种使用从属于代码仓库级产物。本技能对 `.aw/worktrack/*` 的唯一合法行为是读取为边界证据；更新或重写 `.aw/worktrack/*` 的行为必须标记为超出本技能权限。
+`工作追踪约定`、`计划/任务队列` 以及其他工作追踪本地产物都不是代码仓库基准。只有在当前代码仓库观察依赖于理解一个活动中或刚关闭的工作追踪边界时才读取它们，并且必须明确让这种使用从属于代码仓库级产物。本技能对 `.servo/worktrack/*` 的唯一合法行为是读取为边界证据；更新或重写 `.servo/worktrack/*` 的行为必须标记为超出本技能权限。
 
 ## 何时使用
 
@@ -57,7 +57,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮限定范围�
 
 遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
 
-- 对 `.aw/worktrack/*` 的唯一合法行为是将其读取为边界证据；重写 `.aw/worktrack/*` 的行为必须标记为超出本技能权限。
+- 对 `.servo/worktrack/*` 的唯一合法行为是将其读取为边界证据；重写 `.servo/worktrack/*` 的行为必须标记为超出本技能权限。
 - 优先使用标准代码仓库产物，而不是代码仓库本地部署副本或模板。
 - 仅当 `latest_observed_checkpoint` 已存在且其 hash 与当前 `git rev-parse HEAD` 一致时，才可跳过刷新；hash 不一致或 checkpoint 缺失时必须执行完整状态估计。
 - 如果 `latest_observed_checkpoint` 记录的 hash 在当前 git history 中不可达（如曾被 `git reset`），应标记 `baseline_gap_risk: high` 并强制重新刷新。

@@ -41,7 +41,7 @@ $set-harness-goal-skill 当前空仓库期望最终实现一个 [目标描述]�
 
 > 构建 RESTful API 服务，使用 Express + TypeScript，支持用户注册登录和资源 CRUD。数据库使用 PostgreSQL。第一轮只做用户模块。不接入第三方 OAuth，不做前端。
 
-设定目标后，Harness 创建 `.aw/goal-charter.md`，包含项目愿景、核心目标、技术方向和工程节点映射。
+设定目标后，Harness 创建 `.servo/goal-charter.md`，包含项目愿景、核心目标、技术方向和工程节点映射。
 
 ## 三、启动第一个 Worktrack
 

@@ -1,0 +1,746 @@
+---
+title: "Repo Worktrack Backlog"
+artifact_type: "repo-worktrack-backlog"
+generated_from: "harness-skill"
+updated: "2026-05-20"
+owner: "servo-kernel"
+---
+# Repo Worktrack Backlog
+
+## Metadata
+
+- baseline_branch: develop-aw
+- baseline_ref: 4b0dd17764ff37474e78d8efb06c92f94385e1c6
+- updated: 2026-05-20T12:09:30+08:00
+- updated_by: harness-skill
+
+## Active Worktrack
+
+- [done] `WT-20260520-runtime-dispatch-profile-claude-deepseek`: make Claude/Deepseek runtime dispatch capability and fallback evidence explicit.
+  - branch: wt-20260520-runtime-dispatch-profile-claude-deepseek
+  - worktrack_commit: `94a570044eb651fa2f1aa9ecef3cdb119bc2f537`
+  - closeout_checkpoint: wt-20260520-runtime-dispatch-profile-claude-deepseek@94a570044eb651fa2f1aa9ecef3cdb119bc2f537
+  - baseline_ref: develop-aw@7bafc585885efd0d88caf7af6993ce8932d67cab
+  - milestone_id: MS-20260520-001
+  - node_type: feature
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - docs/harness/foundations/dispatch-decision-policy.md
+    - docs/harness/foundations/runtime-dispatch-contract.md
+    - docs/harness/artifact/worktrack/dispatch-packet.md
+    - docs/harness/artifact/control/control-state.md
+    - product/harness/skills/harness-skill/SKILL.md
+    - product/harness/skills/dispatch-skills/SKILL.md
+    - product/harness/skills/review-evidence-skill/SKILL.md if evidence lane fallback needs sync
+    - product/harness/skills/set-harness-goal-skill/assets/control-state.md
+    - product/.servo_template/control-state.md
+    - toolchain/scripts/test/governance_semantic_check.py
+    - toolchain/scripts/test/test_governance_semantic_check.py
+  - acceptance:
+    - Dispatch policy defines runtime capability profile and SubAgent attempt/fallback evidence fields.
+    - ClaudeCodeCLI/Deepseek compatibility lane is represented as capability facts, not as a silent current-carrier shortcut.
+    - `auto` can still choose current-carrier for tightly coupled work, but must record decision inputs, capability probe result, attempted carrier when applicable, and fallback reason.
+    - Focused semantic checks catch missing dispatch capability/fallback contract fields across docs, skills, and templates.
+  - result:
+    - added runtime dispatch profile fields to dispatch policy, runtime dispatch contract, dispatch packet schema, control-state contract/templates, harness-skill, and dispatch-skills
+    - added focused semantic checker coverage for runtime dispatch profile fields and ClaudeCodeCLI/Deepseek fallback terms
+  - validation:
+    - targeted pytest for governance_semantic_check: 57 passed
+    - governance_semantic_check.py --json: passed with retained alignment warnings
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - git diff --check: passed
+
+- [done] `WT-20260520-worktrack-intake-review-gate`: define the Worktrack intake review gate before WorktrackScope.Init and execution-facing work.
+  - branch: wt-20260520-worktrack-intake-review-gate
+  - worktrack_commit: `7bafc585885efd0d88caf7af6993ce8932d67cab`
+  - closeout_checkpoint: wt-20260520-worktrack-intake-review-gate@7bafc585885efd0d88caf7af6993ce8932d67cab
+  - baseline_ref: develop-aw@cd1154fcc965e2dbb7ef63b009da512b70cd881f
+  - milestone_id: MS-20260520-001
+  - node_type: feature
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - product/harness/skills/harness-skill/SKILL.md
+    - product/harness/skills/repo-whats-next-skill/SKILL.md
+    - product/harness/skills/init-worktrack-skill/SKILL.md
+    - docs/harness/scope/repo-scope.md
+    - docs/harness/foundations/runtime-control-loop.md
+    - docs/harness/artifact/worktrack/contract.md
+    - toolchain/scripts/test/governance_semantic_check.py
+    - toolchain/scripts/test/test_governance_semantic_check.py
+  - acceptance:
+    - Worktrack intake review is a required RepoScope decision output before WorktrackScope.Init.
+    - Intake review checks repo_fundamentals, snapshot_freshness, milestone_purpose_alignment, historical_conflict_risk, and worktrack_adjustment_recommendations.
+    - Init blocks or routes back when intake review is missing, stale, blocked, or recommends worktrack changes before execution.
+  - result:
+    - added pre-init intake review semantics to RepoScope transition docs, runtime loop, Worktrack Contract, harness-skill, repo-whats-next-skill, init-worktrack-skill, and contract templates
+    - added focused semantic checker coverage for intake review fields and verdicts
+  - validation:
+    - targeted pytest for governance_semantic_check: 55 passed
+    - governance_semantic_check.py --json: passed with retained alignment warnings
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - git diff --check: passed
+
+- [done] `WT-20260520-milestone-acceptance-writeback-transaction`: define atomic milestone final acceptance writeback and runtime artifact consistency checks.
+  - branch: wt-20260520-milestone-acceptance-writeback-transaction
+  - worktrack_commit: `cd1154fcc965e2dbb7ef63b009da512b70cd881f`
+  - closeout_checkpoint: wt-20260520-milestone-acceptance-writeback-transaction@cd1154fcc965e2dbb7ef63b009da512b70cd881f
+  - baseline_ref: develop-aw@3f4cb03fc0b982faff2e0fd1d359d1894e7671bd
+  - milestone_id: MS-20260520-001
+  - node_type: feature
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - product/harness/skills/harness-skill/SKILL.md
+    - product/harness/skills/milestone-status-skill/SKILL.md
+    - docs/harness/artifact/control/milestone.md
+    - docs/harness/artifact/control/control-state.md
+    - docs/harness/artifact/repo/milestone-backlog.md
+    - docs/harness/foundations/runtime-closeout-refresh.md
+    - docs/harness/catalog/milestone/milestone-status-skill.md
+    - toolchain/scripts/test/governance_semantic_check.py
+    - toolchain/scripts/test/test_governance_semantic_check.py
+  - acceptance:
+    - final acceptance is defined as a logical transaction across milestone artifact, milestone backlog, control-state, handback guard, and traceability
+    - completed/accepted milestone backlog entries cannot retain planned worktrack markers
+    - control-state pipeline summary and active pointers must agree with milestone backlog
+    - focused semantic governance checks catch these inconsistencies
+  - result:
+    - added final acceptance writeback transaction semantics to Harness docs and canonical skills
+    - added runtime artifact consistency checker and tests
+    - normalized MS-20260519-004 stale planned worktrack markers in milestone backlog
+  - validation:
+    - targeted pytest for governance_semantic_check: 53 passed
+    - governance_semantic_check.py --json: passed with retained alignment warnings
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - git diff --check: passed
+
+## Planned Worktracks
+
+- [done] `WT-20260519-managed-files-ownership-sync`: document installer-managed skill payload, .servo/ runtime state, deploy target, and user-owned file ownership boundaries.
+  - branch: wt-20260519-managed-files-ownership-sync
+  - worktrack_commit: `4b0dd17764ff37474e78d8efb06c92f94385e1c6`
+  - closeout_checkpoint: develop-aw@4b0dd17764ff37474e78d8efb06c92f94385e1c6
+  - baseline_ref: develop-aw@db6dcd39ab3c4f3888019920b600ff94968c96b6
+  - milestone_id: MS-20260519-002
+  - node_type: config
+  - status: done
+
+- [done] `WT-20260519-uninstall-remove-runbook`: create operator-facing uninstall/remove guidance with prune --all safety boundaries.
+  - branch: wt-20260519-uninstall-remove-runbook
+  - worktrack_commit: `db6dcd39ab3c4f3888019920b600ff94968c96b6`
+  - closeout_checkpoint: develop-aw@db6dcd39ab3c4f3888019920b600ff94968c96b6
+  - baseline_ref: develop-aw@2ddd6c1b06411d4ade9930fd86b131f314cdf274
+  - milestone_id: MS-20260519-002
+  - node_type: config
+  - status: done
+
+- [done] `WT-20260519-harness-version-marker-contract`: establish Harness payload version marker at canonical source and document contract/semantics.
+  - branch: wt-20260519-harness-version-marker-contract
+  - worktrack_commit: `2ddd6c1b06411d4ade9930fd86b131f314cdf274`
+  - closeout_checkpoint: develop-aw@2ddd6c1b06411d4ade9930fd86b131f314cdf274
+  - baseline_ref: develop-aw@fcd40980d58688d7ea11e66117a555f106b5db96
+  - milestone_id: MS-20260519-002
+  - node_type: config
+  - status: done
+  - files_changed:
+    - product/harness/skills/harness-skill/VERSION (new)
+    - docs/project-maintenance/deploy/harness-version-marker-contract.md (new)
+    - docs/project-maintenance/deploy/README.md
+    - docs/book.md
+
+- [done] `WT-20260519-release-baseline-reconciliation`: reconcile Harness runtime baseline after servo-installer v0.5.2-rc.1 release facts.
+  - branch: wt-20260519-release-baseline-reconciliation
+  - worktrack_commit: N/A (runtime-only reconciliation; no tracked diff)
+  - closeout_checkpoint: develop-aw@fcd40980d58688d7ea11e66117a555f106b5db96
+  - baseline_ref: develop-aw@fcd40980d58688d7ea11e66117a555f106b5db96
+  - milestone_id: MS-20260519-001
+  - node_type: docs/config
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - .servo/control-state.md
+    - .servo/repo/snapshot-status.md
+    - .servo/repo/milestone-backlog.md
+    - .servo/repo/worktrack-backlog.md
+    - docs/project-maintenance/governance/servo-installer/servo-installer-release-channel-governance.md
+    - docs/project-maintenance/governance/servo-installer/servo-installer-release-standard-flow.md
+    - docs/project-maintenance/governance/branch-pr-governance.md
+    - package.json
+    - toolchain/scripts/deploy/package.json
+  - acceptance:
+    - observe and record current develop-aw, develop-main, and master branch facts without changing branch policy
+    - reconcile RepoScope control-state and snapshot-status with the current baseline and active milestone
+    - verify servo-installer v0.5.2-rc.1 source/release/docs freshness facts or record unverified facts explicitly
+    - run matching governance checks or list pending evidence before closeout
+    - keep dedicated deployment repository planning out of scope for this milestone
+  - result:
+    - reconciled `.aw` runtime control state and repo snapshot with verified branch/release observations
+    - recorded that `develop-aw` remains Harness baseline while `develop-main` / `origin/master` carry published `0.5.2-rc.1` release facts
+    - verified npm registry, GitHub Release, publish workflow, remote tag, and remote heads
+    - did not mutate package version, release state, tags, dist-tags, deploy behavior, or tracked files
+  - validation:
+    - git diff --check: passed
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py: passed with retained warnings
+
+- [done] `WT-20260518-quickstart-usage-patterns`: extract real operator usage patterns from recent Codex / Claude records without copying raw conversation text into docs.
+  - branch: wt-20260518-quickstart-usage-patterns
+  - worktrack_commit: 88a77bd
+  - closeout_checkpoint: develop-aw@88a77bd (cherry-pick)
+  - milestone_id: MS-20260518-001
+  - node_type: research/docs
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - recent Codex / Claude conversation records from the approved ten-day window
+    - docs/project-maintenance/usage-help/quickstart.md (future summarized facts only)
+  - acceptance:
+    - summarize top-level entry usage for `harness-skill`, `set-harness-goal-skill`, and explicit unlock prompts
+    - record that bare `continue working` / `继续工作` is not sufficient to unlock a new worktrack after handback
+    - keep raw transcripts out of long-term docs
+
+- [done] `WT-20260518-codex-quickstart-doc`: create the Codex operator quickstart tutorial.
+  - branch: wt-20260518-codex-quickstart-doc
+  - worktrack_commit: 054bdc9
+  - closeout_checkpoint: develop-aw@054bdc9 (cherry-pick)
+  - milestone_id: MS-20260518-001
+  - node_type: docs/usage-help
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - docs/project-maintenance/usage-help/quickstart.md
+  - acceptance:
+    - explain the minimum order for install, verify, Harness initialization, first worktrack, verify/gate/closeout, and handback continuation
+    - use copy-pasteable commands where commands are stable
+    - keep the document operator-facing and avoid duplicating Harness doctrine
+
+- [planned] `WT-20260518-quickstart-entrypoint-sync`: link the quickstart from the relevant public and usage-help entrypoints.
+  - milestone_id: MS-20260518-001
+  - node_type: docs/navigation
+  - status: planned
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - README.md
+    - docs/project-maintenance/usage-help/README.md
+    - docs/project-maintenance/usage-help/recommended-usage.md
+    - docs/project-maintenance/usage-help/codex.md
+  - acceptance:
+    - new operators can find the quickstart from the root README and usage-help index
+    - recommended-usage.md remains a scene router rather than a duplicated tutorial
+
+- [done] `WT-20260518-quickstart-smoke`: validate the quickstart against a temporary target repo or record a clear blocker.
+  - milestone_id: MS-20260518-001
+  - node_type: test/docs-smoke
+  - status: done
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - docs/project-maintenance/usage-help/quickstart.md
+    - docs/project-maintenance/testing/README.md if a durable smoke command reference needs an entrypoint update
+  - acceptance:
+    - verify documented backend names, paths, command order, and explicit unlock guidance against current repo behavior
+    - run matching governance checks after docs edits
+    - record smoke environment limitations explicitly if full isolated execution is unavailable
+
+- [done] `WT-20260518-quickstart-step3-refactor`: refactor quickstart.md step 3 to remove noise and add Milestone-Worktrack context.
+  - branch: wt-20260518-quickstart-step3-refactor
+  - worktrack_commit: 9d133bb
+  - closeout_checkpoint: develop-aw@9d133bb
+  - milestone_id: MS-20260518-001
+  - node_type: docs/usage-help
+  - status: done
+
+- [done] `WT-20260518-recommended-usage-relocate`: relocate recommended-usage.md to focus on CodingAgent Skills usage tutorial.
+  - branch: wt-20260518-recommended-usage-relocate
+  - worktrack_commit: 7c5d336
+  - closeout_checkpoint: develop-aw@7c5d336
+  - milestone_id: MS-20260518-001
+  - node_type: docs/usage-help
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/project-maintenance/usage-help/recommended-usage.md
+  - acceptance:
+    - reposition as CodingAgent Skills usage tutorial (not scene router)
+    - absorb Backend differences table from quickstart.md
+    - keep scene routing as secondary content
+    - remove overlap with quickstart.md
+
+- [done] `WT-20260518-quickstart-crossref-sync`: sync cross-references between quickstart, recommended-usage, and entrypoints.
+  - branch: wt-20260518-quickstart-crossref-sync
+  - worktrack_commit: 2353c22
+  - closeout_checkpoint: develop-aw@2353c22
+  - milestone_id: MS-20260518-001
+  - node_type: docs/navigation
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/project-maintenance/usage-help/quickstart.md
+    - docs/project-maintenance/usage-help/recommended-usage.md
+    - docs/project-maintenance/usage-help/README.md
+    - README.md
+  - acceptance:
+    - quickstart and recommended-usage cross-references rewritten for new positioning
+    - usage-help/README.md entry descriptions updated
+    - governance checks pass
+
+## Latest Closed Worktrack
+
+- [done] `WT-20260517-catalog-milestone-folder`: consolidate `init-milestone-skill.md` and `milestone-status-skill.md` into `docs/harness/catalog/milestone/` subdirectory.
+  - branch: develop-aw
+  - worktrack_commit: 46d0610
+  - closeout_checkpoint: develop-aw@46d06102887ef8807beaa9a7bb588e87d4a38555
+  - milestone_id: MS-20260514-001
+  - node_type: docs/catalog-organization
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/harness/catalog/init-milestone-skill.md
+    - docs/harness/catalog/milestone-status-skill.md
+    - docs/harness/catalog/milestone/ (new directory)
+    - docs/harness/catalog/README.md
+    - docs/harness/README.md
+    - docs/book.md
+  - result:
+    - created catalog/milestone/ directory with README entrypoint describing complementary relationship
+    - moved both milestone skill catalog files into milestone/ subdirectory
+    - updated all cross-references in catalog README, book.md, skill-impact-matrix, and source README
+  - validation:
+    - targeted pytest for path_governance_check: 18 tests passed
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260517-scope-management-clarity`: clarify `docs/harness/scope/` management structure with repo-scope + worktrack-scope docs.
+  - branch: develop-aw
+  - worktrack_commit: ae50be2
+  - closeout_checkpoint: develop-aw@ae50be2911d331b26af64541b8fbe1fd240b59e0
+  - milestone_id: MS-20260514-001
+  - node_type: docs/scope-management
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/harness/scope/README.md
+    - docs/harness/scope/state-loop.md
+    - docs/harness/scope/repo-scope.md (new)
+    - docs/harness/scope/worktrack-scope.md (renamed)
+    - docs/harness/README.md
+    - docs/book.md
+  - result:
+    - created repo-scope.md with 8 sections covering RepoScope control objects
+    - renamed state-loop.md to worktrack-scope.md with clarified focus
+    - rewrote scope/README.md with three-document structure and two-scope diagram
+    - updated all cross-references across 6 files; zero remaining state-loop references
+  - validation:
+    - targeted pytest for path_governance_check: 18 tests passed
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+## Latest Closed Worktrack
+
+- [done] `WT-20260516-docs-source-drift-check`: add lightweight checks for docs/source/deploy-target drift.
+  - branch: develop-aw
+  - worktrack_commit: 7624e70
+  - closeout_checkpoint: develop-aw@940097c778d8a0a7f6e51520e02c1a09eaa96839
+  - milestone_id: MS-20260514-001
+  - node_type: test/governance
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - toolchain/scripts/test/path_governance_check.py
+    - toolchain/scripts/test/test_path_governance_check.py
+    - docs/project-maintenance/governance/path-governance-checks.md
+  - result:
+    - added canonical skill source traceability checks to path governance
+    - required source README first-column skill source backlinks and catalog README second-column canonical source mappings
+    - rejected `.agents/` and `.claude/` links from canonical traceability sections
+    - added focused tests for valid, missing, wrong-column, and deploy-target traceability cases
+  - validation:
+    - targeted pytest for `test_path_governance_check.py`: passed, 18 tests
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260516-skill-version-baseline-traceability`: add skill source version and git checkpoint traceability.
+  - branch: develop-aw
+  - worktrack_commit: eca11de
+  - closeout_checkpoint: develop-aw@854e24b74afbf833755e1eca95aa53b2e21cd7f4
+  - milestone_id: MS-20260514-001
+  - node_type: docs/runtime-traceability
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/harness/artifact/control/control-state.md
+    - docs/harness/artifact/repo/snapshot-status.md
+    - docs/harness/artifact/standard-fields.md
+    - docs/project-maintenance/governance/review-verify-handbook.md
+    - product/harness/skills/README.md
+  - result:
+    - defined skill source baseline ownership across runtime snapshot, control-state traceability, source README, and governance
+    - added `source_baselines` to standard fields before using it in snapshot contract
+    - avoided concrete git hash mentions in long-term docs
+  - validation:
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260516-skill-source-docs-traceability`: establish docs-to-source traceability between `docs/harness/` and canonical skill source.
+  - branch: develop-aw
+  - worktrack_commit: f122184
+  - closeout_checkpoint: develop-aw@25301ed2a4268788bbdb77c0740633a204d36a10
+  - milestone_id: MS-20260514-001
+  - node_type: docs/source-traceability
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/harness/catalog/README.md
+    - docs/harness/catalog/repo.md
+    - docs/harness/catalog/worktrack.md
+    - product/harness/skills/README.md
+  - result:
+    - added a catalog-side canonical source traceability table
+    - added missing catalog entries for `set-harness-goal-skill` and `worktrack-status-skill`
+    - added source-side docs owner backlinks for every canonical skill source directory
+    - kept deploy targets as non-canonical consumers, not source truth
+  - validation:
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260516-superseded-lifecycle-governance`: define lifecycle governance for `status: superseded` docs.
+  - branch: develop-aw
+  - worktrack_commit: a2b5509
+  - closeout_checkpoint: develop-aw@16e91c741175131c29273a9201953252fd3cb8c1
+  - milestone_id: MS-20260514-001
+  - node_type: docs/governance
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/project-maintenance/governance/path-governance-checks.md
+    - docs/project-maintenance/governance/review-verify-handbook.md
+    - toolchain/scripts/test/path_governance_check.py
+    - toolchain/scripts/test/test_path_governance_check.py
+  - result:
+    - added a route-surface guard that fails when `docs/book.md` or `docs/**/README.md` links `status: superseded` docs outside `Retained Historical References` / `Historical References`
+    - documented the superseded lifecycle rule in path governance and review/verify handbook
+    - retained existing superseded docs as historical references rather than current truth owners
+  - validation:
+    - targeted pytest for `path_governance_check.py`: passed
+    - path_governance_check.py: passed
+    - folder_logic_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260516-foundations-layer-rebuild`: rebuild `docs/harness/foundations/` as the Harness thought layer, organized by runtime protocol chapters and owner-boundary links.
+  - branch: develop-aw
+  - worktrack_commit: edce53a
+  - closeout_checkpoint: develop-aw@6273406095107108cea12758a0619ad4135a89f0
+  - milestone_id: MS-20260514-001
+  - node_type: docs/foundations-restructure
+  - status: done
+  - intake_route: programmer-request
+  - scope:
+    - docs/harness/foundations/
+    - docs/harness/README.md
+    - docs/book.md
+    - docs/harness/scope/README.md
+    - docs/harness/artifact/worktrack/README.md
+    - docs/harness/workflow-families/README.md
+    - docs/harness/workflow-families/repo-evolution/README.md
+  - result:
+    - converted `Harness运行协议.md` into the runtime protocol index
+    - added focused runtime chapters for control loop, dispatch, evidence/gate/recovery, closeout/refresh, and state hydration
+    - deleted `runtime-protocol-chapter-plan.md` after the split landed
+    - moved superseded workflow-family documents to retained historical references rather than current truth owner status
+    - thinned nearby entrypoints to link to owners instead of duplicating foundations, scope, artifact, or workflow truth
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260515-remove-harness-design`: remove `docs/harness/design/` from current docs truth and clarify Harness docs layers.
+  - branch: develop-aw
+  - worktrack_commit: 4de5d222d47ef7ff06939dc9d2cf1ea376d38de9
+  - closeout_checkpoint: develop-aw@e66e45d73c2fd447fbb3492194a1d660755bff59
+  - milestone_id: MS-20260514-001
+  - node_type: docs/harness-layer-cleanup
+  - status: done
+  - intake_route: milestone-acceptance-follow-up
+  - scope:
+    - docs/harness/design/skills-handback-improvements.md
+    - docs/harness/README.md
+    - docs/book.md
+    - docs/harness/foundations/README.md
+    - docs/harness/foundations/runtime-protocol-chapter-plan.md
+    - docs/harness/catalog/README.md
+    - docs/harness/catalog/skill-impact-matrix.md
+  - result:
+    - removed `docs/harness/design/skills-handback-improvements.md` from current docs truth
+    - removed `design/` as a current Harness owner from README, book spine, and foundations references
+    - expressed Harness docs as thought, architecture, and implementation-mapping layers
+    - rewrote stale design/analysis path wording in skill impact matrix as historical-source context
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260515-harness-readme-entrypoint`: refine `docs/harness/README.md` into a stable Harness documentation-domain entrypoint.
+  - branch: develop-aw
+  - worktrack_commit: b1aeb1e768b21a5973215b3f795815b7d855c621
+  - closeout_checkpoint: develop-aw@74c87d379b74653b1775e88caa7c512b0848f4cc
+  - milestone_id: MS-20260514-001
+  - node_type: docs/harness-entrypoint
+  - status: done
+  - intake_route: milestone-acceptance-follow-up
+  - scope:
+    - docs/harness/README.md
+  - result:
+    - added a concise purpose statement limiting the README to entrypoint navigation and owner routing
+    - converted current layering and reading boundaries into one-level path/function tables
+    - removed history-serving design/current-claims/migration prose from the entrypoint
+    - kept required AGENTS, executable-root, and executable-skill-source handoff links without restoring duplicate migration prose
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - git diff --check: passed
+
+- [done] `WT-20260514-book-existing-paths`: remove current-version nonexistent paths from `docs/book.md` and add a governance check for book inline paths.
+  - branch: develop-aw
+  - worktrack_commit: d93ab07dc0ab8498df546daf32240b231646efc3
+  - closeout_checkpoint: develop-aw@de09e5d4c2b4dec9ec4d9aa4d7bc3e806fc4cbe5
+  - milestone_id: MS-20260514-001
+  - node_type: docs/governance-correction
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - AGENTS.md
+    - docs/book.md
+    - docs/project-maintenance/foundations/root-directory-layering.md
+    - docs/project-maintenance/governance/path-governance-checks.md
+    - toolchain/scripts/test/path_governance_check.py
+    - toolchain/scripts/test/test_path_governance_check.py
+  - result:
+    - removed absent `analysis/`, `ideas/`, and `archive/` chapter/path references from `docs/book.md`
+    - rewrote short local book paths such as `governance/` and `catalog/` to existing full current paths
+    - aligned `AGENTS.md` and root layering docs to the current docs top-level structure
+    - added `docs/book.md` inline path validation to `path_governance_check.py`
+  - validation:
+    - targeted pytest for path_governance_check: passed, 11 tests
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-current-docs-only-truth`: remove future-only docs planning truth after programmer rejected milestone handback.
+  - branch: develop-aw
+  - worktrack_commit: f1d47155d68f1aa64ddea38adeb6513130a9d10b
+  - closeout_checkpoint: develop-aw@43c447ce68357f2502591043588ae350d851050d
+  - milestone_id: MS-20260514-001
+  - node_type: docs/governance-correction
+  - status: done
+  - intake_route: milestone-acceptance-rejection
+  - scope:
+    - docs/book.md
+    - docs/project-maintenance/governance/
+    - docs/harness/README.md
+    - docs/harness/catalog/
+  - result:
+    - deleted `docs/project-maintenance/governance/docs-ordered-restructure-plan.md`
+    - removed the deleted plan from `docs/book.md` Full Reading Order and governance README
+    - added current-version-only docs truth wording to `docs/book.md` and path governance
+    - rewrote obvious `待迁移/后续重做` entrypoint wording as current-state owner language
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-docs-ordered-restructure-plan`: prepare the ordered docs restructuring plan after book maintenance rules are in place.
+  - branch: develop-aw
+  - worktrack_commit: f31636a4e1a70f6e760fb4a2a753b8b50c11038d
+  - closeout_checkpoint: develop-aw@857077fbc7b0ff835b3099a56c2a0c884d314a91
+  - milestone_id: MS-20260514-001
+  - node_type: docs/planning
+  - status: done
+  - intake_route: milestone-append
+  - scope:
+    - docs/book.md
+    - docs/project-maintenance/governance/
+  - result:
+    - added `docs/project-maintenance/governance/docs-ordered-restructure-plan.md`
+    - governance README links the plan in the local operating sequence
+    - `docs/book.md` Full Reading Order links the plan directly
+    - plan defines grouping, relationship rules, future slices, reader dependencies, stale-entrypoint cleanup, migration risks, non-goals, and a future worktrack seed
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-docs-book-maintenance-rules`: strengthen `docs/book.md` and docs governance so the book spine carries maintenance rules, grouping relationships, and an ordered reading path across the docs tree.
+  - branch: develop-aw
+  - worktrack_commit: 692928b4a74ee0497e5f6e5f266baef5d2b37e5f
+  - closeout_checkpoint: develop-aw@6d6b62a6196e19c09a005905b2beb03888298f23
+  - milestone_id: MS-20260514-001
+  - node_type: docs/governance
+  - status: done
+  - intake_route: milestone-append
+  - scope:
+    - docs/book.md
+    - docs/README.md
+    - INDEX.md
+    - docs/project-maintenance/governance/
+    - toolchain/scripts/test/
+  - result:
+    - `docs/book.md` now includes a Full Reading Order linking all current docs markdown files except itself
+    - `docs/book.md` now documents grouping/relationship rules and docs path maintenance steps
+    - path governance now checks explicit Full Reading Order coverage in addition to book-spine reachability
+    - route and review/verify governance wording now matches the strengthened book role
+  - validation:
+    - targeted pytest for path_governance_check: passed, 9 tests
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-docs-governance-checks`: add review or machine-check guardrails so future docs attach to the book spine.
+  - branch: develop-aw
+  - worktrack_commit: ad76afc97565d03143989b8f254be77054ac12f9
+  - closeout_checkpoint: develop-aw@75c2f798861d6e45b5c66b3c5ff0c9a39df31dc0
+  - milestone_id: MS-20260514-001
+  - node_type: docs/toolchain
+  - status: done
+  - intake_route: milestone
+  - scope:
+    - docs/project-maintenance/governance/
+    - toolchain/scripts/test/
+  - result:
+    - governance now explains how new and moved docs attach to `docs/book.md` and nearest chapter entrypoints
+    - `path_governance_check.py` now traverses `docs/book.md` reachability for substantive docs
+    - targeted tests cover reachable docs, unreachable docs, directory links, anchors, extensionless links, and external/local-anchor ignores
+    - review/verify governance now requires reader-coherence evidence or explicit deferral before docs restructuring closeout
+  - validation:
+    - targeted pytest for path_governance_check: passed, 7 tests
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - folder_logic_check.py: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-runtime-protocol-split-plan`: keep `Harness指导思想.md` as doctrine and split or plan splitting `Harness运行协议.md` into runtime protocol chapters.
+  - branch: develop-aw
+  - worktrack_commit: f790a96a8c06e92914d6ac13e15b4415c1123199
+  - closeout_checkpoint: develop-aw@1457b93f38cc2f0d509070eeb58a6777410d4e07
+  - milestone_id: MS-20260514-001
+  - node_type: docs/harness
+  - status: done
+  - intake_route: milestone
+  - scope:
+    - docs/harness/foundations/Harness指导思想.md
+    - docs/harness/foundations/Harness运行协议.md
+    - docs/harness/foundations/
+  - result:
+    - `Harness指导思想.md` remained unchanged and doctrine-only
+    - `Harness运行协议.md` now links to `runtime-protocol-chapter-plan.md` while remaining current protocol authority until migration
+    - `runtime-protocol-chapter-plan.md` defines target chapters, migration order, retained protocol entry contents, outside-owner boundaries, and future split acceptance
+    - foundations navigation now distinguishes doctrine, runtime protocol, artifact contracts, catalog inventory, workflow policy, design analysis, and executable skill surfaces
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-harness-catalog-cleanup`: clarify `docs/harness/catalog/` boundaries and separate catalog inventory from contracts or analysis.
+  - branch: develop-aw
+  - worktrack_commit: f637f4ba7d73b67da4ab0f3cd3f41126fef4597b
+  - closeout_checkpoint: develop-aw@700c39e5ec7da91c0d76b61aeb35d257a0362aa2
+  - milestone_id: MS-20260514-001
+  - node_type: docs/harness
+  - status: done
+  - intake_route: milestone
+  - scope:
+    - docs/harness/catalog/
+    - docs/harness/README.md
+  - result:
+    - catalog responsibility is now explicitly skill inventory, not doctrine/protocol/artifact/workflow/design/source ownership
+    - non-catalog material under catalog has documented owner/destination or migration route
+    - milestone catalog entries now include canonical executable source links
+    - Harness README distinguishes catalog inventory from governance contracts, protocol, workflow policy, and design analysis
+  - validation:
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260514-docs-book-spine`: create `docs/book.md` as the canonical book-style spine for `docs/`.
+  - branch: develop-aw
+  - worktrack_commit: f2a541f25106439fc9777e4889819b7288454da8
+  - closeout_checkpoint: develop-aw@9f9c5fe9991cf2a822746bf0ff5d37a5a751c6e0
+  - milestone_id: MS-20260514-001
+  - node_type: docs/governance
+  - status: done
+  - intake_route: milestone
+  - scope:
+    - docs/book.md
+    - docs/README.md
+    - INDEX.md
+    - docs/project-maintenance/foundations/root-directory-layering.md
+    - docs/project-maintenance/governance/path-governance-checks.md
+    - toolchain/scripts/test/folder_logic_check.py
+    - toolchain/scripts/test/path_governance_check.py
+    - toolchain/scripts/test/scope_gate_check.py
+    - toolchain/scripts/test/closeout_acceptance_gate.py
+  - result:
+    - docs book spine exists and defines chapter order, owner boundaries, and placement rules
+    - docs entrypoints route readers to `docs/book.md`
+    - governance checks admit `docs/book.md`, `analysis/`, `ideas/`, and `archive/`
+    - closeout scope gate uses exact file matching for file allowances
+  - validation:
+    - folder_logic_check.py: passed
+    - path_governance_check.py: passed
+    - governance_semantic_check.py --json: passed with unrelated retained warnings
+    - targeted pytest for folder/path/closeout gate tests: passed
+    - closeout_acceptance_gate.py --json: passed
+    - git diff --check: passed
+
+- [done] `WT-20260513-m5-execution-policy-template-reference`: canonicalize Execution Policy template references.
+  - branch: develop-aw
+  - closeout_checkpoint: develop-aw@2f113746688d3db3a1cb9d431bbfb94a0bdcc579
+  - milestone_id: MS-20260513-005
+  - result:
+    - canonical Execution Policy text is owned by `docs/harness/artifact/worktrack/contract.md#execution-policy`
+    - init-worktrack and set-harness-goal templates reference the canonical section instead of duplicating prose
+    - governance detects duplicated policy prose returning to templates
+  - validation:
+    - `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test/test_governance_semantic_check.py -q`: passed
+    - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py --json`: passed
+    - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py`: passed
+    - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py`: passed
+    - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gate.py --json`: passed
+    - `git diff --check`: passed
+
+## Rolled Back Runtime Records
+
+- 2026-05-14: programmer requested local rollback to `2f113746688d3db3a1cb9d431bbfb94a0bdcc579`.
+  - removed_from_active_runtime_history:
+    - `MS-20260513-006`
+    - prior skill-constraint-visibility `MS-20260514-001`
+  - reason: skill compression chain failed the intended direction; prompt surface length increased instead of decreasing.
+  - retained_baseline: `MS-20260513-005`

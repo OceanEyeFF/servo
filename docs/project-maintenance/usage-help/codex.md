@@ -22,7 +22,7 @@ AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$AW_
 AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" npx --yes --package "$AW_INSTALLER_PACKAGE" -- servo-installer verify --backend agents
 ```
 
-然后在目标仓库用 Codex `set-harness-goal-skill` 初始化 `.aw/`。
+然后在目标仓库用 Codex `set-harness-goal-skill` 初始化 `.servo/`。
 
 ## 二、Backend 标识与 target root
 

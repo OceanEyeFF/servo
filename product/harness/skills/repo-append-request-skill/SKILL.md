@@ -200,6 +200,6 @@ description: 当 RepoScope 收到 append-feature 或 append-design 追加请求�
 
 ## 资源
 
-使用当前 `.aw/goal-charter.md`、`.aw/repo/snapshot-status.md`、`.aw/control-state.md`、用户追加请求与必要的活跃 worktrack 摘要作为依据。
+使用当前 `.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md`、用户追加请求与必要的活跃 worktrack 摘要作为依据。
 
 当需要整理 `Append Request 路由结果` 时，使用 `templates/append-request.template.md` 作为格式参考。

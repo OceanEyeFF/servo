@@ -63,9 +63,9 @@ npx servo-installer verify --backend agents
 /set-harness-goal-skill
 ```
 
-这一步会创建 `.aw/` 目录并生成 Goal Charter（`repo goal/charter`），定义仓库的长期目标、工程节点类型和系统不变量。
+这一步会创建 `.servo/` 目录并生成 Goal Charter（`repo goal/charter`），定义仓库的长期目标、工程节点类型和系统不变量。
 
-初始化完成后，`.aw/` 下会生成：
+初始化完成后，`.servo/` 下会生成：
 - `control-state.md` — Harness 控制面状态
 - `goal-charter.md` — 仓库目标与约束
 - `repo/` — Repo 级快照和 backlog
@@ -175,7 +175,7 @@ Harness 会在额度耗尽时停止并交还控制权。你可以用新的 `/har
 
 ### Q: 如何查看当前 Milestone 进度？
 
-Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以直接查看 `.aw/milestone/` 目录下的 Milestone artifact。
+Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以直接查看 `.servo/milestone/` 目录下的 Milestone artifact。
 
 ### Q: agents 和 claude backend 有什么区别？
 

@@ -12,7 +12,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REPO_ANALYSIS_PATHS = (
-    REPO_ROOT / "product" / ".aw_template" / "repo" / "analysis.md",
+    REPO_ROOT / "product" / ".servo_template" / "repo" / "analysis.md",
     REPO_ROOT
     / "product"
     / "harness"

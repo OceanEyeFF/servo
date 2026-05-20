@@ -69,4 +69,4 @@ $set-harness-goal-skill 请根据当前已有代码项目初始化 Harness，并
 
 - 已有代码的项目先 `diagnose --json` 做只读确认，避免误覆盖
 - 如果 target repo 已有 `.agents/` 或 `.claude/` 目录，`install` 前先 `update --json` 查看 diff
-- Harness 控制面（`.aw/`）是 runtime state，不提交到版本控制；skills（`.agents/skills/` 或 `.claude/skills/`）可按需提交或 gitignore
+- Harness 控制面（`.servo/`）是 runtime state，不提交到版本控制；skills（`.agents/skills/` 或 `.claude/skills/`）可按需提交或 gitignore

@@ -138,7 +138,7 @@ RepoScope.Observe
 
 阅读路由由 [AGENTS.md](../../../AGENTS.md) 的 Route Contract 承接。写回边界由 [Review / Verify 治理入口](../../project-maintenance/governance/review-verify-handbook.md) 承接。`memory-side`、`task-interface` 与 `adjacent-systems` 已退役。
 
-repo-local runtime 状态属于 `.aw/` 等 state layer，不替代 `docs/`、`product/` 或 `toolchain/` 中的正式真相。
+repo-local runtime 状态属于 `.servo/` 等 state layer，不替代 `docs/`、`product/` 或 `toolchain/` 中的正式真相。
 
 ## 十、判断标准
 

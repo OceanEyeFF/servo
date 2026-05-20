@@ -1,6 +1,6 @@
 # Worktrack Contract
 
-> 这是 `.aw/worktrack/contract.md` 的模板来源，用来填写单个 worktrack 的局部状态转移合同。
+> 这是 `.servo/worktrack/contract.md` 的模板来源，用来填写单个 worktrack 的局部状态转移合同。
 > 按 `Control Signal` / `Supporting Detail` 双层输出：`Control Signal` 只放影响下一动作决策的关键结论；`Supporting Detail` 放完整上下文。
 
 ## Metadata

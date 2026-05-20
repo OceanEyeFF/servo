@@ -20,7 +20,7 @@ DEFAULT_ALLOWED_PREFIXES = (
     "docs/project-maintenance/",
     "docs/harness/",
     "product/README.md",
-    "product/.aw_template/",
+    "product/.servo_template/",
     "package.json",
     "product/harness/skills/",
     "product/harness/adapters/",

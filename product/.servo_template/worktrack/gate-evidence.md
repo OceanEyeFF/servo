@@ -1,6 +1,6 @@
 # Gate Evidence
 
-> 这是 `.aw/worktrack/gate-evidence.md` 的模板来源，用来记录当前 worktrack 的 gate 证据与裁决依据。
+> 这是 `.servo/worktrack/gate-evidence.md` 的模板来源，用来记录当前 worktrack 的 gate 证据与裁决依据。
 
 ## Metadata
 
