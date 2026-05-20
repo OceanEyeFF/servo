@@ -1,5 +1,5 @@
 {
-  "name": "aw-installer",
+  "name": "servo-installer",
   "version": "0.5.1-rc.1",
   "private": true,
   "description": "Local package scaffold for the AW Harness installer wrapper.",

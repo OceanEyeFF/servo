@@ -12,7 +12,7 @@ last_verified: 2026-05-18
 
 ## 前置条件
 
-- Node.js >= 18（用于 `npx aw-installer`）
+- Node.js >= 18（用于 `npx servo-installer`）
 - 一个 Git 仓库（已有代码或空项目均可）
 - 一个支持 slash command 的 Coding CLI（Codex 或 Claude Code）
 
@@ -21,7 +21,7 @@ last_verified: 2026-05-18
 在安装前，先诊断目标仓库是否已安装过 Harness：
 
 ```bash
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 ```
 
 输出示例：
@@ -36,21 +36,21 @@ npx aw-installer diagnose --backend agents --json
 **人类 operator 推荐使用 TUI 引导流程：**
 
 ```bash
-npx aw-installer
+npx servo-installer
 ```
 
-不带参数启动 TUI，默认使用 `bundle` backend（同时部署 agents + claude）。TUI 提供六阶段引导：diagnose → preview → confirm → install → verify → summary。详见 [TUI/CLI 合同](../../aw-installer/tui/human-cli-contract.md)。
+不带参数启动 TUI，默认使用 `bundle` backend（同时部署 agents + claude）。TUI 提供六阶段引导：diagnose → preview → confirm → install → verify → summary。详见 [TUI/CLI 合同](../../servo-installer/tui/human-cli-contract.md)。
 
 **AI agent、CI 或脚本使用 CLI：**
 
 ```bash
-npx aw-installer install --backend agents
+npx servo-installer install --backend agents
 ```
 
 验证安装：
 
 ```bash
-npx aw-installer verify --backend agents
+npx servo-installer verify --backend agents
 ```
 
 `agents` 是当前主路径 backend。Claude Code 用户将 `--backend agents` 替换为 `--backend claude`。CLI 必须显式指定 `--backend`。

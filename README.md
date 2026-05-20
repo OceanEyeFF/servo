@@ -14,28 +14,28 @@ last_verified: 2026-05-07
 确保有 Node.js 18+，在目标仓库根目录安装 Codex / agents backend 的 Harness Skills：
 
 ```bash
-npx aw-installer
-npx aw-installer tui
+npx servo-installer
+npx servo-installer tui
 ```
 
 交互式终端中，已批准 package entrypoint 可以进入最小 TUI；CI、脚本或非交互环境应使用显式 CLI：
 
 ```bash
-npx aw-installer --version
-npx aw-installer diagnose --backend agents --json
-npx aw-installer verify --backend agents
-npx aw-installer update --backend agents
-npx aw-installer update --backend agents --yes
-npx aw-installer install --backend agents
+npx servo-installer --version
+npx servo-installer diagnose --backend agents --json
+npx servo-installer verify --backend agents
+npx servo-installer update --backend agents
+npx servo-installer update --backend agents --yes
+npx servo-installer install --backend agents
 ```
 
 当前 public / near-public 主路径仍是 `agents` backend，也就是 Codex 使用的 `.agents/skills/` payload。推荐从目标仓库根目录先做只读观察，再显式 apply：
 
 ```bash
-npx aw-installer diagnose --backend agents --json
-npx aw-installer update --backend agents
-npx aw-installer update --backend agents --yes
-npx aw-installer verify --backend agents
+npx servo-installer diagnose --backend agents --json
+npx servo-installer update --backend agents
+npx servo-installer update --backend agents --yes
+npx servo-installer verify --backend agents
 ```
 
 进阶安装、TUI、文件软连接和 Claude Code backend 见：

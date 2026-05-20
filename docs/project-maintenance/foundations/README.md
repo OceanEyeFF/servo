@@ -23,7 +23,7 @@ last_verified: 2026-05-17
 |------|---------|
 | Harness 思路层（doctrine/runtime） | [../../harness/foundations/README.md](../../harness/foundations/README.md) |
 | 治理规则与检查 | [../governance/README.md](../governance/README.md) |
-| Deploy runbook | [../deploy/README.md](../../aw-installer/README.md) |
+| Deploy runbook | [../deploy/README.md](../../servo-installer/README.md) |
 | 测试执行 | [../testing/README.md](../testing/README.md) |
 | 使用帮助 | [../usage-help/README.md](../usage-help/README.md) |
 

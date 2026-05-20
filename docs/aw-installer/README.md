@@ -1,28 +1,28 @@
 ---
-title: "aw-installer Documentation"
+title: "servo-installer Documentation"
 status: active
 updated: 2026-05-19
 owner: aw-kernel
 last_verified: 2026-05-19
 ---
-# aw-installer Documentation
+# servo-installer Documentation
 
-> aw-installer 的独立文档体系。与 `docs/harness/`（Harness 控制面）和 `docs/project-maintenance/`（项目维护治理）分层，专注于 operator 视角的安装、配置、卸载和维护。
+> servo-installer 的独立文档体系。与 `docs/harness/`（Harness 控制面）和 `docs/project-maintenance/`（项目维护治理）分层，专注于 operator 视角的安装、配置、卸载和维护。
 
 ## 文档分层原则
 
 | 文档层 | 目录 | 受众 | 内容边界 |
 |--------|------|------|---------|
-| **aw-installer** | `docs/aw-installer/` | operator（人类、AI、CI） | 安装/卸载/维护 runbook、合同规范、参考说明 |
+| **servo-installer** | `docs/servo-installer/` | operator（人类、AI、CI） | 安装/卸载/维护 runbook、合同规范、参考说明 |
 | **Harness** | `docs/harness/` | Harness 开发者、平台维护者 | 控制回路、artifact 合同、skill 目录 |
 | **Project Maintenance** | `docs/project-maintenance/` | 项目维护者 | 治理规则、分支/PR 策略、release channel |
 
-**关键边界：** aw-installer 文档描述"如何使用 aw-installer"，Harness 文档描述"Harness 如何运行"。operator 不应该需要读 Harness 文档才能完成安装。
+**关键边界：** servo-installer 文档描述"如何使用 servo-installer"，Harness 文档描述"Harness 如何运行"。operator 不应该需要读 Harness 文档才能完成安装。
 
 ## 章节结构
 
 ```
-docs/aw-installer/
+docs/servo-installer/
 ├── README.md                       ← 本页：章节索引与阅读路由
 │
 ├── contracts/                      ← 合同与规范（normative）
@@ -49,7 +49,7 @@ docs/aw-installer/
 
 ### contracts/ — 合同与规范
 
-定义 aw-installer 的行为合同。这些是 normative 文档：如果 aw-installer 的行为与合同不一致，那就是 bug。
+定义 servo-installer 的行为合同。这些是 normative 文档：如果 servo-installer 的行为与合同不一致，那就是 bug。
 
 | 文档 | 管理内容 |
 |------|---------|
@@ -70,7 +70,7 @@ operator 执行具体任务时使用。
 
 ### reference/ — 参考与说明
 
-解释性文档，帮助 operator 理解 aw-installer 的工作方式。
+解释性文档，帮助 operator 理解 servo-installer 的工作方式。
 
 | 文档 | 说明内容 |
 |------|---------|
@@ -103,7 +103,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 
 | 问题 | 入口 |
 |------|------|
-| 安装 aw-installer 管理的 skills | runbooks/deploy-runbook.md |
+| 安装 servo-installer 管理的 skills | runbooks/deploy-runbook.md |
 | 更新到新版本 | runbooks/skill-deployment-maintenance.md |
 | 诊断安装状态 | runbooks/skill-deployment-maintenance.md |
 | 完全卸载 | runbooks/uninstall-remove-runbook.md |
@@ -117,17 +117,17 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 
 ## 与旧路径的关系
 
-`docs/project-maintenance/deploy/` 原是 aw-installer 文档的唯一存放位置。本体系建立后：
+`docs/project-maintenance/deploy/` 原是 servo-installer 文档的唯一存放位置。本体系建立后：
 
-- `docs/project-maintenance/deploy/README.md` 简化为指向 `docs/aw-installer/README.md` 的路由指针
-- 所有 aw-installer 的 operator 文档迁移到 `docs/aw-installer/` 对应章节
-- 与 aw-installer 无关的项目维护内容保留在 `docs/project-maintenance/`
+- `docs/project-maintenance/deploy/README.md` 简化为指向 `docs/servo-installer/README.md` 的路由指针
+- 所有 servo-installer 的 operator 文档迁移到 `docs/servo-installer/` 对应章节
+- 与 servo-installer 无关的项目维护内容保留在 `docs/project-maintenance/`
 
 ## 不变量
 
-- aw-installer 文档只描述 operator 如何使用，不描述 Harness 如何实现
+- servo-installer 文档只描述 operator 如何使用，不描述 Harness 如何实现
 - 合同文档是 normative——行为不一致时合同优先
-- 新 aw-installer 功能必须先确定文档归属章节再实现
+- 新 servo-installer 功能必须先确定文档归属章节再实现
 - `docs/book.md` 的阅读顺序始终反映当前文档结构
 
 ## 停止线

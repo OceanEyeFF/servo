@@ -31,8 +31,8 @@ Harness 支持两个 backend，共享同一套合同和验证标准，差异仅�
 
 | Backend | 安装命令 | 部署路径 | 定位 |
 |---------|---------|---------|------|
-| `agents` | `npx aw-installer install --backend agents` | `.agents/skills/` | 主路径，Codex 默认 |
-| `claude` | `npx aw-installer install --backend claude` | `.claude/skills/` | Claude Code 兼容路径 |
+| `agents` | `npx servo-installer install --backend agents` | `.agents/skills/` | 主路径，Codex 默认 |
+| `claude` | `npx servo-installer install --backend claude` | `.claude/skills/` | Claude Code 兼容路径 |
 
 详细 backend 差异和 runtime 配置见：
 - [codex.md](./codex.md) — Codex / agents backend 专属
@@ -43,9 +43,9 @@ Harness 支持两个 backend，共享同一套合同和验证标准，差异仅�
 ### 工作流一：初始化全新仓库
 
 ```
-npx aw-installer diagnose --backend agents --json
-npx aw-installer install --backend agents
-npx aw-installer verify --backend agents
+npx servo-installer diagnose --backend agents --json
+npx servo-installer install --backend agents
+npx servo-installer verify --backend agents
 /set-harness-goal-skill
 ```
 → 完整步骤见 [init-greenfield.md](./init-greenfield.md)
@@ -53,7 +53,7 @@ npx aw-installer verify --backend agents
 ### 工作流二：已有代码接入 Harness
 
 ```
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 /set-harness-goal-skill
 ```
 → 完整步骤见 [init-with-code.md](./init-with-code.md)
@@ -91,7 +91,7 @@ npx aw-installer diagnose --backend agents --json
 
 ## 通用提示
 
-- 安装或重装前先跑 `npx aw-installer diagnose --backend agents --json`
+- 安装或重装前先跑 `npx servo-installer diagnose --backend agents --json`
 - 每个 Worktrack 在独立 Git 分支上执行，完成后合并回基线
 - Milestone 最终验收由 programmer 做决定；handback 需要显式 unlock（不是裸"继续"）
 - 目标描述应包含：最终结果、非目标范围、验收标准、约束
