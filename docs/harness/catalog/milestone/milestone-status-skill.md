@@ -1,9 +1,9 @@
 ---
 title: "Milestone Status Skill"
 status: active
-updated: 2026-05-14
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-14
+last_verified: 2026-05-20
 ---
 
 # Milestone Status Skill
@@ -75,6 +75,8 @@ canonical executable source：
 | recommendations | array | 对 RepoScope.Decide 的建议 |
 | pipeline_advancement | string | 若当前 milestone achieved，推荐激活的下一个 milestone_id |
 | pipeline_state | object | Pipeline 快照（planned/active/completed/superseded 计数） |
+| writeback_required | boolean | 是否要求 `harness-skill` 执行 milestone 写回 |
+| writeback_instructions | object | 包含 milestone artifact、control-state、backlog 与 pipeline advancement 写回指令 |
 
 ## Checkpoint 合同
 
@@ -93,3 +95,7 @@ canonical executable source：
 - goal-driven milestone 的所有声明 worktrack 关闭后（先跑 `Milestone Gate`，再判定 `purpose_achieved`）
 - Milestone 验收边界触发时（判定 handback 或 pipeline 推进）
 - programmer 显式请求 Milestone 状态检查
+
+## Final Acceptance 交接
+
+本技能不直接执行 programmer final acceptance 写回。goal-driven milestone 达成 `achieved` 时，本技能只输出可交接验收信号和 `writeback_instructions`。programmer 明确接受后，由 `harness-skill` 以逻辑事务同步 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 和相关 worktrack 状态；若事务不能完整完成，必须返回阻塞项。

@@ -31,8 +31,11 @@ from governance_semantic_check import (
     check_review_evidence_four_lane_contract,
     check_review_verify_docs_list_closeout_steps,
     check_root_tool_shims_disable_bytecode,
+    check_runtime_artifact_consistency,
+    check_runtime_dispatch_profile_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
+    check_worktrack_intake_review_contract,
     is_bytecode_free_command_excluded,
 )
 
@@ -317,6 +320,63 @@ def test_check_dispatch_context_contract_flags_missing_budget_term(tmp_path: Pat
     assert any("do_not_read" in item for item in report.failures)
 
 
+def _write_runtime_dispatch_profile_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/foundations/dispatch-decision-policy.md",
+        "docs/harness/foundations/runtime-dispatch-contract.md",
+        "docs/harness/artifact/worktrack/dispatch-packet.md",
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/dispatch-skills/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+        "product/.aw_template/control-state.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_runtime_dispatch_profile_contract_flags_missing_field(tmp_path: Path) -> None:
+    _write_runtime_dispatch_profile_sources(
+        tmp_path,
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\ndispatch_package_safety\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+    write_doc(
+        tmp_path / "docs/harness/artifact/worktrack/dispatch-packet.md",
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+
+    report = SemanticReport()
+    check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert any("dispatch_package_safety" in item for item in report.failures)
+
+
+def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_path: Path) -> None:
+    _write_runtime_dispatch_profile_sources(
+        tmp_path,
+        "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
+        "subagent_dispatch_shell\nruntime_supports_subagent\nsubagent_permission_state\n"
+        "permission_allows_delegation\ndispatch_package_safety\n"
+        "delegation_attempted\nattempted_carrier\ncarrier_decision\nfallback_reason\n"
+        "ClaudeCodeCLI\nDeepseek\nruntime fallback\npermission blocked\n"
+        "dispatch package unsafe\n",
+    )
+
+    report = SemanticReport()
+    check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
 def test_check_review_evidence_four_lane_contract_flags_missing_lane(tmp_path: Path) -> None:
     for relative_path in (
         "product/harness/skills/review-evidence-skill/SKILL.md",
@@ -397,6 +457,61 @@ def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(tmp
     check_repo_whats_next_overview_fallback_contract(tmp_path, report)
 
     assert any("不改变 Harness 控制状态" in item for item in report.failures)
+
+
+def _write_worktrack_intake_review_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/artifact/worktrack/contract.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
+        "product/.aw_template/worktrack/contract.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_worktrack_intake_review_contract_flags_missing_field(tmp_path: Path) -> None:
+    _write_worktrack_intake_review_sources(
+        tmp_path,
+        "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\nready_for_worktrack_init\n"
+        "ready_for_worktrack_init\nrefresh_required\nadjust_worktracks\nblocked\n",
+    )
+    write_doc(
+        tmp_path / "docs/harness/artifact/worktrack/contract.md",
+        "worktrack_intake_review\nrepo_fundamentals\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\n"
+        "ready_for_worktrack_init\nrefresh_required\nadjust_worktracks\nblocked\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_intake_review_contract(tmp_path, report)
+
+    assert any("snapshot_freshness" in item for item in report.failures)
+
+
+def test_check_worktrack_intake_review_contract_accepts_complete_sources(tmp_path: Path) -> None:
+    _write_worktrack_intake_review_sources(
+        tmp_path,
+        "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
+        "milestone_purpose_alignment\nhistorical_conflict_risk\n"
+        "worktrack_adjustment_recommendations\nadd_remove_worktrack_recommendations\n"
+        "intake_review_verdict\nready_for_worktrack_init\n"
+        "refresh_required\nadjust_worktracks\nblocked\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_intake_review_contract(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_adapter_wrappers_are_thin_ignores_absent_adapter_layer(tmp_path: Path) -> None:
@@ -936,3 +1051,145 @@ def test_check_artifact_skill_alignment_missing_skill_file(tmp_path: Path) -> No
 
     assert len(report.failures) > 0
     assert any("missing skill file" in f for f in report.failures)
+
+
+def _write_runtime_artifacts(
+    tmp_path: Path,
+    *,
+    active_milestone: str = "MS-001",
+    milestone_status: str = "active",
+    summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
+    backlog_entries: str | None = None,
+) -> None:
+    write_doc(
+        tmp_path / ".aw/control-state.md",
+        "\n".join(
+            [
+                "# Harness Control State",
+                "",
+                "## Milestone Pipeline",
+                f"- active_milestone: {active_milestone}",
+                f"- milestone_status: {milestone_status}",
+                f"- milestone_pipeline_summary: {summary}",
+                "",
+            ]
+        ),
+    )
+    if backlog_entries is None:
+        backlog_entries = "\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+                "- milestone_id: MS-000",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-000 (done)",
+                "",
+            ]
+        )
+    write_doc(
+        tmp_path / ".aw/repo/milestone-backlog.md",
+        "# Repo Milestone Backlog\n\n## Pipeline Entries\n\n" + backlog_entries,
+    )
+
+
+def test_check_runtime_artifact_consistency_noops_without_aw(tmp_path: Path) -> None:
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+    assert any(".aw/ directory missing" in item for item in report.infos)
+
+
+def test_check_runtime_artifact_consistency_accepts_consistent_state(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path)
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_runtime_artifact_consistency_flags_missing_active_pointer(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, active_milestone="MS-MISSING")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_milestone MS-MISSING is missing" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_summary_mismatch(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, summary="planned=1 / active=0 / completed=1 / superseded=0")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("milestone_pipeline_summary mismatch" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_multiple_active_milestones(tmp_path: Path) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        summary="planned=0 / active=2 / completed=0 / superseded=0",
+        backlog_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+                "- milestone_id: MS-002",
+                "  - status: active",
+                "  - worktrack_list:",
+                "    - WT-002 (planned)",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("multiple active milestones" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_completed_milestone_planned_worktrack(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_milestone="none",
+        milestone_status="none",
+        summary="planned=0 / active=0 / completed=1 / superseded=0",
+        backlog_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-001 (planned)",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("unfinished worktrack markers" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_malformed_summary(tmp_path: Path) -> None:
+    _write_runtime_artifacts(tmp_path, summary="active milestone only")
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("milestone_pipeline_summary is missing or malformed" in item for item in report.failures)

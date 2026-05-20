@@ -246,6 +246,37 @@ DISPATCH_CONTEXT_REQUIRED_TERMS = [
     "may_read",
     "do_not_read",
 ]
+RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS = [
+    "docs/harness/foundations/dispatch-decision-policy.md",
+    "docs/harness/foundations/runtime-dispatch-contract.md",
+    "docs/harness/artifact/worktrack/dispatch-packet.md",
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/dispatch-skills/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/.aw_template/control-state.md",
+]
+RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS = [
+    "runtime_dispatch_profile",
+    "backend_runtime",
+    "model_family",
+    "subagent_dispatch_shell",
+    "runtime_supports_subagent",
+    "subagent_permission_state",
+    "permission_allows_delegation",
+    "dispatch_package_safety",
+    "delegation_attempted",
+    "attempted_carrier",
+    "carrier_decision",
+    "fallback_reason",
+]
+RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
+    "ClaudeCodeCLI",
+    "Deepseek",
+    "runtime fallback",
+    "permission blocked",
+    "dispatch package unsafe",
+]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
@@ -346,6 +377,36 @@ REPO_WHATS_NEXT_OVERVIEW_FALLBACK_REQUIRED_TERMS = [
     "Facts / Inferences / Unknowns",
     "不创建工作追踪",
     "不改变 Harness 控制状态",
+]
+WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/artifact/worktrack/contract.md",
+]
+WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS = [
+    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
+    "product/.aw_template/worktrack/contract.md",
+]
+WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS = [
+    "worktrack_intake_review",
+    "repo_fundamentals",
+    "snapshot_freshness",
+    "milestone_purpose_alignment",
+    "historical_conflict_risk",
+    "worktrack_adjustment_recommendations",
+    "add_remove_worktrack_recommendations",
+    "intake_review_verdict",
+    "ready_for_worktrack_init",
+]
+WORKTRACK_INTAKE_REVIEW_VERDICTS = [
+    "ready_for_worktrack_init",
+    "refresh_required",
+    "adjust_worktracks",
+    "blocked",
 ]
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
@@ -890,6 +951,36 @@ def check_dispatch_context_contract(repo_root: Path, report: SemanticReport) -> 
     report.add_info(f"checked {checked} dispatch context contract sources")
 
 
+def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing runtime dispatch profile source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"runtime dispatch profile contract missing required term {term!r}: {relative_path}"
+                )
+        if relative_path in {
+            "docs/harness/foundations/dispatch-decision-policy.md",
+            "docs/harness/foundations/runtime-dispatch-contract.md",
+            "docs/harness/artifact/worktrack/dispatch-packet.md",
+            "product/harness/skills/harness-skill/SKILL.md",
+            "product/harness/skills/dispatch-skills/SKILL.md",
+        }:
+            for term in RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "runtime dispatch profile contract missing compatibility term "
+                        f"{term!r}: {relative_path}"
+                    )
+    report.add_info(f"checked {checked} runtime dispatch profile contract sources")
+
+
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
@@ -994,6 +1085,41 @@ def check_repo_whats_next_overview_fallback_contract(
     report.add_info(f"checked {checked} repo whats-next overview fallback sources")
 
 
+def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack intake review contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack intake review contract missing required term {term!r}: {relative_path}"
+                )
+        for verdict in WORKTRACK_INTAKE_REVIEW_VERDICTS:
+            if verdict not in text:
+                report.add_failure(
+                    f"worktrack intake review contract missing verdict {verdict!r}: {relative_path}"
+                )
+
+    for relative_path in WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack intake review template source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack intake review template missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} worktrack intake review contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1035,6 +1161,158 @@ def check_artifact_skill_alignment(repo_root: Path, report: SemanticReport) -> N
         report.add_info(f"  {label}: {aligned}/{len(fields)} fields aligned")
 
     report.add_info(f"checked {checked} artifact contracts for skill alignment")
+
+
+def _parse_control_state(text: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    in_milestone_pipeline = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_milestone_pipeline = line.strip() == "## Milestone Pipeline"
+            continue
+        if not in_milestone_pipeline:
+            continue
+        stripped = line.strip()
+        for key in ("active_milestone", "milestone_status", "milestone_pipeline_summary"):
+            prefix = f"- {key}:"
+            if stripped.startswith(prefix):
+                fields[key] = stripped.removeprefix(prefix).strip()
+    return fields
+
+
+def _parse_pipeline_summary(value: str) -> dict[str, int] | None:
+    summary: dict[str, int] = {}
+    for status in ("planned", "active", "completed", "superseded"):
+        match = re.search(rf"\b{status}\s*=\s*(\d+)\b", value)
+        if match is None:
+            return None
+        summary[status] = int(match.group(1))
+    return summary
+
+
+def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    current: dict[str, object] | None = None
+    in_worktrack_list = False
+
+    for line in text.splitlines():
+        if line.startswith("- milestone_id:"):
+            if current is not None:
+                entries.append(current)
+            current = {
+                "milestone_id": line.split(":", 1)[1].strip(),
+                "status": "",
+                "worktrack_list": [],
+                "accepted": False,
+            }
+            in_worktrack_list = False
+            continue
+
+        if current is None:
+            continue
+
+        stripped = line.strip()
+        if line.startswith("  - "):
+            in_worktrack_list = stripped.startswith("- worktrack_list:")
+            if stripped.startswith("- status:"):
+                current["status"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("- verdict:") and "accepted" in stripped:
+                current["accepted"] = True
+            elif stripped.startswith("- acceptance:"):
+                current["accepted"] = True
+            continue
+
+        if in_worktrack_list and line.startswith("    - "):
+            worktracks = current["worktrack_list"]
+            assert isinstance(worktracks, list)
+            worktracks.append(stripped.removeprefix("- ").strip())
+
+    if current is not None:
+        entries.append(current)
+    return entries
+
+
+def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
+    aw_dir = repo_root / ".aw"
+    if not aw_dir.exists():
+        report.add_info("checked 0 runtime artifacts for consistency, .aw/ directory missing")
+        return
+
+    control_path = aw_dir / "control-state.md"
+    milestone_backlog_path = aw_dir / "repo/milestone-backlog.md"
+    if not control_path.exists() or not milestone_backlog_path.exists():
+        report.add_info("checked 0 runtime artifacts for consistency, control-state or milestone backlog missing")
+        return
+
+    control_text = control_path.read_text(encoding="utf-8")
+    backlog_text = milestone_backlog_path.read_text(encoding="utf-8")
+    control = _parse_control_state(control_text)
+    entries = _parse_milestone_backlog(backlog_text)
+    if not entries:
+        report.add_failure("runtime artifact consistency: milestone backlog has no parseable entries")
+        return
+
+    counts = {status: 0 for status in ("planned", "active", "completed", "superseded")}
+    active_entries: list[dict[str, object]] = []
+    by_id: dict[str, dict[str, object]] = {}
+    for entry in entries:
+        milestone_id = str(entry["milestone_id"])
+        by_id[milestone_id] = entry
+        status = str(entry.get("status", ""))
+        if status in counts:
+            counts[status] += 1
+        if status == "active":
+            active_entries.append(entry)
+        if status in {"completed", "superseded"} or entry.get("accepted") is True:
+            worktracks = entry.get("worktrack_list", [])
+            if isinstance(worktracks, list):
+                stale = [
+                    str(worktrack)
+                    for worktrack in worktracks
+                    if re.search(r"\((planned|active)\)", str(worktrack))
+                ]
+                if stale:
+                    report.add_failure(
+                        "runtime artifact consistency: completed/accepted milestone "
+                        f"{milestone_id} has unfinished worktrack markers: {', '.join(stale)}"
+                    )
+
+    if len(active_entries) > 1:
+        report.add_failure("runtime artifact consistency: milestone backlog has multiple active milestones")
+
+    active_milestone = control.get("active_milestone", "")
+    milestone_status = control.get("milestone_status", "")
+    if active_milestone and active_milestone != "none":
+        active_entry = by_id.get(active_milestone)
+        if active_entry is None:
+            report.add_failure(
+                "runtime artifact consistency: control-state active_milestone "
+                f"{active_milestone} is missing from milestone backlog"
+            )
+        elif active_entry.get("status") != "active":
+            report.add_failure(
+                "runtime artifact consistency: control-state active_milestone "
+                f"{active_milestone} points to non-active milestone status {active_entry.get('status')!r}"
+            )
+        elif milestone_status and milestone_status != "active":
+            report.add_failure(
+                "runtime artifact consistency: control-state milestone_status does not match active milestone"
+            )
+    elif active_entries:
+        report.add_failure(
+            "runtime artifact consistency: milestone backlog has active milestone but control-state active_milestone is none"
+        )
+
+    summary = _parse_pipeline_summary(control.get("milestone_pipeline_summary", ""))
+    if summary is None:
+        report.add_failure("runtime artifact consistency: control-state milestone_pipeline_summary is missing or malformed")
+    elif summary != counts:
+        report.add_failure(
+            "runtime artifact consistency: milestone_pipeline_summary mismatch: "
+            f"control-state={summary}, backlog={counts}"
+        )
+
+    report.add_info(f"checked {len(entries)} runtime milestone entries for consistency")
 
 
 def _is_readme_or_excluded(rel_path: str) -> bool:
@@ -1153,12 +1431,15 @@ def main() -> int:
     check_manual_runbook_agents_skill_count(repo_root, report)
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
+    check_runtime_dispatch_profile_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)
     check_closeout_record_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
+    check_worktrack_intake_review_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
+    check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
 
     payload = {

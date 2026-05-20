@@ -47,7 +47,9 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 7. 如果有，就通过该专用技能分派。
    - 如果没有，唯一合法行为是把调度包转成一次性的任务专用执行指令，明确目标、范围内、范围外、验收切片、完成信号、回传证据格式和执行载体。阻塞流程或临时发明新 skill 名称的行为必须被阻断。
 8. 读取 `runtime_dispatch_mode`（按 `override_scope -> contract -> control-state default -> runtime auto`）并选择执行载体；默认 `worktrack-contract-primary` 必须让 worktrack 级设置生效，只有 `global-override` 才允许 control-state 压过 contract。
-   - 若模式为 `auto`，必须应用 Dispatch Decision Policy，并记录 `dispatch_policy_ref`、`decision_inputs`、`carrier_decision` 与选择理由。
+   - 若模式为 `auto`，必须应用 Dispatch Decision Policy，并记录 `dispatch_policy_ref`、`runtime_dispatch_profile`、`decision_inputs`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与选择理由。
+   - `runtime_dispatch_profile` 必须至少包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`。
+   - 在 ClaudeCodeCLI / Deepseek 兼容 lane 中，如果无法证明真实 SubAgent dispatch shell 可用，必须写明 `subagent_dispatch_shell = unavailable | unknown`，并将未委派原因记录为 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。不得静默回退到当前载体。
 9. 如果没有合适专用 skill，就使用同一份限定范围任务/信息约定，通过 `generic-worker-skill` 承载的通用任务完成 `SubAgent` 分派。
    - 仅当 `runtime_dispatch_mode` 或 policy 判定为 `current-carrier`，或宿主运行时缺少真实分派壳层、权限边界禁止委派、交接包不满足安全分派条件时，才允许当前载体运行时回退。
 10. 记录本轮使用的是：
@@ -88,11 +90,15 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 - `无专用技能时的任务专用指令`
 - `运行时分派模式`
 - `dispatch_policy_ref`
+- `runtime_dispatch_profile`
 - `decision_inputs`
+- `delegation_attempted`
+- `attempted_carrier`
 - `carrier_decision`
 - `选择理由`
 - `是否使用回退`
 - `回退理由`
+- `fallback_reason`
 - `交接包来源`
 - `分派包状态`
 - `包限定范围判定`

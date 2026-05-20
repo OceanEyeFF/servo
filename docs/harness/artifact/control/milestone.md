@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-05-11
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-20
 ---
 
 # Milestone Artifact
@@ -88,6 +88,15 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 - goal-driven milestone 在 `planned` → `active` 前，harness 必须先输出结构化激活 brief 并等待 programmer 确认；work-collection milestone 可继续按既有自动激活语义推进
 
 完整 Pipeline 编排规则（upsert 语义、tie-breaker、激活顺序）以 [milestone-backlog.md](../repo/milestone-backlog.md#Pipeline 语义) 为权威源。
+
+## Final Acceptance 写回事务
+
+goal-driven milestone 的 `completed` 写入分两层理解：
+
+- `milestone-status-skill` 输出 `milestone_acceptance_verdict == achieved` 且 `milestone_gate_verdict == pass`，表示该 milestone 已达到可交给 programmer final acceptance 的状态。
+- programmer 明确接受后，`harness-skill` 才执行 final acceptance writeback，把验收事实持久化为 runtime control-plane 状态。
+
+final acceptance writeback 是一个逻辑事务，不是只改某一个文件。事务最小写入集合包括 `.aw/milestone/{milestone_id}.md`、`.aw/repo/milestone-backlog.md`、`.aw/control-state.md`，必要时还包括 `.aw/repo/worktrack-backlog.md` 中对应 worktrack 状态的归一化。写回前必须校验输入状态，写回后必须复核 artifact 一致性；失败时进入 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞，不得把 milestone 伪装成已完成。
 
 ## Latest Override 语义
 

@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-05-06
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-06
+last_verified: 2026-05-20
 ---
 # npx Command Test Execution
 
@@ -21,6 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `aw-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
+- last_registry_smoke: 2026-05-20 `aw-installer@next` (`0.5.2-rc.2`) passed with `--skip-remote`
 
 ## Boundary
 
@@ -57,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/aw_installer_registry_npx_smoke.js --package aw-installer@next --skip-remote
 ```
+
+2026-05-20 post-publish verification for `aw-installer@next` passed in `--skip-remote` mode after `0.5.2-rc.2` publication. Evidence was kept in a temporary smoke directory and only the selector/version outcome is retained here as long-term fact.
 
 ## Local Package Smoke
 

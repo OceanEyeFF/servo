@@ -1,9 +1,9 @@
 ---
 title: "Dispatch Packet Schema"
 status: active
-updated: 2026-05-13
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-08
+last_verified: 2026-05-20
 ---
 
 # Dispatch Packet Schema
@@ -84,6 +84,7 @@ dispatch-skills → gate-skill / review-evidence-skill
 | `dispatch_mode` | enum | 是 | 分派模式：`auto` / `delegated` / `current-carrier` |
 | `shared_fact_pack` | object | 是 | 必须共享给执行载体的最小项目事实包，见下方定义 |
 | `context_budget` | object | 是 | 本轮可读取上下文预算，见下方定义 |
+| `runtime_dispatch_profile` | object | 是 | backend/model/runtime 的委派能力画像，见下方定义 |
 | `recovery_hint` | string | 否 | 失败恢复提示，供执行载体在出错时参考 |
 | `context_files` | string[] | 否 | 需要预加载的上下文文件路径列表（路径引用，非内联全文） |
 
@@ -145,6 +146,28 @@ context_budget:
 
 `context_files` 列出执行载体在开始工作前应加载的上下文文件路径。仅提供路径引用，不内联文件全文。dispatch-skills 应确保所列文件均在 `allowed_artifacts` 范围内。
 
+### runtime_dispatch_profile 说明
+
+`runtime_dispatch_profile` 记录本轮运行时是否能真实委派，以及为什么选择或放弃 SubAgent。它不改变权限，只让 `auto` 的判断可审计。
+
+```yaml
+runtime_dispatch_profile:
+  backend_runtime:
+  model_family:
+  subagent_dispatch_shell:
+  runtime_supports_subagent:
+  subagent_permission_state:
+  permission_allows_delegation:
+  dispatch_package_safety:
+  delegation_attempted:
+  attempted_carrier:
+  carrier_decision:
+  selection_reason:
+  fallback_reason:
+```
+
+`backend_runtime` 可记录 `codex-cli`、`claude-code-cli` 或 `unknown`；`model_family` 可记录 `gpt`、`claude`、`deepseek` 或 `unknown`。当 `backend_runtime = claude-code-cli`（ClaudeCodeCLI）或 `model_family = deepseek`（Deepseek）且 `subagent_dispatch_shell` 非 `available` 时，必须将 `fallback_reason` 写为 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe` 中的一个具体原因，不得静默落到 `current-carrier`。
+
 ## Dispatch Result
 
 执行完成后的回传格式。由 SubAgent / generic-worker-skill / doc-catch-up-worker-skill 产出，dispatch-skills 消费。
@@ -163,8 +186,11 @@ context_budget:
 | `recommendations` | string[] | 否 | 对下一步的建议 |
 | `dispatch_mode_used` | enum | 是 | 实际使用的分派模式：`auto` / `delegated` / `current-carrier` |
 | `dispatch_policy_ref` | string | 是 | 使用的执行载体选择策略引用，通常为 `docs/harness/foundations/dispatch-decision-policy.md` |
+| `runtime_dispatch_profile` | object | 是 | 本轮 backend/model/runtime 委派能力画像 |
 | `carrier_decision` | string | 是 | 实际载体选择：如 `SubAgent` / `current-carrier` / `doc-catch-up-worker-skill` / `generic-worker-skill` |
 | `decision_inputs` | object | 否 | `auto` 模式下用于选择载体的输入摘要 |
+| `delegation_attempted` | enum | 是 | 是否真实尝试委派：`yes` / `no` |
+| `attempted_carrier` | string | 是 | 被尝试或被选择的载体：`SubAgent` / `generic-worker-skill` / `doc-catch-up-worker-skill` / `current-carrier` / `none` |
 | `fallback_reason` | string | 否 | 如果发生 fallback，记录原因 |
 | `artifacts_produced` | string[] | 否 | 产出的 artifact 路径列表 |
 
@@ -190,6 +216,7 @@ context_budget:
 - `files_modified` 和 `files_created` 中的所有文件路径必须在 Dispatch Info Packet 的 `allowed_artifacts` 范围内
 - `artifacts_produced` 列出本任务产出的所有 artifact 路径，包括 evidence 文件
 - 当 `dispatch_mode_used` 与 Task Brief 的 `dispatch_mode` 不一致时，必须在 `fallback_reason` 中说明
+- 当 `carrier_decision` 为 `current-carrier` 且 dispatch mode 为 `auto` 时，必须填写 `runtime_dispatch_profile`、`decision_inputs`、`delegation_attempted`、`attempted_carrier` 和 `fallback_reason` 或明确的 `selection_reason`
 - `status` 为 `blocked` 时，`blockers` 必须至少包含一条具体阻塞项描述
 
 ## 与 Worktrack Contract 的关系

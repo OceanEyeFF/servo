@@ -1,9 +1,9 @@
 ---
 title: "Dispatch Decision Policy"
 status: active
-updated: 2026-05-13
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-13
+last_verified: 2026-05-20
 ---
 
 # Dispatch Decision Policy
@@ -44,6 +44,18 @@ last_verified: 2026-05-13
 - `context_budget_fit`: `yes | no`
 - `runtime_supports_subagent`: `yes | no`
 - `permission_allows_delegation`: `yes | no`
+- `runtime_dispatch_profile`: 当前 backend/model/runtime 的能力画像
+- `backend_runtime`: 如 `codex-cli`、`claude-code-cli`、`unknown`
+- `model_family`: 如 `gpt`、`claude`、`deepseek`、`unknown`
+- `subagent_dispatch_shell`: `available | unavailable | unknown`
+- `subagent_permission_state`: `allowed | blocked | unknown`
+- `dispatch_package_safety`: `safe | unsafe | unknown`
+- `delegation_attempted`: `yes | no`
+- `attempted_carrier`: `SubAgent | generic-worker-skill | doc-catch-up-worker-skill | current-carrier | none`
+
+`ClaudeCodeCLI` / `Deepseek` 这类兼容 lane 不应被静默解释为 `current-carrier`。如果宿主运行时无法证明存在真实 SubAgent dispatch shell，必须把 `subagent_dispatch_shell = unavailable | unknown` 写入 `runtime_dispatch_profile`，并在 `delegation_attempted`、`attempted_carrier` 和 `fallback_reason` 中说明没有委派或委派失败的原因。
+
+当 `dispatch_package_safety = unsafe` 时，fallback reason 必须使用 `dispatch package unsafe`，并返回调度阶段收紧 scope、context_budget 或 forbidden boundaries。
 
 ## Decision Rules
 
@@ -51,17 +63,21 @@ last_verified: 2026-05-13
 2. `parallel_value: high` 且任务可拆成独立输入/输出时，优先选择 `SubAgent` 或 fanout。
 3. `risk_profile: high` 时，实现可保持当前载体，但 review/test/policy evidence 应按风险选择独立验证 lane。
 4. `context_budget_fit: no` 时不得强行分派，应返回调度阶段拆分或收紧上下文。
-5. `runtime_supports_subagent: no` 或 `permission_allows_delegation: no` 时，若任务仍可安全执行，可 `current-carrier` fallback，并记录 `runtime fallback` 或 `permission blocked`。
+5. `runtime_supports_subagent: no` 或 `permission_allows_delegation: no` 时，若任务仍可安全执行，可 `current-carrier` fallback，并记录 `runtime fallback` 或 `permission blocked`；同时必须记录 `runtime_dispatch_profile`、`delegation_attempted`、`attempted_carrier` 与 `fallback_reason`。
 6. `delegated` 模式不走 policy 降级；无法真实委派时返回 gap/block。
 7. `current-carrier` 模式显式关闭委派，不再重新评估 SubAgent。
+8. `auto` 模式下，如果 `parallel_value: high`、`task_coupling: low|medium`、`context_budget_fit: yes`、`subagent_permission_state: allowed` 且 `subagent_dispatch_shell: available`，应尝试 `SubAgent` 或记录为什么没有尝试；直接选择 `current-carrier` 但缺少理由的行为必须返回 blocked。
 
 ## Required Output
 
 每次 `auto` 选择执行载体时，dispatch result 必须说明：
 
 - `dispatch_policy_ref`
+- `runtime_dispatch_profile`
 - `carrier_decision`
 - `decision_inputs`
+- `delegation_attempted`
+- `attempted_carrier`
 - `selection_reason`
 - `fallback_reason`（如有）
 

@@ -21,6 +21,20 @@
 - milestone_id: N/A
 - derived_from_milestone: N/A
 
+## Worktrack Intake Review
+
+> Milestone 派生 worktrack 必须引用 RepoScope.Decide 的 pre-init intake review。
+
+- worktrack_intake_review: N/A
+- repo_fundamentals: N/A
+- snapshot_freshness: N/A
+- milestone_purpose_alignment: N/A
+- historical_conflict_risk: N/A
+- worktrack_adjustment_recommendations: N/A
+- add_remove_worktrack_recommendations: N/A
+- intake_review_verdict: N/A
+- ready_for_worktrack_init: N/A
+
 ## Node Type
 
 > 从 Goal Charter 的 Engineering Node Map 绑定，决定本 worktrack 的基线策略与判定标准。

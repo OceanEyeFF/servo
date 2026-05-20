@@ -380,6 +380,7 @@ Gate 应汇总**正交校验面**的裁决：
    **关键约束**：`ChangeGoal` 不由常规 Decide 选择。目标变更由外部请求触发，完成后系统重新进入 Observe。
    **work-collection 路由差异**：当 active milestone 为 work-collection 类型时，milestone achieved 后不触发 handback，自动推进 pipeline（标记 superseded → 选择下一 planned milestone 或清空 active_milestone → 继续 Observe）。
    **milestone brief 约束**：当 `repo-whats-next-skill` 建议 `create` / `activate` / `append_worktracks` 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认；未确认前不得绑定 `init-milestone-skill` 去激活 goal-driven milestone，也不得把建议视为已获批自动继续。
+   **Worktrack intake review 约束**：当 `repo-whats-next-skill` 建议从 active milestone 进入 WorktrackScope.Init 时，Harness 必须消费结构化 `worktrack_intake_review`。只有 `intake_review_verdict = ready_for_worktrack_init` 且 `ready_for_worktrack_init = true`，并且其中包含 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 与 `add_remove_worktrack_recommendations`，才允许绑定 `init-worktrack-skill`。`refresh_required`、`adjust_worktracks`、`blocked` 或 intake review 缺失时，必须停留在 RepoScope 的刷新/调整/观察路径，不得静默初始化 worktrack。
 3. 在 `WorktrackScope` 下，评估是否需要：
    - `Init`（初始化局部状态）
    - `Observe`（状态估计）
@@ -407,6 +408,7 @@ Gate 应汇总**正交校验面**的裁决：
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
+9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason`。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
 
 ### 10.5 证据收集阶段
 
@@ -438,6 +440,13 @@ Gate 应汇总**正交校验面**的裁决：
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.aw/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
 5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.aw/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
+   - **Final Acceptance 事务边界**：
+     - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
+     - programmer 明确接受 goal-driven milestone 后，acceptance writeback 必须作为一个逻辑事务处理：预先校验 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 与 worktrack status 输入；再写入所有相关 artifact；最后做提交后校验。
+     - 该事务的最小写入集合为 `.aw/milestone/{milestone_id}.md`、`.aw/repo/milestone-backlog.md`、`.aw/control-state.md`，以及必要时 `.aw/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
+     - 对 goal-driven milestone，programmer final acceptance 后 backlog 中该 milestone 的所有已闭环 worktrack 不得继续标记为 `(planned)` 或 `(active)`；必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
+     - 写回后必须校验：同一时刻最多一个 active milestone；control-state 的 `active_milestone` 与 backlog 唯一 active 条目一致；`milestone_status` 与 active milestone 状态一致；`milestone_pipeline_summary` 与 backlog 计数一致；completed/accepted milestone 不含未完成 worktrack 标记。
+     - 任一写入或提交后校验失败时，不得伪装成已完成验收；必须标记 `writeback_incomplete` / `milestone_pipeline_stale`，返回 `proceed_blockers`，并停在 RepoScope.Observe 或 handback，等待恢复或 programmer 决策。
    - **Milestone Artifact 更新**（`.aw/milestone/{milestone_id}.md`）：
      - 将 `progress_counter` 更新为 milestone-status-skill 计算的值（total/completed/blocked/deferred）
      - goal-driven 且 `milestone_acceptance_verdict == "achieved"`、`milestone_gate_verdict == "pass"` 且双重验收通过：将 `status` 从 `active` 更新为 `completed`
