@@ -32,14 +32,21 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 2. 判断当前属于：
    - 一个新的 `工作追踪`
    - 一个恢复中的 `工作追踪`，其分支、基准、约定或计划需要修复
-3. 为这个 `工作追踪` 创建限定范围分支。
-4. 如果该分支无法安全创建，返回一个被阻塞的初始化结果，而不是静默复用另一条分支。
-5. 记录这个 `工作追踪` 用来比较的基准引用，并把 `baseline_branch` 写入 `Worktrack Contract`：
+3. 若当前 worktrack 来自 active milestone（`derived_from_milestone == true` 或传入 `target_milestone_id`），必须先读取上游 `repo-whats-next-skill` 的 `worktrack_intake_review`：
+   - 必须包含 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 和 `ready_for_worktrack_init`
+   - 只有 `intake_review_verdict == "ready_for_worktrack_init"` 且 `ready_for_worktrack_init == true` 时，才允许继续创建分支和写入 Worktrack Contract
+   - 若 verdict 为 `refresh_required`，返回被阻塞初始化结果并建议回到 `RepoScope.Observe` / `RepoScope.Refresh`，不得创建 worktrack branch
+   - 若 verdict 为 `adjust_worktracks`，返回被阻塞初始化结果并建议回到 `RepoScope.Decide` / milestone backlog 调整；需要新增、移除、重排 worktrack 时不得在 Init 中静默改写范围
+   - 若 verdict 为 `blocked` 或 intake review 缺失/字段不全，返回被阻塞初始化结果，暴露 `worktrack_intake_review_missing_or_not_ready`
+   - 初始化成功时，必须把 `worktrack_intake_review` 的摘要写入 `Worktrack Contract`
+4. 为这个 `工作追踪` 创建限定范围分支。
+5. 如果该分支无法安全创建，返回一个被阻塞的初始化结果，而不是静默复用另一条分支。
+6. 记录这个 `工作追踪` 用来比较的基准引用，并把 `baseline_branch` 写入 `Worktrack Contract`：
    - 优先从当前已批准输入读取明确的 `baseline_branch`
    - 否则从 `origin/HEAD` 动态解析 baseline branch（执行 `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`）
    - baseline branch 的唯一合法来源是 `origin/HEAD` 动态解析，技能必须通过解析获取，写死默认分支名的行为禁止发生
    - 若 baseline branch 无法确认，初始化必须阻断，而不是猜测 PR target 或 merge target
-6. 构建或刷新一份 `工作追踪约定`；有需要时，让草稿与 `templates/contract.template.md` 对齐。
+7. 构建或刷新一份 `工作追踪约定`；有需要时，让草稿与 `templates/contract.template.md` 对齐。
    - **从 Goal Charter 的 Engineering Node Map 中确定本 worktrack 的节点类型**
    - **根据节点类型填充 contract 中的类型化字段**：baseline_branch、baseline_form、merge_required、gate_criteria、if_interrupted_strategy
    - 如果 Goal Charter 未定义 Engineering Node Map，标记为缺失风险并在初始化结果中暴露
@@ -48,12 +55,12 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
      - 验证通过后将 `milestone_id` 写入 Worktrack Contract
      - 标记 `derived_from_milestone: true`（若 worktrack 来自 milestone 的 `worktrack_list`）
      - 若 milestone 不存在或非 active：标记为阻塞并停止，不得静默忽略绑定
-7. 使用显式队列项播种一份初始 `计划/任务队列`，而不是只写自由文本任务说明。
-8. 产出一份 `调度交接包`，告诉 `调度工作追踪技能` 已播种了什么、还有哪些内容需要调度判断，以及此前轮次是否已存在兼容的下游包。
-9. 产出一份固定格式的 `工作追踪初始化结果`。
-10. 如果没有命中正式停止条件，交给 `调度工作追踪技能`，让播种后的队列在本轮被刷新，并选出一个当前下一步动作。
-11. 只有当活动队列状态中明确存在一份仍然有效、由调度阶段编写的分派包，且不再需要额外调度判断时，才允许直接继续到 `分派技能`。
-12. 如果下一条路由尚未可继续，返回被阻塞或受审批门控的初始化结果，而不是假装执行已经开始。
+8. 使用显式队列项播种一份初始 `计划/任务队列`，而不是只写自由文本任务说明。
+9. 产出一份 `调度交接包`，告诉 `调度工作追踪技能` 已播种了什么、还有哪些内容需要调度判断，以及此前轮次是否已存在兼容的下游包。
+10. 产出一份固定格式的 `工作追踪初始化结果`。
+11. 如果没有命中正式停止条件，交给 `调度工作追踪技能`，让播种后的队列在本轮被刷新，并选出一个当前下一步动作。
+12. 只有当活动队列状态中明确存在一份仍然有效、由调度阶段编写的分派包，且不再需要额外调度判断时，才允许直接继续到 `分派技能`。
+13. 如果下一条路由尚未可继续，返回被阻塞或受审批门控的初始化结果，而不是假装执行已经开始。
 
 ## 硬约束
 
@@ -72,6 +79,7 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - 仅当宿主运行时真的能发起分派时，声称回退式 `子代理` 已就绪才合法；否则必须显式暴露运行时缺口或权限阻塞。
 - 若传入 `target_milestone_id`，必须验证其存在于 milestone-backlog 且为 `active`；引用不存在或非 active 的 milestone 必须返回 blocked。
 - milestone 绑定信息（`milestone_id`、`derived_from_milestone`）必须写入 Worktrack Contract，供 `repo-refresh-skill` 在 closeout 时写入 worktrack-backlog。
+- milestone 派生 worktrack 必须有上游 `worktrack_intake_review`，且 `intake_review_verdict = ready_for_worktrack_init`、`ready_for_worktrack_init = true`。缺失或非 ready 的 intake review 必须返回 blocked，不得创建分支、不得播种队列、不得把执行直接交给当前载体。
 
 ## 预期输出
 
@@ -80,6 +88,7 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - `初始化决策`
 - `分支与基准`
 - `工作追踪约定`
+- `Worktrack Intake Review`
 - `初始计划/任务队列`
 - `调度交接包`
 - `执行者交接包`
@@ -103,6 +112,15 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - `受影响模块`
 - `节点类型`
 - `节点类型来源`
+- `worktrack_intake_review`
+- `repo_fundamentals`
+- `snapshot_freshness`
+- `milestone_purpose_alignment`
+- `historical_conflict_risk`
+- `worktrack_adjustment_recommendations`
+- `add_remove_worktrack_recommendations`
+- `intake_review_verdict`
+- `ready_for_worktrack_init`
 - `基线形式`
 - `合并要求`
 - `判定标准`

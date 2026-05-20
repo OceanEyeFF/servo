@@ -118,8 +118,20 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
       - 若 `worktrack_list` 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
       - 若 `worktrack_list` 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `purpose_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
       - 仅当仍存在合法待执行 worktrack，且 `milestone_gate_verdict` 未形成上层阻断时，才从 milestone 上下文推导 `suggested_node_type`（优先使用 milestone 声明的，fallback 到 Goal Charter 的 Engineering Node Map）
-      - 仅在上述条件成立时：`suggested_next_scope = "WorktrackScope"`，绑定 `init-worktrack-skill`
-      - 仅在上述条件成立时：`derived_from_milestone = true`，`target_milestone_id = <active_milestone>`
+      - 仅当上述条件成立时，必须先生成结构化 `worktrack_intake_review`，作为进入 WorktrackScope.Init 的前置判定：
+        - `repo_fundamentals`：当前 active milestone、目标/非目标、baseline branch、已关闭 worktrack、release/package/deploy 禁止项是否仍一致
+        - `snapshot_freshness`：`Repo Snapshot/Status`、`Harness Control State`、milestone-backlog、worktrack-backlog 与当前 git HEAD 是否足够新鲜，是否需要先 `refresh_required`
+        - `milestone_purpose_alignment`：候选 worktrack 是否仍服务于 active milestone 的 purpose、completion_signals 和 acceptance_criteria
+        - `historical_conflict_risk`：候选 worktrack 是否与刚关闭 worktrack、历史决策、既有文档真相、待处理阻塞项或 handback 边界冲突
+        - `worktrack_adjustment_recommendations`：是否建议保持、拆分、合并、改写、推迟、阻塞当前候选 worktrack
+        - `add_remove_worktrack_recommendations`：是否需要新增、移除或重排 worktrack；若不需要必须显式写 `none`
+        - `intake_review_verdict`：`ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`
+        - `ready_for_worktrack_init`：布尔值，只能在 verdict 为 `ready_for_worktrack_init` 且无阻塞时为 true
+      - 若 `intake_review_verdict == "refresh_required"`：`suggested_next_scope = "RepoScope"`，推荐刷新/观察，不得绑定 `init-worktrack-skill`
+      - 若 `intake_review_verdict == "adjust_worktracks"`：返回 `suggested_milestone_action = "append_worktracks"` 或结构化调整建议；需要 programmer 确认的范围变更必须设置 `需要审批 = true`
+      - 若 `intake_review_verdict == "blocked"`：推荐 `保持并观察`，在继续阻塞项中写明原因，不得进入 WorktrackScope.Init
+      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`suggested_next_scope = "WorktrackScope"`，绑定 `init-worktrack-skill`
+      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`derived_from_milestone = true`，`target_milestone_id = <active_milestone>`，并把完整 `worktrack_intake_review` 交给 `init-worktrack-skill`
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `achieved`（已完成）：
       - `suggested_milestone_action = "closeout"`
       - `recommended_repo_action = "保持并观察"`
@@ -210,6 +222,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - 建议 `create` / `activate` / `append_worktracks` 时必须附带结构化 `milestone brief`；在 programmer 确认前不得把该建议伪装成已获准的自动路由。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
 - 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `init-worktrack-skill` 绑定。
+- 从 active milestone 派生 worktrack 时必须携带 `worktrack_intake_review`，且只有 `intake_review_verdict = ready_for_worktrack_init` 与 `ready_for_worktrack_init = true` 才能进入 WorktrackScope.Init。缺失 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 或 `add_remove_worktrack_recommendations` 任一字段时，推荐 Init 的行为必须返回 blocked。
 
 ## 预期输出
 
@@ -283,6 +296,15 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - `derived_from_milestone`
 - `target_milestone_id`
 - `pipeline_advancement_hint`
+- `worktrack_intake_review`
+- `repo_fundamentals`
+- `snapshot_freshness`
+- `milestone_purpose_alignment`
+- `historical_conflict_risk`
+- `worktrack_adjustment_recommendations`
+- `add_remove_worktrack_recommendations`
+- `intake_review_verdict`
+- `ready_for_worktrack_init`
 
 当活动部署配置缩窄了路由空间时，`允许的代码仓库动作`、`允许的下一路由`、`范围外` 与 `决策约束` 必须反映这个收窄后的子集，而不是完整的标准动作空间。
 

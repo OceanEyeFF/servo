@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Dispatch Contract
 status: active
-updated: 2026-05-16
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-16
+last_verified: 2026-05-20
 ---
 
 # Harness Runtime Dispatch Contract
@@ -57,6 +57,26 @@ Harness 本体属于控制平面。
 | `delegated` | 必须真实委派。无法委派时返回运行时缺口或权限阻塞 |
 | `current-carrier` | 显式关闭 SubAgent 委派，由当前载体执行同一份 bounded contract |
 
+## Runtime Dispatch Profile
+
+每轮 Dispatch 必须形成 `runtime_dispatch_profile`，用于区分“策略上不该委派”和“运行时无法委派”。该画像是事实记录，不扩大权限。
+
+最小字段：
+
+- `backend_runtime`: 当前宿主运行时，如 `codex-cli`、`claude-code-cli`、`unknown`
+- `model_family`: 当前模型家族，如 `gpt`、`claude`、`deepseek`、`unknown`
+- `subagent_dispatch_shell`: `available | unavailable | unknown`
+- `runtime_supports_subagent`: `yes | no | unknown`
+- `subagent_permission_state`: `allowed | blocked | unknown`
+- `permission_allows_delegation`: `yes | no | unknown`
+- `dispatch_package_safety`: `safe | unsafe | unknown`
+- `delegation_attempted`: `yes | no`
+- `attempted_carrier`: `SubAgent | generic-worker-skill | doc-catch-up-worker-skill | current-carrier | none`
+- `carrier_decision`
+- `fallback_reason`
+
+ClaudeCodeCLI / Deepseek compatibility lane 的关键规则：如果 `backend_runtime = claude-code-cli` 或 `model_family = deepseek`，但宿主未暴露真实 SubAgent dispatch shell，必须将 `subagent_dispatch_shell` 记录为 `unavailable` 或 `unknown`，并把未委派原因写入 `fallback_reason`。不得仅因为“当前 carrier 可以做”就省略 capability probe 和 fallback 证据。
+
 ## Dispatch Packet Minimum
 
 最小 dispatch packet：
@@ -70,6 +90,7 @@ Harness 本体属于控制平面。
 - 预期输出
 - evidence 回传格式
 - rollback / recovery hint
+- runtime dispatch profile
 
 完整字段由 [dispatch-packet.md](../artifact/worktrack/dispatch-packet.md) 承接。Runtime protocol 只规定边界和选择语义，不复制 packet schema。
 
@@ -86,3 +107,5 @@ Harness 本体属于控制平面。
 - dispatch package unsafe
 
 发生 fallback 时，输出必须记录 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。没有真实创建委派载体时，不得声称已经使用 SubAgent。
+
+`auto` 模式下未委派也必须产生可审计证据：`runtime_dispatch_profile`、`decision_inputs`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`selection_reason` 和 `fallback_reason`。如果 `parallel_value` 高且任务可安全拆包，但 `subagent_dispatch_shell` 可用，缺少委派尝试或缺少不委派理由的 dispatch result 必须视为 blocked。

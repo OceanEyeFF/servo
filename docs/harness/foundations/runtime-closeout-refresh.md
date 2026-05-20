@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Closeout Refresh
 status: active
-updated: 2026-05-16
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-16
+last_verified: 2026-05-20
 ---
 
 # Harness Runtime Closeout Refresh
@@ -61,6 +61,8 @@ work-collection milestone 只要求 worktrack list finished，验收下沉到各
 ## Pipeline Advancement
 
 goal-driven milestone achieved 后触发 programmer handback，不自动推进 pipeline。
+
+programmer final acceptance 发生后，`harness-skill` 执行 final acceptance writeback。该写回必须作为 milestone artifact、milestone-backlog、control-state、handback guard 与 baseline traceability 的逻辑事务处理；完成后还必须校验 backlog 不含 completed/accepted milestone 的 `(planned)` / `(active)` worktrack marker，且 control-state pipeline summary 与 backlog 计数一致。事务失败时返回 `writeback_incomplete` / `milestone_pipeline_stale`，不允许继续推进。
 
 work-collection milestone achieved 后可自动标记 superseded，并按 pipeline priority 激活下一 planned milestone；若没有下一 planned milestone，则清空 active milestone。
 

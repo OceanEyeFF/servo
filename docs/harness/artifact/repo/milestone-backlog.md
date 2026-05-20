@@ -1,9 +1,9 @@
 ---
 title: "Milestone Backlog"
 status: active
-updated: 2026-05-11
+updated: 2026-05-20
 owner: aw-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-20
 ---
 
 # Milestone Backlog
@@ -58,3 +58,5 @@ last_verified: 2026-05-11
 - `superseded` 条目保留原状直到 programmer 手动清理
 - work-collection milestone（`milestone_kind == "work-collection"`）在 `completed` 后自动标记为 `superseded`，不阻塞 pipeline
 - 仅当 `milestone_acceptance_verdict == achieved`（goal-driven 双重验收通过；work-collection 单重验收通过）时，`Harness-skill` 可将 `active` → `completed`
+- goal-driven milestone 经 programmer final acceptance 后，backlog 条目不得保留 `(planned)` 或 `(active)` worktrack marker；所有声明 worktrack 必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
+- 每次 final acceptance writeback 后，control-state 的 `active_milestone`、`milestone_status` 与 `milestone_pipeline_summary` 必须与 backlog 中的唯一 active 条目和 planned/active/completed/superseded 计数一致。
