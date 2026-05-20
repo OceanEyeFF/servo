@@ -171,3 +171,15 @@ def test_tui_exit_choice(repo_root: Path, tmp_path: Path) -> None:
     assert code == 0, output
     assert "AW Installer" in output
     assert "Exit" in output
+
+
+def test_tui_arrow_key_enter_can_select_exit(repo_root: Path, tmp_path: Path) -> None:
+    code, output = run_tui_script(
+        repo_root,
+        tmp_path / "arrow-exit-target",
+        [("Enter confirm", "\x1b[B\x1b[B\x1b[B\x1b[B\x1b[B\r")],
+    )
+
+    assert code == 0, output
+    assert "AW Installer" in output
+    assert "Exit" in output

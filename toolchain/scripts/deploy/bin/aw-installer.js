@@ -164,18 +164,33 @@ const STATUS_LINES = 7;
 // Interactive arrow-key menu using readline.emitKeypressEvents for proper
 // terminal mode integration. Returns selected index (0-based), or -1 on cancel.
 let _keypressSetup = false;
+let _captureKeypress = false;
+const _keypressQueue = [];
+const _keypressWaiters = [];
 function _ensureKeypress() {
   if (!_keypressSetup && ttyIn) {
     readline.emitKeypressEvents(process.stdin);
+    process.stdin.on("keypress", (str, key) => {
+      if (!_captureKeypress) { return; }
+      const ev = { str, key };
+      const waiter = _keypressWaiters.shift();
+      if (waiter) {
+        waiter(ev);
+      } else {
+        _keypressQueue.push(ev);
+      }
+    });
     _keypressSetup = true;
   }
 }
 
 function _waitKey() {
+  const queued = _keypressQueue.shift();
+  if (queued) {
+    return Promise.resolve(queued);
+  }
   return new Promise((resolve) => {
-    process.stdin.once("keypress", (str, key) => {
-      resolve({ str, key });
-    });
+    _keypressWaiters.push(resolve);
   });
 }
 
@@ -197,39 +212,51 @@ async function interactiveSelect(rl, options, prompt_) {
     return -1;
   }
 
-  // TTY: keypress-based arrow-key selection
-  // Raw mode is managed by runTui() lifecycle — do NOT toggle here.
+  // TTY: keypress-based arrow-key selection. Raw mode is scoped to this menu
+  // so later readline.question() prompts keep normal line-input behavior.
   _ensureKeypress();
+  try { process.stdin.setRawMode(true); } catch (_) { /* ignore */ }
+  process.stdin.resume();
+  _keypressQueue.length = 0;
+  _keypressWaiters.length = 0;
+  _captureKeypress = true;
   let selected = 0;
   const promptStr = prompt_ || "";
 
-  while (true) {
-    refreshTui(tuiState);
-    let menu = "\n";
-    for (let i = 0; i < options.length; i++) {
-      if (i === selected) {
-        menu += `  \x1b[7m   ${options[i]}   \x1b[0m\n`;
-      } else {
-        menu += `    ${options[i]}\n`;
+  try {
+    while (true) {
+      refreshTui(tuiState);
+      let menu = "\n";
+      for (let i = 0; i < options.length; i++) {
+        if (i === selected) {
+          menu += `  \x1b[7m   ${options[i]}   \x1b[0m\n`;
+        } else {
+          menu += `    ${options[i]}\n`;
+        }
       }
-    }
-    menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
-    process.stdout.write(menu);
+      menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
+      process.stdout.write(menu);
 
-    const ev = await _waitKey();
+      const ev = await _waitKey();
 
-    if (ev.key && ev.key.name === "up") {
-      selected = selected > 0 ? selected - 1 : options.length - 1;
-    } else if (ev.key && ev.key.name === "down") {
-      selected = selected < options.length - 1 ? selected + 1 : 0;
-    } else if (ev.key && ev.key.name === "return") {
-      return selected;
-    } else if (ev.str === "q" || (ev.key && ev.key.name === "escape")) {
-      return -1;
-    } else if (ev.str === "b") {
-      tuiState.backend = cycleBackend(tuiState.backend);
+      if (ev.key && ev.key.name === "up") {
+        selected = selected > 0 ? selected - 1 : options.length - 1;
+      } else if (ev.key && ev.key.name === "down") {
+        selected = selected < options.length - 1 ? selected + 1 : 0;
+      } else if (ev.key && ev.key.name === "return") {
+        return selected;
+      } else if (ev.str === "q" || (ev.key && ev.key.name === "escape")) {
+        return -1;
+      } else if (ev.str === "b") {
+        tuiState.backend = cycleBackend(tuiState.backend);
+      }
+      // Unknown key: ignore, re-render
     }
-    // Unknown key: ignore, re-render
+  } finally {
+    _captureKeypress = false;
+    _keypressQueue.length = 0;
+    _keypressWaiters.length = 0;
+    try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
   }
 }
 
