@@ -1,7 +1,7 @@
 {
   "name": "servo-installer",
-  "version": "0.5.2",
-  "description": "Local package scaffold for the AW Harness installer wrapper.",
+  "version": "0.5.3",
+  "description": "servo harness installer: install, verify, diagnose, and update CLI + TUI",
   "bin": {
     "servo-installer": "bin/servo-installer.js"
   },
