@@ -4172,6 +4172,18 @@ function runTui(args, input, env) {
   );
 }
 
+function runTuiInTempTarget(args, input, env = {}) {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-cli-"));
+  try {
+    return runTui(args, input, {
+      ...env,
+      SERVO_HARNESS_TARGET_REPO_ROOT: root,
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 // TUI guard: non-TTY with explicit "tui" arg must print error
 test("tui guard refuses non-TTY with explicit tui arg", () => {
   const result = runTui(["tui"], "", {});
@@ -4221,32 +4233,32 @@ test("cli: --help lists tui command", () => {
 
 // CLI backward compat: diagnose still works
 test("cli: diagnose --backend agents --json runs", () => {
-  const result = runTui(["diagnose", "--backend", "agents", "--json"], "", {});
+  const result = runTuiInTempTarget(["diagnose", "--backend", "agents", "--json"], "");
   // May fail if no target repo, but should produce output (not crash)
   assert.ok(result.stdout.length > 0 || result.stderr.length > 0);
 });
 
 // CLI backward compat: verify still works  
 test("cli: verify --backend agents runs", () => {
-  const result = runTui(["verify", "--backend", "agents"], "", {});
+  const result = runTuiInTempTarget(["verify", "--backend", "agents"], "");
   assert.ok(result.stdout.length > 0 || result.stderr.length > 0);
 });
 
 // CLI backward compat: install still works
 test("cli: install --backend agents runs (may fail without target)", () => {
-  const result = runTui(["install", "--backend", "agents"], "", {});
+  const result = runTuiInTempTarget(["install", "--backend", "agents"], "");
   assert.ok(result.stdout.length > 0 || result.stderr.length > 0);
 });
 
 // CLI backward compat: update dry-run still works
 test("cli: update --backend agents dry-run runs", () => {
-  const result = runTui(["update", "--backend", "agents"], "", {});
+  const result = runTuiInTempTarget(["update", "--backend", "agents"], "");
   assert.ok(result.stdout.length > 0 || result.stderr.length > 0);
 });
 
 // CLI backward compat: prune rejects without --all
 test("cli: prune --backend agents without --all is rejected", () => {
-  const result = runTui(["prune", "--backend", "agents"], "", {});
+  const result = runTuiInTempTarget(["prune", "--backend", "agents"], "");
   assert.notEqual(result.status, 0);
 });
 

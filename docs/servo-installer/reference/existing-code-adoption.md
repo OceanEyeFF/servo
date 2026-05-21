@@ -18,7 +18,7 @@ last_verified: 2026-05-08
 ## Operator 命令
 
 ```bash
-node product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js generate \
+node product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js generate \
   --deploy-path "$TARGET_REPO" \
   --baseline-branch "$BASELINE_BRANCH" \
   --adoption-mode existing-code-adoption

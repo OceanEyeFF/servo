@@ -2,14 +2,14 @@
 title: "Harness Control State"
 artifact_type: "control-state"
 generated_from: "init-milestone-skill"
-updated: "2026-05-20"
+updated: "2026-05-22"
 owner: "servo-kernel"
 ---
 # Harness Control State
 
 ## Metadata
 
-- updated: 2026-05-20T12:55:49+08:00
+- updated: 2026-05-22T01:03:06+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -22,14 +22,14 @@ owner: "servo-kernel"
 ## Active Worktrack
 
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260520-servo-runtime-governance-closeout
+- latest_closed_worktrack: WT-20260520-servo-npm-release-prep
 
 ## Milestone Pipeline
 
 - active_milestone: none
 - milestone_status: handback
 - milestone_pipeline_path: .servo/repo/milestone-backlog.md
-- milestone_pipeline_summary: planned=0 / active=0 / completed=16 / superseded=0
+- milestone_pipeline_summary: planned=1 / active=0 / completed=16 / superseded=0
 
 ## Baseline Branch
 
@@ -44,7 +44,7 @@ owner: "servo-kernel"
 
 - recommended_next_route: RepoScope.Observe
 - recommended_next_scope: RepoScope
-- current_next_action: RepoScope.Observe — MS-20260520-002 completed; awaiting programmer acceptance
+- current_next_action: RepoScope.Observe — MS-20260520-002 accepted; planned milestone MS-20260521-001 remains inactive until programmer authorization
 
 ## Handback Guard
 
@@ -58,13 +58,30 @@ owner: "servo-kernel"
 
 - latest_observed_checkpoint: 94a570044eb651fa2f1aa9ecef3cdb119bc2f537
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260520-001:3_accepted
-- checkpoint_ref: develop-aw@94a570044eb651fa2f1aa9ecef3cdb119bc2f537
+- milestone_input_checkpoint: MS-20260520-002:4_accepted
+- checkpoint_ref: develop-aw@f8076d1235e7d44a04a3372ac64c9f1c98afb8ad
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: milestone-acceptance
-- verified_at: 2026-05-20
+- verified_at: 2026-05-22
 
 ## Current Control Notes
+
+- 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
+  - accepted_worktracks:
+    - `WT-20260520-servo-external-rename`
+    - `WT-20260520-servo-internal-migration`
+    - `WT-20260520-servo-runtime-governance-closeout`
+    - `WT-20260520-servo-npm-release-prep`
+  - registry_evidence:
+    - `servo-installer@0.5.3` published
+    - `latest=0.5.3`
+    - gitHead `f8076d1235e7d44a04a3372ac64c9f1c98afb8ad`
+    - `npx --yes servo-installer@latest --version` => `servo-installer 0.5.3`
+    - `npx --yes servo-installer@latest --help` passed
+  - gate: pass
+  - result: milestone final acceptance confirmed; no active milestone remains
+  - next_legal_route: RepoScope.Observe
+  - retained_next_planned_milestone: MS-20260521-001 `.aw Runtime Seamless Upgrade`
 
 - 2026-05-20: **activated `MS-20260520-002`** (Repo Rename to servo). WT-1 initialized.
   - active_milestone: MS-20260520-002

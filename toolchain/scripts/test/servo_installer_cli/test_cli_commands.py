@@ -35,8 +35,8 @@ def run_servo_installer(
     target_repo.mkdir(parents=True, exist_ok=True)
     env = {
         **os.environ,
-        "AW_HARNESS_REPO_ROOT": str(repo_root),
-        "AW_HARNESS_TARGET_REPO_ROOT": str(target_repo),
+        "SERVO_HARNESS_REPO_ROOT": str(repo_root),
+        "SERVO_HARNESS_TARGET_REPO_ROOT": str(target_repo),
         "PYTHONDONTWRITEBYTECODE": "1",
     }
     if env_overrides is not None:
@@ -127,7 +127,7 @@ def test_cli_agents_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 
     check_paths = run_servo_installer(repo_root, node_path, target_repo, "check_paths_exist", "--backend", "agents")
     assert_success(check_paths)
-    assert "[agents] ok: no conflicting target paths" in check_paths.stdout
+    assert "[agents] ok: no pre-existing paths" in check_paths.stdout
 
     prune_empty = run_servo_installer(repo_root, node_path, target_repo, "prune", "--all", "--backend", "agents")
     assert_success(prune_empty)
@@ -176,7 +176,7 @@ def test_cli_claude_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 
     check_paths = run_servo_installer(repo_root, node_path, target_repo, "check_paths_exist", "--backend", "claude")
     assert_success(check_paths)
-    assert "[claude] ok: no conflicting target paths" in check_paths.stdout
+    assert "[claude] ok: no pre-existing paths" in check_paths.stdout
 
     prune_empty = run_servo_installer(repo_root, node_path, target_repo, "prune", "--all", "--backend", "claude")
     assert_success(prune_empty)

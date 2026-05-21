@@ -5,7 +5,7 @@
   "canonical_dir": "product/harness/skills/set-harness-goal-skill",
   "canonical_paths": [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
     "product/harness/skills/set-harness-goal-skill/assets/README.md",
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
     "product/harness/skills/set-harness-goal-skill/assets/goal-charter.md",
@@ -20,7 +20,7 @@
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/gate-evidence.md",
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md"
   ],
-  "target_dir": "aw-set-harness-goal-skill",
+  "target_dir": "servo-set-harness-goal-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -29,7 +29,7 @@
   "reference_distribution": "copy-listed-canonical-paths",
   "required_payload_files": [
     "SKILL.md",
-    "scripts/deploy_aw.js",
+    "scripts/deploy_servo.js",
     "assets/README.md",
     "assets/control-state.md",
     "assets/goal-charter.md",
@@ -47,6 +47,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "set-harness-goal-skill"
+    "set-harness-goal-skill",
+    "aw-set-harness-goal-skill"
   ]
 }

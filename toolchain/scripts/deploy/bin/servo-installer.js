@@ -164,6 +164,7 @@ const STATUS_LINES = 7;
 // Interactive arrow-key menu using readline.emitKeypressEvents for proper
 // terminal mode integration. Returns selected index (0-based), or -1 on cancel.
 let _keypressSetup = false;
+let suppressMenuReturnUntil = 0;
 function _ensureKeypress() {
   if (!_keypressSetup && ttyIn) {
     readline.emitKeypressEvents(process.stdin);
@@ -223,6 +224,10 @@ async function interactiveSelect(rl, options, prompt_) {
     } else if (ev.key && ev.key.name === "down") {
       selected = selected < options.length - 1 ? selected + 1 : 0;
     } else if (ev.key && ev.key.name === "return") {
+      if (Date.now() < suppressMenuReturnUntil) {
+        suppressMenuReturnUntil = 0;
+        continue;
+      }
       return selected;
     } else if (ev.str === "q" || (ev.key && ev.key.name === "escape")) {
       return -1;
@@ -264,7 +269,7 @@ function tryReadPackageVersionAt(candidate) {
 function printHelp() {
   console.log(`usage: servo-installer [tui|<deploy-mode>] [options]
 
-Run AW Harness installer commands through the stable Node.js distribution
+Run servo harness installer commands through the stable Node.js distribution
 wrapper. Supported package/runtime deploy modes are handled directly by Node.
 
 commands:
@@ -3789,6 +3794,7 @@ function question(rl, prompt) {
 
 async function pause(rl) {
   await question(rl, "\nPress Enter to return to the installer menu...");
+  suppressMenuReturnUntil = Date.now() + 300;
 }
 
 // ─── Console capture for TUI-friendly output ──────────────────────────────
@@ -3860,12 +3866,12 @@ function buildDiagnoseSummary(capturedOutput, backend) {
 function checkAwHealth() {
   const fs = require("node:fs");
   const path = require("node:path");
-  const awDir = path.join(process.cwd(), ".aw");
+  const awDir = path.join(process.cwd(), ".servo");
   const checks = [];
 
-  // .aw directory existence
+  // .servo directory existence
   if (!fs.existsSync(awDir)) {
-    return [{ item: ".aw directory", ok: false, detail: "missing — Harness not initialized" }];
+    return [{ item: ".servo directory", ok: false, detail: "missing - Harness not initialized" }];
   }
 
   // milestone dir
@@ -3940,8 +3946,8 @@ async function guidedDiagnose(rl, state) {
     }
   }
 
-  // ── .aw health ──
-  console.log(`\n  ${colorBold(".aw Control-plane Health")}`);
+  // ── .servo health ──
+  console.log(`\n  ${colorBold(".servo Control-plane Health")}`);
   for (const ck of awChecks) {
     const icon = ck.ok ? SYM_OK : SYM_FAIL;
     console.log(`  ${icon} ${ck.item}: ${ck.detail}`);

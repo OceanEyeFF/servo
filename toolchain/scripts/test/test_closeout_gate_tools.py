@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import closeout_acceptance_gate
-from scope_gate_check import check_scope, normalize_status_path
+from scope_gate_check import ChangedFile, check_scope, normalize_status_path
 from gate_status_backfill import update_state
 
 
@@ -123,7 +123,7 @@ def successful_npm_command_result(
     def npm_exec_target_root(backend: str | None = None) -> Path:
         current_backend = backend or npm_exec_backend()
         target_repo = (
-            extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+            extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
             if extra_env is not None
             else None
         )
@@ -202,12 +202,12 @@ def successful_npm_command_result(
             "passed": True,
         }
     if command[:2] == ["npm", "exec"] and "diagnose" in command:
-        if extra_env is None or "AW_HARNESS_REPO_ROOT" not in extra_env:
+        if extra_env is None or "SERVO_HARNESS_REPO_ROOT" not in extra_env:
             return {
                 "command": command,
                 "returncode": 1,
                 "stdout": "",
-                "stderr": "missing AW_HARNESS_REPO_ROOT",
+                "stderr": "missing SERVO_HARNESS_REPO_ROOT",
                 "passed": False,
             }
         if npm_exec_backend() == "bundle":
@@ -221,14 +221,14 @@ def successful_npm_command_result(
                             "agents": {
                                 "backend": "agents",
                                 "binding_count": len(npm_exec_skill_dirs("agents")),
-                                "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                                "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                                 "target_root": str(npm_exec_target_root("agents")),
                                 "issue_count": 0,
                             },
                             "claude": {
                                 "backend": "claude",
                                 "binding_count": len(npm_exec_skill_dirs("claude")),
-                                "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                                "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                                 "target_root": str(npm_exec_target_root("claude")),
                                 "issue_count": 0,
                             },
@@ -247,7 +247,7 @@ def successful_npm_command_result(
                 {
                     "backend": npm_exec_backend(),
                     "binding_count": len(npm_exec_skill_dirs()),
-                    "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                    "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                     "target_root": str(npm_exec_target_root()),
                 }
             ),
@@ -281,12 +281,12 @@ def successful_npm_command_result(
             "passed": False,
         }
     if command[:2] == ["npm", "exec"] and "update" in command:
-        if extra_env is None or "AW_HARNESS_REPO_ROOT" not in extra_env:
+        if extra_env is None or "SERVO_HARNESS_REPO_ROOT" not in extra_env:
             return {
                 "command": command,
                 "returncode": 1,
                 "stdout": "",
-                "stderr": "missing AW_HARNESS_REPO_ROOT",
+                "stderr": "missing SERVO_HARNESS_REPO_ROOT",
                 "passed": False,
             }
         return {
@@ -295,7 +295,7 @@ def successful_npm_command_result(
             "stdout": json.dumps(
                 {
                     "backend": npm_exec_backend(),
-                    "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                    "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                     "target_root": str(npm_exec_target_root()),
                     "blocking_issue_count": 0,
                     "planned_target_paths": [str(target) for target in npm_exec_skill_dirs()],
@@ -376,6 +376,7 @@ def test_check_scope_accepts_allowed_prefixes() -> None:
             "product/harness/README.md",
             "docs/project-maintenance/governance/review-verify-handbook.md",
             "docs/project-maintenance/governance/path-governance-checks.md",
+            "docs/servo-installer/reference/existing-code-adoption.md",
             ".autoworkflow/closeout/demo/summary.json",
             "package.json",
             "product/.servo_template/control-state.md",
@@ -402,6 +403,7 @@ def test_check_scope_accepts_allowed_prefixes() -> None:
             "package.json",
             "docs/project-maintenance/",
             "docs/harness/",
+            "docs/servo-installer/",
             "product/README.md",
             "product/harness/README.md",
             "product/.servo_template/",
@@ -444,6 +446,36 @@ def test_check_scope_flags_disallowed_changes() -> None:
     result = check_scope(["GUIDE.md"], ("docs/project-maintenance/",))
     assert result.passed is False
     assert result.violations == ["GUIDE.md"]
+
+
+def test_check_scope_allows_runtime_layer_untracking_only() -> None:
+    result = check_scope(
+        [
+            ChangedFile(".servo/control-state.md", "D "),
+            ChangedFile(".agents/skills/example/SKILL.md", " D"),
+            ChangedFile(".claude/skills/example/SKILL.md", "D "),
+        ],
+        ("docs/project-maintenance/",),
+    )
+
+    assert result.passed is True
+    assert result.violations == []
+
+
+def test_check_scope_blocks_runtime_layer_modification() -> None:
+    result = check_scope(
+        [
+            ChangedFile(".servo/control-state.md", " M"),
+            ChangedFile(".agents/skills/example/SKILL.md", "A "),
+        ],
+        ("docs/project-maintenance/",),
+    )
+
+    assert result.passed is False
+    assert result.violations == [
+        ".servo/control-state.md",
+        ".agents/skills/example/SKILL.md",
+    ]
 
 
 def test_normalize_status_path_decodes_git_quoted_utf8_path() -> None:
@@ -788,8 +820,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and "diagnose" in command
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -798,8 +830,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         and "update" in command
         and "--json" in command
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -807,8 +839,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-1] == "tui"
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -816,8 +848,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["install", "--backend", "agents"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -825,8 +857,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["verify", "--backend", "agents"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -834,27 +866,27 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["update", "--backend", "agents", "--yes"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["update", "--backend", "claude", "--yes"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["diagnose", "--backend", "bundle", "--json"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["verify", "--backend", "bundle"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert not any("adapter_deploy.py" in command[1] for command in commands if len(command) > 1)

@@ -32,8 +32,8 @@ def run_tui_script(
     target_repo.mkdir(parents=True, exist_ok=True)
     env = {
         **os.environ,
-        "AW_HARNESS_REPO_ROOT": str(repo_root),
-        "AW_HARNESS_TARGET_REPO_ROOT": str(target_repo),
+        "SERVO_HARNESS_REPO_ROOT": str(repo_root),
+        "SERVO_HARNESS_TARGET_REPO_ROOT": str(target_repo),
         "PYTHONDONTWRITEBYTECODE": "1",
     }
     if env_overrides is not None:
@@ -133,22 +133,26 @@ def fake_failing_python_bin(tmp_path: Path) -> Path:
     return fake_bin
 
 
-def test_tui_show_cli_help_menu_action(repo_root: Path, tmp_path: Path) -> None:
+def choose_menu_steps(index: int) -> list[tuple[str, str]]:
+    return [("↑↓ navigate", "\x1b[B") for _ in range(index)] + [("↑↓ navigate", "\n")]
+
+
+def quit_menu_step() -> tuple[str, str]:
+    return ("↑↓ navigate", "q")
+
+
+def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: Path) -> None:
     code, output = run_tui_script(
         repo_root,
-        tmp_path / "help-target",
-        [
-            ("Select an action:", "5\n"),
-            ("Press Enter to return to the installer menu", "\n"),
-            ("Select an action:", "6\n"),
-        ],
+        tmp_path / "menu-target",
+        choose_menu_steps(5),
     )
 
     assert code == 0, output
     assert "AW Installer" in output
-    assert "5. Show CLI help" in output
-    assert "usage: servo-installer" in output
-    assert "check_paths_exist --backend agents|claude" in output
+    assert "Guided install/update" in output
+    assert "Show update dry-run plan" in output
+    assert "Exit" in output
 
 
 def test_tui_diagnose_menu_action_uses_node_owned_json(
@@ -160,9 +164,9 @@ def test_tui_diagnose_menu_action_uses_node_owned_json(
         repo_root,
         tmp_path / "diagnose-target",
         [
-            ("Select an action:", "2\n"),
+            *choose_menu_steps(2),
             ("Press Enter to return to the installer menu", "\n"),
-            ("Select an action:", "6\n"),
+            quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
     )
@@ -182,9 +186,9 @@ def test_tui_verify_menu_action_returns_to_menu_after_strict_verify(
         repo_root,
         tmp_path / "verify-target",
         [
-            ("Select an action:", "3\n"),
+            *choose_menu_steps(3),
             ("Press Enter to return to the installer menu", "\n"),
-            ("Select an action:", "6\n"),
+            quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
     )
@@ -193,7 +197,7 @@ def test_tui_verify_menu_action_returns_to_menu_after_strict_verify(
     assert "unexpected-python" not in output
     assert "[agents] drift" in output
     assert "missing-target-root" in output
-    assert output.count("Select an action:") >= 2
+    assert output.count("TUI Menu") >= 2
 
 
 def test_tui_update_dry_run_menu_action(repo_root: Path, tmp_path: Path) -> None:
@@ -202,9 +206,9 @@ def test_tui_update_dry_run_menu_action(repo_root: Path, tmp_path: Path) -> None
         repo_root,
         tmp_path / "dry-run-target",
         [
-            ("Select an action:", "4\n"),
+            *choose_menu_steps(4),
             ("Press Enter to return to the installer menu", "\n"),
-            ("Select an action:", "6\n"),
+            quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
     )
@@ -223,21 +227,21 @@ def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Pa
         repo_root,
         target_repo,
         [
-            ("Select an action:", "1\n"),
-            ("Step 3: Type yes", "no\n"),
-            ("Update cancelled.", "\n"),
-            ("Select an action:", "6\n"),
+            *choose_menu_steps(0),
+            ("Press Enter to return to the installer menu", "\n"),
+            ("No pre-existing paths", "\n"),
+            ("Type yes to proceed", "no\n"),
+            quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
     )
 
     assert code == 0, output
     assert "unexpected-python" not in output
-    assert "Guided update flow" in output
-    assert "Step 1: Diagnose current agents install." in output
-    assert "Step 2: Review update dry-run plan." in output
-    assert "Step 3: Type yes to apply update via prune --all -> check_paths_exist -> install -> verify" in output
-    assert "Update cancelled." in output
+    assert "Diagnosing bundle install" in output
+    assert "No pre-existing paths" in output
+    assert "Ready to install/update bundle." in output
+    assert "Guided flow cancelled. No changes made." in output
     assert "[agents] applying update" not in output
     assert not (target_repo / ".agents" / "skills").exists()
 
@@ -248,45 +252,49 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
         repo_root,
         target_repo,
         [
-            ("Select an action:", "1\n"),
-            ("Step 3: Type yes", "yes\n"),
+            *choose_menu_steps(0),
             ("Press Enter to return to the installer menu", "\n"),
-            ("Select an action:", "6\n"),
+            ("No pre-existing paths", "\n"),
+            ("Type yes to proceed", "yes\n"),
+            ("Install complete for bundle", "\n"),
+            ("Verification passed", "\n"),
+            ("All stages completed successfully", "\n"),
+            ("Press Enter to return to the installer menu", "\n"),
+            quit_menu_step(),
         ],
     )
 
     assert code == 0, output
-    assert "Step 4: Applying update and running strict verify." in output
-    assert "[agents] applying update" in output
+    assert "Installing bundle" in output
     assert "[agents] ok" in output
-    assert "[agents] update complete" in output
+    assert "[claude] ok" in output
+    assert "[bundle] install complete for both backends" in output
+    assert "All stages completed successfully." in output
     assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
 
 
-def test_tui_unknown_selection_loops_back_to_menu(repo_root: Path, tmp_path: Path) -> None:
+def test_tui_unknown_key_stays_on_menu_then_quits(repo_root: Path, tmp_path: Path) -> None:
     code, output = run_tui_script(
         repo_root,
         tmp_path / "unknown-target",
         [
-            ("Select an action:", "not-a-choice\n"),
-            ("Unknown selection.", ""),
-            ("Select an action:", "6\n"),
+            ("↑↓ navigate", "x"),
+            ("↑↓ navigate", "q"),
         ],
     )
 
     assert code == 0, output
-    assert "Unknown selection." in output
-    assert output.count("Select an action:") >= 2
+    assert "Guided install/update" in output
 
 
-@pytest.mark.parametrize("exit_text", ["6\n", "q\n", "quit\n", "exit\n"])
-def test_tui_exit_choices(repo_root: Path, tmp_path: Path, exit_text: str) -> None:
+def test_tui_exit_choice_quits(repo_root: Path, tmp_path: Path) -> None:
+    exit_text = "q\n"
     code, output = run_tui_script(
         repo_root,
         tmp_path / f"exit-target-{exit_text.strip()}",
-        [("Select an action:", exit_text)],
+        [("↑↓ navigate", exit_text)],
     )
 
     assert code == 0, output
     assert "AW Installer" in output
-    assert "6. Exit" in output
+    assert "Exit" in output

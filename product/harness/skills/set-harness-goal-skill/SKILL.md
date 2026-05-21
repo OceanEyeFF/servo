@@ -88,7 +88,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - 在 `existing-code-adoption` 模式下，可以从 `.servo/repo/discovery-input.md` 提取已确认的状态线索，但 snapshot 是初始化后的慢变量状态，不是 discovery 的原文复制
 
 9. **确认目录结构并复制模板资产**
-   - 优先使用本技能自带的 `scripts/deploy_aw.js` 生成标准 Harness `.servo/` 基线；它会从本技能的 `assets/` 目录渲染/复制所需文件，确保目录结构完整：
+   - 优先使用本技能自带的 `scripts/deploy_servo.js` 生成标准 Harness `.servo/` 基线；它会从本技能的 `assets/` 目录渲染/复制所需文件，确保目录结构完整：
      ```
      .servo/
      ├── control-state.md           ← 基于 assets/control-state.md 模板填充
@@ -107,10 +107,10 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
          └── plan-task-queue.md     ← 从 assets/worktrack/plan-task-queue.md 复制
      ```
    - `assets/` 目录遵循 Codex Skills 标准，存放本技能所需的模板、资源和参考文档
-   - `scripts/deploy_aw.js` 是本技能的标准 `.aw` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
-   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/aw-set-harness-goal-skill/`
-   - 也可以单独运行 `node scripts/deploy_aw.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
-   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `aw-set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
+   - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
+   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`
+   - 也可以单独运行 `node scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
+   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `servo-set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
    - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为已完成并 no-op
    - 复制时只复制模板骨架；内容字段（如 Project Vision、autonomy 参数等）由第 3~5 步的分析结果填充
    - 不覆盖已存在的文件；如果 `.servo/` 中已有同名文件，保留现有文件并报告冲突
@@ -147,7 +147,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。
 - 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-contract-primary`，使 worktrack 级 `runtime_dispatch_mode` 在默认 scaffold 中可生效；只有操作者显式改为 `global-override` 时，control-state 才压过 worktrack 合同。`auto` 是保守默认值，表示按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时在无安全分派壳层、权限边界阻断或 `dispatch package unsafe` 时显式记录 `runtime fallback`。
 - **不依赖外部 scaffold 脚本**；所有模板来自本技能自带的 `assets/` 目录，遵循 Codex Skills 标准。
-- 如果需要 repo-local operator 帮助脚本，唯一合法来源是本技能自带的 `scripts/deploy_aw.js`。
+- 如果需要 repo-local operator 帮助脚本，唯一合法来源是本技能自带的 `scripts/deploy_servo.js`。
 - 写入文件后，控制权返回 Harness；由 Harness 根据新的 control state 决定下一步。
 
 ## 预期输出
@@ -205,20 +205,20 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 | `assets/worktrack/contract.md` | 工作追踪契约模板骨架 | `.servo/worktrack/contract.md`（直接复制） |
 | `assets/worktrack/gate-evidence.md` | 关卡证据模板骨架 | `.servo/worktrack/gate-evidence.md`（直接复制） |
 | `assets/worktrack/plan-task-queue.md` | 计划任务队列模板骨架 | `.servo/worktrack/plan-task-queue.md`（直接复制） |
-| `scripts/deploy_aw.js` | `.aw` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选安装本技能到 `<deploy-path>/.claude/skills/aw-set-harness-goal-skill/` |
+| `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选安装本技能到 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/` |
 
-这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_aw.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 `.claude/skills` root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_aw.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.aw` 模板源码根的行为必须返回 blocked。
+这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_servo.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 `.claude/skills` root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.servo` 模板源码根的行为必须返回 blocked。
 
 最小用法：
 
 ```bash
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
-node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_aw.js generate --help
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
+node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node scripts/deploy_servo.js generate --help
 ```
 
 ## 资源
 
-使用当前用户需求文本、当前 repo 实际状态（文件、分支、提交历史），以及本技能 `assets/` 目录下的标准模板格式作为参考。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_aw.js`；依赖外部 scaffold 脚本的行为必须返回 blocked；需要 operator 辅助时直接使用本技能自带的 `scripts/deploy_aw.js`，把目标路径通过 `--deploy-path` 传入，由本技能生成符合 Harness 运行协议的标准组件。
+使用当前用户需求文本、当前 repo 实际状态（文件、分支、提交历史），以及本技能 `assets/` 目录下的标准模板格式作为参考。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js`；依赖外部 scaffold 脚本的行为必须返回 blocked；需要 operator 辅助时直接使用本技能自带的 `scripts/deploy_servo.js`，把目标路径通过 `--deploy-path` 传入，由本技能生成符合 Harness 运行协议的标准组件。

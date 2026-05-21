@@ -37,6 +37,14 @@ EXPECTED_AGENTS_SKILLS = {
 EXPECTED_CLAUDE_SKILLS = {
     *EXPECTED_AGENTS_SKILLS,
 }
+AGENTS_TARGET_DIR_OVERRIDES = {
+    "harness-skill": "servo-harness-skill",
+    "set-harness-goal-skill": "servo-set-harness-goal-skill",
+}
+CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
+    "harness-skill": ["servo-harness-skill"],
+    "set-harness-goal-skill": ["aw-set-harness-goal-skill", "servo-set-harness-goal-skill"],
+}
 
 
 def load_json(path: Path) -> dict[str, object]:
@@ -83,7 +91,11 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["skill_id"], skill_id)
             self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
             self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
-            self.assertIn(payload["target_dir"], (skill_id, f"aw-{skill_id}"))
+            expected_target_dir = AGENTS_TARGET_DIR_OVERRIDES.get(skill_id)
+            if expected_target_dir is None:
+                self.assertIn(payload["target_dir"], (skill_id, f"aw-{skill_id}"))
+            else:
+                self.assertEqual(payload["target_dir"], expected_target_dir)
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])
@@ -130,7 +142,10 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
             self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
             self.assertEqual(payload["target_dir"], skill_id)
-            self.assertEqual(payload["legacy_target_dirs"], [f"aw-{skill_id}"])
+            self.assertEqual(
+                payload["legacy_target_dirs"],
+                CLAUDE_LEGACY_TARGET_DIR_OVERRIDES.get(skill_id, [f"aw-{skill_id}"]),
+            )
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])

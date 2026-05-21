@@ -1,7 +1,7 @@
 {
   "name": "servo-installer",
-  "version": "0.5.2",
-  "description": "Self-contained npm package envelope for the AW Harness installer.",
+  "version": "0.5.3",
+  "description": "servo harness installer: install, verify, diagnose, and update CLI + TUI",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,9 +34,9 @@
   },
   "servoInstallerRelease": {
     "realPublishApproval": "approved",
-    "approvedVersion": "0.5.1-rc.1",
-    "approvedGitTag": "v0.5.1-rc.1",
-    "approvedChannel": "next"
+    "approvedVersion": "0.5.3",
+    "approvedGitTag": "v0.5.3",
+    "approvedChannel": "latest"
   },
   "engines": {
     "node": ">=18"

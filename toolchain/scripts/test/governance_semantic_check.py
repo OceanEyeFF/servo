@@ -1207,7 +1207,7 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
 
 
 def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
-    aw_dir = repo_root / ".aw"
+    aw_dir = repo_root / ".servo"
     if not aw_dir.exists():
         report.add_info("checked 0 runtime artifacts for consistency, .servo/ directory missing")
         return

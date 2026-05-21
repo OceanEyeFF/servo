@@ -6,10 +6,10 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const SKILL_ROOT = path.resolve(__dirname, "..");
-const DEFAULT_AW_DIRNAME = ".aw";
+const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
-const DEFAULT_CLAUDE_SKILL_NAME = "aw-set-harness-goal-skill";
+const DEFAULT_CLAUDE_SKILL_NAME = "servo-set-harness-goal-skill";
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
   ".git",
   "__pycache__",
@@ -485,19 +485,19 @@ function placeholder(name) {
 
 function usage() {
   return [
-    "Generate and validate `.aw` bootstrap artifacts from set-harness-goal-skill-owned assets.",
+    "Generate and validate `.servo` bootstrap artifacts from set-harness-goal-skill-owned assets.",
     "",
     "Usage:",
-    "  node deploy_aw.js list [--json]",
-    "  node deploy_aw.js validate [--profile NAME | --template ID... | --all]",
-    "  node deploy_aw.js generate [--deploy-path PATH] [--profile NAME | --template ID... | --all] [options]",
-    "  node deploy_aw.js install-claude-skill [--deploy-path PATH] [options]",
+    "  node deploy_servo.js list [--json]",
+    "  node deploy_servo.js validate [--profile NAME | --template ID... | --all]",
+    "  node deploy_servo.js generate [--deploy-path PATH] [--profile NAME | --template ID... | --all] [options]",
+    "  node deploy_servo.js install-claude-skill [--deploy-path PATH] [options]",
     "",
     "Examples:",
-    "  node deploy_aw.js validate",
-    "  node deploy_aw.js generate --deploy-path \"$DEPLOY_PATH\" --owner servo-kernel",
-    "  node deploy_aw.js generate --deploy-path \"$DEPLOY_PATH\" --install-claude-skill",
-    "  node deploy_aw.js install-claude-skill --deploy-path \"$DEPLOY_PATH\"",
+    "  node deploy_servo.js validate",
+    "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --owner servo-kernel",
+    "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --install-claude-skill",
+    "  node deploy_servo.js install-claude-skill --deploy-path \"$DEPLOY_PATH\"",
   ].join("\n");
 }
 

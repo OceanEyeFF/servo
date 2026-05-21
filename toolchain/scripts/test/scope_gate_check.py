@@ -43,6 +43,12 @@ class ScopeGateResult:
     violations: list[str]
 
 
+@dataclass(frozen=True)
+class ChangedFile:
+    path: str
+    status: str
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate the closeout worktree scope.")
     parser.add_argument(
@@ -65,7 +71,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def collect_changed_files(repo_root: Path) -> list[str]:
+def collect_changed_files(repo_root: Path) -> list[ChangedFile]:
     completed = subprocess.run(
         [
             "git",
@@ -81,15 +87,16 @@ def collect_changed_files(repo_root: Path) -> list[str]:
         capture_output=True,
         text=True,
     )
-    changed: list[str] = []
+    changed: list[ChangedFile] = []
     for raw_line in completed.stdout.splitlines():
         if not raw_line:
             continue
+        status = raw_line[:2]
         path = raw_line[3:].strip()
         if " -> " in path:
             path = path.split(" -> ", 1)[1].strip()
         path = normalize_status_path(path)
-        changed.append(path)
+        changed.append(ChangedFile(path=path, status=status))
     return changed
 
 
@@ -117,15 +124,32 @@ def is_allowed_path(path: str, allowed_path: str) -> bool:
     return path == allowed_path
 
 
-def check_scope(changed_files: list[str], allowed_prefixes: tuple[str, ...]) -> ScopeGateResult:
+def is_allowed_runtime_untrack(change: ChangedFile) -> bool:
+    if change.path.startswith((".servo/", ".agents/", ".autoworkflow/", ".claude/")):
+        return change.status.strip(" ") == "D"
+    return False
+
+
+def check_scope(changed_files: list[ChangedFile] | list[str], allowed_prefixes: tuple[str, ...]) -> ScopeGateResult:
     violations: list[str] = []
-    for path in changed_files:
+    normalized_changes = [
+        change if isinstance(change, ChangedFile) else ChangedFile(path=change, status=" M")
+        for change in changed_files
+    ]
+    for change in normalized_changes:
+        path = change.path
         if path.startswith(".git"):
             continue
         if any(is_allowed_path(path, prefix) for prefix in allowed_prefixes):
             continue
+        if is_allowed_runtime_untrack(change):
+            continue
         violations.append(path)
-    return ScopeGateResult(passed=not violations, changed_files=changed_files, violations=violations)
+    return ScopeGateResult(
+        passed=not violations,
+        changed_files=[change.path for change in normalized_changes],
+        violations=violations,
+    )
 
 
 def main() -> int:

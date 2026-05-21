@@ -1,47 +1,43 @@
 ---
-title: "Closeout Record - WT-20260519-managed-files-ownership-sync"
-artifact_type: "worktrack-closeout-record"
-generated_from: "harness-skill"
-updated: "2026-05-19"
-owner: "servo-kernel"
+title: "Closeout Record - WT-20260520-servo-npm-release-prep"
+artifact_type: worktrack-closeout-record
+worktrack_id: WT-20260520-servo-npm-release-prep
+milestone_id: MS-20260520-002
+generated_from: harness-skill
+updated: 2026-05-20T23:00:00+08:00
 ---
 
 # Closeout Record
 
-## Control Signal
+## Worktrack Summary
 
-- worktrack_id: WT-20260519-managed-files-ownership-sync
-- milestone_id: MS-20260519-002
-- worktrack_commit: `4b0dd17764ff37474e78d8efb06c92f94385e1c6`
-- merge_commit: `4b0dd17764ff37474e78d8efb06c92f94385e1c6` (fast-forward)
-- closeout_checkpoint: develop-aw@4b0dd17764ff37474e78d8efb06c92f94385e1c6
-- baseline_branch: develop-aw
-- branch_cleanup: deleted local `wt-20260519-managed-files-ownership-sync`
-- closeout_status: closed
+- worktrack_id: WT-20260520-servo-npm-release-prep
+- milestone_id: MS-20260520-002 (appended)
+- node_type: config
+- baseline_ref: develop-aw@b321349
+- closeout_checkpoint: develop-aw@f8076d1
 
-## Files Changed
+## Commits
 
-- `docs/project-maintenance/deploy/managed-files-ownership.md` (new): ownership classification for installer-managed skill payload, .servo/ runtime state, deploy targets, and user-owned files
-- `docs/project-maintenance/deploy/README.md` (updated): added managed-files-ownership.md to both tables
-- `docs/book.md` (updated): added new doc to reading order, renumbered subsequent entries
+| Commit | Description |
+|--------|-------------|
+| `25797bc` | chore: bump version to 0.5.2 |
+| `cdfef9e` | fix: remove private flag for npm publish |
+| `f8e3aaa` | fix: update description and bump to 0.5.3 |
+| `f8076d1` | fix: AW_INSTALLER_/AW_HARNESS_ → SERVO_INSTALLER_/SERVO_HARNESS_ env vars + deploy_aw → deploy_servo |
 
-## Gate Verdict
+## Gate
 
-- implementation_gate: pass
-- validation_gate: pass
-- policy_gate: pass
-- overall_verdict: pass
+- **verdict**: blocked
+- implementation-gate: pass
+- validation-gate: blocked
+- policy-gate: blocked
 
-## Validation Summary
+## Deferred
 
-- `git diff --check`: passed
-- `path_governance_check.py`: passed (680 links)
-- `folder_logic_check.py`: passed
-- `governance_semantic_check.py --json`: passed with retained warnings
+- npm publish servo-installer@0.5.3: 24h CD until ~2026-05-21 14:30 UTC
+- GitHub Release v0.5.3: can be created after npm publish
 
 ## Milestone Progress
 
-- milestone_id: MS-20260519-002
-- milestone_progress: 3/3 — ALL WORKTRACKS COMPLETE
-- milestone_status: completed → awaiting programmer acceptance
-- next_action: RepoScope.Observe milestone handback
+- MS-20260520-002: 3/4 worktracks complete; WT-4 appended is blocked until npm publish + registry smoke evidence exists

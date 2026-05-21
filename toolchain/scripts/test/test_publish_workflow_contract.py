@@ -38,15 +38,15 @@ def test_publish_workflow_uses_npm_environment_and_registry() -> None:
     assert "expected_npm_integrity=" in workflow
     assert "npm view npm@11.5.1 dist.integrity" in workflow
     assert "npm install -g npm@11.5.1" in workflow
-    assert "npm publish --provenance --access public --tag \"$AW_INSTALLER_RELEASE_CHANNEL\"" in workflow
+    assert "npm publish --provenance --access public --tag \"$SERVO_INSTALLER_RELEASE_CHANNEL\"" in workflow
 
 
 def test_publish_workflow_resolves_and_checks_release_metadata_before_publish() -> None:
     workflow = read_publish_workflow()
     resolver = RELEASE_METADATA_SCRIPT.read_text(encoding="utf-8")
 
-    assert "AW_INSTALLER_RELEASE_GIT_TAG" in resolver
-    assert "AW_INSTALLER_RELEASE_CHANNEL" in resolver
+    assert "SERVO_INSTALLER_RELEASE_GIT_TAG" in resolver
+    assert "SERVO_INSTALLER_RELEASE_CHANNEL" in resolver
     assert resolver.count("appendFileSync(") == 1
     assert 'const { deriveReleaseChannelFromTag, semverPattern } = require("./check-root-publish.js");' in resolver
     assert "const semverPattern =" not in resolver
@@ -142,8 +142,8 @@ def test_release_metadata_resolver_formats_github_env_as_single_block() -> None:
 
     assert completed.returncode == 0, completed.stderr
     assert json.loads(completed.stdout) == (
-        "AW_INSTALLER_RELEASE_GIT_TAG=v1.2.3-rc.1\n"
-        "AW_INSTALLER_RELEASE_CHANNEL=next\n"
+        "SERVO_INSTALLER_RELEASE_GIT_TAG=v1.2.3-rc.1\n"
+        "SERVO_INSTALLER_RELEASE_CHANNEL=next\n"
         "NPM_CONFIG_TAG=next\n"
     )
 

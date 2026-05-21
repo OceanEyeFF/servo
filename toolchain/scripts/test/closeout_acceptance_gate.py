@@ -187,6 +187,8 @@ def run_scope_gate(repo_root: Path, python: str) -> dict:
             "--allowed-prefix",
             "docs/project-maintenance/foundations/root-directory-layering.md",
             "--allowed-prefix",
+            "docs/servo-installer/",
+            "--allowed-prefix",
             "toolchain/toolchain-layering.md",
             "--allowed-prefix",
             "product/README.md",
@@ -526,8 +528,8 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
         target_repo.mkdir()
         fake_python_bin = write_python_sentinel_bin(package_dir_path)
         no_python_env = {
-            "AW_HARNESS_REPO_ROOT": str(repo_root),
-            "AW_HARNESS_TARGET_REPO_ROOT": str(target_repo),
+            "SERVO_HARNESS_REPO_ROOT": str(repo_root),
+            "SERVO_HARNESS_TARGET_REPO_ROOT": str(target_repo),
             "PATH": f"{fake_python_bin}{os.pathsep}{os.environ.get('PATH', '')}",
         }
 
@@ -832,8 +834,8 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
         target_repo.mkdir()
         if package_file is not None:
             clean_env = {
-                "AW_HARNESS_REPO_ROOT": "",
-                "AW_HARNESS_TARGET_REPO_ROOT": "",
+                "SERVO_HARNESS_REPO_ROOT": "",
+                "SERVO_HARNESS_TARGET_REPO_ROOT": "",
             }
 
             def validate_root_help(exec_result: dict, help_failures: list[str]) -> None:

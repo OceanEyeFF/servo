@@ -2,7 +2,7 @@
 title: "Repo Milestone Backlog"
 artifact_type: "repo-milestone-backlog"
 generated_from: "harness-skill"
-updated: "2026-05-20"
+updated: "2026-05-22"
 owner: "servo-kernel"
 ---
 # Repo Milestone Backlog
@@ -11,36 +11,37 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: fcd40980d58688d7ea11e66117a555f106b5db96
-- updated: 2026-05-20T12:55:49+08:00
-- updated_by: init-milestone-skill
+- updated: 2026-05-22T01:03:06+08:00
+- updated_by: harness-skill
 
 ## Pipeline Entries
 
 - milestone_id: MS-20260520-002
   - title: Repo Rename to servo
   - purpose: 将仓库、npm 包、内部前缀从 aw- / autoworkflow 统一重命名为 servo，使项目身份与「AI 编码的闭环控制系统」内核一致。外部面先改（GitHub repo + npm package），然后内部全量迁移（skills / docs / templates / scripts），最后运行时目录和治理检查收尾。
-  - status: active
+  - status: completed
   - priority: 0
   - depends_on_milestones:
     - MS-20260520-001
   - worktrack_list:
-    - WT-20260520-servo-external-rename (active)
-    - WT-20260520-servo-internal-migration (planned)
-    - WT-20260520-servo-runtime-governance-closeout (planned)
+    - WT-20260520-servo-external-rename (done)
+    - WT-20260520-servo-internal-migration (done)
+    - WT-20260520-servo-runtime-governance-closeout (done)
+    - WT-20260520-servo-npm-release-prep (done, appended)
   - created_by: programmer
   - created_at: 2026-05-20T19:10:00+08:00
-  - updated: 2026-05-20T19:20:00+08:00
+  - updated: 2026-05-22T01:03:06+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized continuous execution cycle on 2026-05-20 with 30 worktrack budget; activated immediately
   - milestone_kind: goal-driven
   - progress_counter:
-    - total: 3
-    - completed: 0
+    - total: 4
+    - completed: 4
     - blocked: 0
     - deferred: 0
   - completion_signals:
     - GitHub repo renamed from servo to servo
-    - npm servo-installer published and installable; servo-installer deprecated but retained
+    - npm servo-installer@0.5.3 published and installable; latest points to 0.5.3
     - Source zero-residual grep for servo-installer (excl. changelogs), servo-harness, servo-kernel, servo, .servo/ references
     - servo-installer, servo-harness new names searchable across full source
     - npx servo-installer --help succeeds
@@ -60,6 +61,59 @@ owner: "servo-kernel"
     - do not change package version, release tag, dist-tag, or release channel policy
     - servo-installer npm package must remain available as deprecated, not unpublished
     - changelog/historical references to old name are preserved
+  - acceptance:
+    - accepted_by: programmer
+    - accepted_at: 2026-05-22T01:03:06+08:00
+    - verdict: accepted
+    - note: all 4 worktracks done; npm publish and registry npx smoke evidence confirmed
+
+- milestone_id: MS-20260521-001
+  - title: .aw Runtime Seamless Upgrade
+  - purpose: 为仍在使用 .aw/ runtime state 的目标仓库提供一条低摩擦升级路径：显式迁移 .aw/ 到 .servo/，保留或备份用户状态，然后通过 servo-installer 重新覆盖安装 Skills，使 marker、target dirs、payload 指纹与新命名收敛。
+  - status: planned
+  - priority: 1
+  - depends_on_milestones:
+    - MS-20260520-002
+  - worktrack_list:
+    - WT-20260521-aw-upgrade-contract (planned)
+    - WT-20260521-aw-to-servo-runtime-migrator (planned)
+    - WT-20260521-skill-marker-reinstall-upgrade-flow (planned)
+    - WT-20260521-aw-upgrade-docs-and-smoke (planned)
+  - created_by: programmer
+  - created_at: 2026-05-21T10:51:47+08:00
+  - updated: 2026-05-21T10:51:47+08:00
+  - updated_by: init-milestone-skill
+  - activation_rules: planned only; activate after MS-20260520-002 is accepted and programmer authorizes the upgrade milestone
+  - milestone_kind: goal-driven
+  - progress_counter:
+    - total: 4
+    - completed: 0
+    - blocked: 0
+    - deferred: 0
+  - completion_signals:
+    - Existing target repos with only .aw/ runtime state can explicitly migrate to .servo/ while preserving equivalent state.
+    - Existing .servo/ conflicts block by default and produce clear recovery guidance instead of silent overwrite.
+    - .aw/ is retained or backed up by default unless explicit cleanup is approved.
+    - Reinstall/update refreshes Skills marker, legacy target cleanup, and payload fingerprint through existing installer mechanisms.
+    - /tmp target repository smoke tests cover .aw-only, .servo-existing, both-present, foreign marker, malformed marker, dry-run, and backup recovery cases.
+    - Operator docs describe the upgrade path for legacy .aw users.
+  - acceptance_criteria:
+    - Explicit migration entry exists; ordinary init does not silently mutate .aw to .servo.
+    - Dry-run reports planned copy, backup, block, and reinstall/update actions.
+    - Migration is idempotent and safe to rerun after a successful migration.
+    - .servo/ conflict handling blocks by default and requires explicit recovery confirmation to proceed.
+    - Existing aw.marker / legacy cleanup / payload fingerprint mechanisms are reused for the reinstall/update path and verified by tests.
+    - Smoke tests use /tmp target repositories and avoid source-tree runtime pollution.
+    - Relevant installer tests and folder/path/governance checks pass.
+    - Docs/runbook and usage entrypoints are synchronized.
+  - completion_threshold_pct: 100
+  - planning_boundary:
+    - do not delete user-owned .aw/ contents by default
+    - do not silently overwrite existing .servo/
+    - do not modify package version, npm dist-tag, release tag, publish state, or release channel policy
+    - do not treat .agents/ or .claude/ deploy targets as source truth
+    - do not modify .autoworkflow/ or .spec-workflow/ directories
+    - use /tmp target repositories for migration smoke tests
 
 - milestone_id: MS-20260520-001
   - title: Harness Runtime State Freshness & Worktrack Intake Governance

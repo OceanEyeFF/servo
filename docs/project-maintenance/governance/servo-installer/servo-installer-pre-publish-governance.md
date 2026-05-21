@@ -42,10 +42,10 @@ git ls-remote --tags origin "v<version>"
 ```bash
 npm pkg set version="<version>"
 npm --prefix toolchain/scripts/deploy pkg set version="<version>"
-npm pkg set awInstallerRelease.realPublishApproval="approved"
-npm pkg set awInstallerRelease.approvedVersion="<version>"
-npm pkg set awInstallerRelease.approvedGitTag="v<version>"
-npm pkg set awInstallerRelease.approvedChannel="<latest|next|canary>"
+npm pkg set servoInstallerRelease.realPublishApproval="approved"
+npm pkg set servoInstallerRelease.approvedVersion="<version>"
+npm pkg set servoInstallerRelease.approvedGitTag="v<version>"
+npm pkg set servoInstallerRelease.approvedChannel="<latest|next|canary>"
 ```
 
 4. 核对 tuple 输出：
