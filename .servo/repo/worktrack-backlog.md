@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 2497581cdab7f1e71434270dd02cf36329f1abf7
-- updated: 2026-05-22T18:40:33+08:00
+- baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
+- updated: 2026-05-22T19:20:38+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -19,6 +19,47 @@ owner: "servo-kernel"
 - none
 
 ## Recent Worktracks
+
+- [done] `WT-20260522-servo-skill-target-dir-convergence`: converge all agents backend skill target dirs from legacy `aw-*` to canonical `servo-*`, and surface CLI/TUI update guidance for legacy target replacement.
+  - branch: wt-20260522-servo-skill-target-dir-convergence
+  - worktrack_commit: `4aad90a`
+  - closeout_checkpoint: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
+  - baseline_ref: develop-aw@08de18c66556d273fe2b6ae28620cb9f9eb69f76
+  - milestone_id: MS-20260521-001
+  - node_type: feature
+  - status: done
+  - intake_route: programmer-requested-append-worktrack
+  - scope:
+    - agents backend payload target_dir convergence to `servo-*`
+    - installer diagnose/update legacy target dir guidance
+    - TUI guided diagnose/summary guidance
+    - operator docs and deploy mapping docs
+    - `/tmp/.tmpRepo` external target repository update verification
+  - acceptance:
+    - every agents backend payload uses a `servo-*` `target_dir`; old `aw-*` target dirs exist only in `legacy_target_dirs`
+    - CLI `diagnose --backend agents` reports legacy target dir replacement guidance when old managed dirs exist
+    - CLI dry-run `update --backend agents` lists old `aw-*` to new `servo-*` replacement paths and reports zero blocking issues
+    - TUI guided diagnose/summary exposes the same update path instead of a separate cleanup verb
+    - `/tmp/.tmpRepo` old agents `aw-*` managed target dirs update to 21 `servo-*` dirs and pass verify/diagnose
+  - result:
+    - source payload contract converged to servo target dirs for agents backend
+    - installer exposes `legacy_target_dir_count`, `legacy_target_dirs`, `legacy_blocked_count`, `legacy_blocked`, and `upgrade_guidance`
+    - docs describe `servo-*` target naming and legacy `aw-*` replacement path
+    - retained boundary: source repo `.agents/skills` deploy target was not mutating-updated because that would delete/add many managed dirs; dry-run guidance recorded the required command
+  - validation:
+    - `node --check toolchain/scripts/deploy/bin/servo-installer.js`: passed
+    - full installer Node tests: 146 passed
+    - `rg '"target_dir": "aw-' product/harness/adapters/agents/skills product/harness/adapters/claude/skills`: no matches
+    - `git diff --check`: passed
+    - `path_governance_check.py`: passed
+    - `governance_semantic_check.py`: passed with retained artifact alignment warnings
+    - `folder_logic_check.py`: retained existing `.servo/` tracked runtime conflicts
+    - source repo `diagnose --backend agents`: reported 19 legacy target dirs and upgrade guidance
+    - source repo dry-run `update --backend agents`: reported 19 legacy target replacements and 0 blocking preflight issues
+    - `/tmp/.tmpRepo` `update --backend agents --yes`: passed
+    - `/tmp/.tmpRepo` post-update directory list: 21 `servo-*` dirs, no `aw-*`
+    - `/tmp/.tmpRepo` `verify --backend agents`: passed
+    - `/tmp/.tmpRepo` `diagnose --backend agents`: 0 issues, 21 managed installs
 
 - [done] `WT-20260522-aw-external-tmprepo-migration-smoke`: validate `.aw` to `.servo` migration and agents reinstall against the programmer-provided old autoworkflow target repository at `/tmp/.tmpRepo`.
   - branch: wt-20260522-aw-external-tmprepo-migration-smoke

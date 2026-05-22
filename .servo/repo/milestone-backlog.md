@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 2497581cdab7f1e71434270dd02cf36329f1abf7
-- updated: 2026-05-22T18:40:33+08:00
+- baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
+- updated: 2026-05-22T19:20:38+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -80,15 +80,16 @@ owner: "servo-kernel"
     - WT-20260521-skill-marker-reinstall-upgrade-flow (done)
     - WT-20260521-aw-upgrade-docs-and-smoke (done)
     - WT-20260522-aw-external-tmprepo-migration-smoke (done, appended)
+    - WT-20260522-servo-skill-target-dir-convergence (done, appended)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-22T18:34:57+08:00
+  - updated: 2026-05-22T19:20:38+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
-    - total: 5
-    - completed: 5
+    - total: 6
+    - completed: 6
     - blocked: 0
     - deferred: 0
   - completion_signals:
@@ -98,6 +99,8 @@ owner: "servo-kernel"
     - Reinstall/update refreshes Skills marker, legacy target cleanup, and payload fingerprint through existing installer mechanisms.
     - /tmp target repository smoke tests cover .aw-only, .servo-existing, both-present, foreign marker, malformed marker, dry-run, and backup recovery cases.
     - Operator docs describe the upgrade path for legacy .aw users.
+    - Agents backend canonical skill target dirs use servo-*; legacy aw-* dirs are recognized only as update/reinstall replacement inputs.
+    - CLI and TUI surfaces provide update guidance for legacy aw-* target dir convergence.
   - acceptance_criteria:
     - Explicit migration entry exists; ordinary init does not silently mutate .aw to .servo.
     - Dry-run reports planned copy, backup, block, and reinstall/update actions.
@@ -107,6 +110,8 @@ owner: "servo-kernel"
     - Smoke tests use /tmp target repositories and avoid source-tree runtime pollution.
     - Relevant installer tests and folder/path/governance checks pass.
     - Docs/runbook and usage entrypoints are synchronized.
+    - All skill payload target_dir declarations have no aw-* residue.
+    - External /tmp target repo update from old aw-* managed skill target dirs to servo-* passes verify and diagnose.
   - completion_threshold_pct: 100
   - planning_boundary:
     - do not delete user-owned .aw/ contents by default
@@ -118,7 +123,7 @@ owner: "servo-kernel"
   - handback:
     - state: awaiting_programmer_acceptance
     - all_worktracks_complete: true
-    - latest_worktrack_closeout_checkpoint: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
+    - latest_worktrack_closeout_checkpoint: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
     - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001

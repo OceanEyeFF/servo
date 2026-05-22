@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T18:40:33+08:00
+- updated: 2026-05-22T19:20:38+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -22,7 +22,7 @@ owner: "servo-kernel"
 ## Active Worktrack
 
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260522-aw-external-tmprepo-migration-smoke
+- latest_closed_worktrack: WT-20260522-servo-skill-target-dir-convergence
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
-- current_checkout: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
+- baseline_ref: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
+- current_checkout: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,11 +44,12 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: RepoScope.Observe — MS-20260521-001 has 5/5 worktracks complete including appended external tmp repo smoke; request programmer final acceptance
+- current_next_action: RepoScope.Observe — MS-20260521-001 has 6/6 worktracks complete including appended servo skill target dir convergence; request programmer final acceptance
 
 ## Handback Guard
 
 - handoff_state: milestone_acceptance_requested
+- last_stop_reason: MS-20260521-001 all worktracks complete after appended servo skill target dir convergence; final milestone acceptance remains programmer-owned
 - last_stop_reason: MS-20260521-001 all worktracks complete after appended external tmp repo smoke; final milestone acceptance remains programmer-owned
 - last_stop_reason: programmer authorized MS-20260521-001 activation and first worktrack initialization on 2026-05-22
 - last_stop_reason: programmer accepted MS-20260520-001; milestone completed
@@ -58,10 +59,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 2497581cdab7f1e71434270dd02cf36329f1abf7
+- latest_observed_checkpoint: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:5_complete_pending_acceptance
-- checkpoint_ref: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
+- milestone_input_checkpoint: MS-20260521-001:6_complete_pending_acceptance
+- checkpoint_ref: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
@@ -119,6 +120,19 @@ owner: "servo-kernel"
   - validation: dry-run JSON passed; mutating migration passed; `.aw` vs `.servo` diff excluding sentinel passed; idempotence JSON returned `already-migrated`; `--reinstall --backend agents` passed; `verify --backend agents` passed; `diagnose --backend agents` reported 0 issues and 21 managed installs
   - milestone_progress: MS-20260521-001 5/5 — ALL WORKTRACKS COMPLETE
   - retained_observation: current agents payload contract still keeps most Worktrack skill target dirs as `aw-*`; only `harness-skill` and `set-harness-goal-skill` use `servo-*` target dirs
+  - next_legal_route: RepoScope.Observe milestone handback
+  - stop_boundary: milestone final acceptance remains programmer-owned
+
+- 2026-05-22: **appended and closed `WT-20260522-servo-skill-target-dir-convergence`** (MS-20260521-001, 6/6). Gate: pass with retained deploy-target boundary.
+  - worktrack_commit: `4aad90a`
+  - merge_commit: `13a8304`
+  - goal: all agents backend skill target dirs converge from `aw-*` to `servo-*`; CLI/TUI surfaces update guidance
+  - files_changed: agents adapter payloads, `servo-installer` diagnose/update/TUI guidance, installer tests, deploy mapping and ownership docs
+  - validation: full Node installer tests passed (146/146); `rg '"target_dir": "aw-' ...` no matches; git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
+  - external_tmprepo_validation: `/tmp/.tmpRepo` `update --backend agents --yes` replaced legacy `aw-*` target dirs with 21 `servo-*` dirs; verify passed; diagnose reported 0 issues and 21 managed installs
+  - source_repo_guidance_validation: local `diagnose --backend agents` and dry-run `update --backend agents` reported 19 legacy target dir replacements and `Run servo-installer update --backend agents --yes`
+  - retained_boundary: source repo `.agents/skills` deploy target was not mutating-updated because applying the guidance would delete/add many managed target dirs
+  - milestone_progress: MS-20260521-001 6/6 — ALL WORKTRACKS COMPLETE
   - next_legal_route: RepoScope.Observe milestone handback
   - stop_boundary: milestone final acceptance remains programmer-owned
 
