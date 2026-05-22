@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T10:11:07+08:00
+- updated: 2026-05-22T11:35:19+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -21,8 +21,8 @@ owner: "servo-kernel"
 
 ## Active Worktrack
 
-- active_worktrack: WT-20260521-aw-upgrade-contract
-- latest_closed_worktrack: WT-20260520-servo-npm-release-prep
+- active_worktrack: WT-20260521-aw-to-servo-runtime-migrator
+- latest_closed_worktrack: WT-20260521-aw-upgrade-contract
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
-- current_checkout: wt-20260521-aw-upgrade-contract@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+- current_checkout: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,7 +44,7 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: WorktrackScope.Observe — MS-20260521-001 activated; WT-20260521-aw-upgrade-contract initialized and ready for schedule-worktrack-skill
+- current_next_action: WorktrackScope.Init — WT-20260521-aw-upgrade-contract closed; initialize WT-20260521-aw-to-servo-runtime-migrator
 
 ## Handback Guard
 
@@ -57,10 +57,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- latest_observed_checkpoint: e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:0_active
-- checkpoint_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- milestone_input_checkpoint: MS-20260521-001:1_active
+- checkpoint_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: milestone-activation
 - verified_at: 2026-05-22
@@ -76,6 +76,14 @@ owner: "servo-kernel"
   - intake_review_verdict: ready_for_worktrack_init
   - next_legal_route: WorktrackScope.Observe then WorktrackScope.Decide via schedule-worktrack-skill
   - activation_authority: one-cycle programmer authorization in this conversation; no persistent autonomy default changed
+
+- 2026-05-22: **closed `WT-20260521-aw-upgrade-contract`** (MS-20260521-001, 1/4). Gate: pass.
+  - worktrack_commit: `7f4ae43`
+  - merge_commit: `e8e501d`
+  - files_changed: `.aw` runtime upgrade contract and servo-installer/operator routing docs
+  - validation: git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
+  - milestone_progress: MS-20260521-001 1/4
+  - next_legal_route: Init WT-20260521-aw-to-servo-runtime-migrator
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:

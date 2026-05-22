@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: fcd40980d58688d7ea11e66117a555f106b5db96
-- updated: 2026-05-22T10:11:07+08:00
+- updated: 2026-05-22T11:35:19+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -75,19 +75,19 @@ owner: "servo-kernel"
   - depends_on_milestones:
     - MS-20260520-002
   - worktrack_list:
-    - WT-20260521-aw-upgrade-contract (active)
-    - WT-20260521-aw-to-servo-runtime-migrator (planned)
+    - WT-20260521-aw-upgrade-contract (done)
+    - WT-20260521-aw-to-servo-runtime-migrator (active)
     - WT-20260521-skill-marker-reinstall-upgrade-flow (planned)
     - WT-20260521-aw-upgrade-docs-and-smoke (planned)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-22T10:11:07+08:00
+  - updated: 2026-05-22T11:35:19+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
     - total: 4
-    - completed: 0
+    - completed: 1
     - blocked: 0
     - deferred: 0
   - completion_signals:

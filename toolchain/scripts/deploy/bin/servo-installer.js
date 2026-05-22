@@ -5,6 +5,7 @@ const {
   chmodSync,
   closeSync,
   constants,
+  cpSync,
   existsSync,
   fstatSync,
   lstatSync,
@@ -39,6 +40,10 @@ const claudeBackend = "claude";
 const bundleBackend = "bundle";
 const packageSource = "package";
 const githubSource = "github";
+const legacyAwRuntimeDir = ".aw";
+const servoRuntimeDir = ".servo";
+const runtimeMigrationSentinel = ".servo-installer-aw-migration.json";
+const runtimeMigrationSentinelVersion = "aw-to-servo-runtime-migration.v1";
 const defaultGithubRepo = "OceanEyeFF/servo";
 const githubRepoPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const githubRefPattern = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/;
@@ -90,11 +95,14 @@ const cliFlags = Object.freeze({
   agentsRoot: "--agents-root",
   backend: "--backend",
   claudeRoot: "--claude-root",
+  from: "--from",
   githubArchiveSha256: "--github-archive-sha256",
   githubRef: "--github-ref",
   githubRepo: "--github-repo",
   json: "--json",
+  reinstall: "--reinstall",
   source: "--source",
+  to: "--to",
   yes: "--yes",
 });
 const unrecognizedIssueCodes = new Set(["unrecognized-target-directory"]);
@@ -286,6 +294,8 @@ commands:
                               apply the explicit update plan
   update --backend agents --source github --github-ref REF
                               update from a GitHub source archive containing current payloads
+  migrate-runtime --from aw --to servo [--json|--yes]
+                              preview or copy .aw runtime state into .servo
   prune --all --backend agents|claude|bundle
                               remove managed installs for the backend
   check_paths_exist --backend agents|claude|bundle
@@ -294,6 +304,10 @@ commands:
 options:
   -h, --help                  show this help message
   -V, --version               show package version
+  --from aw --to servo        select the supported runtime migration direction
+  --backend agents|claude|bundle
+                              include backend in migration reinstall plan output
+  --reinstall                 include deploy reinstall/update in migration plan output
   --source package|github     select package-local or GitHub update source
   --agents-root PATH          override the managed agents skills target root
   --claude-root PATH          override the managed Claude skills target root
@@ -2654,6 +2668,122 @@ function parsedGithubOptions(githubRepo, githubRef, githubArchiveSha256) {
   };
 }
 
+function parseNodeMigrateRuntimeArgs(args) {
+  if (args[0] !== "migrate-runtime") {
+    return null;
+  }
+  const parsed = {
+    from: undefined,
+    to: undefined,
+    backend: agentsBackend,
+    json: false,
+    yes: false,
+    reinstall: false,
+    agentsRoot: undefined,
+    claudeRoot: undefined,
+  };
+  for (let index = 1; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === cliFlags.json) {
+      parsed.json = true;
+      continue;
+    }
+    if (arg === cliFlags.yes) {
+      parsed.yes = true;
+      continue;
+    }
+    if (arg === cliFlags.reinstall) {
+      parsed.reinstall = true;
+      continue;
+    }
+    if (arg === cliFlags.from) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.from = value;
+      index += 1;
+      continue;
+    }
+    const fromValue = readEqualsOption(arg, cliFlags.from);
+    if (fromValue !== null) {
+      parsed.from = fromValue;
+      continue;
+    }
+    if (arg === cliFlags.to) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.to = value;
+      index += 1;
+      continue;
+    }
+    const toValue = readEqualsOption(arg, cliFlags.to);
+    if (toValue !== null) {
+      parsed.to = toValue;
+      continue;
+    }
+    if (arg === cliFlags.backend) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.backend = value;
+      index += 1;
+      continue;
+    }
+    const backendValue = readEqualsOption(arg, cliFlags.backend);
+    if (backendValue !== null) {
+      parsed.backend = backendValue;
+      continue;
+    }
+    if (arg === cliFlags.agentsRoot) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.agentsRoot = value;
+      index += 1;
+      continue;
+    }
+    const agentsRootValue = readEqualsOption(arg, cliFlags.agentsRoot);
+    if (agentsRootValue !== null) {
+      parsed.agentsRoot = agentsRootValue;
+      continue;
+    }
+    if (arg === cliFlags.claudeRoot) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.claudeRoot = value;
+      index += 1;
+      continue;
+    }
+    const claudeRootValue = readEqualsOption(arg, cliFlags.claudeRoot);
+    if (claudeRootValue !== null) {
+      parsed.claudeRoot = claudeRootValue;
+      continue;
+    }
+    return null;
+  }
+  if (parsed.from !== "aw" || parsed.to !== "servo" || (parsed.json && parsed.yes)) {
+    return null;
+  }
+  if (!backendAllowed(parsed.backend, [agentsBackend, claudeBackend, bundleBackend])) {
+    return null;
+  }
+  return {
+    ...parsedBackendRoots(parsed.backend, parsed.agentsRoot, parsed.claudeRoot),
+    from: parsed.from,
+    to: parsed.to,
+    json: parsed.json,
+    yes: parsed.yes,
+    reinstall: parsed.reinstall,
+  };
+}
+
 function parseNodeUpdateArgs(args) {
   if (args[0] !== "update") {
     return null;
@@ -3053,6 +3183,248 @@ function runNodeDiagnose(args) {
   try {
     printDiagnosticSummary(diagnosticSummary(verifyBackend(buildNodeBackendContext(parsed))));
     return 0;
+  } catch (error) {
+    console.error(`error: ${error.message}`);
+    return 1;
+  }
+}
+
+function runtimeMigrationContext(parsed) {
+  const sourceRoot = process.env.SERVO_HARNESS_REPO_ROOT || process.cwd();
+  const targetRepoRoot = validateTargetRepoRoot(
+    process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd(),
+    sourceRoot,
+  );
+  return {
+    ...parsed,
+    targetRepoRoot,
+    sourceRuntimePath: join(targetRepoRoot, legacyAwRuntimeDir),
+    destinationRuntimePath: join(targetRepoRoot, servoRuntimeDir),
+    sentinelPath: join(targetRepoRoot, servoRuntimeDir, runtimeMigrationSentinel),
+  };
+}
+
+function readRuntimeMigrationSentinel(path) {
+  const stat = lstatOrNull(path);
+  if (stat === null || !stat.isFile()) {
+    return null;
+  }
+  try {
+    return readJsonObject(path);
+  } catch (error) {
+    return null;
+  }
+}
+
+function runtimeMigrationReinstallPlan(context) {
+  if (!context.reinstall) {
+    return {
+      requested: false,
+      backend: context.backend,
+      command: null,
+      note: "not requested",
+    };
+  }
+  const args = ["servo-installer", "update", "--backend", context.backend, "--yes"];
+  if (context.backend === agentsBackend && context.agentsRoot !== undefined) {
+    args.push("--agents-root", context.agentsRoot);
+  }
+  if (context.backend === claudeBackend && context.claudeRoot !== undefined) {
+    args.push("--claude-root", context.claudeRoot);
+  }
+  if (context.backend === bundleBackend) {
+    if (context.agentsRoot !== undefined) {
+      args.push("--agents-root", context.agentsRoot);
+    }
+    if (context.claudeRoot !== undefined) {
+      args.push("--claude-root", context.claudeRoot);
+    }
+  }
+  return {
+    requested: true,
+    backend: context.backend,
+    command: args.join(" "),
+    note: "planned only; run the command after reviewing runtime migration output",
+  };
+}
+
+function runtimeMigrationIssue(code, path, detail) {
+  return { code, path, detail };
+}
+
+function assertRuntimeSymlinksStayInsideSource(sourcePath) {
+  const sourceRealpath = realpathSync(sourcePath);
+  const stack = [sourcePath];
+  while (stack.length > 0) {
+    const currentPath = stack.pop();
+    for (const entry of readdirSync(currentPath, { withFileTypes: true })) {
+      const entryPath = join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+        continue;
+      }
+      if (!entry.isSymbolicLink()) {
+        continue;
+      }
+      let targetRealpath;
+      try {
+        targetRealpath = realpathSync(entryPath);
+      } catch (error) {
+        throw new Error(`runtime migration blocked: symlink target is unreadable: ${entryPath}`);
+      }
+      if (!isPathContainedIn(targetRealpath, sourceRealpath)) {
+        throw new Error(
+          `runtime migration blocked: symlink target escapes ${legacyAwRuntimeDir}: ${entryPath} -> ${targetRealpath}`,
+        );
+      }
+    }
+  }
+}
+
+function runtimeMigrationSummary(context) {
+  validateNotSensitiveRepoRoot(context.targetRepoRoot, "Runtime migration target repo root", "migrated");
+  const sourceStat = lstatOrNull(context.sourceRuntimePath);
+  const destinationStat = lstatOrNull(context.destinationRuntimePath);
+  const sentinel = readRuntimeMigrationSentinel(context.sentinelPath);
+  const issues = [];
+  let state = "no-runtime";
+  let action = "noop";
+  let mutationAllowed = false;
+
+  if (sourceStat !== null && (!sourceStat.isDirectory() || sourceStat.isSymbolicLink())) {
+    issues.push(runtimeMigrationIssue(
+      "malformed-source-runtime",
+      context.sourceRuntimePath,
+      `${legacyAwRuntimeDir} must be a real directory`,
+    ));
+    state = "blocked";
+    action = "blocked";
+  } else if (destinationStat !== null && (!destinationStat.isDirectory() || destinationStat.isSymbolicLink())) {
+    issues.push(runtimeMigrationIssue(
+      "malformed-destination-runtime",
+      context.destinationRuntimePath,
+      `${servoRuntimeDir} must be absent or a real directory`,
+    ));
+    state = "blocked";
+    action = "blocked";
+  } else if (sourceStat === null && destinationStat === null) {
+    state = "no-runtime";
+    action = "noop";
+  } else if (sourceStat === null && destinationStat !== null) {
+    state = "destination-only";
+    action = "noop";
+  } else if (sourceStat !== null && destinationStat === null) {
+    state = "ready";
+    action = "copy";
+    mutationAllowed = true;
+  } else if (
+    sentinel !== null &&
+    sentinel.marker_version === runtimeMigrationSentinelVersion &&
+    sentinel.from === legacyAwRuntimeDir &&
+    sentinel.to === servoRuntimeDir
+  ) {
+    state = "already-migrated";
+    action = "noop";
+  } else {
+    issues.push(runtimeMigrationIssue(
+      "destination-runtime-exists",
+      context.destinationRuntimePath,
+      `${servoRuntimeDir} already exists; refusing to overwrite or merge runtime state`,
+    ));
+    state = "blocked";
+    action = "blocked";
+  }
+
+  return {
+    command: "migrate-runtime",
+    from: "aw",
+    to: "servo",
+    target_repo_root: context.targetRepoRoot,
+    source_runtime_path: context.sourceRuntimePath,
+    destination_runtime_path: context.destinationRuntimePath,
+    state,
+    action,
+    mutation_allowed: mutationAllowed,
+    mutation_performed: false,
+    source_exists: sourceStat !== null,
+    destination_exists: destinationStat !== null,
+    sentinel_path: context.sentinelPath,
+    sentinel_present: sentinel !== null,
+    issue_count: issues.length,
+    issues,
+    reinstall_plan: runtimeMigrationReinstallPlan(context),
+  };
+}
+
+function applyRuntimeMigration(context) {
+  const summary = runtimeMigrationSummary(context);
+  if (summary.issue_count > 0) {
+    throw new Error(`runtime migration blocked by ${summary.issue_count} issue(s)`);
+  }
+  if (!summary.mutation_allowed) {
+    return summary;
+  }
+  assertRuntimeSymlinksStayInsideSource(context.sourceRuntimePath);
+  cpSync(context.sourceRuntimePath, context.destinationRuntimePath, {
+    recursive: true,
+    errorOnExist: true,
+    force: false,
+    verbatimSymlinks: true,
+  });
+  writeFileSync(
+    context.sentinelPath,
+    `${JSON.stringify({
+      marker_version: runtimeMigrationSentinelVersion,
+      from: legacyAwRuntimeDir,
+      to: servoRuntimeDir,
+      source_runtime_path: context.sourceRuntimePath,
+      destination_runtime_path: context.destinationRuntimePath,
+      migrated_at: new Date().toISOString(),
+    }, null, 2)}\n`,
+    "utf8",
+  );
+  return {
+    ...runtimeMigrationSummary(context),
+    state: "migrated",
+    action: "copy",
+    mutation_performed: true,
+  };
+}
+
+function printRuntimeMigrationSummary(summary) {
+  console.log(`runtime migration ${summary.from} -> ${summary.to} for ${summary.target_repo_root}`);
+  console.log(`state: ${summary.state}`);
+  console.log(`action: ${summary.action}`);
+  console.log(`source: ${summary.source_runtime_path}`);
+  console.log(`destination: ${summary.destination_runtime_path}`);
+  if (summary.issue_count > 0) {
+    console.log(`blocking issues: ${summary.issue_count}`);
+    for (const issue of summary.issues) {
+      console.log(`  - ${issue.code}: ${issue.path} (${issue.detail})`);
+    }
+  }
+  if (summary.reinstall_plan.requested) {
+    console.log(`reinstall plan: ${summary.reinstall_plan.command}`);
+  }
+  if (!summary.mutation_performed && summary.mutation_allowed) {
+    console.log("dry-run only; pass --yes to copy .aw into .servo");
+  }
+}
+
+function runNodeMigrateRuntime(args) {
+  const parsed = parseNodeMigrateRuntimeArgs(args);
+  if (parsed === null) {
+    return null;
+  }
+  try {
+    const context = runtimeMigrationContext(parsed);
+    const summary = parsed.yes ? applyRuntimeMigration(context) : runtimeMigrationSummary(context);
+    if (parsed.json) {
+      console.log(JSON.stringify(sortJsonObjectKeys(summary), null, 2));
+    } else {
+      printRuntimeMigrationSummary(summary);
+    }
+    return summary.issue_count > 0 ? 1 : 0;
   } catch (error) {
     console.error(`error: ${error.message}`);
     return 1;
@@ -3727,6 +4099,11 @@ async function runNodeOwned(args) {
   const bundleStatus = await runNodeBundle(args);
   if (bundleStatus !== null) {
     return bundleStatus;
+  }
+
+  const nodeMigrateRuntimeStatus = runNodeMigrateRuntime(args);
+  if (nodeMigrateRuntimeStatus !== null) {
+    return nodeMigrateRuntimeStatus;
   }
 
   const nodeDiagnoseStatus = runNodeDiagnoseJson(args);
@@ -4488,6 +4865,7 @@ module.exports = {
   parseNodeDiagnoseJsonArgs,
   parseNodeDiagnoseArgs,
   parseNodeInstallArgs,
+  parseNodeMigrateRuntimeArgs,
   parseNodePruneArgs,
   parseNodeUnsupportedPruneMissingAllArgs,
   parseNodeUnsupportedUpdateJsonYesArgs,
@@ -4503,6 +4881,7 @@ module.exports = {
   pruneBackendManagedInstalls,
   recursiveSensitiveTargetRepoRoots,
   resolveExistingOrLexical,
+  runtimeMigrationSummary,
   runNodeOwned,
   updatePlanSummary,
   validateSourceRepoRoot,
