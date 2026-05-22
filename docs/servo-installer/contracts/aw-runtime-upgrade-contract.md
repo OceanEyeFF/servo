@@ -61,14 +61,14 @@ Exit semantics:
 - `1`: blocked, validation failed, partial copy failed, reinstall/update failed, or arguments are unsafe
 - no partial-success exit code: partial completion is represented in structured output and stderr
 
-JSON output must include stable top-level fields: `target_root`, `source_runtime_path`, `destination_runtime_path`, `state`, `verdict`, `planned_actions`, `backup_policy`, `reinstall_plan`, `blocking_issues`, `recovery_hints`, and `mutation_performed`.
+JSON output must include stable top-level fields: `target_root`, `source_runtime_path`, `destination_runtime_path`, `state`, `verdict`, `planned_actions`, `backup_policy`, `reinstall_plan`, `blocking_issues`, `recovery_hints`, and `mutation_performed`. The implementation may also expose compatibility/detail fields such as `target_repo_root`, `action`, `mutation_allowed`, `sentinel_path`, `sentinel_present`, `issue_count`, and `issues`.
 
 ## State Matrix
 
 | Target State | Default Verdict | Required Behavior |
 | --- | --- | --- |
 | no `.aw/`, no `.servo/` | no-op | Report that no legacy runtime state exists. Do not create `.servo/` as part of this upgrade. |
-| `.aw/` only | ready | Dry-run reports planned `.aw/` to `.servo/` copy and retention or backup behavior. Mutating mode may create `.servo/`. |
+| `.aw/` only | ready | Dry-run reports planned `.aw/` to `.servo/` copy and retention behavior. Mutating mode may create `.servo/`. |
 | `.servo/` only | no-op | Report already on `.servo/`. Do not touch `.aw/`. |
 | both `.aw/` and `.servo/` | blocked | Fail closed by default. Provide recovery options; do not merge or overwrite automatically. |
 | `.aw/` unreadable or malformed | blocked | Do not guess. Report the unreadable path and preserve contents. |
@@ -102,6 +102,14 @@ If an idempotence sentinel is introduced, it should live under `.servo/` and rec
 ## Reinstall / Update Coupling
 
 After runtime state migration, the installer may run the existing destructive reinstall/update chain so installed skills converge on current naming and payload descriptors.
+
+Implemented command shape:
+
+```text
+servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend agents|claude|bundle
+```
+
+`--reinstall` is not an independent migration mode. It adds an update preflight to `migrate-runtime`; when the update plan has blocking issues, the command must stop before copying `.aw/` to `.servo/`. When the runtime migration is safe and the update plan is clear, the command runs the existing `update --yes` chain for the selected backend. Bundle mode uses the same aggregate update composition as `servo-installer update --backend bundle --yes`.
 
 The reinstall/update portion must reuse existing mechanisms:
 
@@ -152,11 +160,13 @@ Minimum fields:
 
 Dry-run must not create, modify, move, delete, or chmod target repository files.
 
+`--json` is always read-only and mutually exclusive with `--yes`. Human output may include a concise `reinstall status` and `reinstall blocking issues` summary; JSON exposes the same information under `reinstall_plan.status` and `reinstall_plan.blocking_issue_count`.
+
 TUI may surface legacy `.aw/` as a warning or upgrade prompt, but it must route mutating behavior back to the explicit CLI-equivalent command shape. TUI `.servo` health checks must not auto-migrate `.aw/`, and missing `.servo/` plus present `.aw/` should be reported as "legacy runtime state present" rather than as a generic uninitialized state.
 
 ## Test Surface
 
-The implementation worktrack must include `/tmp` target repository smoke tests for at least:
+The implementation worktracks must include `/tmp` target repository smoke tests for at least:
 
 - `.aw/` only
 - `.servo/` exists
@@ -167,6 +177,8 @@ The implementation worktrack must include `/tmp` target repository smoke tests f
 - successful migration is idempotent
 - failed copy exposes recovery guidance
 - reinstall/update refreshes managed skill markers and payload fingerprints through the existing installer path
+
+Current verified test coverage also includes update preflight blocking before runtime copy and bundle reinstall installing both backend payloads.
 
 Tests must not create runtime state under this source repository.
 

@@ -10,7 +10,7 @@
 |--------|--------|
 | `deploy/distribution-entrypoint-contract.md` | [`servo-installer/contracts/`](../../servo-installer/contracts/distribution-entrypoint-contract.md) |
 | `deploy/deploy-mapping-spec.md` | [`servo-installer/contracts/`](../../servo-installer/contracts/deploy-mapping-spec.md) |
-| legacy `.aw` runtime upgrade | [`servo-installer/contracts/aw-runtime-upgrade-contract.md`](../../servo-installer/contracts/aw-runtime-upgrade-contract.md) |
+| legacy `.aw` runtime upgrade | [`servo-installer/runbooks/aw-runtime-upgrade-runbook.md`](../../servo-installer/runbooks/aw-runtime-upgrade-runbook.md) |
 | `deploy/payload-provenance-trust-boundary.md` | [`servo-installer/contracts/`](../../servo-installer/contracts/payload-provenance-trust-boundary.md) |
 | `deploy/harness-version-marker-contract.md` | [`servo-installer/contracts/version-marker-contract.md`](../../servo-installer/contracts/version-marker-contract.md) |
 | `deploy/deploy-runbook.md` | [`servo-installer/runbooks/`](../../servo-installer/runbooks/deploy-runbook.md) |

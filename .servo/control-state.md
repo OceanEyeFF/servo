@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T12:42:35+08:00
+- updated: 2026-05-22T15:20:35+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -21,8 +21,8 @@ owner: "servo-kernel"
 
 ## Active Worktrack
 
-- active_worktrack: WT-20260521-skill-marker-reinstall-upgrade-flow
-- latest_closed_worktrack: WT-20260521-aw-to-servo-runtime-migrator
+- active_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
+- latest_closed_worktrack: WT-20260521-skill-marker-reinstall-upgrade-flow
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
-- current_checkout: wt-20260521-skill-marker-reinstall-upgrade-flow@11a61134d6ac73bea790ac34f2a76a437ec6afc2
+- baseline_ref: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- current_checkout: wt-20260521-aw-upgrade-docs-and-smoke@2a8fbba8a71214a21b0626d1609cc0b1957926fa
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,7 +44,7 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: WorktrackScope.Init — WT-20260521-aw-to-servo-runtime-migrator closed; initialize WT-20260521-skill-marker-reinstall-upgrade-flow
+- current_next_action: WorktrackScope.Init — WT-20260521-skill-marker-reinstall-upgrade-flow closed; initialize WT-20260521-aw-upgrade-docs-and-smoke
 
 ## Handback Guard
 
@@ -57,10 +57,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 11a61134d6ac73bea790ac34f2a76a437ec6afc2
+- latest_observed_checkpoint: 2a8fbba8a71214a21b0626d1609cc0b1957926fa
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:2_active
-- checkpoint_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
+- milestone_input_checkpoint: MS-20260521-001:3_active
+- checkpoint_ref: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
@@ -92,6 +92,14 @@ owner: "servo-kernel"
   - validation: full Node installer tests passed (142/142); git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
   - milestone_progress: MS-20260521-001 2/4
   - next_legal_route: Init WT-20260521-skill-marker-reinstall-upgrade-flow
+
+- 2026-05-22: **closed `WT-20260521-skill-marker-reinstall-upgrade-flow`** (MS-20260521-001, 3/4). Gate: pass with retained repo warning.
+  - worktrack_commit: `066742c`
+  - merge_commit: `2a8fbba`
+  - files_changed: `migrate-runtime --reinstall` preflight/execution path plus managed marker refresh and bundle reinstall tests
+  - validation: full Node installer tests passed (145/145); git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
+  - milestone_progress: MS-20260521-001 3/4
+  - next_legal_route: Init WT-20260521-aw-upgrade-docs-and-smoke
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:
