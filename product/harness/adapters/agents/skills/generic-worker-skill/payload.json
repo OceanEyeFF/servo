@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/generic-worker-skill/SKILL.md"
   ],
-  "target_dir": "aw-generic-worker-skill",
+  "target_dir": "servo-generic-worker-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "generic-worker-skill"
+    "generic-worker-skill",
+    "aw-generic-worker-skill"
   ]
 }

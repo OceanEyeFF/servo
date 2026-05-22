@@ -67,6 +67,8 @@ servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend
 
 `--reinstall` first computes the existing update plan. If update preflight has blocking conflicts, the command stops before copying `.aw/` to `.servo/`. If runtime migration is safe and update preflight is clear, it reuses the existing `update --yes` chain: `prune --all -> check_paths_exist -> install -> verify`.
 
+For `agents`, the reinstall/update chain also replaces installer-managed legacy `aw-*` skill target dirs with current `servo-*` target dirs. `diagnose` and `update` surface this as upgrade guidance before the mutating run.
+
 `aw.marker` remains installer-managed payload identity. It is not evidence of `.aw/` runtime state.
 
 ## State Matrix

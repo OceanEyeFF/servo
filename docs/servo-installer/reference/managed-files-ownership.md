@@ -37,7 +37,7 @@ target repo root/
 
 | 属性 | 值 |
 |------|-----|
-| 路径 | `<targetRepoRoot>/.agents/skills/aw-*` 和 `<targetRepoRoot>/.claude/skills/*` |
+| 路径 | `<targetRepoRoot>/.agents/skills/servo-*` 和 `<targetRepoRoot>/.claude/skills/*` |
 | 创建者 | `servo-installer install` |
 | 更新者 | `servo-installer update --yes` |
 | 删除者 | `servo-installer prune --all` 或 operator 手动删除 |
@@ -139,9 +139,9 @@ servo/           ← 用户自有（target repo 本身）
 │
 ├── .agents/skills/                ← deploy target（installer 管理）
 │   ├── servo-harness-skill/          ← 受管 skill payload
-│   ├── aw-close-worktrack-skill/  ← 受管 skill payload
-│   ├── aw-gate-skill/             ← 受管 skill payload
-│   └── aw-*                       ← 所有 aw- 前缀目录均为受管
+│   ├── servo-close-worktrack-skill/  ← 受管 skill payload
+│   ├── servo-gate-skill/             ← 受管 skill payload
+│   └── servo-*                       ← 当前 agents 受管 skill payload
 │
 ├── .claude/skills/                ← deploy target（installer 管理）
 │   ├── harness-skill/             ← 受管 skill payload
@@ -171,6 +171,7 @@ servo/           ← 用户自有（target repo 本身）
 |-----------|------|---------|
 | 重置所有受管 skill 到当前版本 | `servo-installer install --backend bundle` | 仅 `.agents/skills/` 和 `.claude/skills/` |
 | 完全清理 installer 部署产物 | `servo-installer prune --all --backend bundle` | 仅上述两个 skills 目录 |
+| 将旧 `aw-*` agents skill 目录收敛到 `servo-*` | `servo-installer update --backend agents --yes` 或 runtime 迁移时加 `--reinstall` | 仅 `.agents/skills/` 受管目录 |
 | 重置 Harness 控制状态 | `rm -rf .servo/` 然后重新 `set-harness-goal-skill` | 仅 `.servo/`，不影响源码和文档 |
 | 升级 legacy runtime state | 按 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) 先 dry-run，再显式确认 | `.aw/` 作为源；`.servo/` 作为目标 |
 | 修改 skill 行为 | 编辑 `product/harness/skills/` 下的 canonical source | 下次 install 时生效 |

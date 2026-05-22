@@ -662,6 +662,11 @@ test("node-owned summary and context helpers are exported for unit coverage", ()
       binding_count: 0,
       managed_install_count: 0,
       managed_installs: [],
+      legacy_target_dir_count: 0,
+      legacy_target_dirs: [],
+      legacy_blocked_count: 0,
+      legacy_blocked: [],
+      upgrade_guidance: null,
       issue_count: 0,
       issue_codes: [],
       issues: [],
@@ -3441,6 +3446,59 @@ test("servo-installer update agents yes refreshes drifted and stale managed inst
     assert.equal(completed.stderr.includes("unexpected-python"), false);
     assert.match(completed.stdout, new RegExp(`removed managed skill dir ${escapeRegExp(installed.targetSkillDir)}`));
     assert.equal(readFileSync(targetSkillPath, "utf8"), "# demo-skill\n\n# updated source\n");
+    const verify = runNodeVerify(root, ["--backend=agents"], fakeBin);
+    assert.equal(verify.status, 0, verify.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("servo-installer update agents replaces legacy aw target dir with servo target dir", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-test-"));
+  try {
+    const installed = seedInstalledAgentsSkill(root, "demo-skill", {
+      targetDir: "servo-demo-skill",
+      legacyTargetDirs: ["aw-demo-skill"],
+    });
+    const legacyDir = join(installed.targetRoot, "aw-demo-skill");
+    mkdirSync(legacyDir, { recursive: true });
+    writeFileSync(join(legacyDir, "SKILL.md"), "# demo-skill\n\n# old aw target\n", "utf8");
+    writeFileSync(
+      join(legacyDir, "payload.json"),
+      `${JSON.stringify({ ...installed.payload, target_dir: "aw-demo-skill" }, null, 2)}\n`,
+      "utf8",
+    );
+    writeFileSync(
+      join(legacyDir, "aw.marker"),
+      `${JSON.stringify({
+        marker_version: "aw-managed-skill-marker.v2",
+        backend: "agents",
+        skill_id: "demo-skill",
+        payload_version: "agents-skill-payload.v1",
+        payload_fingerprint: "old-fingerprint",
+      }, null, 2)}\n`,
+      "utf8",
+    );
+    rmSync(installed.targetSkillDir, { recursive: true, force: true });
+    const fakeBin = fakePythonBin(root);
+
+    const dryRun = runNodeUpdate(root, ["--backend=agents"], fakeBin);
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    assert.match(dryRun.stdout, /legacy target dirs to replace: 1/);
+    assert.match(dryRun.stdout, new RegExp(`${escapeRegExp(legacyDir)} -> ${escapeRegExp(installed.targetSkillDir)}`));
+    assert.match(dryRun.stdout, /upgrade guidance: Run servo-installer update --backend agents --yes/);
+
+    const diagnose = runNodeDiagnose(root, ["--backend=agents"], fakeBin);
+    assert.equal(diagnose.status, 0, diagnose.stderr);
+    assert.match(diagnose.stdout, /upgrade guidance: 1 legacy target dir\(s\) can be replaced/);
+    assert.match(diagnose.stdout, /next: Run servo-installer update --backend agents --yes/);
+
+    const completed = runNodeUpdate(root, ["--backend=agents", "--yes"], fakeBin);
+    assert.equal(completed.status, 0, completed.stderr);
+    assert.match(completed.stdout, new RegExp(`removed managed skill dir ${escapeRegExp(legacyDir)}`));
+    assert.match(completed.stdout, new RegExp(`installed skill demo-skill -> ${escapeRegExp(installed.targetSkillDir)}`));
+    assert.equal(existsSync(legacyDir), false);
+    assert.equal(existsSync(join(installed.targetSkillDir, "aw.marker")), true);
     const verify = runNodeVerify(root, ["--backend=agents"], fakeBin);
     assert.equal(verify.status, 0, verify.stderr);
   } finally {

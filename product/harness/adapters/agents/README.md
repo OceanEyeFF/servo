@@ -16,8 +16,8 @@
 
 - canonical truth 仍在 `product/harness/skills/`
 - adapter source 只保存 `agents` backend 的 payload descriptor
-- target naming 当前固定为 `aw-<skill_id>`
-- 旧 `<skill_id>` 目录只通过 `legacy_target_dirs` 参与受管清理
+- target naming 当前固定为 `servo-<skill_id>`
+- 旧 `<skill_id>` 与 `aw-<skill_id>` 目录只通过 `legacy_target_dirs` 参与受管清理和 update 收敛
 - repo-local `.agents/skills/` 是 deploy target，不是 source truth
 
 这里适合放：

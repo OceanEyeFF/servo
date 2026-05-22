@@ -2260,6 +2260,57 @@ function collectLegacyPathConflicts(plans, targetRoot) {
   return conflicts;
 }
 
+function legacyTargetDirMigrationSummary(plans, targetRoot) {
+  const legacyManagedInstalls = [];
+  const legacyBlocked = [];
+  if (!isDirectory(targetRoot)) {
+    return {
+      legacy_target_dir_count: 0,
+      legacy_target_dirs: legacyManagedInstalls,
+      legacy_blocked_count: 0,
+      legacy_blocked: legacyBlocked,
+    };
+  }
+  for (const plan of plans) {
+    for (const legacyDirName of plan.targetMetadata.legacyTargetDirs) {
+      const legacyPath = join(targetRoot, legacyDirName);
+      if (!pathExistsOrIsSymlink(legacyPath)) {
+        continue;
+      }
+      const identity = childDirectoryIdentity(legacyPath);
+      const marker = identity === null ? null : loadRuntimeMarker(join(legacyPath, managedSkillMarker));
+      const item = {
+        skill_id: plan.binding.skillId,
+        legacy_dir: legacyDirName,
+        legacy_path: legacyPath,
+        target_dir: plan.targetMetadata.targetDir,
+        target_path: join(targetRoot, plan.targetMetadata.targetDir),
+      };
+      if (
+        marker !== null &&
+        marker.backend === plan.binding.backend &&
+        (marker.skill_id === plan.binding.skillId ||
+          plan.targetMetadata.legacySkillIds.includes(marker.skill_id))
+      ) {
+        legacyManagedInstalls.push(item);
+        continue;
+      }
+      legacyBlocked.push({
+        ...item,
+        reason: marker === null
+          ? "legacy target path is not an installer-managed directory for this backend"
+          : `legacy target path is managed for backend ${marker.backend} skill ${marker.skill_id}`,
+      });
+    }
+  }
+  return {
+    legacy_target_dir_count: legacyManagedInstalls.length,
+    legacy_target_dirs: legacyManagedInstalls,
+    legacy_blocked_count: legacyBlocked.length,
+    legacy_blocked: legacyBlocked,
+  };
+}
+
 function formatPathConflicts(conflicts) {
   return [
     "target path conflicts:",
@@ -2569,6 +2620,7 @@ function updatePlanSummary(context) {
     targetChildren,
     backend,
   );
+  const legacyMigration = legacyTargetDirMigrationSummary(plans, targetRoot);
   const managedInstallsToDelete = managedInstallDirs(targetRoot, targetChildren, backend);
   const managedDeletePaths = new Set(managedInstallsToDelete);
   const allIssues = dedupeIssues([...result.issues, ...planIssues, ...targetEntryIssues, ...preloadIssues]);
@@ -2583,6 +2635,10 @@ function updatePlanSummary(context) {
     operation_sequence: ["prune --all", "check_paths_exist", "install", "verify"],
     managed_installs_to_delete: managedInstallsToDelete,
     planned_target_paths: plans.map((plan) => plan.targetSkillDir),
+    ...legacyMigration,
+    upgrade_guidance: legacyMigration.legacy_target_dir_count > 0
+      ? `Run servo-installer update --backend ${backend} --yes to replace legacy target dirs with current servo target dirs.`
+      : null,
     issue_count: allIssues.length,
     issues: allIssues,
     blocking_issue_count: blockingIssues.length,
@@ -2593,6 +2649,33 @@ function updatePlanSummary(context) {
 function diagnosticSummary(result) {
   const backend = result.backend || agentsBackend;
   const managedDirs = managedInstallDirs(result.targetRoot, result.targetChildren, backend);
+  let legacyMigration = {
+    legacy_target_dir_count: 0,
+    legacy_target_dirs: [],
+    legacy_blocked_count: 0,
+    legacy_blocked: [],
+  };
+  if (result.bindings.length > 0 && isDirectory(result.targetRoot)) {
+    try {
+      const loadedPayloads = loadBindingPayloads(result.bindings);
+      const targetMetadata = collectTargetDirMetadata(result.bindings, loadedPayloads);
+      const plans = result.bindings.map((binding) =>
+        buildInstallPlan(binding, result.targetRoot, { sourceRoot: result.sourceRoot }, {
+          loadedPayloads,
+          targetMetadata: targetMetadata.metadataByPayloadPath.get(binding.payloadPath),
+          includePayloadFingerprint: false,
+        }),
+      );
+      legacyMigration = legacyTargetDirMigrationSummary(plans, result.targetRoot);
+    } catch (_) {
+      legacyMigration = {
+        legacy_target_dir_count: 0,
+        legacy_target_dirs: [],
+        legacy_blocked_count: 0,
+        legacy_blocked: [],
+      };
+    }
+  }
   const issueCodes = [...new Set(result.issues.map((currentIssue) => currentIssue.code))].sort();
   const unrecognized = result.issues.filter((currentIssue) => unrecognizedIssueCodes.has(currentIssue.code));
   const conflicts = result.issues.filter((currentIssue) => conflictIssueCodes.has(currentIssue.code));
@@ -2605,6 +2688,10 @@ function diagnosticSummary(result) {
     binding_count: result.bindings.length,
     managed_install_count: managedDirs.length,
     managed_installs: managedDirs,
+    ...legacyMigration,
+    upgrade_guidance: legacyMigration.legacy_target_dir_count > 0
+      ? `Run servo-installer update --backend ${backend} --yes to replace legacy target dirs with current servo target dirs.`
+      : null,
     issue_count: result.issues.length,
     issue_codes: issueCodes,
     issues: result.issues,
@@ -3164,6 +3251,12 @@ function printDiagnosticSummary(summary) {
     `[${summary.backend}] diagnose: ${summary.issue_count} issue(s), ` +
       `${summary.managed_install_count} managed install(s) at ${summary.target_root}`,
   );
+  if (summary.legacy_target_dir_count > 0) {
+    console.log(
+      `[${summary.backend}] upgrade guidance: ${summary.legacy_target_dir_count} legacy target dir(s) can be replaced by current servo target dirs`,
+    );
+    console.log(`[${summary.backend}] next: ${summary.upgrade_guidance}`);
+  }
   if (summary.issue_codes.length > 0) {
     console.log(`issue codes: ${summary.issue_codes.join(", ")}`);
   }
@@ -3628,6 +3721,13 @@ function printUpdatePlan(summary) {
   console.log(`target paths to write: ${summary.planned_target_paths.length}`);
   for (const currentPath of summary.planned_target_paths) {
     console.log(`  - ${currentPath}`);
+  }
+  if (summary.legacy_target_dir_count > 0) {
+    console.log(`legacy target dirs to replace: ${summary.legacy_target_dir_count}`);
+    for (const current of summary.legacy_target_dirs) {
+      console.log(`  - ${current.legacy_path} -> ${current.target_path}`);
+    }
+    console.log(`upgrade guidance: ${summary.upgrade_guidance}`);
   }
   console.log(`blocking preflight issues: ${summary.blocking_issue_count}`);
   for (const currentIssue of summary.blocking_issues) {
@@ -4290,6 +4390,8 @@ function buildDiagnoseSummary(capturedOutput, backend) {
       skillCount: bd.managed_install_count || 0,
       issueCount: bd.issue_count || 0,
       conflictCount: bd.conflict_count || 0,
+      legacyTargetDirCount: bd.legacy_target_dir_count || 0,
+      upgradeGuidance: bd.upgrade_guidance || null,
       issues: (bd.issues || []).slice(0, 5),
     });
   }
@@ -4371,6 +4473,12 @@ async function guidedDiagnose(rl, state) {
   for (const bk of diag.backends) {
     const icon = bk.ok ? SYM_OK : (bk.conflictCount > 0 ? SYM_WARN : SYM_FAIL);
     console.log(`  ${icon} ${colorCyan(bk.backend)}: ${bk.skillCount} skills installed, ${bk.issueCount} issues, ${bk.conflictCount} conflicts`);
+    if (bk.legacyTargetDirCount > 0) {
+      console.log(
+        `     ${colorYellow("upgrade:")} ${bk.legacyTargetDirCount} legacy target dir(s) can be replaced by current servo target dirs`,
+      );
+      console.log(`     ${colorDim(bk.upgradeGuidance)}`);
+    }
     if (!bk.ok && bk.issues.length > 0) {
       for (const iss of bk.issues.slice(0, 3)) {
         console.log(`     ${colorDim("- " + (iss.skill || iss.code || JSON.stringify(iss)))}`);
@@ -4547,6 +4655,7 @@ async function guidedSummary(rl, state, results) {
     if (state.backend === bundleBackend) {
       console.log("  " + colorDim("Both agents and claude backends are deployed."));
     }
+    console.log("  " + colorDim("Legacy target dir cleanup uses the same update flow: servo-installer update --backend " + state.backend + " --yes"));
   } else {
     console.log(SYM_FAIL + " " + colorBold("Guided flow incomplete — partial state."));
     var stageNames = ["diagnose", "preview", "confirm", "install", "verify"];
@@ -4896,6 +5005,7 @@ module.exports = {
   childDirectoryIdentity,
   collectAllKnownTargetDirs,
   collectLegacyPathConflicts,
+  legacyTargetDirMigrationSummary,
   collectPathConflicts,
   collectTargetDirMetadata,
   collectUpdateTargetEntryIssues,

@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/worktrack-status-skill/SKILL.md"
   ],
-  "target_dir": "aw-worktrack-status-skill",
+  "target_dir": "servo-worktrack-status-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "worktrack-status-skill"
+    "worktrack-status-skill",
+    "aw-worktrack-status-skill"
   ]
 }

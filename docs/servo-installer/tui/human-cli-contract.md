@@ -90,6 +90,8 @@ diagnose → preview paths → confirm → install/update → verify → summary
 
 每一步都可以取消。取消时 TUI 不执行任何 mutating 操作。
 
+当 diagnose 发现 installer-managed legacy target dirs（例如 agents backend 的旧 `aw-*` skill 目录）时，TUI 必须展示与 CLI 相同的更新指引，并把 mutating 收敛动作映射到 `servo-installer update --backend <backend> --yes` 或 runtime 迁移路径中的 `migrate-runtime --from aw --to servo --yes --reinstall --backend <backend>`。TUI 不得引入独立的 legacy cleanup verb。
+
 ## 受众路径
 
 | 受众 | 推荐路径 | 文档入口 |

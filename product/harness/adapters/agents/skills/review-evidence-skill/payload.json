@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/review-evidence-skill/SKILL.md"
   ],
-  "target_dir": "aw-review-evidence-skill",
+  "target_dir": "servo-review-evidence-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "review-evidence-skill"
+    "review-evidence-skill",
+    "aw-review-evidence-skill"
   ]
 }
