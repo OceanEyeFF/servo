@@ -7,7 +7,7 @@
     "product/harness/skills/gate-skill/SKILL.md",
     "product/harness/skills/gate-skill/templates/gate-evidence.template.md"
   ],
-  "target_dir": "aw-gate-skill",
+  "target_dir": "servo-gate-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -21,6 +21,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "gate-skill"
+    "gate-skill",
+    "aw-gate-skill"
   ]
 }

@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/rule-check-skill/SKILL.md"
   ],
-  "target_dir": "aw-rule-check-skill",
+  "target_dir": "servo-rule-check-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "rule-check-skill"
+    "rule-check-skill",
+    "aw-rule-check-skill"
   ]
 }
