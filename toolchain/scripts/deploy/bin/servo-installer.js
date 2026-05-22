@@ -3376,10 +3376,14 @@ function runtimeMigrationSummary(context) {
     from: "aw",
     to: "servo",
     target_repo_root: context.targetRepoRoot,
+    target_root: context.targetRepoRoot,
     source_runtime_path: context.sourceRuntimePath,
     destination_runtime_path: context.destinationRuntimePath,
     state,
+    verdict: issues.length > 0 ? "blocked" : state,
     action,
+    planned_actions: mutationAllowed ? ["copy .aw to .servo"] : [],
+    backup_policy: "retain .aw in place; no default cleanup",
     mutation_allowed: mutationAllowed,
     mutation_performed: false,
     source_exists: sourceStat !== null,
@@ -3388,6 +3392,10 @@ function runtimeMigrationSummary(context) {
     sentinel_present: sentinel !== null,
     issue_count: issues.length,
     issues,
+    blocking_issues: issues,
+    recovery_hints: issues.length > 0
+      ? ["preserve .aw; fix or relocate the reported path; rerun migrate-runtime"]
+      : [],
     reinstall_plan: runtimeMigrationReinstallPlan(context),
   };
 }

@@ -10,18 +10,39 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 11a61134d6ac73bea790ac34f2a76a437ec6afc2
-- updated: 2026-05-22T12:42:35+08:00
+- baseline_ref: 2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- updated: 2026-05-22T15:20:35+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
 
-- [active] `WT-20260521-skill-marker-reinstall-upgrade-flow`: couple the explicit runtime migration path to existing installer update/reinstall mechanics so managed skill markers, legacy cleanup, and payload fingerprints converge after migration.
+- [active] `WT-20260521-aw-upgrade-docs-and-smoke`: synchronize operator docs/runbook and smoke evidence for the `.aw` to `.servo` upgrade path.
+  - branch: wt-20260521-aw-upgrade-docs-and-smoke
+  - baseline_ref: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
+  - milestone_id: MS-20260521-001
+  - node_type: docs
+  - status: active
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - docs/servo-installer/contracts/aw-runtime-upgrade-contract.md
+    - docs/servo-installer/runbooks/
+    - docs/project-maintenance/usage-help/
+    - docs/book.md and local entrypoints if needed
+    - toolchain/scripts/deploy/test_servo_installer.js only for smoke harness clarifications if needed
+  - acceptance:
+    - Operator docs explain dry-run, JSON, `--yes`, `--reinstall`, conflict blocking, idempotence, and `.aw` retention.
+    - Smoke evidence covers `.aw` only, `.servo` exists, both present, malformed paths, dry-run, successful mutation, and reinstall refresh path.
+    - Docs align with actual implemented JSON/human fields and command semantics.
+    - Governance checks pass except the retained `.servo/` tracked runtime folder warning.
+
+- [done] `WT-20260521-skill-marker-reinstall-upgrade-flow`: couple the explicit runtime migration path to existing installer update/reinstall mechanics so managed skill markers, legacy cleanup, and payload fingerprints converge after migration.
   - branch: wt-20260521-skill-marker-reinstall-upgrade-flow
+  - worktrack_commit: `066742c`
+  - closeout_checkpoint: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
   - baseline_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
   - milestone_id: MS-20260521-001
   - node_type: feature
-  - status: active
+  - status: done
   - intake_route: programmer-confirmed-milestone
   - scope:
     - toolchain/scripts/deploy/bin/servo-installer.js

@@ -32,7 +32,7 @@
 - 外部试用反馈模板：[trial feedback issue template](../../../.github/ISSUE_TEMPLATE/servo-installer-trial-feedback.yml) 与 [bug/blocker issue template](../../../.github/ISSUE_TEMPLATE/servo-installer-bug.yml)
 - registry `npx` 验证、反馈日志与多临时 workdir 验证：[npx Command Test Execution](../testing/npx-command-test-execution.md)
 - drift、冲突扫描、故障诊断：[skill-deployment-maintenance.md](../../servo-installer/runbooks/skill-deployment-maintenance.md)
-- legacy `.aw/` runtime state 升级边界：[`.aw` Runtime Upgrade Contract](../../servo-installer/contracts/aw-runtime-upgrade-contract.md)
+- legacy `.aw/` runtime state 升级步骤：[Legacy `.aw` Runtime Upgrade Runbook](../../servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
 - add/update/rename/remove：看当前 backend 的 usage-help 页面
 
 public/near-public trial 主路径仍是 `agents` backend；Claude Code 可安装完整 Harness skill payload，作为 Claude 适配 lane。

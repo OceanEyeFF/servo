@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-05-16
+updated: 2026-05-22
 owner: servo-kernel
-last_verified: 2026-05-16
+last_verified: 2026-05-22
 ---
 # Docs Book Spine
 
@@ -65,13 +65,14 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 5. [servo-installer/contracts/payload-provenance-trust-boundary.md](./servo-installer/contracts/payload-provenance-trust-boundary.md)
 6. [servo-installer/contracts/version-marker-contract.md](./servo-installer/contracts/version-marker-contract.md)
 7. [servo-installer/runbooks/deploy-runbook.md](./servo-installer/runbooks/deploy-runbook.md)
-8. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
-9. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
-10. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
-11. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
-12. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
-13. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
-14. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
+8. [servo-installer/runbooks/aw-runtime-upgrade-runbook.md](./servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
+9. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
+10. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
+11. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
+12. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
+13. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
+14. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
+15. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
 
 ### 3. Harness
 

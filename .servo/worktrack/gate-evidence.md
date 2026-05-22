@@ -1,8 +1,8 @@
 ---
-title: "Gate Evidence: WT-20260521-skill-marker-reinstall-upgrade-flow"
+title: "Gate Evidence: WT-20260521-aw-upgrade-docs-and-smoke"
 artifact_type: gate-evidence
-worktrack_id: WT-20260521-skill-marker-reinstall-upgrade-flow
-updated: 2026-05-22T15:17:06+08:00
+worktrack_id: WT-20260521-aw-upgrade-docs-and-smoke
+updated: 2026-05-22T15:59:04+08:00
 ---
 
 # Gate Evidence
@@ -11,28 +11,29 @@ updated: 2026-05-22T15:17:06+08:00
 
 - Verdict: pass
 - Evidence:
-  - `migrate-runtime --from aw --to servo --yes --reinstall` now preflights the existing update plan before runtime mutation.
-  - Agents/Claude reinstall uses the existing `applyUpdateContext(buildNodeBackendContext(...))` path.
-  - Bundle reinstall uses the existing `runBundleUpdateYes(...)` composition.
-  - The implementation preserves `aw.marker` as payload identity and reuses existing `legacy_target_dirs`, `legacy_skill_ids`, and `payload_fingerprint` mechanics.
+  - Added `target_root`, `verdict`, `planned_actions`, `backup_policy`, `blocking_issues`, and `recovery_hints` to `migrate-runtime` JSON summaries while preserving existing implementation detail fields.
+  - Updated `docs/servo-installer/contracts/aw-runtime-upgrade-contract.md` to describe implemented dry-run, `--json`, `--yes`, `--reinstall`, conflict blocking, idempotence, and retention semantics.
+  - Added `docs/servo-installer/runbooks/aw-runtime-upgrade-runbook.md` and linked it from `docs/servo-installer/README.md`, project maintenance deploy/usage entrypoints, and `docs/book.md`.
 
 ## validation-gate
 
 - Verdict: pass
 - Evidence:
-  - `node --test --test-name-pattern 'migrate-runtime|parseNodeMigrateRuntimeArgs' toolchain/scripts/deploy/test_servo_installer.js` passed.
-  - `node --test toolchain/scripts/deploy/test_servo_installer.js` passed: 145/145 tests.
-  - `git diff --check` passed.
+  - `node --check toolchain/scripts/deploy/bin/servo-installer.js` passed.
+  - `git diff --check` passed before governance verification.
+  - `node --test --test-name-pattern 'migrate-runtime|parseNodeMigrateRuntimeArgs' toolchain/scripts/deploy/test_servo_installer.js` passed: 11 pass, 134 skipped.
+  - `node --test toolchain/scripts/deploy/test_servo_installer.js` passed: 145 pass.
   - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py` passed.
-  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py` passed with retained plan-task-queue alignment warnings.
+  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py` passed with retained artifact-alignment warnings.
 
 ## policy-gate
 
-- Verdict: pass_with_retained_repo_warning
+- Verdict: pass-with-retained-repo-warning
 - Evidence:
-  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py` failed only on retained tracked `.servo/` runtime-layer content (`FL001`, `FL007`), matching prior worktrack evidence.
-  - Tests use `/tmp` target repositories and do not create source-tree `.aw/`, `.servo/`, `.agents/`, or `.claude/` runtime state.
+  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py` failed only on the retained tracked `.servo/` runtime/install/mount conflict (`FL001`, `FL007`), which predates this worktrack and was already recorded in earlier MS-20260521-001 closeouts.
+  - No package version, release tag, npm dist-tag, publish state, `.aw` deletion behavior, deploy target source rewrite, or `.autoworkflow` / `.spec-workflow` mutation was introduced.
 
 ## Deferred Items
 
-- WT-4 owns operator docs/runbook and broader upgrade smoke documentation.
+- Milestone final acceptance remains programmer-owned.
+- Repository-level snapshot refresh and final checkpoint update are deferred until after the worktrack is merged to `develop-aw`.

@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Documentation"
 status: active
-updated: 2026-05-19
+updated: 2026-05-22
 owner: servo-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-22
 ---
 # servo-installer Documentation
 
@@ -34,6 +34,7 @@ docs/servo-installer/
 │
 ├── runbooks/                       ← 操作步骤（procedural）
 │   ├── deploy-runbook.md
+│   ├── aw-runtime-upgrade-runbook.md
 │   ├── skill-deployment-maintenance.md
 │   └── uninstall-remove-runbook.md
 │
@@ -67,6 +68,7 @@ operator 执行具体任务时使用。
 | 文档 | 使用场景 |
 |------|---------|
 | `deploy-runbook.md` | 首次安装或完整重装 |
+| `aw-runtime-upgrade-runbook.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` |
 | `skill-deployment-maintenance.md` | 已有安装，判断 drift/conflict，diagnose/verify 分流 |
 | `uninstall-remove-runbook.md` | 安全卸载，prune --all 边界，bundle 模式行为 |
 
@@ -96,6 +98,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 |------|-------------|
 | 新 operator（首次安装） | runbooks/deploy-runbook → reference/managed-files-ownership |
 | operator（日常维护） | runbooks/skill-deployment-maintenance → runbooks/uninstall-remove-runbook |
+| operator（legacy `.aw` runtime） | runbooks/aw-runtime-upgrade-runbook → contracts/aw-runtime-upgrade-contract |
 | operator（理解行为） | contracts/distribution-entrypoint-contract → reference/managed-files-ownership |
 | CI/脚本集成 | contracts/distribution-entrypoint-contract → contracts/deploy-mapping-spec |
 | 人类 operator（TUI 交互） | tui/human-cli-contract → runbooks/deploy-runbook |
@@ -112,7 +115,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | 理解 installer 写入哪些文件 | reference/managed-files-ownership.md |
 | 理解 CLI 命令不变量 | contracts/distribution-entrypoint-contract.md |
 | 理解 canonical source 到 target 的映射 | contracts/deploy-mapping-spec.md |
-| 升级 legacy `.aw/` runtime state | contracts/aw-runtime-upgrade-contract.md |
+| 升级 legacy `.aw/` runtime state | runbooks/aw-runtime-upgrade-runbook.md |
 | 理解 payload 来源与信任边界 | contracts/payload-provenance-trust-boundary.md |
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |
