@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T15:20:35+08:00
+- updated: 2026-05-22T16:01:59+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -21,8 +21,8 @@ owner: "servo-kernel"
 
 ## Active Worktrack
 
-- active_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
-- latest_closed_worktrack: WT-20260521-skill-marker-reinstall-upgrade-flow
+- active_worktrack: none
+- latest_closed_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
-- current_checkout: wt-20260521-aw-upgrade-docs-and-smoke@2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- baseline_ref: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
+- current_checkout: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,11 +44,12 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: WorktrackScope.Init — WT-20260521-skill-marker-reinstall-upgrade-flow closed; initialize WT-20260521-aw-upgrade-docs-and-smoke
+- current_next_action: RepoScope.Observe — MS-20260521-001 has 4/4 worktracks complete; request programmer final acceptance
 
 ## Handback Guard
 
-- handoff_state: active
+- handoff_state: milestone_acceptance_requested
+- last_stop_reason: MS-20260521-001 all worktracks complete; final milestone acceptance remains programmer-owned
 - last_stop_reason: programmer authorized MS-20260521-001 activation and first worktrack initialization on 2026-05-22
 - last_stop_reason: programmer accepted MS-20260520-001; milestone completed
 - last_stop_reason: programmer accepted MS-20260519-004; milestone completed
@@ -57,10 +58,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- latest_observed_checkpoint: 2153813eec001c66d6d128ed586a023ed146cb11
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:3_active
-- checkpoint_ref: develop-aw@2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- milestone_input_checkpoint: MS-20260521-001:4_complete_pending_acceptance
+- checkpoint_ref: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
@@ -100,6 +101,15 @@ owner: "servo-kernel"
   - validation: full Node installer tests passed (145/145); git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
   - milestone_progress: MS-20260521-001 3/4
   - next_legal_route: Init WT-20260521-aw-upgrade-docs-and-smoke
+
+- 2026-05-22: **closed `WT-20260521-aw-upgrade-docs-and-smoke`** (MS-20260521-001, 4/4). Gate: pass with retained repo warning.
+  - worktrack_commit: `b1dd4a6`
+  - merge_commit: `2153813`
+  - files_changed: `.aw` runtime upgrade runbook, docs navigation, contract clarification, and `migrate-runtime` JSON compatibility aliases
+  - validation: full Node installer tests passed (145/145); targeted migrate-runtime tests passed (11 pass, 134 skipped); git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained warnings; folder_logic_check.py retained existing `.servo/` tracked runtime conflict
+  - milestone_progress: MS-20260521-001 4/4 — ALL WORKTRACKS COMPLETE
+  - next_legal_route: RepoScope.Observe milestone handback
+  - stop_boundary: milestone final acceptance remains programmer-owned
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:

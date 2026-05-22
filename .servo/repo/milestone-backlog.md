@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: fcd40980d58688d7ea11e66117a555f106b5db96
-- updated: 2026-05-22T15:20:35+08:00
+- baseline_ref: 2153813eec001c66d6d128ed586a023ed146cb11
+- updated: 2026-05-22T16:01:59+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -78,16 +78,16 @@ owner: "servo-kernel"
     - WT-20260521-aw-upgrade-contract (done)
     - WT-20260521-aw-to-servo-runtime-migrator (done)
     - WT-20260521-skill-marker-reinstall-upgrade-flow (done)
-    - WT-20260521-aw-upgrade-docs-and-smoke (active)
+    - WT-20260521-aw-upgrade-docs-and-smoke (done)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-22T15:20:35+08:00
+  - updated: 2026-05-22T16:01:59+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
     - total: 4
-    - completed: 3
+    - completed: 4
     - blocked: 0
     - deferred: 0
   - completion_signals:
@@ -114,6 +114,11 @@ owner: "servo-kernel"
     - do not treat .agents/ or .claude/ deploy targets as source truth
     - do not modify .autoworkflow/ or .spec-workflow/ directories
     - use /tmp target repositories for migration smoke tests
+  - handback:
+    - state: awaiting_programmer_acceptance
+    - all_worktracks_complete: true
+    - latest_worktrack_closeout_checkpoint: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
+    - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001
   - title: Harness Runtime State Freshness & Worktrack Intake Governance

@@ -11,15 +11,15 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: 2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- checkpoint: 2153813eec001c66d6d128ed586a023ed146cb11
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
 
 ## Current Repo State
 
 - active_milestone: MS-20260521-001
-- active_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
-- latest_closed_worktrack: WT-20260521-skill-marker-reinstall-upgrade-flow
+- active_worktrack: none
+- latest_closed_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
 - latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
@@ -80,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: 2a8fbba8a71214a21b0626d1609cc0b1957926fa
+- harness_baseline_head: 2153813eec001c66d6d128ed586a023ed146cb11
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -118,9 +118,9 @@ owner: "servo-kernel"
 
 - completed: 16 milestones
 - active: 1
-  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 3/4 complete; WT-20260521-aw-upgrade-docs-and-smoke active
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 4/4 worktracks complete; awaiting programmer acceptance
 - planned: 0
 
 ## Recommended Next Route
 
-- WorktrackScope.Init: WT-20260521-aw-upgrade-docs-and-smoke is next active worktrack
+- RepoScope.Observe: milestone handback for MS-20260521-001; final acceptance remains programmer-owned
