@@ -11,7 +11,7 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: 2153813eec001c66d6d128ed586a023ed146cb11
+- checkpoint: 3b3772515194079fbe8b5537e68a8de948b584ef
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
 
@@ -19,7 +19,7 @@ owner: "servo-kernel"
 
 - active_milestone: MS-20260521-001
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
+- latest_closed_worktrack: WT-20260522-aw-external-tmprepo-migration-smoke
 - latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
@@ -80,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: 2153813eec001c66d6d128ed586a023ed146cb11
+- harness_baseline_head: 3b3772515194079fbe8b5537e68a8de948b584ef
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -118,9 +118,9 @@ owner: "servo-kernel"
 
 - completed: 16 milestones
 - active: 1
-  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 4/4 worktracks complete; awaiting programmer acceptance
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 5/5 worktracks complete including appended external tmp repo smoke; awaiting programmer acceptance
 - planned: 0
 
 ## Recommended Next Route
 
-- RepoScope.Observe: milestone handback for MS-20260521-001; final acceptance remains programmer-owned
+- RepoScope.Observe: close appended smoke worktrack, refresh checkpoint after merge, then milestone handback for MS-20260521-001; final acceptance remains programmer-owned

@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 2153813eec001c66d6d128ed586a023ed146cb11
-- updated: 2026-05-22T16:01:59+08:00
+- baseline_ref: 3b3772515194079fbe8b5537e68a8de948b584ef
+- updated: 2026-05-22T18:34:57+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -19,6 +19,43 @@ owner: "servo-kernel"
 - none
 
 ## Recent Worktracks
+
+- [done] `WT-20260522-aw-external-tmprepo-migration-smoke`: validate `.aw` to `.servo` migration and agents reinstall against the programmer-provided old autoworkflow target repository at `/tmp/.tmpRepo`.
+  - branch: wt-20260522-aw-external-tmprepo-migration-smoke
+  - worktrack_commit: pending
+  - closeout_checkpoint: pending merge
+  - baseline_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
+  - milestone_id: MS-20260521-001
+  - node_type: test
+  - status: done
+  - intake_route: programmer-requested-append-worktrack
+  - scope:
+    - `/tmp/.tmpRepo` external target repository smoke execution
+    - `.servo` runtime evidence writeback in this source repository
+    - no source implementation changes
+  - acceptance:
+    - `/tmp/.tmpRepo` starts as legacy autoworkflow shape: `.aw/` exists, `.servo/` absent, `.agents/skills/aw-*` managed installs present.
+    - `migrate-runtime --from aw --to servo --json` reports a ready copy plan with no blocking issues.
+    - `migrate-runtime --from aw --to servo --yes` creates `.servo/`, preserves `.aw/`, and writes the migration sentinel.
+    - `.aw/` and `.servo/` content match except the migration sentinel.
+    - Repeated migration is idempotent and reports `already-migrated`.
+    - `migrate-runtime --from aw --to servo --yes --reinstall --backend agents` completes and refreshes installer-managed skills according to current payload metadata.
+    - `verify --backend agents` and `diagnose --backend agents` pass after migration.
+  - result:
+    - external runtime migration passed
+    - agents reinstall passed
+    - diagnose reported 0 issues and 21 managed installs
+    - retained observation: current agents payload contract still keeps most Worktrack skill target dirs as `aw-*`; only `harness-skill` and `set-harness-goal-skill` target dirs are `servo-*`
+  - validation:
+    - target initial git status: clean
+    - target initial head: d4c5ae4f0917f77e9beb600a08da4d76d4ac4824
+    - dry-run JSON: passed, `state=ready`, `verdict=ready`, `blocking_issues=[]`
+    - mutating migration: passed
+    - runtime equivalence: `diff -qr /tmp/.tmpRepo/.aw /tmp/.tmpRepo/.servo -x .servo-installer-aw-migration.json` passed
+    - idempotence JSON: passed, `state=already-migrated`, `sentinel_present=true`
+    - reinstall: passed
+    - verify: passed
+    - diagnose: passed
 
 - [done] `WT-20260521-aw-upgrade-docs-and-smoke`: synchronize operator docs/runbook and smoke evidence for the `.aw` to `.servo` upgrade path.
   - branch: wt-20260521-aw-upgrade-docs-and-smoke

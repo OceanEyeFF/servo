@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 2153813eec001c66d6d128ed586a023ed146cb11
-- updated: 2026-05-22T16:01:59+08:00
+- baseline_ref: 3b3772515194079fbe8b5537e68a8de948b584ef
+- updated: 2026-05-22T18:34:57+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -79,15 +79,16 @@ owner: "servo-kernel"
     - WT-20260521-aw-to-servo-runtime-migrator (done)
     - WT-20260521-skill-marker-reinstall-upgrade-flow (done)
     - WT-20260521-aw-upgrade-docs-and-smoke (done)
+    - WT-20260522-aw-external-tmprepo-migration-smoke (done, appended)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-22T16:01:59+08:00
+  - updated: 2026-05-22T18:34:57+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
-    - total: 4
-    - completed: 4
+    - total: 5
+    - completed: 5
     - blocked: 0
     - deferred: 0
   - completion_signals:
@@ -117,7 +118,7 @@ owner: "servo-kernel"
   - handback:
     - state: awaiting_programmer_acceptance
     - all_worktracks_complete: true
-    - latest_worktrack_closeout_checkpoint: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
+    - latest_worktrack_closeout_checkpoint: pending merge for WT-20260522-aw-external-tmprepo-migration-smoke
     - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001
