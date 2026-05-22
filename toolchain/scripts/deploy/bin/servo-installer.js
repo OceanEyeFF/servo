@@ -3222,6 +3222,8 @@ function runtimeMigrationReinstallPlan(context) {
       requested: false,
       backend: context.backend,
       command: null,
+      status: "not-requested",
+      blocking_issue_count: 0,
       note: "not requested",
     };
   }
@@ -3240,12 +3242,46 @@ function runtimeMigrationReinstallPlan(context) {
       args.push("--claude-root", context.claudeRoot);
     }
   }
+  let summaries;
+  if (context.backend === bundleBackend) {
+    const { agentsContext, claudeContext } = validateBundleDisjointRoots(context);
+    const agentsSummary = updatePlanSummary(agentsContext);
+    const claudeSummary = updatePlanSummary(claudeContext);
+    summaries = {
+      [agentsBackend]: agentsSummary,
+      [claudeBackend]: claudeSummary,
+    };
+  } else {
+    summaries = {
+      [context.backend]: updatePlanSummary(buildNodeBackendContext(context)),
+    };
+  }
+  const blockingIssueCount = Object.values(summaries)
+    .reduce((total, summary) => total + summary.blocking_issue_count, 0);
   return {
     requested: true,
     backend: context.backend,
     command: args.join(" "),
-    note: "planned only; run the command after reviewing runtime migration output",
+    status: blockingIssueCount === 0 ? "ready" : "blocked",
+    blocking_issue_count: blockingIssueCount,
+    summaries,
+    note: "uses existing update --yes chain after runtime migration succeeds",
   };
+}
+
+function runtimeMigrationBlockingIssueCount(summary) {
+  const reinstallBlocking =
+    summary.reinstall_plan && summary.reinstall_plan.requested
+      ? summary.reinstall_plan.blocking_issue_count
+      : 0;
+  return summary.issue_count + reinstallBlocking;
+}
+
+async function applyRuntimeMigrationReinstall(context) {
+  if (context.backend === bundleBackend) {
+    return await runBundleUpdateYes(context);
+  }
+  return applyUpdateContext(buildNodeBackendContext(context));
 }
 
 function runtimeMigrationIssue(code, path, detail) {
@@ -3405,26 +3441,38 @@ function printRuntimeMigrationSummary(summary) {
   }
   if (summary.reinstall_plan.requested) {
     console.log(`reinstall plan: ${summary.reinstall_plan.command}`);
+    console.log(`reinstall status: ${summary.reinstall_plan.status}`);
+    console.log(`reinstall blocking issues: ${summary.reinstall_plan.blocking_issue_count}`);
   }
   if (!summary.mutation_performed && summary.mutation_allowed) {
     console.log("dry-run only; pass --yes to copy .aw into .servo");
   }
 }
 
-function runNodeMigrateRuntime(args) {
+async function runNodeMigrateRuntime(args) {
   const parsed = parseNodeMigrateRuntimeArgs(args);
   if (parsed === null) {
     return null;
   }
   try {
     const context = runtimeMigrationContext(parsed);
-    const summary = parsed.yes ? applyRuntimeMigration(context) : runtimeMigrationSummary(context);
+    const summary = runtimeMigrationSummary(context);
+    if (parsed.yes && runtimeMigrationBlockingIssueCount(summary) === 0) {
+      const appliedSummary = applyRuntimeMigration(context);
+      if (parsed.reinstall) {
+        printRuntimeMigrationSummary(appliedSummary);
+        const reinstallStatus = await applyRuntimeMigrationReinstall(context);
+        return reinstallStatus === 0 ? 0 : 1;
+      }
+      printRuntimeMigrationSummary(appliedSummary);
+      return appliedSummary.issue_count > 0 ? 1 : 0;
+    }
     if (parsed.json) {
       console.log(JSON.stringify(sortJsonObjectKeys(summary), null, 2));
     } else {
       printRuntimeMigrationSummary(summary);
     }
-    return summary.issue_count > 0 ? 1 : 0;
+    return runtimeMigrationBlockingIssueCount(summary) > 0 ? 1 : 0;
   } catch (error) {
     console.error(`error: ${error.message}`);
     return 1;
@@ -4101,7 +4149,7 @@ async function runNodeOwned(args) {
     return bundleStatus;
   }
 
-  const nodeMigrateRuntimeStatus = runNodeMigrateRuntime(args);
+  const nodeMigrateRuntimeStatus = await runNodeMigrateRuntime(args);
   if (nodeMigrateRuntimeStatus !== null) {
     return nodeMigrateRuntimeStatus;
   }

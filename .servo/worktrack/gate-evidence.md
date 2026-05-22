@@ -1,8 +1,8 @@
 ---
-title: "Gate Evidence: WT-20260521-aw-to-servo-runtime-migrator"
+title: "Gate Evidence: WT-20260521-skill-marker-reinstall-upgrade-flow"
 artifact_type: gate-evidence
-worktrack_id: WT-20260521-aw-to-servo-runtime-migrator
-updated: 2026-05-22T12:39:03+08:00
+worktrack_id: WT-20260521-skill-marker-reinstall-upgrade-flow
+updated: 2026-05-22T15:17:06+08:00
 ---
 
 # Gate Evidence
@@ -11,17 +11,17 @@ updated: 2026-05-22T12:39:03+08:00
 
 - Verdict: pass
 - Evidence:
-  - Added Node-owned `migrate-runtime --from aw --to servo` CLI path in `toolchain/scripts/deploy/bin/servo-installer.js`.
-  - Default and `--json` paths are read-only; `--yes` performs copy-not-move into `.servo`.
-  - Existing `.servo` without the migration sentinel blocks; successful migration writes `.servo/.servo-installer-aw-migration.json` for safe rerun idempotence.
-  - Runtime migration target root validation no longer requires the target repository to also be a harness payload source.
+  - `migrate-runtime --from aw --to servo --yes --reinstall` now preflights the existing update plan before runtime mutation.
+  - Agents/Claude reinstall uses the existing `applyUpdateContext(buildNodeBackendContext(...))` path.
+  - Bundle reinstall uses the existing `runBundleUpdateYes(...)` composition.
+  - The implementation preserves `aw.marker` as payload identity and reuses existing `legacy_target_dirs`, `legacy_skill_ids`, and `payload_fingerprint` mechanics.
 
 ## validation-gate
 
 - Verdict: pass
 - Evidence:
   - `node --test --test-name-pattern 'migrate-runtime|parseNodeMigrateRuntimeArgs' toolchain/scripts/deploy/test_servo_installer.js` passed.
-  - `node --test toolchain/scripts/deploy/test_servo_installer.js` passed: 142/142 tests.
+  - `node --test toolchain/scripts/deploy/test_servo_installer.js` passed: 145/145 tests.
   - `git diff --check` passed.
   - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py` passed.
   - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py` passed with retained plan-task-queue alignment warnings.
@@ -30,9 +30,9 @@ updated: 2026-05-22T12:39:03+08:00
 
 - Verdict: pass_with_retained_repo_warning
 - Evidence:
-  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py` failed only on retained tracked `.servo/` runtime-layer content (`FL001`, `FL007`), matching the pre-existing repository warning from the prior worktrack.
-  - No `.aw`, `.servo`, `.agents`, `.claude`, `.autoworkflow`, or `.spec-workflow` runtime target was mutated by tests; runtime migration tests use `/tmp` target repositories.
+  - `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py` failed only on retained tracked `.servo/` runtime-layer content (`FL001`, `FL007`), matching prior worktrack evidence.
+  - Tests use `/tmp` target repositories and do not create source-tree `.aw/`, `.servo/`, `.agents/`, or `.claude/` runtime state.
 
 ## Deferred Items
 
-- WT-3 owns reinstall marker refresh refinements beyond preserving existing update/install behavior.
+- WT-4 owns operator docs/runbook and broader upgrade smoke documentation.
