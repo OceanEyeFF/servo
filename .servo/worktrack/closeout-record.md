@@ -1,43 +1,43 @@
 ---
-title: "Closeout Record - WT-20260520-servo-npm-release-prep"
+title: "Closeout Record - WT-20260521-aw-upgrade-contract"
 artifact_type: worktrack-closeout-record
-worktrack_id: WT-20260520-servo-npm-release-prep
-milestone_id: MS-20260520-002
-generated_from: harness-skill
-updated: 2026-05-20T23:00:00+08:00
+worktrack_id: WT-20260521-aw-upgrade-contract
+milestone_id: MS-20260521-001
+generated_from: init-worktrack-skill
+updated: 2026-05-22T11:32:33+08:00
 ---
 
 # Closeout Record
 
 ## Worktrack Summary
 
-- worktrack_id: WT-20260520-servo-npm-release-prep
-- milestone_id: MS-20260520-002 (appended)
-- node_type: config
-- baseline_ref: develop-aw@b321349
-- closeout_checkpoint: develop-aw@f8076d1
-
-## Commits
-
-| Commit | Description |
-|--------|-------------|
-| `25797bc` | chore: bump version to 0.5.2 |
-| `cdfef9e` | fix: remove private flag for npm publish |
-| `f8e3aaa` | fix: update description and bump to 0.5.3 |
-| `f8076d1` | fix: AW_INSTALLER_/AW_HARNESS_ → SERVO_INSTALLER_/SERVO_HARNESS_ env vars + deploy_aw → deploy_servo |
+- worktrack_id: WT-20260521-aw-upgrade-contract
+- milestone_id: MS-20260521-001
+- node_type: feature
+- baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- closeout_checkpoint: pending-commit
 
 ## Gate
 
-- **verdict**: blocked
+- verdict: pass
 - implementation-gate: pass
-- validation-gate: blocked
-- policy-gate: blocked
+- validation-gate: pass-with-retained-warning
+- policy-gate: pass
 
-## Deferred
+## Closeout Status
 
-- npm publish servo-installer@0.5.3: 24h CD until ~2026-05-21 14:30 UTC
-- GitHub Release v0.5.3: can be created after npm publish
+- execution_started: true
+- closeout_ready: true
 
-## Milestone Progress
+## Result
 
-- MS-20260520-002: 3/4 worktracks complete; WT-4 appended is blocked until npm publish + registry smoke evidence exists
+- Added the normative `.aw` runtime upgrade contract.
+- Synchronized servo-installer docs entrypoints and project-maintenance routing.
+- Preserved WT-1 boundary: contract/docs only; no migrator implementation and no release/package mutation.
+
+## Validation
+
+- `git diff --check`: passed
+- `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py`: passed
+- `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py`: passed with retained plan-task-queue warnings
+- `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py`: failed on existing tracked `.servo/` runtime-layer governance conflict

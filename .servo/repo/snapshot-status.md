@@ -2,7 +2,7 @@
 title: "Repo Snapshot Status"
 artifact_type: "repo-snapshot-status"
 generated_from: "repo-refresh-skill"
-updated: "2026-05-20"
+updated: "2026-05-22"
 owner: "servo-kernel"
 ---
 
@@ -11,18 +11,31 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: 94a570044eb651fa2f1aa9ecef3cdb119bc2f537
-- checkpoint_type: milestone-acceptance
-- verified_at: 2026-05-20
+- checkpoint: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- checkpoint_type: milestone-activation
+- verified_at: 2026-05-22
 
 ## Current Repo State
 
-- active_milestone: none
-- active_worktrack: none
-- latest_closed_worktrack: WT-20260520-runtime-dispatch-profile-claude-deepseek
-- latest_accepted_milestone: MS-20260520-001
+- active_milestone: MS-20260521-001
+- active_worktrack: WT-20260521-aw-upgrade-contract
+- latest_closed_worktrack: WT-20260520-servo-npm-release-prep
+- latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
+
+- [completed] MS-20260520-002 (Repo Rename to servo)
+  - milestone_kind: goal-driven
+  - priority: 0
+  - progress: 4 / 4 worktracks complete
+  - completed:
+    - WT-20260520-servo-external-rename
+    - WT-20260520-servo-internal-migration
+    - WT-20260520-servo-runtime-governance-closeout
+    - WT-20260520-servo-npm-release-prep
+  - purpose: 将仓库、npm 包、内部前缀从 aw- / autoworkflow 统一重命名为 servo
+  - accepted_by: programmer
+  - accepted_at: 2026-05-22
 
 - [completed] MS-20260520-001 (Harness Runtime State Freshness & Worktrack Intake Governance)
   - milestone_kind: goal-driven
@@ -67,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: 94a570044eb651fa2f1aa9ecef3cdb119bc2f537
+- harness_baseline_head: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -79,16 +92,16 @@ owner: "servo-kernel"
 ## Release Fact Observations
 
 - current_harness_baseline_source_tuple:
-  - root_package_version: 0.5.1-rc.1
-  - deploy_scaffold_version: 0.5.1-rc.1
-  - note: develop-aw release docs still describe 0.5.1-rc.1 facts
+  - root_package_version: 0.5.3
+  - deploy_scaffold_version: 0.5.3
+  - note: develop-aw baseline includes servo rename and servo-installer 0.5.3 package metadata
 - release_branch_source_tuple (develop-main):
   - root_package_version: 0.5.2-rc.3
   - latest_publish: v0.5.2-rc.3 (commit 0d9c6e2)
   - publish_workflow: PR #54 merged
 - npm_registry:
-  - latest: 0.5.1
-  - next: 0.5.2-rc.1 (may be out of date — not rechecked)
+  - latest: 0.5.3
+  - evidence: accepted MS-20260520-002 registry smoke recorded servo-installer@0.5.3 as latest
 - pending_decision:
   - Whether and when to resynchronize develop-aw with develop-main release facts is a programmer-owned branch-role decision.
   - Dedicated deployment repository design and repo rename are preserved as later planning topics.
@@ -103,11 +116,11 @@ owner: "servo-kernel"
 
 ## Pipeline Summary
 
-- completed: 15 milestones
-- active: 0
-- planned: 1
-  - MS-20260520-002 (Repo Rename to servo): 3 worktracks, priority 0, awaiting activation
+- completed: 16 milestones
+- active: 1
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): WT-20260521-aw-upgrade-contract active
+- planned: 0
 
 ## Recommended Next Route
 
-- RepoScope.Observe: no active milestone; await programmer direction for next milestone planning
+- WorktrackScope.Observe: active milestone and first worktrack initialized; continue to schedule-worktrack-skill

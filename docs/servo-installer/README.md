@@ -28,6 +28,7 @@ docs/servo-installer/
 ├── contracts/                      ← 合同与规范（normative）
 │   ├── distribution-entrypoint-contract.md
 │   ├── deploy-mapping-spec.md
+│   ├── aw-runtime-upgrade-contract.md
 │   ├── payload-provenance-trust-boundary.md
 │   └── version-marker-contract.md
 │
@@ -55,6 +56,7 @@ docs/servo-installer/
 |------|---------|
 | `distribution-entrypoint-contract.md` | CLI/TUI 包装层语义、命令面合同、backend 枚举、bundle aggregate 模式 |
 | `deploy-mapping-spec.md` | canonical source → target 映射链路、最小字段、target 命名约定 |
+| `aw-runtime-upgrade-contract.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` 的安全边界 |
 | `payload-provenance-trust-boundary.md` | payload 来源种类、source/target root 分离、GitHub source 准入 |
 | `version-marker-contract.md` | VERSION 标记文件的位置、格式、语义和 operator 解读规则 |
 
@@ -110,6 +112,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | 理解 installer 写入哪些文件 | reference/managed-files-ownership.md |
 | 理解 CLI 命令不变量 | contracts/distribution-entrypoint-contract.md |
 | 理解 canonical source 到 target 的映射 | contracts/deploy-mapping-spec.md |
+| 升级 legacy `.aw/` runtime state | contracts/aw-runtime-upgrade-contract.md |
 | 理解 payload 来源与信任边界 | contracts/payload-provenance-trust-boundary.md |
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |

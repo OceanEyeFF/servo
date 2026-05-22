@@ -2,7 +2,7 @@
 title: "Repo Worktrack Backlog"
 artifact_type: "repo-worktrack-backlog"
 generated_from: "harness-skill"
-updated: "2026-05-20"
+updated: "2026-05-22"
 owner: "servo-kernel"
 ---
 # Repo Worktrack Backlog
@@ -10,11 +10,31 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 4b0dd17764ff37474e78d8efb06c92f94385e1c6
-- updated: 2026-05-20T12:09:30+08:00
+- baseline_ref: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- updated: 2026-05-22T10:11:07+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
+
+- [active] `WT-20260521-aw-upgrade-contract`: define explicit `.aw` to `.servo` runtime upgrade contract, conflict blocking, dry-run, backup/retention, recovery, and reinstall marker refresh boundaries.
+  - branch: wt-20260521-aw-upgrade-contract
+  - baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+  - milestone_id: MS-20260521-001
+  - node_type: feature
+  - status: active
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - docs/servo-installer/contracts/
+    - docs/servo-installer/runbooks/
+    - docs/project-maintenance/usage-help/
+    - toolchain/scripts/deploy/bin/servo-installer.js
+    - toolchain/scripts/deploy/test_servo_installer.js
+    - product/harness/adapters/*/skills/*/payload.json where marker or legacy target semantics need contract references
+  - acceptance:
+    - `.aw` runtime upgrade entry is explicit, never part of ordinary init by default.
+    - Contract defines `.aw` detection, `.servo` conflict blocking, backup or retention, dry-run, idempotence, and recovery behavior.
+    - Reinstall/update marker refresh path reuses existing `aw.marker`, legacy cleanup, and payload fingerprint mechanisms.
+    - Later implementation worktracks can derive tests and docs from this contract without redefining release or deletion policy.
 
 - [done] `WT-20260520-runtime-dispatch-profile-claude-deepseek`: make Claude/Deepseek runtime dispatch capability and fallback evidence explicit.
   - branch: wt-20260520-runtime-dispatch-profile-claude-deepseek

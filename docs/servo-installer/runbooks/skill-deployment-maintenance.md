@@ -1,9 +1,9 @@
 ---
 title: "Skill Deployment 维护流"
 status: active
-updated: 2026-05-06
+updated: 2026-05-22
 owner: servo-kernel
-last_verified: 2026-05-06
+last_verified: 2026-05-22
 ---
 # Skill Deployment 维护流
 
@@ -43,5 +43,10 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `check_paths_exist` 冲突清单 | 先手工清理占位目录，再三步重装 |
 | `unrecognized-target-directory` | 不让脚本猜测；人工确认保留、改名或删除 |
 | `target-payload-drift`/`missing-target-entry`/`missing-required-payload` | 默认完整重装，除非确认是更上游 source 问题 |
+| legacy `.aw/` runtime state exists | 不走 `prune --all`；先看 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) |
 
 已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](../contracts/deploy-mapping-spec.md) + [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../../project-maintenance/testing/README.md) + [Governance](../../project-maintenance/governance/README.md)。
+
+## Legacy `.aw/` runtime state
+
+`.aw/` is legacy Harness runtime state, not installer-managed skill payload. `diagnose`, `verify`, `prune --all`, `install`, and ordinary `update` must not silently migrate or delete it. If a target repository still has `.aw/`, use the explicit upgrade boundary in [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) before planning any mutating action.
