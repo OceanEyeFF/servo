@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T16:01:59+08:00
+- updated: 2026-05-22T18:34:57+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -22,7 +22,7 @@ owner: "servo-kernel"
 ## Active Worktrack
 
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260521-aw-upgrade-docs-and-smoke
+- latest_closed_worktrack: WT-20260522-aw-external-tmprepo-migration-smoke
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
-- current_checkout: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
+- baseline_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
+- current_checkout: wt-20260522-aw-external-tmprepo-migration-smoke@3b3772515194079fbe8b5537e68a8de948b584ef
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,12 +44,12 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: RepoScope.Observe — MS-20260521-001 has 4/4 worktracks complete; request programmer final acceptance
+- current_next_action: RepoScope.Observe — MS-20260521-001 has 5/5 worktracks complete including appended external tmp repo smoke; request programmer final acceptance
 
 ## Handback Guard
 
 - handoff_state: milestone_acceptance_requested
-- last_stop_reason: MS-20260521-001 all worktracks complete; final milestone acceptance remains programmer-owned
+- last_stop_reason: MS-20260521-001 all worktracks complete after appended external tmp repo smoke; final milestone acceptance remains programmer-owned
 - last_stop_reason: programmer authorized MS-20260521-001 activation and first worktrack initialization on 2026-05-22
 - last_stop_reason: programmer accepted MS-20260520-001; milestone completed
 - last_stop_reason: programmer accepted MS-20260519-004; milestone completed
@@ -58,10 +58,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 2153813eec001c66d6d128ed586a023ed146cb11
+- latest_observed_checkpoint: 3b3772515194079fbe8b5537e68a8de948b584ef
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:4_complete_pending_acceptance
-- checkpoint_ref: develop-aw@2153813eec001c66d6d128ed586a023ed146cb11
+- milestone_input_checkpoint: MS-20260521-001:5_complete_pending_acceptance
+- checkpoint_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
@@ -110,6 +110,16 @@ owner: "servo-kernel"
   - milestone_progress: MS-20260521-001 4/4 — ALL WORKTRACKS COMPLETE
   - next_legal_route: RepoScope.Observe milestone handback
   - stop_boundary: milestone final acceptance remains programmer-owned
+
+- 2026-05-22: **appended and closed `WT-20260522-aw-external-tmprepo-migration-smoke`** (MS-20260521-001, 5/5). Gate: pass.
+  - worktrack_commit: pending
+  - merge_commit: pending
+  - target_repo: `/tmp/.tmpRepo`
+  - target_initial_shape: `.aw/` exists, `.servo/` absent, `.agents/skills/aw-*` managed installs present, git status clean
+  - validation: dry-run JSON passed; mutating migration passed; `.aw` vs `.servo` diff excluding sentinel passed; idempotence JSON returned `already-migrated`; `--reinstall --backend agents` passed; `verify --backend agents` passed; `diagnose --backend agents` reported 0 issues and 21 managed installs
+  - milestone_progress: MS-20260521-001 5/5 — ALL WORKTRACKS COMPLETE
+  - retained_observation: current agents payload contract still keeps most Worktrack skill target dirs as `aw-*`; only `harness-skill` and `set-harness-goal-skill` use `servo-*` target dirs
+  - next_legal_route: close WT-20260522-aw-external-tmprepo-migration-smoke, merge, repo refresh, then milestone handback
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:
