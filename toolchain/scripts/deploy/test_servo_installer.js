@@ -4411,6 +4411,121 @@ test("migrate-runtime treats destination-only .servo as a safe no-op", () => {
   }
 });
 
+test("migrate-runtime --yes --reinstall agents copies runtime then refreshes managed skill payload", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    const installed = seedInstalledAgentsSkill(root, "demo-skill");
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    writeFileSync(join(installed.canonicalDir, "SKILL.md"), "# demo-skill\n\n# migrated source\n", "utf8");
+    writeFileSync(
+      join(installed.targetSkillDir, "aw.marker"),
+      `${JSON.stringify({
+        marker_version: "aw-managed-skill-marker.v2",
+        backend: "agents",
+        skill_id: "legacy-demo-skill",
+        payload_version: "agents-skill-payload.v0",
+        payload_fingerprint: "old-fingerprint",
+      }, null, 2)}\n`,
+      "utf8",
+    );
+    const fakeBin = fakePythonBin(root);
+
+    const result = runNodeMigrateRuntime(root, [
+      "--from",
+      "aw",
+      "--to",
+      "servo",
+      "--yes",
+      "--reinstall",
+      "--backend=agents",
+    ], fakeBin);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /state: migrated/);
+    assert.match(result.stdout, /reinstall status: ready/);
+    assert.match(result.stdout, /\[agents\] applying update/);
+    assert.match(result.stdout, /\[agents\] update complete/);
+    assert.equal(readFileSync(join(root, ".servo", "control-state.md"), "utf8"), "runtime\n");
+    assert.equal(readFileSync(join(root, ".aw", "control-state.md"), "utf8"), "runtime\n");
+    assert.equal(readFileSync(join(installed.targetSkillDir, "SKILL.md"), "utf8"), "# demo-skill\n\n# migrated source\n");
+    const marker = JSON.parse(readFileSync(join(installed.targetSkillDir, "aw.marker"), "utf8"));
+    assert.equal(marker.skill_id, "demo-skill");
+    assert.notEqual(marker.payload_fingerprint, "old-fingerprint");
+    assert.equal(result.stderr.includes("unexpected-python"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime --reinstall blocks update conflicts before copying runtime", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    seedMinimalAgentsSource(root, "demo-skill");
+    seedMinimalAgentsSource(root, "other-skill");
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    const targetRoot = join(root, ".agents", "skills");
+    const unmanagedDir = join(targetRoot, "aw-demo-skill");
+    mkdirSync(unmanagedDir, { recursive: true });
+    writeFileSync(join(unmanagedDir, "SKILL.md"), "# unmanaged\n", "utf8");
+    const fakeBin = fakePythonBin(root);
+
+    const result = runNodeMigrateRuntime(root, [
+      "--from",
+      "aw",
+      "--to",
+      "servo",
+      "--yes",
+      "--reinstall",
+      "--backend=agents",
+    ], fakeBin);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /state: ready/);
+    assert.match(result.stdout, /reinstall status: blocked/);
+    assert.match(result.stdout, /reinstall blocking issues: 1/);
+    assert.equal(result.stdout.includes("[agents] applying update"), false);
+    assert.equal(existsSync(join(root, ".servo")), false);
+    assert.equal(readFileSync(join(unmanagedDir, "SKILL.md"), "utf8"), "# unmanaged\n");
+    assert.equal(existsSync(join(targetRoot, "aw-other-skill")), false);
+    assert.equal(result.stderr.includes("unexpected-python"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime --yes --reinstall bundle installs both backend payloads", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    seedMinimalBundleSource(root, "demo-skill");
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    const fakeBin = fakePythonBin(root);
+
+    const result = runNodeMigrateRuntime(root, [
+      "--from",
+      "aw",
+      "--to",
+      "servo",
+      "--yes",
+      "--reinstall",
+      "--backend=bundle",
+    ], fakeBin);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /state: migrated/);
+    assert.match(result.stdout, /reinstall status: ready/);
+    assert.match(result.stdout, /\[bundle\] update complete for both backends/);
+    assert.equal(readFileSync(join(root, ".servo", "control-state.md"), "utf8"), "runtime\n");
+    assert.equal(existsSync(join(root, ".agents", "skills", "aw-demo-skill", "aw.marker")), true);
+    assert.equal(existsSync(join(root, ".claude", "skills", "demo-skill", "aw.marker")), true);
+    assert.equal(result.stderr.includes("unexpected-python"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // CLI backward compat: prune rejects without --all
 test("cli: prune --backend agents without --all is rejected", () => {
   const result = runTuiInTempTarget(["prune", "--backend", "agents"], "");

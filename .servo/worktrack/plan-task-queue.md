@@ -1,20 +1,20 @@
 ---
-title: "Plan / Task Queue: WT-20260521-aw-to-servo-runtime-migrator"
+title: "Plan / Task Queue: WT-20260521-skill-marker-reinstall-upgrade-flow"
 artifact_type: plan-task-queue
-worktrack_id: WT-20260521-aw-to-servo-runtime-migrator
-baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
-updated: 2026-05-22T12:39:03+08:00
+worktrack_id: WT-20260521-skill-marker-reinstall-upgrade-flow
+baseline_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
+updated: 2026-05-22T15:17:06+08:00
 ---
 
 # Plan / Task Queue
 
 ## Queue
 
-- [x] **T1**: Inspect current CLI parser/dispatcher and choose the smallest explicit command integration point.
-- [x] **T2**: Implement dry-run and JSON state classification for `.aw` to `.servo` runtime migration.
-- [x] **T3**: Implement `--yes` copy-not-move mutation with conflict blocking and idempotence.
-- [x] **T4**: Add focused `/tmp` target repository tests for state matrix and no source-tree runtime pollution.
-- [x] **T5**: Run Node tests and governance checks; record evidence.
+- [x] **T1**: Inspect current `migrate-runtime`, `update --yes`, bundle update, marker, legacy cleanup, and payload fingerprint paths.
+- [x] **T2**: Implement `--reinstall` preflight so blocking update conflicts stop before runtime migration.
+- [x] **T3**: Implement `--yes --reinstall` execution by reusing existing update/reinstall chain after successful or idempotent runtime migration.
+- [x] **T4**: Add `/tmp` tests for marker refresh, legacy target cleanup, payload fingerprint convergence, conflict blocking, and relevant bundle behavior.
+- [x] **T5**: Run full installer tests and governance checks; record gate evidence.
 
 ## Scheduling Seed
 

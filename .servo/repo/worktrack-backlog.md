@@ -10,18 +10,37 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
-- updated: 2026-05-22T11:35:19+08:00
+- baseline_ref: 11a61134d6ac73bea790ac34f2a76a437ec6afc2
+- updated: 2026-05-22T12:42:35+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
 
-- [active] `WT-20260521-aw-to-servo-runtime-migrator`: implement explicit `.aw` to `.servo` runtime migration entry with dry-run, confirmation, backup/retention, idempotence, and /tmp smoke tests.
-  - branch: wt-20260521-aw-to-servo-runtime-migrator
-  - baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+- [active] `WT-20260521-skill-marker-reinstall-upgrade-flow`: couple the explicit runtime migration path to existing installer update/reinstall mechanics so managed skill markers, legacy cleanup, and payload fingerprints converge after migration.
+  - branch: wt-20260521-skill-marker-reinstall-upgrade-flow
+  - baseline_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
   - milestone_id: MS-20260521-001
   - node_type: feature
   - status: active
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - toolchain/scripts/deploy/bin/servo-installer.js
+    - toolchain/scripts/deploy/test_servo_installer.js
+    - docs/servo-installer/contracts/aw-runtime-upgrade-contract.md if implementation requires contract clarification
+  - acceptance:
+    - `migrate-runtime --from aw --to servo --yes --reinstall --backend agents|claude|bundle` or equivalent explicit path runs the existing update/reinstall chain after safe runtime migration.
+    - The reinstall path reuses `aw.marker`, `legacy_target_dirs` / `legacy_skill_ids`, and `payload_fingerprint`; it does not reinterpret `aw.marker` as runtime state.
+    - Reinstall preflight blocks on existing update conflicts before runtime mutation when requested.
+    - `/tmp` target tests verify marker refresh, legacy cleanup, payload fingerprint convergence, conflict blocking, and no source-tree runtime pollution.
+
+- [done] `WT-20260521-aw-to-servo-runtime-migrator`: implement explicit `.aw` to `.servo` runtime migration entry with dry-run, confirmation, backup/retention, idempotence, and /tmp smoke tests.
+  - branch: wt-20260521-aw-to-servo-runtime-migrator
+  - worktrack_commit: `f3e3fdd`
+  - closeout_checkpoint: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
+  - baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+  - milestone_id: MS-20260521-001
+  - node_type: feature
+  - status: done
   - intake_route: programmer-confirmed-milestone
   - scope:
     - toolchain/scripts/deploy/bin/servo-installer.js

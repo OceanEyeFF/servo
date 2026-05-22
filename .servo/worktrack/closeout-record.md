@@ -1,20 +1,20 @@
 ---
-title: "Closeout Record - WT-20260521-aw-to-servo-runtime-migrator"
+title: "Closeout Record - WT-20260521-skill-marker-reinstall-upgrade-flow"
 artifact_type: worktrack-closeout-record
-worktrack_id: WT-20260521-aw-to-servo-runtime-migrator
+worktrack_id: WT-20260521-skill-marker-reinstall-upgrade-flow
 milestone_id: MS-20260521-001
 generated_from: init-worktrack-skill
-updated: 2026-05-22T12:39:03+08:00
+updated: 2026-05-22T15:17:06+08:00
 ---
 
 # Closeout Record
 
 ## Worktrack Summary
 
-- worktrack_id: WT-20260521-aw-to-servo-runtime-migrator
+- worktrack_id: WT-20260521-skill-marker-reinstall-upgrade-flow
 - milestone_id: MS-20260521-001
 - node_type: feature
-- baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+- baseline_ref: develop-aw@11a61134d6ac73bea790ac34f2a76a437ec6afc2
 - closeout_checkpoint: pending
 
 ## Gate
@@ -26,15 +26,15 @@ updated: 2026-05-22T12:39:03+08:00
 
 ## Changes
 
-- Implemented explicit `servo-installer migrate-runtime --from aw --to servo` command.
-- Added read-only default/JSON state classification for no-runtime, ready, destination-only, blocked, and already-migrated states.
-- Added `--yes` copy-not-move behavior with `.aw` source preservation, `.servo` overwrite blocking, symlink escape guard, and migration sentinel idempotence.
-- Added `/tmp` target repository tests for parser, dry-run, JSON, successful mutation, rerun, `.servo` conflict, malformed `.aw`, and destination-only cases.
+- Added real `--reinstall` behavior to `migrate-runtime --from aw --to servo`.
+- Added preflight blocking so update conflicts stop before `.aw` is copied into `.servo`.
+- Reused existing update composition for agents, claude, and bundle backends instead of reimplementing marker refresh.
+- Added `/tmp` target repository tests for managed marker refresh, payload fingerprint convergence, preflight conflict blocking before runtime copy, and bundle two-backend reinstall behavior.
 
 ## Verification
 
 - PASS: `node --test --test-name-pattern 'migrate-runtime|parseNodeMigrateRuntimeArgs' toolchain/scripts/deploy/test_servo_installer.js`
-- PASS: `node --test toolchain/scripts/deploy/test_servo_installer.js` (142/142)
+- PASS: `node --test toolchain/scripts/deploy/test_servo_installer.js` (145/145)
 - PASS: `git diff --check`
 - PASS: `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py`
 - PASS: `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py`
