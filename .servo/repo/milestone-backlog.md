@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
-- updated: 2026-05-22T19:20:38+08:00
+- updated: 2026-05-23T00:05:45+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -81,15 +81,16 @@ owner: "servo-kernel"
     - WT-20260521-aw-upgrade-docs-and-smoke (done)
     - WT-20260522-aw-external-tmprepo-migration-smoke (done, appended)
     - WT-20260522-servo-skill-target-dir-convergence (done, appended)
+    - WT-20260523-packaged-installer-upgrade-smoke (done, appended)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-22T19:20:38+08:00
+  - updated: 2026-05-23T00:05:45+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
-    - total: 6
-    - completed: 6
+    - total: 7
+    - completed: 7
     - blocked: 0
     - deferred: 0
   - completion_signals:
@@ -101,6 +102,7 @@ owner: "servo-kernel"
     - Operator docs describe the upgrade path for legacy .aw users.
     - Agents backend canonical skill target dirs use servo-*; legacy aw-* dirs are recognized only as update/reinstall replacement inputs.
     - CLI and TUI surfaces provide update guidance for legacy aw-* target dir convergence.
+    - Packaged root `.tgz` installer entry completes the legacy upgrade chain in a programmer-provided `/tmp` target directory.
   - acceptance_criteria:
     - Explicit migration entry exists; ordinary init does not silently mutate .aw to .servo.
     - Dry-run reports planned copy, backup, block, and reinstall/update actions.
@@ -112,6 +114,7 @@ owner: "servo-kernel"
     - Docs/runbook and usage entrypoints are synchronized.
     - All skill payload target_dir declarations have no aw-* residue.
     - External /tmp target repo update from old aw-* managed skill target dirs to servo-* passes verify and diagnose.
+    - Packaged installer smoke covers `.aw -> .servo`, agents reinstall, `aw-* -> servo-*`, verify/diagnose, and idempotence.
   - completion_threshold_pct: 100
   - planning_boundary:
     - do not delete user-owned .aw/ contents by default
@@ -123,7 +126,7 @@ owner: "servo-kernel"
   - handback:
     - state: awaiting_programmer_acceptance
     - all_worktracks_complete: true
-    - latest_worktrack_closeout_checkpoint: develop-aw@13a8304f08db3b5c315ba4e3f69f0393fdee1742
+    - latest_worktrack_closeout_checkpoint: develop-aw@d52c94bcd48d222b8ee4a4ef254f0df829c3358e
     - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001

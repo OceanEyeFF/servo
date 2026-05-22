@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
-- updated: 2026-05-22T19:20:38+08:00
+- updated: 2026-05-23T00:05:45+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -19,6 +19,44 @@ owner: "servo-kernel"
 - none
 
 ## Recent Worktracks
+
+- [done] `WT-20260523-packaged-installer-upgrade-smoke`: validate the root package `.tgz` installer path against the programmer-provided legacy target directory at `/tmp/repo-rating-function`.
+  - branch: develop-aw
+  - worktrack_commit: evidence-only-runtime-writeback
+  - closeout_checkpoint: develop-aw@d52c94bcd48d222b8ee4a4ef254f0df829c3358e
+  - baseline_ref: develop-aw@d52c94bcd48d222b8ee4a4ef254f0df829c3358e
+  - milestone_id: MS-20260521-001
+  - node_type: test
+  - status: done
+  - intake_route: programmer-requested-append-worktrack
+  - scope:
+    - package artifact smoke via `npm pack`
+    - `/tmp/repo-rating-function` external legacy target directory
+    - `.aw -> .servo` runtime migration
+    - agents reinstall and legacy target dir convergence
+    - no source implementation changes
+  - acceptance:
+    - root package `.tgz` installs and exposes `servo-installer` bin
+    - packaged dry-run reports `.aw -> .servo` ready state with no blocking issues
+    - packaged `migrate-runtime --yes --reinstall --backend agents` copies runtime and runs the agents update chain
+    - old managed `.agents/skills/aw-*` dirs are replaced by 21 `.agents/skills/servo-*` dirs
+    - `.aw/` and `.servo/` content match except the migration sentinel
+    - packaged `verify --backend agents` and `diagnose --backend agents` pass after migration
+    - repeated packaged migration JSON reports `already-migrated`
+  - result:
+    - `npm pack --pack-destination /tmp/servo-pack-smoke --cache /tmp/servo-pack-smoke/npm-cache --json` produced `servo-installer-0.5.3.tgz`
+    - initial `npm pack` without tmp cache failed because `/home/oceaneye/.npm` is read-only; rerun with `/tmp` cache passed
+    - initial parallel `npm exec` attempts using a shared cache collided in npm `_npx` symlink setup; rerun serially with per-command `/tmp` caches passed
+    - target directory is not a git repo; this was recorded as target shape and did not block installer behavior
+  - validation:
+    - packaged `servo-installer --version`: `servo-installer 0.5.3`
+    - packaged dry-run JSON: `state=ready`, `verdict=ready`, `blocking_issues=[]`
+    - packaged migrate + reinstall: passed
+    - post-update directory list: 21 `servo-*` dirs, no `aw-*`
+    - runtime equivalence: `diff -qr /tmp/repo-rating-function/.aw /tmp/repo-rating-function/.servo -x .servo-installer-aw-migration.json` passed
+    - packaged `verify --backend agents`: passed
+    - packaged `diagnose --backend agents`: 0 issues, 21 managed installs
+    - packaged idempotence JSON: `state=already-migrated`, `verdict=already-migrated`, `sentinel_present=true`
 
 - [done] `WT-20260522-servo-skill-target-dir-convergence`: converge all agents backend skill target dirs from legacy `aw-*` to canonical `servo-*`, and surface CLI/TUI update guidance for legacy target replacement.
   - branch: wt-20260522-servo-skill-target-dir-convergence
@@ -296,6 +334,23 @@ owner: "servo-kernel"
     - git diff --check: passed
 
 ## Planned Worktracks
+
+- [planned] `WT-20260523-stale-deploy-command-doc-cleanup`: remove or correct stale `adapter_deploy.py verify` references and align operator-facing verification docs with the Node-only `servo-installer` deploy entrypoint.
+  - milestone_id: TBD
+  - node_type: docs
+  - intake_route: programmer-requested-backlog
+  - priority: normal
+  - scope:
+    - AGENTS/review-verify command guidance if stale command remains there
+    - docs/project-maintenance/testing and usage-help references
+    - toolchain test recommendation fixtures if they still mention retired Python deploy entrypoints
+  - acceptance:
+    - no operator-facing verification guidance tells users to run nonexistent `toolchain/scripts/deploy/adapter_deploy.py`
+    - canonical deploy verification guidance uses `node toolchain/scripts/deploy/bin/servo-installer.js verify --backend ...` or package `servo-installer verify --backend ...`
+    - governance/recommendation tests still pass after cleanup
+  - boundary:
+    - do not reintroduce Python deploy entrypoints
+    - do not change package version, publish state, or release channel
 
 - [done] `WT-20260519-managed-files-ownership-sync`: document installer-managed skill payload, .servo/ runtime state, deploy target, and user-owned file ownership boundaries.
   - branch: wt-20260519-managed-files-ownership-sync

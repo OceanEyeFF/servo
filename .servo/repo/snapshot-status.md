@@ -2,7 +2,7 @@
 title: "Repo Snapshot Status"
 artifact_type: "repo-snapshot-status"
 generated_from: "repo-refresh-skill"
-updated: "2026-05-22"
+updated: "2026-05-23"
 owner: "servo-kernel"
 ---
 
@@ -11,15 +11,15 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
+- checkpoint: d52c94bcd48d222b8ee4a4ef254f0df829c3358e
 - checkpoint_type: worktrack-closeout
-- verified_at: 2026-05-22
+- verified_at: 2026-05-23
 
 ## Current Repo State
 
 - active_milestone: MS-20260521-001
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260522-servo-skill-target-dir-convergence
+- latest_closed_worktrack: WT-20260523-packaged-installer-upgrade-smoke
 - latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
@@ -80,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
+- harness_baseline_head: d52c94bcd48d222b8ee4a4ef254f0df829c3358e
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -118,7 +118,7 @@ owner: "servo-kernel"
 
 - completed: 16 milestones
 - active: 1
-  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 6/6 worktracks complete including appended servo skill target dir convergence; awaiting programmer acceptance
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 7/7 worktracks complete including appended packaged installer upgrade smoke; awaiting programmer acceptance
 - planned: 0
 
 ## Recommended Next Route
