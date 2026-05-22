@@ -11,15 +11,15 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
-- checkpoint_type: milestone-activation
+- checkpoint: e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+- checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
 
 ## Current Repo State
 
 - active_milestone: MS-20260521-001
-- active_worktrack: WT-20260521-aw-upgrade-contract
-- latest_closed_worktrack: WT-20260520-servo-npm-release-prep
+- active_worktrack: WT-20260521-aw-to-servo-runtime-migrator
+- latest_closed_worktrack: WT-20260521-aw-upgrade-contract
 - latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
@@ -80,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- harness_baseline_head: e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -118,9 +118,9 @@ owner: "servo-kernel"
 
 - completed: 16 milestones
 - active: 1
-  - MS-20260521-001 (.aw Runtime Seamless Upgrade): WT-20260521-aw-upgrade-contract active
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 1/4 complete; WT-20260521-aw-to-servo-runtime-migrator active
 - planned: 0
 
 ## Recommended Next Route
 
-- WorktrackScope.Observe: active milestone and first worktrack initialized; continue to schedule-worktrack-skill
+- WorktrackScope.Init: WT-20260521-aw-to-servo-runtime-migrator is next active worktrack

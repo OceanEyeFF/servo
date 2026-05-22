@@ -1,25 +1,24 @@
 ---
-title: "Plan / Task Queue: WT-20260521-aw-upgrade-contract"
+title: "Plan / Task Queue: WT-20260521-aw-to-servo-runtime-migrator"
 artifact_type: plan-task-queue
-worktrack_id: WT-20260521-aw-upgrade-contract
-baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
-updated: 2026-05-22T11:32:33+08:00
+worktrack_id: WT-20260521-aw-to-servo-runtime-migrator
+baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+updated: 2026-05-22T12:39:03+08:00
 ---
 
 # Plan / Task Queue
 
 ## Queue
 
-- [x] **T1**: Map existing installer ownership, marker, legacy cleanup, payload fingerprint, and runtime `.servo/` boundaries.
-- [x] **T2**: Draft `.aw` runtime upgrade contract with explicit states: `.aw` only, `.servo` exists, both present, foreign marker, malformed marker, already migrated, and dry-run.
-- [x] **T3**: Define fail-closed conflict and recovery rules, including default retention or backup for `.aw/` and no default deletion.
-- [x] **T4**: Define reinstall/update marker refresh requirements that reuse `aw.marker`, legacy target cleanup, and payload fingerprint mechanisms.
-- [x] **T5**: Sync operator-facing docs/runbook entrypoints only where they own upgrade-path routing.
-- [x] **T6**: Run focused docs/governance validation and record evidence in gate-evidence.
+- [x] **T1**: Inspect current CLI parser/dispatcher and choose the smallest explicit command integration point.
+- [x] **T2**: Implement dry-run and JSON state classification for `.aw` to `.servo` runtime migration.
+- [x] **T3**: Implement `--yes` copy-not-move mutation with conflict blocking and idempotence.
+- [x] **T4**: Add focused `/tmp` target repository tests for state matrix and no source-tree runtime pollution.
+- [x] **T5**: Run Node tests and governance checks; record evidence.
 
 ## Scheduling Seed
 
 - next_recommended_task: closeout
-- dispatch_package_required: false
+- dispatch_package_required: true
 - current_blockers: none
 - execution_not_started: false

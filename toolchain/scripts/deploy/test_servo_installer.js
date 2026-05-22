@@ -638,6 +638,10 @@ function runAwInstaller(root, args, fakeBin = null) {
   });
 }
 
+function runNodeMigrateRuntime(root, args, fakeBin = null) {
+  return runAwInstaller(root, ["migrate-runtime", ...args], fakeBin);
+}
+
 test("node-owned summary and context helpers are exported for unit coverage", () => {
   assert.equal(typeof installer.buildNodeAgentsContext, "function");
   assert.equal(typeof installer.diagnosticSummary, "function");
@@ -873,6 +877,46 @@ test("parseNodeDiagnoseArgs accepts agents and claude human diagnose forms", () 
     installer.parseNodeDiagnoseArgs(["diagnose", "--backend", "claude", "--claude-root=/tmp/claude-skills"]),
     { backend: "claude", agentsRoot: undefined, claudeRoot: "/tmp/claude-skills" },
   );
+});
+
+test("parseNodeMigrateRuntimeArgs accepts only explicit aw to servo migration forms", () => {
+  assert.deepEqual(
+    installer.parseNodeMigrateRuntimeArgs(["migrate-runtime", "--from", "aw", "--to", "servo"]),
+    {
+      backend: "agents",
+      agentsRoot: undefined,
+      from: "aw",
+      to: "servo",
+      json: false,
+      yes: false,
+      reinstall: false,
+    },
+  );
+  assert.deepEqual(
+    installer.parseNodeMigrateRuntimeArgs([
+      "migrate-runtime",
+      "--from=aw",
+      "--to=servo",
+      "--json",
+      "--reinstall",
+      "--backend=bundle",
+      "--agents-root=/tmp/agents",
+      "--claude-root=/tmp/claude",
+    ]),
+    {
+      backend: "bundle",
+      agentsRoot: "/tmp/agents",
+      claudeRoot: "/tmp/claude",
+      from: "aw",
+      to: "servo",
+      json: true,
+      yes: false,
+      reinstall: true,
+    },
+  );
+  assert.equal(installer.parseNodeMigrateRuntimeArgs(["migrate-runtime", "--from", "servo", "--to", "aw"]), null);
+  assert.equal(installer.parseNodeMigrateRuntimeArgs(["migrate-runtime", "--from", "aw", "--to", "servo", "--json", "--yes"]), null);
+  assert.equal(installer.parseNodeMigrateRuntimeArgs(["migrate-runtime", "--from", "aw"]), null);
 });
 
 test("parseNodeUpdateJsonArgs accepts agents and claude package JSON update dry-runs", () => {
@@ -4254,6 +4298,117 @@ test("cli: install --backend agents runs (may fail without target)", () => {
 test("cli: update --backend agents dry-run runs", () => {
   const result = runTuiInTempTarget(["update", "--backend", "agents"], "");
   assert.ok(result.stdout.length > 0 || result.stderr.length > 0);
+});
+
+test("migrate-runtime --json reports no-op when neither .aw nor .servo exists", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--json"]);
+    assert.equal(result.status, 0);
+    const summary = JSON.parse(result.stdout);
+    assert.equal(summary.state, "no-runtime");
+    assert.equal(summary.mutation_performed, false);
+    assert.equal(existsSync(join(root, ".servo")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime dry-run reports ready .aw without mutating target", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--json"]);
+    assert.equal(result.status, 0);
+    const summary = JSON.parse(result.stdout);
+    assert.equal(summary.state, "ready");
+    assert.equal(summary.action, "copy");
+    assert.equal(summary.mutation_allowed, true);
+    assert.equal(summary.mutation_performed, false);
+    assert.equal(existsSync(join(root, ".servo")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime --yes copies .aw to .servo and preserves source", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".aw", "worktrack"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    writeFileSync(join(root, ".aw", "worktrack", "contract.md"), "contract\n", "utf8");
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--yes"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /state: migrated/);
+    assert.equal(readFileSync(join(root, ".servo", "control-state.md"), "utf8"), "runtime\n");
+    assert.equal(readFileSync(join(root, ".servo", "worktrack", "contract.md"), "utf8"), "contract\n");
+    assert.equal(readFileSync(join(root, ".aw", "control-state.md"), "utf8"), "runtime\n");
+    const sentinel = JSON.parse(readFileSync(join(root, ".servo", ".servo-installer-aw-migration.json"), "utf8"));
+    assert.equal(sentinel.marker_version, "aw-to-servo-runtime-migration.v1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime rerun after successful copy is idempotent", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    const first = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--yes"]);
+    assert.equal(first.status, 0, first.stderr);
+
+    const second = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--yes"]);
+    assert.equal(second.status, 0, second.stderr);
+    assert.match(second.stdout, /state: already-migrated/);
+    assert.match(second.stdout, /action: noop/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime blocks pre-existing .servo without migration sentinel", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    mkdirSync(join(root, ".servo"), { recursive: true });
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--json"]);
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout);
+    assert.equal(summary.state, "blocked");
+    assert.equal(summary.issues[0].code, "destination-runtime-exists");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime blocks malformed source runtime path", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    writeFileSync(join(root, ".aw"), "not a directory\n", "utf8");
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--json"]);
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout);
+    assert.equal(summary.state, "blocked");
+    assert.equal(summary.issues[0].code, "malformed-source-runtime");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("migrate-runtime treats destination-only .servo as a safe no-op", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".servo"), { recursive: true });
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--json"]);
+    assert.equal(result.status, 0);
+    const summary = JSON.parse(result.stdout);
+    assert.equal(summary.state, "destination-only");
+    assert.equal(summary.action, "noop");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 // CLI backward compat: prune rejects without --all

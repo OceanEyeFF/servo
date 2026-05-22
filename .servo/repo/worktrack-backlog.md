@@ -10,18 +10,38 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
-- updated: 2026-05-22T10:11:07+08:00
+- baseline_ref: e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+- updated: 2026-05-22T11:35:19+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
 
-- [active] `WT-20260521-aw-upgrade-contract`: define explicit `.aw` to `.servo` runtime upgrade contract, conflict blocking, dry-run, backup/retention, recovery, and reinstall marker refresh boundaries.
-  - branch: wt-20260521-aw-upgrade-contract
-  - baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- [active] `WT-20260521-aw-to-servo-runtime-migrator`: implement explicit `.aw` to `.servo` runtime migration entry with dry-run, confirmation, backup/retention, idempotence, and /tmp smoke tests.
+  - branch: wt-20260521-aw-to-servo-runtime-migrator
+  - baseline_ref: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
   - milestone_id: MS-20260521-001
   - node_type: feature
   - status: active
+  - intake_route: programmer-confirmed-milestone
+  - scope:
+    - toolchain/scripts/deploy/bin/servo-installer.js
+    - toolchain/scripts/deploy/test_servo_installer.js
+    - docs/servo-installer/contracts/aw-runtime-upgrade-contract.md if implementation reveals necessary contract clarification
+  - acceptance:
+    - explicit runtime migration entry exists; ordinary init/install/update does not silently migrate `.aw`.
+    - dry-run reports planned copy, backup/retention, block, and optional reinstall/update actions.
+    - migration is idempotent and safe to rerun.
+    - `.servo/` conflicts block by default and produce recovery guidance.
+    - /tmp target tests cover key migration states.
+
+- [done] `WT-20260521-aw-upgrade-contract`: define explicit `.aw` to `.servo` runtime upgrade contract, conflict blocking, dry-run, backup/retention, recovery, and reinstall marker refresh boundaries.
+  - branch: wt-20260521-aw-upgrade-contract
+  - worktrack_commit: `7f4ae43`
+  - closeout_checkpoint: develop-aw@e8e501d7ccb3ef3abadc2c9e8120990e4c8ac2ab
+  - baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+  - milestone_id: MS-20260521-001
+  - node_type: feature
+  - status: done
   - intake_route: programmer-confirmed-milestone
   - scope:
     - docs/servo-installer/contracts/
