@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
-- updated: 2026-05-23T00:34:31+08:00
+- updated: 2026-05-23T00:53:21+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -83,15 +83,16 @@ owner: "servo-kernel"
     - WT-20260522-servo-skill-target-dir-convergence (done, appended)
     - WT-20260523-packaged-installer-upgrade-smoke (done, appended)
     - WT-20260523-dual-backend-bundle-upgrade-smoke (done, appended)
+    - WT-20260523-legacy-version-handling-docs (done, appended)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-23T00:34:31+08:00
+  - updated: 2026-05-23T00:53:21+08:00
   - updated_by: harness-skill
   - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
-    - total: 8
-    - completed: 8
+    - total: 9
+    - completed: 9
     - blocked: 0
     - deferred: 0
   - completion_signals:
@@ -105,6 +106,7 @@ owner: "servo-kernel"
     - CLI and TUI surfaces provide update guidance for legacy aw-* target dir convergence.
     - Packaged root `.tgz` installer entry completes the legacy upgrade chain in a programmer-provided `/tmp` target directory.
     - Packaged bundle reinstall handles simultaneous agents and claude deploy targets without cross-backend interference.
+    - Legacy version handling docs explain the current 0.5.x/0.6.x compatibility window and expected 0.7.x removal of the old-version note.
   - acceptance_criteria:
     - Explicit migration entry exists; ordinary init does not silently mutate .aw to .servo.
     - Dry-run reports planned copy, backup, block, and reinstall/update actions.
@@ -118,6 +120,7 @@ owner: "servo-kernel"
     - External /tmp target repo update from old aw-* managed skill target dirs to servo-* passes verify and diagnose.
     - Packaged installer smoke covers `.aw -> .servo`, agents reinstall, `aw-* -> servo-*`, verify/diagnose, and idempotence.
     - Dual-backend smoke covers `.agents` and `.claude` coexisting before bundle reinstall and passing bundle verify/diagnose afterward.
+    - Legacy handling docs are reachable from servo-installer README and docs book spine.
   - completion_threshold_pct: 100
   - planning_boundary:
     - do not delete user-owned .aw/ contents by default
@@ -129,7 +132,7 @@ owner: "servo-kernel"
   - handback:
     - state: awaiting_programmer_acceptance
     - all_worktracks_complete: true
-    - latest_worktrack_closeout_checkpoint: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
+    - latest_worktrack_closeout_checkpoint: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
     - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001

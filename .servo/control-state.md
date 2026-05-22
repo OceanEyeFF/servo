@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-23T00:34:31+08:00
+- updated: 2026-05-23T00:53:21+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -22,7 +22,7 @@ owner: "servo-kernel"
 ## Active Worktrack
 
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260523-dual-backend-bundle-upgrade-smoke
+- latest_closed_worktrack: WT-20260523-legacy-version-handling-docs
 
 ## Milestone Pipeline
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
-- current_checkout: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
+- baseline_ref: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
+- current_checkout: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -44,11 +44,12 @@ owner: "servo-kernel"
 
 - recommended_next_route: WorktrackScope.Observe
 - recommended_next_scope: WorktrackScope
-- current_next_action: RepoScope.Observe — MS-20260521-001 has 8/8 worktracks complete including appended dual-backend bundle upgrade smoke; request programmer final acceptance
+- current_next_action: RepoScope.Observe — MS-20260521-001 has 9/9 worktracks complete including appended legacy version handling docs; request programmer final acceptance
 
 ## Handback Guard
 
 - handoff_state: milestone_acceptance_requested
+- last_stop_reason: MS-20260521-001 all worktracks complete after appended legacy version handling docs; final milestone acceptance remains programmer-owned
 - last_stop_reason: MS-20260521-001 all worktracks complete after appended dual-backend bundle upgrade smoke; final milestone acceptance remains programmer-owned
 - last_stop_reason: MS-20260521-001 all worktracks complete after appended packaged installer upgrade smoke; final milestone acceptance remains programmer-owned
 - last_stop_reason: MS-20260521-001 all worktracks complete after appended servo skill target dir convergence; final milestone acceptance remains programmer-owned
@@ -61,13 +62,13 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 8f37d60bfb986a0c63b7578edca7a62f0cc95979
+- latest_observed_checkpoint: ecd5f0975e6903a3777ac4b368baf49560dcff8f
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260521-001:8_complete_pending_acceptance
-- checkpoint_ref: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
+- milestone_input_checkpoint: MS-20260521-001:9_complete_pending_acceptance
+- checkpoint_ref: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
-- verified_at: 2026-05-22
+- verified_at: 2026-05-23
 
 ## Current Control Notes
 
@@ -159,6 +160,16 @@ owner: "servo-kernel"
   - target_initial_shape: `.aw/` exists, `.agents/skills/servo-*` exists, `.claude/skills/<skill-id>` exists, `.servo/` absent before migration
   - validation: preflight packaged `verify --backend bundle` passed; preflight packaged `diagnose --backend bundle` reported 0 issues and 21 managed installs for both agents and claude; packaged `migrate-runtime --yes --reinstall --backend bundle` passed; runtime equivalence diff passed; agents retained 21 `servo-*` dirs; claude retained 21 bare skill id dirs; post packaged bundle verify/diagnose passed; packaged idempotence JSON returned `already-migrated`
   - milestone_progress: MS-20260521-001 8/8 — ALL WORKTRACKS COMPLETE
+  - next_legal_route: RepoScope.Observe milestone handback
+  - stop_boundary: milestone final acceptance remains programmer-owned
+
+- 2026-05-23: **appended and closed `WT-20260523-legacy-version-handling-docs`** (MS-20260521-001, 9/9). Gate: pass.
+  - worktrack_commit: pending-doc-writeback
+  - baseline_checkpoint: `ecd5f09`
+  - files_changed: `docs/servo-installer/reference/legacy-version-handling.md`, `docs/servo-installer/README.md`, `docs/book.md`
+  - goal: document current handling for old `.aw/` runtime state, old agents `aw-*` target dirs, agents/claude coexistence, and expected 0.7.x removal of the temporary old-version note
+  - validation: git diff --check passed; path_governance_check.py passed; governance_semantic_check.py passed with retained artifact alignment warnings
+  - milestone_progress: MS-20260521-001 9/9 — ALL WORKTRACKS COMPLETE
   - next_legal_route: RepoScope.Observe milestone handback
   - stop_boundary: milestone final acceptance remains programmer-owned
 

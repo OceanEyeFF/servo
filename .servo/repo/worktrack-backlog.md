@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
-- updated: 2026-05-23T00:34:31+08:00
+- updated: 2026-05-23T00:53:21+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -19,6 +19,34 @@ owner: "servo-kernel"
 - none
 
 ## Recent Worktracks
+
+- [done] `WT-20260523-legacy-version-handling-docs`: document current old-version handling and the expected 0.7.x removal of the legacy compatibility note.
+  - branch: develop-aw
+  - worktrack_commit: pending-doc-writeback
+  - closeout_checkpoint: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
+  - baseline_ref: develop-aw@ecd5f0975e6903a3777ac4b368baf49560dcff8f
+  - milestone_id: MS-20260521-001
+  - node_type: docs
+  - status: done
+  - intake_route: programmer-requested-append-worktrack
+  - scope:
+    - `docs/servo-installer/reference/legacy-version-handling.md`
+    - `docs/servo-installer/README.md`
+    - `docs/book.md`
+    - no installer behavior changes
+  - acceptance:
+    - old-version handling for `.aw/`, old agents `aw-*` dirs, and agents+claude coexistence is documented in servo-installer reference docs
+    - the document states it is temporary for the 0.5.x/0.6.x compatibility window
+    - the document states it is expected to be removed in 0.7.x
+    - the document is linked from the servo-installer README and docs book spine
+  - result:
+    - added `docs/servo-installer/reference/legacy-version-handling.md`
+    - updated servo-installer reference index and reading routes
+    - updated docs book spine
+  - validation:
+    - `git diff --check`: passed
+    - `path_governance_check.py`: passed
+    - `governance_semantic_check.py`: passed with retained artifact alignment warnings
 
 - [done] `WT-20260523-dual-backend-bundle-upgrade-smoke`: simulate `.agents` and `.claude` coexisting in one temporary target and validate packaged bundle reinstall behavior.
   - branch: develop-aw

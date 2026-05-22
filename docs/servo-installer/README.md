@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Documentation"
 status: active
-updated: 2026-05-22
+updated: 2026-05-23
 owner: servo-kernel
-last_verified: 2026-05-22
+last_verified: 2026-05-23
 ---
 # servo-installer Documentation
 
@@ -40,7 +40,8 @@ docs/servo-installer/
 │
 ├── reference/                      ← 参考与说明（explanatory）
 │   ├── managed-files-ownership.md
-│   └── existing-code-adoption.md
+│   ├── existing-code-adoption.md
+│   └── legacy-version-handling.md
 │
 └── tui/                            ← TUI 合同与实现（MS-003, MS-004）
     ├── README.md                   ← TUI 章节索引
@@ -80,6 +81,7 @@ operator 执行具体任务时使用。
 |------|---------|
 | `managed-files-ownership.md` | 文件所有权分类：installer payload / .servo/ 运行时 / deploy target / 用户自有 |
 | `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.servo/repo/discovery-input.md` 生成边界 |
+| `legacy-version-handling.md` | 0.5.x/0.6.x 兼容窗口内旧 `.aw/` runtime 和旧 `aw-*` target dirs 的处理说明；预计 0.7.x 移除 |
 
 ### tui/ — TUI 合同与实现
 
@@ -98,7 +100,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 |------|-------------|
 | 新 operator（首次安装） | runbooks/deploy-runbook → reference/managed-files-ownership |
 | operator（日常维护） | runbooks/skill-deployment-maintenance → runbooks/uninstall-remove-runbook |
-| operator（legacy `.aw` runtime） | runbooks/aw-runtime-upgrade-runbook → contracts/aw-runtime-upgrade-contract |
+| operator（legacy `.aw` runtime） | reference/legacy-version-handling → runbooks/aw-runtime-upgrade-runbook → contracts/aw-runtime-upgrade-contract |
 | operator（理解行为） | contracts/distribution-entrypoint-contract → reference/managed-files-ownership |
 | CI/脚本集成 | contracts/distribution-entrypoint-contract → contracts/deploy-mapping-spec |
 | 人类 operator（TUI 交互） | tui/human-cli-contract → runbooks/deploy-runbook |
@@ -116,6 +118,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | 理解 CLI 命令不变量 | contracts/distribution-entrypoint-contract.md |
 | 理解 canonical source 到 target 的映射 | contracts/deploy-mapping-spec.md |
 | 升级 legacy `.aw/` runtime state | runbooks/aw-runtime-upgrade-runbook.md |
+| 理解旧版本兼容处理窗口 | reference/legacy-version-handling.md |
 | 理解 payload 来源与信任边界 | contracts/payload-provenance-trust-boundary.md |
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |
