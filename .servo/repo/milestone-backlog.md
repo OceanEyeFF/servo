@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: fcd40980d58688d7ea11e66117a555f106b5db96
-- updated: 2026-05-22T01:03:06+08:00
+- updated: 2026-05-22T10:11:07+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -70,20 +70,20 @@ owner: "servo-kernel"
 - milestone_id: MS-20260521-001
   - title: .aw Runtime Seamless Upgrade
   - purpose: 为仍在使用 .aw/ runtime state 的目标仓库提供一条低摩擦升级路径：显式迁移 .aw/ 到 .servo/，保留或备份用户状态，然后通过 servo-installer 重新覆盖安装 Skills，使 marker、target dirs、payload 指纹与新命名收敛。
-  - status: planned
+  - status: active
   - priority: 1
   - depends_on_milestones:
     - MS-20260520-002
   - worktrack_list:
-    - WT-20260521-aw-upgrade-contract (planned)
+    - WT-20260521-aw-upgrade-contract (active)
     - WT-20260521-aw-to-servo-runtime-migrator (planned)
     - WT-20260521-skill-marker-reinstall-upgrade-flow (planned)
     - WT-20260521-aw-upgrade-docs-and-smoke (planned)
   - created_by: programmer
   - created_at: 2026-05-21T10:51:47+08:00
-  - updated: 2026-05-21T10:51:47+08:00
-  - updated_by: init-milestone-skill
-  - activation_rules: planned only; activate after MS-20260520-002 is accepted and programmer authorizes the upgrade milestone
+  - updated: 2026-05-22T10:11:07+08:00
+  - updated_by: harness-skill
+  - activation_rules: programmer-authorized activation on 2026-05-22 after MS-20260520-002 acceptance; initialize WT-20260521-aw-upgrade-contract first
   - milestone_kind: goal-driven
   - progress_counter:
     - total: 4

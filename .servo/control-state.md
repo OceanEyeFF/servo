@@ -9,46 +9,47 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T01:03:06+08:00
+- updated: 2026-05-22T10:11:07+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
 ## Current Control Level
 
 - repo_scope: RepoScope
-- worktrack_scope: none
+- worktrack_scope: WorktrackScope
 - current_function: Observe
 
 ## Active Worktrack
 
-- active_worktrack: none
+- active_worktrack: WT-20260521-aw-upgrade-contract
 - latest_closed_worktrack: WT-20260520-servo-npm-release-prep
 
 ## Milestone Pipeline
 
-- active_milestone: none
-- milestone_status: handback
+- active_milestone: MS-20260521-001
+- milestone_status: active
 - milestone_pipeline_path: .servo/repo/milestone-backlog.md
-- milestone_pipeline_summary: planned=1 / active=0 / completed=16 / superseded=0
+- milestone_pipeline_summary: planned=0 / active=1 / completed=16 / superseded=0
 
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@94a570044eb651fa2f1aa9ecef3cdb119bc2f537
-- current_checkout: develop-aw@94a570044eb651fa2f1aa9ecef3cdb119bc2f537
+- baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+- current_checkout: wt-20260521-aw-upgrade-contract@5335b7ecee76f9e1a001424f7865e3ab1a96c408
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
 
 ## Current Next Action
 
-- recommended_next_route: RepoScope.Observe
-- recommended_next_scope: RepoScope
-- current_next_action: RepoScope.Observe — MS-20260520-002 accepted; planned milestone MS-20260521-001 remains inactive until programmer authorization
+- recommended_next_route: WorktrackScope.Observe
+- recommended_next_scope: WorktrackScope
+- current_next_action: WorktrackScope.Observe — MS-20260521-001 activated; WT-20260521-aw-upgrade-contract initialized and ready for schedule-worktrack-skill
 
 ## Handback Guard
 
-- handoff_state: awaiting-handoff
+- handoff_state: active
+- last_stop_reason: programmer authorized MS-20260521-001 activation and first worktrack initialization on 2026-05-22
 - last_stop_reason: programmer accepted MS-20260520-001; milestone completed
 - last_stop_reason: programmer accepted MS-20260519-004; milestone completed
 - last_stop_reason: programmer accepted MS-20260519-003; activated MS-20260519-004 (deferred start to new session)
@@ -56,15 +57,25 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 94a570044eb651fa2f1aa9ecef3cdb119bc2f537
+- latest_observed_checkpoint: 5335b7ecee76f9e1a001424f7865e3ab1a96c408
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
-- milestone_input_checkpoint: MS-20260520-002:4_accepted
-- checkpoint_ref: develop-aw@f8076d1235e7d44a04a3372ac64c9f1c98afb8ad
+- milestone_input_checkpoint: MS-20260521-001:0_active
+- checkpoint_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
-- checkpoint_type: milestone-acceptance
+- checkpoint_type: milestone-activation
 - verified_at: 2026-05-22
 
 ## Current Control Notes
+
+- 2026-05-22: **programmer authorized activation of `MS-20260521-001`** (`.aw Runtime Seamless Upgrade`) and first worktrack initialization.
+  - active_milestone: MS-20260521-001
+  - active_worktrack: WT-20260521-aw-upgrade-contract
+  - branch: wt-20260521-aw-upgrade-contract
+  - baseline_ref: develop-aw@5335b7ecee76f9e1a001424f7865e3ab1a96c408
+  - worktrack_goal: define the explicit `.aw` to `.servo` runtime upgrade contract, including detection, conflict blocking, backup/retention, dry-run, recovery, and reinstall marker refresh boundaries
+  - intake_review_verdict: ready_for_worktrack_init
+  - next_legal_route: WorktrackScope.Observe then WorktrackScope.Decide via schedule-worktrack-skill
+  - activation_authority: one-cycle programmer authorization in this conversation; no persistent autonomy default changed
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:
