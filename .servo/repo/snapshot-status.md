@@ -11,7 +11,7 @@ owner: "servo-kernel"
 ## Baseline
 
 - branch: develop-aw
-- checkpoint: d52c94bcd48d222b8ee4a4ef254f0df829c3358e
+- checkpoint: 8f37d60bfb986a0c63b7578edca7a62f0cc95979
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-23
 
@@ -19,7 +19,7 @@ owner: "servo-kernel"
 
 - active_milestone: MS-20260521-001
 - active_worktrack: none
-- latest_closed_worktrack: WT-20260523-packaged-installer-upgrade-smoke
+- latest_closed_worktrack: WT-20260523-dual-backend-bundle-upgrade-smoke
 - latest_accepted_milestone: MS-20260520-002
 
 ## Recent Milestones Completed
@@ -80,7 +80,7 @@ owner: "servo-kernel"
 ## Branch And Release Baseline Observations
 
 - harness_baseline_branch: develop-aw
-- harness_baseline_head: d52c94bcd48d222b8ee4a4ef254f0df829c3358e
+- harness_baseline_head: 8f37d60bfb986a0c63b7578edca7a62f0cc95979
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - local_master_head: 9a98815627f06285132077ab9675e7fceafb557a
 - origin_master_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
@@ -118,7 +118,7 @@ owner: "servo-kernel"
 
 - completed: 16 milestones
 - active: 1
-  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 7/7 worktracks complete including appended packaged installer upgrade smoke; awaiting programmer acceptance
+  - MS-20260521-001 (.aw Runtime Seamless Upgrade): 8/8 worktracks complete including appended dual-backend bundle upgrade smoke; awaiting programmer acceptance
 - planned: 0
 
 ## Recommended Next Route

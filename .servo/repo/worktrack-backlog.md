@@ -11,7 +11,7 @@ owner: "servo-kernel"
 
 - baseline_branch: develop-aw
 - baseline_ref: 13a8304f08db3b5c315ba4e3f69f0393fdee1742
-- updated: 2026-05-23T00:05:45+08:00
+- updated: 2026-05-23T00:34:31+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -19,6 +19,45 @@ owner: "servo-kernel"
 - none
 
 ## Recent Worktracks
+
+- [done] `WT-20260523-dual-backend-bundle-upgrade-smoke`: simulate `.agents` and `.claude` coexisting in one temporary target and validate packaged bundle reinstall behavior.
+  - branch: develop-aw
+  - worktrack_commit: evidence-only-runtime-writeback
+  - closeout_checkpoint: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
+  - baseline_ref: develop-aw@8f37d60bfb986a0c63b7578edca7a62f0cc95979
+  - milestone_id: MS-20260521-001
+  - node_type: test
+  - status: done
+  - intake_route: programmer-requested-append-worktrack
+  - scope:
+    - `/tmp/servo-dual-backend-smoke.OZuLrQ` external temporary target
+    - packaged root `.tgz` installer path
+    - `.aw -> .servo` runtime migration
+    - `--reinstall --backend bundle`
+    - agents and claude deploy targets coexisting
+    - no source implementation changes
+  - acceptance:
+    - target starts with `.aw/`, `.agents/skills`, and `.claude/skills`
+    - preflight bundle verify and diagnose pass for both backends
+    - packaged `migrate-runtime --yes --reinstall --backend bundle` copies runtime and updates both backends
+    - agents target remains 21 `servo-*` dirs
+    - claude target remains 21 bare skill id dirs
+    - post bundle verify and diagnose pass for both backends
+    - repeated migration JSON reports `already-migrated`
+  - result:
+    - packaged install created `.agents/skills/servo-*` and `.claude/skills/<skill-id>` before migration
+    - bundle reinstall pruned/reinstalled each backend independently and completed for both
+    - no cross-backend deletion or target naming drift observed
+  - validation:
+    - preflight packaged `verify --backend bundle`: passed
+    - preflight packaged `diagnose --backend bundle`: agents 0 issues / 21 managed installs; claude 0 issues / 21 managed installs
+    - packaged `migrate-runtime --from aw --to servo --yes --reinstall --backend bundle`: passed
+    - runtime equivalence: `diff -qr /tmp/servo-dual-backend-smoke.OZuLrQ/.aw /tmp/servo-dual-backend-smoke.OZuLrQ/.servo -x .servo-installer-aw-migration.json` passed
+    - agents directory list: 21 `servo-*` dirs
+    - claude directory list: 21 bare skill id dirs
+    - post packaged `verify --backend bundle`: passed
+    - post packaged `diagnose --backend bundle`: agents 0 issues / 21 managed installs; claude 0 issues / 21 managed installs
+    - packaged idempotence JSON: `state=already-migrated`, `verdict=already-migrated`, `sentinel_present=true`
 
 - [done] `WT-20260523-packaged-installer-upgrade-smoke`: validate the root package `.tgz` installer path against the programmer-provided legacy target directory at `/tmp/repo-rating-function`.
   - branch: develop-aw
