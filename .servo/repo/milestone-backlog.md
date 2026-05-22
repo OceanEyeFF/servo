@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 3b3772515194079fbe8b5537e68a8de948b584ef
-- updated: 2026-05-22T18:34:57+08:00
+- baseline_ref: 2497581cdab7f1e71434270dd02cf36329f1abf7
+- updated: 2026-05-22T18:40:33+08:00
 - updated_by: harness-skill
 
 ## Pipeline Entries
@@ -118,7 +118,7 @@ owner: "servo-kernel"
   - handback:
     - state: awaiting_programmer_acceptance
     - all_worktracks_complete: true
-    - latest_worktrack_closeout_checkpoint: pending merge for WT-20260522-aw-external-tmprepo-migration-smoke
+    - latest_worktrack_closeout_checkpoint: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
     - milestone_acceptance_verdict: pending_programmer_decision
 
 - milestone_id: MS-20260520-001

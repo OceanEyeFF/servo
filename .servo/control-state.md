@@ -9,7 +9,7 @@ owner: "servo-kernel"
 
 ## Metadata
 
-- updated: 2026-05-22T18:34:57+08:00
+- updated: 2026-05-22T18:40:33+08:00
 - owner: servo-kernel
 - status: repo-initialized
 
@@ -34,8 +34,8 @@ owner: "servo-kernel"
 ## Baseline Branch
 
 - baseline_branch: develop-aw
-- baseline_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
-- current_checkout: wt-20260522-aw-external-tmprepo-migration-smoke@3b3772515194079fbe8b5537e68a8de948b584ef
+- baseline_ref: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
+- current_checkout: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
 - remote_branches: origin/develop-main (only remote branch; origin/develop-aw deleted 2026-05-20 per programmer — erroneously pushed)
 - develop_main_head: 2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - master_head: 9a98815627f06285132077ab9675e7fceafb557a
@@ -58,10 +58,10 @@ owner: "servo-kernel"
 
 ## Baseline Traceability
 
-- latest_observed_checkpoint: 3b3772515194079fbe8b5537e68a8de948b584ef
+- latest_observed_checkpoint: 2497581cdab7f1e71434270dd02cf36329f1abf7
 - last_doc_catch_up_checkpoint: 052ad0ddfbc5261e4e15e0e05349a5cc6c33c51f
 - milestone_input_checkpoint: MS-20260521-001:5_complete_pending_acceptance
-- checkpoint_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
+- checkpoint_ref: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
 - release_checkpoint_ref: origin/master@2c4fab873fedd786f38a6de5cd3e6591f0d2c7f5
 - checkpoint_type: worktrack-closeout
 - verified_at: 2026-05-22
@@ -112,14 +112,15 @@ owner: "servo-kernel"
   - stop_boundary: milestone final acceptance remains programmer-owned
 
 - 2026-05-22: **appended and closed `WT-20260522-aw-external-tmprepo-migration-smoke`** (MS-20260521-001, 5/5). Gate: pass.
-  - worktrack_commit: pending
-  - merge_commit: pending
+  - worktrack_commit: `1e35eda`
+  - merge_commit: `2497581`
   - target_repo: `/tmp/.tmpRepo`
   - target_initial_shape: `.aw/` exists, `.servo/` absent, `.agents/skills/aw-*` managed installs present, git status clean
   - validation: dry-run JSON passed; mutating migration passed; `.aw` vs `.servo` diff excluding sentinel passed; idempotence JSON returned `already-migrated`; `--reinstall --backend agents` passed; `verify --backend agents` passed; `diagnose --backend agents` reported 0 issues and 21 managed installs
   - milestone_progress: MS-20260521-001 5/5 — ALL WORKTRACKS COMPLETE
   - retained_observation: current agents payload contract still keeps most Worktrack skill target dirs as `aw-*`; only `harness-skill` and `set-harness-goal-skill` use `servo-*` target dirs
-  - next_legal_route: close WT-20260522-aw-external-tmprepo-migration-smoke, merge, repo refresh, then milestone handback
+  - next_legal_route: RepoScope.Observe milestone handback
+  - stop_boundary: milestone final acceptance remains programmer-owned
 
 - 2026-05-22: **programmer accepted `MS-20260520-002`**. Repo Rename to servo milestone completed (4/4 worktracks including appended npm release prep).
   - accepted_worktracks:

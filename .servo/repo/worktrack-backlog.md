@@ -10,8 +10,8 @@ owner: "servo-kernel"
 ## Metadata
 
 - baseline_branch: develop-aw
-- baseline_ref: 3b3772515194079fbe8b5537e68a8de948b584ef
-- updated: 2026-05-22T18:34:57+08:00
+- baseline_ref: 2497581cdab7f1e71434270dd02cf36329f1abf7
+- updated: 2026-05-22T18:40:33+08:00
 - updated_by: harness-skill
 
 ## Active Worktrack
@@ -22,8 +22,8 @@ owner: "servo-kernel"
 
 - [done] `WT-20260522-aw-external-tmprepo-migration-smoke`: validate `.aw` to `.servo` migration and agents reinstall against the programmer-provided old autoworkflow target repository at `/tmp/.tmpRepo`.
   - branch: wt-20260522-aw-external-tmprepo-migration-smoke
-  - worktrack_commit: pending
-  - closeout_checkpoint: pending merge
+  - worktrack_commit: `1e35eda`
+  - closeout_checkpoint: develop-aw@2497581cdab7f1e71434270dd02cf36329f1abf7
   - baseline_ref: develop-aw@3b3772515194079fbe8b5537e68a8de948b584ef
   - milestone_id: MS-20260521-001
   - node_type: test
