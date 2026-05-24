@@ -83,7 +83,11 @@ def run_tui_script(
                     break
                 search_pos = match_index + len(pattern)
                 if response:
-                    os.write(master_fd, response.replace("\n", "\r").encode("utf-8"))
+                    if response.startswith("raw:"):
+                        encoded_response = response.removeprefix("raw:")
+                    else:
+                        encoded_response = response.replace("\n", "\r")
+                    os.write(master_fd, encoded_response.encode("utf-8"))
                 step_index += 1
 
             if process.poll() is not None:
@@ -230,7 +234,7 @@ def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Pa
             *choose_menu_steps(0),
             ("Press Enter to return to the installer menu", "\n"),
             ("No pre-existing paths", "\n"),
-            ("Type yes to proceed", "no\n"),
+            ("Type yes to proceed", "raw:no\n"),
             quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -255,7 +259,7 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
             *choose_menu_steps(0),
             ("Press Enter to return to the installer menu", "\n"),
             ("No pre-existing paths", "\n"),
-            ("Type yes to proceed", "yes\n"),
+            ("Type yes to proceed", "raw:yes\n"),
             ("Install complete for bundle", "\n"),
             ("Verification passed", "\n"),
             ("All stages completed successfully", "\n"),
