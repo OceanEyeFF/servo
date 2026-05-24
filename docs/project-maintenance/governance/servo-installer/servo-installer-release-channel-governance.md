@@ -18,21 +18,22 @@ last_verified: 2026-05-24
 2026-05-24 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.5.4`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`
-- GitHub Release `v0.5.4` 已发布，target commit `515838a895e6a8bd51a6582a011153bb78a06a2b`；npm `servo-installer@0.5.4` 的 `gitHead` 同为 `515838a895e6a8bd51a6582a011153bb78a06a2b`
-- npm `servo-installer@0.5.4` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.4.tgz`
+- npm registry 真实状态：`latest` -> `0.5.5`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`
+- GitHub Release `v0.5.5` 已发布，target commit `34515def745076f348e13d4725792a40e9785fd3`；npm `servo-installer@0.5.5` 的 `gitHead` 同为 `34515def745076f348e13d4725792a40e9785fd3`
+- npm `servo-installer@0.5.5` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.5.tgz`
 
 ## 当前 source release tuple
 
-2026-05-24，本地 source tuple 已准备为 `v0.5.5` 的 `latest` channel release candidate：
+2026-05-24，本地 source tuple 已发布为 `v0.5.5` 的 `latest` channel release：
 
 - root `package.json` version：`0.5.5`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.5`
 - approval lock：`approvedVersion=0.5.5`、`approvedGitTag=v0.5.5`、`approvedChannel=latest`
-- candidate scope：修复 Windows / non-ASCII target path 下 `migrate-runtime --yes` 复制 `.aw/` 到 `.servo/` 时 Node native copy crash 的问题
-- publish state：尚未发布；registry 事实仍以本页“当前 registry 事实”为准
+- release scope：修复 Windows / non-ASCII target path 下 `migrate-runtime --yes` 复制 `.aw/` 到 `.servo/` 时 Node native copy crash 的问题
+- GitHub Release 是 stable release，target commit `34515def745076f348e13d4725792a40e9785fd3`，publish workflow run `26365685544` 已成功
+- npm `servo-installer@0.5.5` 已发布到 `latest` dist-tag，tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.5.tgz`
 
-注意：`0.5.5` 是 stable release candidate；在发布完成前，默认 `servo-installer` 仍解析到 `latest` 的 `0.5.4`。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.5.5` 是 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.5.5`。当前 npm registry 未设置 `next` dist-tag。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
