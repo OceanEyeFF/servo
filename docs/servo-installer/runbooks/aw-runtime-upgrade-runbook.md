@@ -1,9 +1,9 @@
 ---
 title: "Legacy .aw Runtime Upgrade Runbook"
 status: active
-updated: 2026-05-22
+updated: 2026-05-24
 owner: servo-kernel
-last_verified: 2026-05-22
+last_verified: 2026-05-24
 ---
 # Legacy .aw Runtime Upgrade Runbook
 
@@ -44,6 +44,8 @@ servo-installer migrate-runtime --from aw --to servo --yes
 The command copies `.aw/` to `.servo/` and writes a migration sentinel under `.servo/`. It preserves `.aw/` in place. Cleanup of `.aw/` is a separate operator decision and is not part of this runbook.
 
 Re-running after a successful migration is safe: the sentinel lets the command report `already-migrated` instead of overwriting `.servo/`.
+
+The copy path uses installer-owned recursive file copying rather than Node's native `fs.cpSync`, so Windows target paths containing non-ASCII characters are supported by the installer migration path.
 
 ## Apply Migration And Refresh Installed Skills
 
@@ -106,6 +108,7 @@ The installer test suite verifies the upgrade path using `/tmp` target repositor
 - both `.aw/` and `.servo/` present
 - malformed `.aw` path
 - `.servo/` only
+- Windows / non-ASCII target path copy
 - agents `--reinstall` marker refresh and payload fingerprint convergence
 - update conflict blocks before runtime copy
 - bundle `--reinstall` installs both backend payloads

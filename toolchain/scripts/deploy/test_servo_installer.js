@@ -4409,6 +4409,21 @@ test("migrate-runtime --yes copies .aw to .servo and preserves source", () => {
   }
 });
 
+test("migrate-runtime --yes copies .aw under non-ascii target path", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-迁移-"));
+  try {
+    mkdirSync(join(root, ".aw"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), "runtime\n", "utf8");
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--yes"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /state: migrated/);
+    assert.equal(readFileSync(join(root, ".servo", "control-state.md"), "utf8"), "runtime\n");
+    assert.equal(readFileSync(join(root, ".aw", "control-state.md"), "utf8"), "runtime\n");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("migrate-runtime rerun after successful copy is idempotent", () => {
   const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
   try {

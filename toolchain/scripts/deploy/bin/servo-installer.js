@@ -5,7 +5,7 @@ const {
   chmodSync,
   closeSync,
   constants,
-  cpSync,
+  copyFileSync,
   existsSync,
   fstatSync,
   lstatSync,
@@ -13,11 +13,13 @@ const {
   mkdirSync,
   openSync,
   readFileSync,
+  readlinkSync,
   readdirSync,
   renameSync,
   realpathSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } = require("node:fs");
 const https = require("node:https");
@@ -3415,6 +3417,28 @@ function assertRuntimeSymlinksStayInsideSource(sourcePath) {
   }
 }
 
+function copyRuntimeDirectory(sourcePath, destinationPath) {
+  const sourceStat = lstatSync(sourcePath);
+  if (sourceStat.isSymbolicLink()) {
+    symlinkSync(readlinkSync(sourcePath), destinationPath);
+    return;
+  }
+  if (sourceStat.isDirectory()) {
+    mkdirSync(destinationPath, { mode: sourceStat.mode & 0o777 });
+    for (const entry of readdirSync(sourcePath, { withFileTypes: true })) {
+      copyRuntimeDirectory(join(sourcePath, entry.name), join(destinationPath, entry.name));
+    }
+    chmodSync(destinationPath, sourceStat.mode & 0o777);
+    return;
+  }
+  if (sourceStat.isFile()) {
+    copyFileSync(sourcePath, destinationPath, constants.COPYFILE_EXCL);
+    chmodSync(destinationPath, sourceStat.mode & 0o777);
+    return;
+  }
+  throw new Error(`runtime migration blocked: unsupported runtime entry type: ${sourcePath}`);
+}
+
 function runtimeMigrationSummary(context) {
   validateNotSensitiveRepoRoot(context.targetRepoRoot, "Runtime migration target repo root", "migrated");
   const sourceStat = lstatOrNull(context.sourceRuntimePath);
@@ -3507,12 +3531,7 @@ function applyRuntimeMigration(context) {
     return summary;
   }
   assertRuntimeSymlinksStayInsideSource(context.sourceRuntimePath);
-  cpSync(context.sourceRuntimePath, context.destinationRuntimePath, {
-    recursive: true,
-    errorOnExist: true,
-    force: false,
-    verbatimSymlinks: true,
-  });
+  copyRuntimeDirectory(context.sourceRuntimePath, context.destinationRuntimePath);
   writeFileSync(
     context.sentinelPath,
     `${JSON.stringify({
