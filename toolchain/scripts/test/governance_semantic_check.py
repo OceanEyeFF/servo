@@ -125,6 +125,7 @@ APPEND_REQUEST_CONTRACT_PATHS = [
 PATH_GOVERNANCE_CHECKS_DOC = "docs/project-maintenance/governance/path-governance-checks.md"
 REVIEW_VERIFY_HANDBOOK_DOC = "docs/project-maintenance/governance/review-verify-handbook.md"
 TOOLCHAIN_TEST_README_DOC = "toolchain/scripts/test/README.md"
+PULL_REQUEST_TEMPLATE_PATH = ".github/pull_request_template.md"
 CODEX_HARNESS_MANUAL_RUNBOOK_DOC = (
     "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md"
 )
@@ -518,6 +519,31 @@ def check_required_templates(repo_root: Path, report: SemanticReport) -> None:
     for path in missing:
         report.add_failure(f"missing required governance template: {path}")
     report.add_info(f"checked {len(REQUIRED_TEMPLATE_PATHS)} required governance templates")
+
+
+def check_pull_request_template_release_evidence(repo_root: Path, report: SemanticReport) -> None:
+    template_path = repo_root / PULL_REQUEST_TEMPLATE_PATH
+    if not template_path.exists():
+        report.add_failure(f"missing pull request template: {PULL_REQUEST_TEMPLATE_PATH}")
+        return
+    text = template_path.read_text(encoding="utf-8")
+    required_terms = [
+        "develop-main -> master",
+        "Release PR Evidence",
+        "PR head SHA",
+        "Local release-readiness SHA",
+        "source-version docs freshness",
+        "candidate npm version/tag conflict check",
+        "CI run/job URL",
+        "skipped",
+        "reviewDecision",
+    ]
+    for term in required_terms:
+        if term not in text:
+            report.add_failure(
+                f"pull request template missing release evidence term {term!r}: {PULL_REQUEST_TEMPLATE_PATH}"
+            )
+    report.add_info("checked pull request template release evidence guard")
 
 
 def check_required_handoffs(repo_root: Path, report: SemanticReport) -> None:
@@ -1388,6 +1414,7 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
     report = SemanticReport()
     check_required_templates(repo_root, report)
+    check_pull_request_template_release_evidence(repo_root, report)
     check_required_handoffs(repo_root, report)
     check_foundations_authority_shadows(repo_root, report)
     check_outdated_placeholder_phrases(repo_root, report)

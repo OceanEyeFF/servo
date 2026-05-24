@@ -1,9 +1,9 @@
 ---
 title: "Branch / PR 治理规则"
 status: active
-updated: 2026-05-11
+updated: 2026-05-20
 owner: servo-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-20
 ---
 # Branch / PR 治理规则
 
@@ -36,12 +36,16 @@ Decision time: 2026-04-25
 - `v<package.version>` tag 不存在，npm registry 中 `servo-installer@<package.version>` 不存在
 - RC PR 明确使用 `next` channel；stable PR 明确使用 `latest` channel
 - PR head SHA 与本地 release-readiness 验证所用 SHA 一致
+- PR 正文必须区分本地已跑证据、远端 CI 证据、pending/skipped/not-run 项；未运行或被跳过的检查不得写成 passed
+- source-version docs freshness 已完成或明确说明不适用；若 release channel governance、testing/usage docs 或 root README 仍指向旧 source tuple，PR 必须保持 draft
 
 ## 四、Review 规则
 
-`CODEOWNERS` 生效时至少需要对应 owner review；参考 `docs/project-maintenance/governance/review-verify-handbook.md`。
+`CODEOWNERS` 生效时以远端规则集为准；参考 `docs/project-maintenance/governance/review-verify-handbook.md`。
 
-GitHub 不允许 PR author approve 自己的 PR；repo owner/admin 身份不改变这一点。若 branch protection 要求 review，必须使用另一位有权限的 reviewer，或由 owner/admin 通过明确的 ruleset bypass/merge 操作处理。可以 self-merge 不代表可以 self-approve；两者在 release handoff 中必须分开记录。
+本仓库当前按单人维护模式运行：PR author 不需要等待外部 reviewer 才能合并。GitHub 仍不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin 可在 CI 通过、PR 内容与本地验证证据一致、release tuple 无冲突时直接 self-merge。release PR 的 handoff 需记录已通过检查、PR head SHA、merge commit SHA 和后续 release/tag/publish 动作。
+
+`reviewDecision` 为空不等于审核失败；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
 
 ## 五、CI 最小检查链
 
@@ -49,7 +53,7 @@ PR 阶段必须通过：`folder_logic_check.py` + `path_governance_check.py` + `
 
 ## 六、远端保护规则
 
-必须启用 GitHub Branch Protection Ruleset：仅允许 PR 合并到 protected baseline，必须通过 CI 最小检查链与 `CODEOWNERS` review，不允许 force push 与删除。规则集匹配 `origin/HEAD` 当前 baseline（当前为 `master`）；`origin/HEAD` 迁移时同步更新 ruleset、Worktrack `baseline_branch` 与本文 `last_verified`。
+必须启用 GitHub Branch Protection Ruleset：仅允许 PR 合并到 protected baseline，必须通过 CI 最小检查链，不允许 force push 与删除。单人维护模式下不要求 CODEOWNERS 外部 review；规则集匹配 `origin/HEAD` 当前 baseline（当前为 `master`）；`origin/HEAD` 迁移时同步更新 ruleset、Worktrack `baseline_branch` 与本文 `last_verified`。
 
 ## 七、本地 pre-push hook
 
@@ -64,7 +68,7 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 
 - 若需跳过上述检查，须在 PR 中说明原因并获得显式批准。
 - 禁止为"过关"降低检查标准或替换证据。
-- release PR 若使用 owner/admin bypass 合并，PR 评论或 release handoff 必须记录：bypass 原因、已通过检查、review 不可用原因、后续发布是否继续。
+- release PR 若使用 owner/admin self-merge 或 ruleset bypass，PR 评论或 release handoff 必须记录：已通过检查、PR head SHA、merge commit SHA、后续发布是否继续；只有绕过失败检查时才需要额外记录 bypass 原因。
 
 ## 九、发布后分支同步
 

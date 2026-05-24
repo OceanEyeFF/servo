@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-05-06
+updated: 2026-05-20
 owner: servo-kernel
-last_verified: 2026-05-06
+last_verified: 2026-05-20
 ---
 # npx Command Test Execution
 
@@ -21,6 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
+- last_registry_smoke: 2026-05-20 `servo-installer@next` (`0.5.2-rc.3`) passed with `--skip-remote`
 
 ## Boundary
 
@@ -57,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
+
+2026-05-20 post-publish verification for `servo-installer@next` passed in `--skip-remote` mode after `0.5.2-rc.3` publication. Evidence was kept in a temporary smoke directory and only the selector/version outcome is retained here as long-term fact.
 
 ## Local Package Smoke
 

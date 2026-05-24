@@ -24,6 +24,7 @@ from governance_semantic_check import (
     check_manual_runbook_agents_skill_count,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
+    check_pull_request_template_release_evidence,
     check_repo_python_commands_are_bytecode_free,
     check_repo_whats_next_overview_fallback_contract,
     check_retired_entrypoint_references,
@@ -80,6 +81,35 @@ def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
     check_required_handoffs(tmp_path, report)
 
     assert any("toolchain-layering.md -> toolchain/scripts/README.md" in item for item in report.failures)
+
+
+def test_check_pull_request_template_release_evidence_flags_missing_terms(tmp_path: Path) -> None:
+    write_doc(tmp_path / ".github/pull_request_template.md", "## Verification\n")
+
+    report = SemanticReport()
+    check_pull_request_template_release_evidence(tmp_path, report)
+
+    assert any("Release PR Evidence" in item for item in report.failures)
+
+
+def test_check_pull_request_template_release_evidence_accepts_guard_terms(tmp_path: Path) -> None:
+    write_doc(
+        tmp_path / ".github/pull_request_template.md",
+        "develop-main -> master\n"
+        "## Release PR Evidence\n"
+        "- PR head SHA:\n"
+        "- Local release-readiness SHA:\n"
+        "- source-version docs freshness:\n"
+        "- candidate npm version/tag conflict check:\n"
+        "- CI run/job URL:\n"
+        "- skipped checks:\n"
+        "- reviewDecision:\n",
+    )
+
+    report = SemanticReport()
+    check_pull_request_template_release_evidence(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_foundations_authority_shadows_flags_prefixed_duplicate(tmp_path: Path) -> None:
@@ -1068,7 +1098,7 @@ def _write_runtime_artifacts(
     )
 
 
-def test_check_runtime_artifact_consistency_noops_without_aw(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_noops_without_servo(tmp_path: Path) -> None:
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
