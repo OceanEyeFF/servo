@@ -1,9 +1,9 @@
 ---
 title: ".aw Runtime Upgrade Contract"
 status: active
-updated: 2026-05-22
+updated: 2026-05-24
 owner: servo-kernel
-last_verified: 2026-05-22
+last_verified: 2026-05-24
 ---
 # .aw Runtime Upgrade Contract
 
@@ -90,6 +90,7 @@ Required behavior:
 - if backup is used, place it under a clearly named path outside active `.servo/`
 - preserve file content and relative paths as faithfully as the local filesystem permits
 - preserve normal file modes where supported by the platform
+- avoid platform-native bulk copy APIs that are known to crash on supported target paths; the installer copy implementation must handle Windows paths containing non-ASCII characters
 - copy symlinks only when they remain inside the source runtime tree after resolution; otherwise block with a recovery hint
 - fail before partial overwrite when `.servo/` already exists
 - if a partial copy fails, report both source and destination state and leave recovery guidance
@@ -176,6 +177,7 @@ The implementation worktracks must include `/tmp` target repository smoke tests 
 - dry-run reports planned actions without mutation
 - successful migration is idempotent
 - failed copy exposes recovery guidance
+- Windows / non-ASCII target path migration succeeds without relying on `fs.cpSync`
 - reinstall/update refreshes managed skill markers and payload fingerprints through the existing installer path
 
 Current verified test coverage also includes update preflight blocking before runtime copy and bundle reinstall installing both backend payloads.

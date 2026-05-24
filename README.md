@@ -1,13 +1,15 @@
 ---
 title: "AutoWorkflow"
 status: active
-updated: 2026-05-07
+updated: 2026-05-24
 owner: servo-kernel
-last_verified: 2026-05-07
+last_verified: 2026-05-24
 ---
 # AutoWorkflow
 
 > 一个 Codex-first 的 AI coding harness 平台，通过 repo-side contract layer 实现可控的 AI 编程工作流。
+
+本项目由作者与 AI coding agents 协作推进：主要协作伙伴是 GPT/Codex，DeepSeek 也参与部分分析、实现和验证工作。
 
 ## 安装 Skills
 
