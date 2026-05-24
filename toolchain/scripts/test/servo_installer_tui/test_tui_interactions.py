@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import errno
 import os
+import re
 import select
 import shutil
 import subprocess
@@ -60,6 +61,7 @@ def run_tui_script(
         slave_fd = -1
 
         step_index = 0
+        normalized_output = ""
         search_pos = 0
         deadline = time.monotonic() + timeout_seconds
         while time.monotonic() < deadline:
@@ -76,9 +78,10 @@ def run_tui_script(
                 output_parts.append(chunk.decode("utf-8", errors="replace"))
 
             output = "".join(output_parts)
+            normalized_output = strip_ansi(output)
             while step_index < len(steps):
                 pattern, response = steps[step_index]
-                match_index = output.find(pattern, search_pos)
+                match_index = normalized_output.find(pattern, search_pos)
                 if match_index == -1:
                     break
                 search_pos = match_index + len(pattern)
@@ -86,7 +89,7 @@ def run_tui_script(
                     if response.startswith("raw:"):
                         encoded_response = response.removeprefix("raw:")
                     else:
-                        encoded_response = response.replace("\n", "\r")
+                        encoded_response = response
                     os.write(master_fd, encoded_response.encode("utf-8"))
                 step_index += 1
 
@@ -96,7 +99,7 @@ def run_tui_script(
         if process.poll() is None:
             process.kill()
             process.wait(timeout=5)
-            pytest.fail("timed out waiting for servo-installer tui; output so far:\n" + "".join(output_parts))
+            pytest.fail("timed out waiting for servo-installer tui; output so far:\n" + strip_ansi("".join(output_parts)))
 
         while True:
             ready, _, _ = select.select([master_fd], [], [], 0)
@@ -112,7 +115,7 @@ def run_tui_script(
                 break
             output_parts.append(chunk.decode("utf-8", errors="replace"))
 
-        return process.returncode or 0, "".join(output_parts)
+        return process.returncode or 0, strip_ansi("".join(output_parts))
     finally:
         if process is not None and process.poll() is None:
             process.kill()
@@ -120,6 +123,13 @@ def run_tui_script(
         if slave_fd != -1:
             os.close(slave_fd)
         os.close(master_fd)
+
+
+ANSI_ESCAPE_RE = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def strip_ansi(output: str) -> str:
+    return ANSI_ESCAPE_RE.sub("", output)
 
 
 def fake_failing_python_bin(tmp_path: Path) -> Path:
@@ -138,11 +148,11 @@ def fake_failing_python_bin(tmp_path: Path) -> Path:
 
 
 def choose_menu_steps(index: int) -> list[tuple[str, str]]:
-    return [("↑↓ navigate", "\x1b[B") for _ in range(index)] + [("↑↓ navigate", "\n")]
+    return [("↑↓ navigate", "raw:\x1b[B") for _ in range(index)] + [("↑↓ navigate", "raw:\r")]
 
 
 def quit_menu_step() -> tuple[str, str]:
-    return ("↑↓ navigate", "q")
+    return ("↑↓ navigate", "raw:q")
 
 
 def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: Path) -> None:
@@ -234,7 +244,7 @@ def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Pa
             *choose_menu_steps(0),
             ("Press Enter to return to the installer menu", "\n"),
             ("No pre-existing paths", "\n"),
-            ("Type yes to proceed", "raw:no\n\r"),
+            ("Type yes to proceed", "no\n"),
             quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -259,7 +269,7 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
             *choose_menu_steps(0),
             ("Press Enter to return to the installer menu", "\n"),
             ("No pre-existing paths", "\n"),
-            ("Type yes to proceed", "raw:yes\n\r"),
+            ("Type yes to proceed", "yes\n"),
             ("Install complete for bundle", "\n"),
             ("Verification passed", "\n"),
             ("All stages completed successfully", "\n"),
@@ -282,8 +292,8 @@ def test_tui_unknown_key_stays_on_menu_then_quits(repo_root: Path, tmp_path: Pat
         repo_root,
         tmp_path / "unknown-target",
         [
-            ("↑↓ navigate", "x"),
-            ("↑↓ navigate", "q"),
+            ("↑↓ navigate", "raw:x"),
+            ("↑↓ navigate", "raw:q"),
         ],
     )
 
@@ -292,11 +302,11 @@ def test_tui_unknown_key_stays_on_menu_then_quits(repo_root: Path, tmp_path: Pat
 
 
 def test_tui_exit_choice_quits(repo_root: Path, tmp_path: Path) -> None:
-    exit_text = "q\n"
+    exit_text = "q"
     code, output = run_tui_script(
         repo_root,
         tmp_path / f"exit-target-{exit_text.strip()}",
-        [("↑↓ navigate", exit_text)],
+        [("↑↓ navigate", f"raw:{exit_text}")],
     )
 
     assert code == 0, output

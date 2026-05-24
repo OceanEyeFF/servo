@@ -173,6 +173,11 @@ const STATUS_LINES = 7;
 // terminal mode integration. Returns selected index (0-based), or -1 on cancel.
 let _keypressSetup = false;
 let suppressMenuReturnUntil = 0;
+function setTuiRawMode(enabled) {
+  if (ttyIn && typeof process.stdin.setRawMode === "function") {
+    process.stdin.setRawMode(enabled);
+  }
+}
 function _ensureKeypress() {
   if (!_keypressSetup && ttyIn) {
     readline.emitKeypressEvents(process.stdin);
@@ -207,8 +212,8 @@ async function interactiveSelect(rl, options, prompt_) {
   }
 
   // TTY: keypress-based arrow-key selection
-  // Raw mode is managed by runTui() lifecycle — do NOT toggle here.
   _ensureKeypress();
+  setTuiRawMode(true);
   let selected = 0;
   const promptStr = prompt_ || "";
 
@@ -4321,7 +4326,10 @@ async function runNodeOwned(args) {
 
 function question(rl, prompt) {
   return new Promise((resolve) => {
-    rl.question(prompt, resolve);
+    setTuiRawMode(false);
+    rl.question(prompt, (answer) => {
+      resolve(answer);
+    });
   });
 }
 
