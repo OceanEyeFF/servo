@@ -1,4 +1,4 @@
-name: Publish aw-installer
+name: Publish servo-installer
 
 on:
   release:
@@ -9,7 +9,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: aw-installer-publish-${{ github.event.release.tag_name }}
+  group: servo-installer-publish-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
@@ -90,20 +90,20 @@ jobs:
       - name: Deploy package unit tests
         run: npm --prefix toolchain/scripts/deploy test --silent
 
-      - name: Root aw-installer package pack dry-run
+      - name: Root servo-installer package pack dry-run
         run: npm pack --dry-run --json
 
-      - name: Root aw-installer publish dry-run
+      - name: Root servo-installer publish dry-run
         run: npm run publish:dry-run --silent
 
       - name: Real publish guard
         env:
-          AW_INSTALLER_PUBLISH_APPROVED: "1"
+          SERVO_INSTALLER_PUBLISH_APPROVED: "1"
           CI: "true"
         run: npm_config_tag="$NPM_CONFIG_TAG" node toolchain/scripts/deploy/bin/check-root-publish.js
 
       - name: Publish to npm
         env:
-          AW_INSTALLER_PUBLISH_APPROVED: "1"
+          SERVO_INSTALLER_PUBLISH_APPROVED: "1"
           CI: "true"
-        run: npm publish --provenance --access public --tag "$AW_INSTALLER_RELEASE_CHANNEL"
+        run: npm publish --provenance --access public --tag "$SERVO_INSTALLER_RELEASE_CHANNEL"

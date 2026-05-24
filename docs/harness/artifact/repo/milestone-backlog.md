@@ -2,18 +2,18 @@
 title: "Milestone Backlog"
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 
 # Milestone Backlog
 
-> `.aw/repo/milestone-backlog.md` 是 `RepoScope` 运行时 artifact，记录 Milestone Pipeline 中所有 milestone 的状态。不是部署模板。由 `init-milestone-skill` 创建条目，`harness-skill` 执行状态转移，`milestone-status-skill` 和 `repo-whats-next-skill` 作为 pipeline 推理输入。
+> `.servo/repo/milestone-backlog.md` 是 `RepoScope` 运行时 artifact，记录 Milestone Pipeline 中所有 milestone 的状态。不是部署模板。由 `init-milestone-skill` 创建条目，`harness-skill` 执行状态转移，`milestone-status-skill` 和 `repo-whats-next-skill` 作为 pipeline 推理输入。
 
 ## 定位
 
 - Scope: `RepoScope`
-- 性质: 运行时 artifact（非 git 追溯，`.aw/` 被 gitignore）
+- 性质: 运行时 artifact（非 git 追溯，`.servo/` 被 gitignore）
 - 产生时机: 首个 milestone 创建时由 `init-milestone-skill` 创建
 - 更新时机: milestone 创建/状态转移/关闭时写入（upsert-by-milestone_id）
 - 消费方: `repo-status-skill`（pipeline 快照）、`milestone-status-skill`（pipeline 上下文）、`repo-whats-next-skill`（milestone-first 推理）

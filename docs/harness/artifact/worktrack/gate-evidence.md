@@ -2,7 +2,7 @@
 title: "Gate Evidence"
 status: active
 updated: 2026-05-13
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-06
 ---
 # Gate Evidence

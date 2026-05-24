@@ -2,7 +2,7 @@
 title: "初始化 Harness：空项目（Greenfield）"
 status: active
 updated: 2026-05-07
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-07
 ---
 
@@ -20,13 +20,13 @@ last_verified: 2026-05-07
 
 ```bash
 # 只读诊断
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 
 # 安装
-npx aw-installer install --backend agents
+npx servo-installer install --backend agents
 
 # 验证
-npx aw-installer verify --backend agents
+npx servo-installer verify --backend agents
 ```
 
 ## 二、设置项目目标
@@ -41,7 +41,7 @@ $set-harness-goal-skill 当前空仓库期望最终实现一个 [目标描述]�
 
 > 构建 RESTful API 服务，使用 Express + TypeScript，支持用户注册登录和资源 CRUD。数据库使用 PostgreSQL。第一轮只做用户模块。不接入第三方 OAuth，不做前端。
 
-设定目标后，Harness 创建 `.aw/goal-charter.md`，包含项目愿景、核心目标、技术方向和工程节点映射。
+设定目标后，Harness 创建 `.servo/goal-charter.md`，包含项目愿景、核心目标、技术方向和工程节点映射。
 
 ## 三、启动第一个 Worktrack
 

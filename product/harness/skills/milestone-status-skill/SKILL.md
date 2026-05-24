@@ -15,12 +15,12 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 它的主要观测依据是 Milestone 级产物和工作追踪边界证据：
 
-- 当前活跃 Milestone artifact（`.aw/milestone/{milestone_id}.md`）
-- Worktrack backlog（`.aw/repo/worktrack-backlog.md`）
-- Gate evidence（`.aw/worktrack/gate-evidence.md`）
-- Repo snapshot（`.aw/repo/snapshot-status.md`）
+- 当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）
+- Worktrack backlog（`.servo/repo/worktrack-backlog.md`）
+- Gate evidence（`.servo/worktrack/gate-evidence.md`）
+- Repo snapshot（`.servo/repo/snapshot-status.md`）
 
-本技能对 `.aw/worktrack/*` 的唯一合法行为是读取为边界证据；更新或重写 `.aw/worktrack/*` 的行为必须标记为超出本技能权限。本技能不对 Milestone artifact 执行写入操作 —— 进度计数器的更新应由上游调用方（如 harness-skill）在收到本技能输出后决策执行。
+本技能对 `.servo/worktrack/*` 的唯一合法行为是读取为边界证据；更新或重写 `.servo/worktrack/*` 的行为必须标记为超出本技能权限。本技能不对 Milestone artifact 执行写入操作 —— 进度计数器的更新应由上游调用方（如 harness-skill）在收到本技能输出后决策执行。
 
 ## 何时使用
 
@@ -37,10 +37,10 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 1. 确认这是一轮 Milestone 状态分析轮次，不是工作追踪分派、下一步决策或直接执行。
 2. 识别当前活跃 Milestone：从 Harness 控制状态或 repo snapshot 中获取当前 active milestone_id。
-3. 读取 Milestone artifact（`.aw/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
-4. 读取 worktrack backlog（`.aw/repo/worktrack-backlog.md`）：若文件不存在（首个 worktrack 尚未 closeout），视为空 backlog（completed/blocked/deferred 均为 0），`total` 仍取自 Milestone artifact 的 `worktrack_list` 长度，继续正常分析，不触发停止条件。若文件存在但无法按 Worktrack Backlog 合同解析为包含 `worktrack_id` 与 `status` 的条目，或出现无法归一化的状态值、损坏 frontmatter / markdown 结构、同一条目缺少必需字段等 present-but-damaged / unparseable 情况，必须命中正式停止条件，不得把损坏 backlog 当成空 backlog，也不得用部分解析结果继续计算。若文件存在且可解析，按以下规则处理：backlog 存储的状态值为 `done / deferred / blocked / resolved`，读取时须做归一化映射：`done → completed`、`resolved → completed`、`blocked → blocked`、`deferred → deferred`。映射后按 `worktrack_id` 去重（保留最新条目），以 `completed / blocked / deferred` 三类参与 progress 计算。
-5. 读取 gate evidence：先读取 Milestone artifact 的 `aggregated_evidence` 引用列表（包含各 worktrack 的 evidence 路径以及可选的 milestone gate evidence 路径），逐条读取；若 `aggregated_evidence` 为空，回退读取 `.aw/worktrack/gate-evidence.md` 获取最近关闭 worktrack 的 evidence 记录。聚合所有 evidence 后参与 `Milestone Gate` 和 `purpose_achieved` 判定。
-6. 读取 repo snapshot（`.aw/repo/snapshot-status.md`），获取当前 repo 基准状态和治理信号。
+3. 读取 Milestone artifact（`.servo/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
+4. 读取 worktrack backlog（`.servo/repo/worktrack-backlog.md`）：若文件不存在（首个 worktrack 尚未 closeout），视为空 backlog（completed/blocked/deferred 均为 0），`total` 仍取自 Milestone artifact 的 `worktrack_list` 长度，继续正常分析，不触发停止条件。若文件存在但无法按 Worktrack Backlog 合同解析为包含 `worktrack_id` 与 `status` 的条目，或出现无法归一化的状态值、损坏 frontmatter / markdown 结构、同一条目缺少必需字段等 present-but-damaged / unparseable 情况，必须命中正式停止条件，不得把损坏 backlog 当成空 backlog，也不得用部分解析结果继续计算。若文件存在且可解析，按以下规则处理：backlog 存储的状态值为 `done / deferred / blocked / resolved`，读取时须做归一化映射：`done → completed`、`resolved → completed`、`blocked → blocked`、`deferred → deferred`。映射后按 `worktrack_id` 去重（保留最新条目），以 `completed / blocked / deferred` 三类参与 progress 计算。
+5. 读取 gate evidence：先读取 Milestone artifact 的 `aggregated_evidence` 引用列表（包含各 worktrack 的 evidence 路径以及可选的 milestone gate evidence 路径），逐条读取；若 `aggregated_evidence` 为空，回退读取 `.servo/worktrack/gate-evidence.md` 获取最近关闭 worktrack 的 evidence 记录。聚合所有 evidence 后参与 `Milestone Gate` 和 `purpose_achieved` 判定。
+6. 读取 repo snapshot（`.servo/repo/snapshot-status.md`），获取当前 repo 基准状态和治理信号。
 7. 检查前置 Milestone 依赖：若 `depends_on_milestones` 非空，验证前置 Milestone 是否已完成。
 8. 计算 Milestone 进度计数器：
    - 遍历 `worktrack_list`，对照 backlog 统计 total / completed / blocked / deferred 数量
@@ -105,7 +105,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - 顶层字段：`schema_version` 固定为 `milestone-input-checkpoint/v1`，并包含 `active_milestone_id`、`milestone_artifact`、`worktrack_backlog`、`gate_evidence`、`repo_snapshot`。
 - `milestone_artifact` 输入字段：artifact path、`milestone_id`、`status`、`worktrack_list`（保持 Milestone 声明顺序）、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`depends_on_milestones`、`aggregated_evidence`。不得纳入由本技能或上游刷新产生的 `progress_counter`、前次 `milestone_input_checkpoint` 或分析时间戳。
 - `worktrack_backlog` 输入字段：backlog path、`state`（`missing` / `present`）、以及按 `worktrack_id` 字典序排列的最新有效条目。文件缺失时写入 `state: missing` 与空 entries；文件存在时必须先完成解析、状态归一化和按 `worktrack_id` 去重，条目字段至少包括 `worktrack_id`、归一化后的 `status`（completed / blocked / deferred）、`node_type`、`scope`、`merge_commit`、`validation`、`intake_route`。backlog 存在但损坏或不可解析时不得生成 partial checkpoint，必须停止并返回 `proceed_blockers`。
-- `gate_evidence` 输入字段：使用 Milestone artifact 的 `aggregated_evidence` 路径列表；若该列表为空，使用 `.aw/worktrack/gate-evidence.md` fallback。证据路径按 repo-relative POSIX path 字典序排列；每个 evidence 只纳入影响 `Milestone Gate` 或 `purpose_achieved` 的关键字段，包括 `worktrack_id`（如有）、`verdict`、review/validation/policy 维度结论、black-box/white-box 集成结论、anti-cheat 结论、absorbed issues、freshness / missing 状态和后续动作摘要。
+- `gate_evidence` 输入字段：使用 Milestone artifact 的 `aggregated_evidence` 路径列表；若该列表为空，使用 `.servo/worktrack/gate-evidence.md` fallback。证据路径按 repo-relative POSIX path 字典序排列；每个 evidence 只纳入影响 `Milestone Gate` 或 `purpose_achieved` 的关键字段，包括 `worktrack_id`（如有）、`verdict`、review/validation/policy 维度结论、black-box/white-box 集成结论、anti-cheat 结论、absorbed issues、freshness / missing 状态和后续动作摘要。
 - `repo_snapshot` 输入字段：snapshot path、`baseline_branch`、`last_verified_checkpoint`、`checkpoint_type`、`checkpoint_ref`、当前 active milestone 指针（如有）、治理状态、已知问题与风险标识。不得纳入纯展示性更新时间、文件 mtime 或本轮分析时间。
 - Markdown 解析规范：从 frontmatter、表格、列表和 keyed lines 中提取字段时，字段名应先规范化为小写 snake_case；字符串 trim 首尾空白；列表中本来有业务顺序的字段保持原顺序，其余 map/object 键排序；缺失可选字段用 `null`，不得省略同一 schema 下的键。
 - 重算时机：每次 RepoScope.Observe 至少重新计算该输入指纹；若已存 `milestone_input_checkpoint` 与新指纹一致，且 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 一致，才允许跳过 progress counter 和 purpose evidence 的完整重算。任一输入源的存在状态、路径集合、上述纳入字段、active milestone、schema_version 或 stored checkpoint 变化时，都必须完整重算并返回新的 checkpoint。
@@ -120,7 +120,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - Milestone 是 RepoScope 下的聚合观测变量，不是第三 Scope：不得创建独立 Scope、不得创建独立状态转移路径。
 - `developer_decisions_needed` 中的项目不得由本技能自动判定；它们必须作为显式边界交还给 developer。
 - 如果 `depends_on_milestones` 中的前置 Milestone 未完成，必须标记为 blocked 并在 `developer_decisions_needed` 中列出是否跳过前置依赖的决策。
-- 仅当 `milestone_input_checkpoint` 已存在且与当前输入指纹一致、同时 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 一致时，才可跳过 progress counter 重算。仅 git HEAD 一致不足以跳过（`.aw/` 下运行时 artifact 不受 git 追溯）；backlog present-but-damaged / unparseable 时不得产出 partial checkpoint。
+- 仅当 `milestone_input_checkpoint` 已存在且与当前输入指纹一致、同时 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 一致时，才可跳过 progress counter 重算。仅 git HEAD 一致不足以跳过（`.servo/` 下运行时 artifact 不受 git 追溯）；backlog present-but-damaged / unparseable 时不得产出 partial checkpoint。
 - `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct` 任一发生变化，必须触发完整 milestone 重新评估；不得沿用旧的 `purpose_achieved`、`milestone_gate_verdict` 或 `milestone_input_checkpoint` 直接放行。
 - 仅追加 worktrack 且 programmer 已确认其归属当前 milestone 时，可不因 append 动作本身触发 milestone 重新评估；但若 append 同时修改 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct`，仍必须重新评估。
 
@@ -180,7 +180,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 资源
 
-使用当前活跃 Milestone artifact（`.aw/milestone/{milestone_id}.md`）、当前 worktrack backlog（`.aw/repo/worktrack-backlog.md`）、gate evidence（`.aw/worktrack/gate-evidence.md`）和 repo snapshot（`.aw/repo/snapshot-status.md`）作为主要输入。只有当工作追踪本地产物会实质影响 Milestone 进度计数或目的达成判定时才读取额外的 worktrack 细节文件；仅允许将它们作为辅助边界证据使用，禁止将它们当作 Milestone 真相的替代品。
+使用当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）、当前 worktrack backlog（`.servo/repo/worktrack-backlog.md`）、gate evidence（`.servo/worktrack/gate-evidence.md`）和 repo snapshot（`.servo/repo/snapshot-status.md`）作为主要输入。只有当工作追踪本地产物会实质影响 Milestone 进度计数或目的达成判定时才读取额外的 worktrack 细节文件；仅允许将它们作为辅助边界证据使用，禁止将它们当作 Milestone 真相的替代品。
 
 结果应保持聚焦于 Milestone 级别的聚合分析，而不是扩张成单个 worktrack 的逐条审查或下一 worktrack 的选择规划。输出应可直接作为 `RepoScope.Decide` 和 `harness-skill` continuous execution 流程中的 handback 判断依据。
 
@@ -213,14 +213,14 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 本技能不直接写入 milestone artifact 或 control-state。产出中包含 `writeback_instructions` 对象，`harness-skill` 在收到本技能输出后**必须**按指令执行以下写回：
 
-- **Milestone Artifact**（`.aw/milestone/{milestone_id}.md`）：
+- **Milestone Artifact**（`.servo/milestone/{milestone_id}.md`）：
   - 将 `progress_counter` 更新为本技能计算的当前值
   - 仅当 `milestone_acceptance_verdict == "achieved"` 且 `milestone_gate_verdict == "pass"` 时：将 `status` 更新为 `completed`
   - 更新 `updated` 时间戳
-- **Control State**（`.aw/control-state.md`）：
+- **Control State**（`.servo/control-state.md`）：
   - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
   - 更新 `milestone_status`（若发生变化）
-- **Milestone Backlog**（`.aw/repo/milestone-backlog.md`）：
+- **Milestone Backlog**（`.servo/repo/milestone-backlog.md`）：
   - 按 milestone_id upsert，更新 status 和 updated
 - **Pipeline Advancement**（仅在 `milestone_acceptance_verdict == "achieved"` 时）：
   - 读取本技能输出的 `pipeline_advancement`

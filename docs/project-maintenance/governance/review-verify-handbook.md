@@ -2,7 +2,7 @@
 title: "Review / Verify 治理入口"
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 # Review / Verify 治理入口
@@ -39,7 +39,7 @@ last_verified: 2026-05-20
 - release PR 正文只能声明实际运行且有本地输出或 CI run/job URL 支撑的验证结果；被 CI 跳过、尚未运行或只计划运行的检查必须标成 pending/not-run，不能写成 passed
 - 退役/删除文档域需同步入口页、旧路径引用和治理检查
 - SKILL.md 变更需保持最小 executable body；已退役 references 需同步清理
-- product/.aw_template/ 变更只承接 scaffold 模板，不生长 canonical truth 或运行状态
+- product/.servo_template/ 变更只承接 scaffold 模板，不生长 canonical truth 或运行状态
 - docs/harness/workflow-families/ 变更需明确文档真相层定位，对 product/harness/ 只能当下游 executable root
 
 ### 3. 验证结果
@@ -51,8 +51,8 @@ last_verified: 2026-05-20
 - 默认阅读路径或 route contract 变更：`path_governance_check.py` + `governance_semantic_check.py`，确认 `AGENTS.md` 未恢复成固定长 Read First 清单
 - skills/templates 分层规则变更：`path_governance_check.py` + `governance_semantic_check.py`
 - branch/PR/baseline 或 hook 变更：`git symbolic-ref` + `bash -n pre-push` + dry-run
-- `.aw_template`/`.aw/` scaffold 变更：`path_governance_check.py` + `governance_semantic_check.py`
-- closeout/gate/backfill 变更：`closeout_acceptance_gate.py --json` + 对应最小 pytest；closeout 按 `scope_gate -> spec_gate -> static_gate -> cache_gate -> test_gate -> smoke_gate` 收口；`cache_gate` 扫描 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存；`scope_gate` 允许 root `README.md` 与 `product/.aw_template/`；`test_gate` 运行 closeout/folder/path/semantic/adapter 回归 + deploy package Node unit tests + npm packlist + publish dry-run + tarball smoke
+- `.servo_template`/`.servo/` scaffold 变更：`path_governance_check.py` + `governance_semantic_check.py`
+- closeout/gate/backfill 变更：`closeout_acceptance_gate.py --json` + 对应最小 pytest；closeout 按 `scope_gate -> spec_gate -> static_gate -> cache_gate -> test_gate -> smoke_gate` 收口；`cache_gate` 扫描 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存；`scope_gate` 允许 root `README.md` 与 `product/.servo_template/`；`test_gate` 运行 closeout/folder/path/semantic/adapter 回归 + deploy package Node unit tests + npm packlist + publish dry-run + tarball smoke
 - deploy mapping/payload contract 变更：`test_agents_adapter_contract.py`；改 gate 链路再补 `closeout_acceptance_gate.py --json`
 - adapter/deploy 变更：`test_agents_adapter_contract.py` + npm test + smoke + 双端 `npm pack --dry-run --json` + publish dry-run + tarball 全命令 smoke（diagnose/update/install/verify）+ 隔离 target repo full smoke
 - Harness runtime 观察或 operator-facing runbook 变更：先跑对应 deploy/adapter 最小验证，再按 [Codex Post-Deploy Behavior Tests](../testing/codex-post-deploy-behavior-tests.md) 做真实观察（不用 mock smoke 替代）
@@ -77,6 +77,6 @@ docs restructuring closeout 必须记录 reader-coherence evidence，至少说�
 
 - [AGENTS.md](../../../AGENTS.md)
 - [路径与文档治理检查运行说明](./path-governance-checks.md)
-- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
-- [Skill Deployment 维护流](../../aw-installer/runbooks/skill-deployment-maintenance.md)
+- [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
+- [Skill Deployment 维护流](../../servo-installer/runbooks/skill-deployment-maintenance.md)
 - [Branch / PR 治理规则](./branch-pr-governance.md)

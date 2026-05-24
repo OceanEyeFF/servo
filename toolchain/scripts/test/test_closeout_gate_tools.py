@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import closeout_acceptance_gate
-from scope_gate_check import check_scope, normalize_status_path
+from scope_gate_check import ChangedFile, check_scope, normalize_status_path
 from gate_status_backfill import update_state
 
 
@@ -39,7 +39,7 @@ def test_npm_pack_tarball_result_script_resolves_single_pack_result(tmp_path: Pa
         pytest.skip("node is not available")
     pack_json = tmp_path / "pack.json"
     pack_json.write_text(
-        json.dumps([{"filename": "aw-installer-0.0.0.tgz"}]),
+        json.dumps([{"filename": "servo-installer-0.0.0.tgz"}]),
         encoding="utf-8",
     )
     script = Path(__file__).resolve().parent / "npm_pack_tarball_result.js"
@@ -52,11 +52,11 @@ def test_npm_pack_tarball_result_script_resolves_single_pack_result(tmp_path: Pa
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert completed.stdout == f"{tmp_path / 'aw-installer-0.0.0.tgz'}\n"
+    assert completed.stdout == f"{tmp_path / 'servo-installer-0.0.0.tgz'}\n"
 
 
 def test_successful_npm_command_result_fails_unknown_npm_commands() -> None:
-    result = successful_npm_command_result(["npm", "exec", "--", "aw-installer", "unknown"])
+    result = successful_npm_command_result(["npm", "exec", "--", "servo-installer", "unknown"])
 
     assert result is not None
     assert result["passed"] is False
@@ -64,7 +64,7 @@ def test_successful_npm_command_result_fails_unknown_npm_commands() -> None:
 
 
 NPM_HELP_STDOUT = (
-    "usage: aw-installer [tui|<deploy-mode>] [options]\n"
+    "usage: servo-installer [tui|<deploy-mode>] [options]\n"
     "Node.js distribution\n"
     "tui\n"
     "diagnose --backend agents|claude\n"
@@ -77,13 +77,13 @@ NPM_HELP_STDOUT = (
 NPM_VERSION = json.loads((closeout_acceptance_gate.REPO_ROOT / "package.json").read_text(encoding="utf-8"))[
     "version"
 ]
-NPM_VERSION_STDOUT = f"aw-installer {NPM_VERSION}\n"
+NPM_VERSION_STDOUT = f"servo-installer {NPM_VERSION}\n"
 CLAUDE_SKILL_DIR_NAMES = closeout_acceptance_gate.CLAUDE_REQUIRED_PAYLOAD_SKILLS
 
 
 def write_root_package_json(repo_root: Path, version: str = NPM_VERSION) -> None:
     (repo_root / "package.json").write_text(
-        json.dumps({"name": "aw-installer", "version": version}),
+        json.dumps({"name": "servo-installer", "version": version}),
         encoding="utf-8",
     )
 
@@ -92,12 +92,12 @@ def write_deploy_package_json(repo_root: Path, version: str = NPM_VERSION) -> No
     package_path = repo_root / "toolchain" / "scripts" / "deploy" / "package.json"
     package_path.parent.mkdir(parents=True, exist_ok=True)
     package_path.write_text(
-        json.dumps({"name": "aw-installer", "version": version}),
+        json.dumps({"name": "servo-installer", "version": version}),
         encoding="utf-8",
     )
 
 
-def npm_pack_stdout(paths: set[str] | None = None, filename: str = f"aw-installer-{NPM_VERSION}.tgz") -> str:
+def npm_pack_stdout(paths: set[str] | None = None, filename: str = f"servo-installer-{NPM_VERSION}.tgz") -> str:
     if paths is None:
         paths = closeout_acceptance_gate.EXPECTED_NPM_PACKAGE_FILES
     return json.dumps(
@@ -123,7 +123,7 @@ def successful_npm_command_result(
     def npm_exec_target_root(backend: str | None = None) -> Path:
         current_backend = backend or npm_exec_backend()
         target_repo = (
-            extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+            extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
             if extra_env is not None
             else None
         )
@@ -141,7 +141,7 @@ def successful_npm_command_result(
             ]
         if current_backend == "claude":
             return [npm_exec_target_root("claude") / skill_name for skill_name in CLAUDE_SKILL_DIR_NAMES]
-        return [npm_exec_target_root("agents") / "aw-harness-skill"]
+        return [npm_exec_target_root("agents") / "servo-harness-skill"]
 
     if command[:4] == ["npm", "pack", "--dry-run", "--json"]:
         packed_paths = (
@@ -162,9 +162,9 @@ def successful_npm_command_result(
             "returncode": 0,
             "stdout": json.dumps(
                 {
-                    "name": "aw-installer",
+                    "name": "servo-installer",
                     "version": NPM_VERSION,
-                    "filename": f"aw-installer-{NPM_VERSION}.tgz",
+                    "filename": f"servo-installer-{NPM_VERSION}.tgz",
                     "files": [
                         {"path": path}
                         for path in sorted(closeout_acceptance_gate.ROOT_NPM_REQUIRED_PACKAGE_FILES)
@@ -188,7 +188,7 @@ def successful_npm_command_result(
     if command[:3] == ["npm", "pack", "--json"] and "--pack-destination" in command:
         package_dir = Path(command[command.index("--pack-destination") + 1])
         package_dir.mkdir(parents=True, exist_ok=True)
-        (package_dir / f"aw-installer-{NPM_VERSION}.tgz").write_text("fake package", encoding="utf-8")
+        (package_dir / f"servo-installer-{NPM_VERSION}.tgz").write_text("fake package", encoding="utf-8")
         packed_paths = (
             closeout_acceptance_gate.EXPECTED_NPM_PACKAGE_FILES
             if cwd is not None and cwd.as_posix().endswith("toolchain/scripts/deploy")
@@ -202,12 +202,12 @@ def successful_npm_command_result(
             "passed": True,
         }
     if command[:2] == ["npm", "exec"] and "diagnose" in command:
-        if extra_env is None or "AW_HARNESS_REPO_ROOT" not in extra_env:
+        if extra_env is None or "SERVO_HARNESS_REPO_ROOT" not in extra_env:
             return {
                 "command": command,
                 "returncode": 1,
                 "stdout": "",
-                "stderr": "missing AW_HARNESS_REPO_ROOT",
+                "stderr": "missing SERVO_HARNESS_REPO_ROOT",
                 "passed": False,
             }
         if npm_exec_backend() == "bundle":
@@ -221,14 +221,14 @@ def successful_npm_command_result(
                             "agents": {
                                 "backend": "agents",
                                 "binding_count": len(npm_exec_skill_dirs("agents")),
-                                "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                                "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                                 "target_root": str(npm_exec_target_root("agents")),
                                 "issue_count": 0,
                             },
                             "claude": {
                                 "backend": "claude",
                                 "binding_count": len(npm_exec_skill_dirs("claude")),
-                                "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                                "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                                 "target_root": str(npm_exec_target_root("claude")),
                                 "issue_count": 0,
                             },
@@ -247,7 +247,7 @@ def successful_npm_command_result(
                 {
                     "backend": npm_exec_backend(),
                     "binding_count": len(npm_exec_skill_dirs()),
-                    "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                    "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                     "target_root": str(npm_exec_target_root()),
                 }
             ),
@@ -277,16 +277,16 @@ def successful_npm_command_result(
             "command": command,
             "returncode": 1,
             "stdout": "",
-            "stderr": "aw-installer tui requires an interactive terminal.\n",
+            "stderr": "servo-installer tui requires an interactive terminal.\n",
             "passed": False,
         }
     if command[:2] == ["npm", "exec"] and "update" in command:
-        if extra_env is None or "AW_HARNESS_REPO_ROOT" not in extra_env:
+        if extra_env is None or "SERVO_HARNESS_REPO_ROOT" not in extra_env:
             return {
                 "command": command,
                 "returncode": 1,
                 "stdout": "",
-                "stderr": "missing AW_HARNESS_REPO_ROOT",
+                "stderr": "missing SERVO_HARNESS_REPO_ROOT",
                 "passed": False,
             }
         return {
@@ -295,7 +295,7 @@ def successful_npm_command_result(
             "stdout": json.dumps(
                 {
                     "backend": npm_exec_backend(),
-                    "source_root": extra_env.get("AW_HARNESS_REPO_ROOT") or "/tmp/package-source",
+                    "source_root": extra_env.get("SERVO_HARNESS_REPO_ROOT") or "/tmp/package-source",
                     "target_root": str(npm_exec_target_root()),
                     "blocking_issue_count": 0,
                     "planned_target_paths": [str(target) for target in npm_exec_skill_dirs()],
@@ -376,17 +376,18 @@ def test_check_scope_accepts_allowed_prefixes() -> None:
             "product/harness/README.md",
             "docs/project-maintenance/governance/review-verify-handbook.md",
             "docs/project-maintenance/governance/path-governance-checks.md",
+            "docs/servo-installer/reference/existing-code-adoption.md",
             ".autoworkflow/closeout/demo/summary.json",
             "package.json",
-            "product/.aw_template/control-state.md",
+            "product/.servo_template/control-state.md",
             "product/harness/skills/harness-skill/SKILL.md",
             "product/harness/adapters/agents/skills/harness-skill/payload.json",
             ".agents/skills/legacy-skill/SKILL.md",
-            "toolchain/scripts/deploy/bin/aw-installer.js",
+            "toolchain/scripts/deploy/bin/servo-installer.js",
             "toolchain/scripts/deploy/package.json",
             "toolchain/scripts/deploy/path_safety_policy.json",
             "toolchain/scripts/deploy/README.md",
-            "toolchain/scripts/deploy/test_aw_installer.js",
+            "toolchain/scripts/deploy/test_servo_installer.js",
             "toolchain/scripts/test/scope_gate_check.py",
             "tools/scope_gate_check.py",
         ],
@@ -402,9 +403,10 @@ def test_check_scope_accepts_allowed_prefixes() -> None:
             "package.json",
             "docs/project-maintenance/",
             "docs/harness/",
+            "docs/servo-installer/",
             "product/README.md",
             "product/harness/README.md",
-            "product/.aw_template/",
+            "product/.servo_template/",
             "product/harness/skills/",
             "product/harness/adapters/",
             ".agents/",
@@ -412,7 +414,7 @@ def test_check_scope_accepts_allowed_prefixes() -> None:
             "toolchain/scripts/deploy/package.json",
             "toolchain/scripts/deploy/path_safety_policy.json",
             "toolchain/scripts/deploy/README.md",
-            "toolchain/scripts/deploy/test_aw_installer.js",
+            "toolchain/scripts/deploy/test_servo_installer.js",
             "toolchain/scripts/test/",
             "tools/scope_gate_check.py",
         ),
@@ -444,6 +446,36 @@ def test_check_scope_flags_disallowed_changes() -> None:
     result = check_scope(["GUIDE.md"], ("docs/project-maintenance/",))
     assert result.passed is False
     assert result.violations == ["GUIDE.md"]
+
+
+def test_check_scope_allows_runtime_layer_untracking_only() -> None:
+    result = check_scope(
+        [
+            ChangedFile(".servo/control-state.md", "D "),
+            ChangedFile(".agents/skills/example/SKILL.md", " D"),
+            ChangedFile(".claude/skills/example/SKILL.md", "D "),
+        ],
+        ("docs/project-maintenance/",),
+    )
+
+    assert result.passed is True
+    assert result.violations == []
+
+
+def test_check_scope_blocks_runtime_layer_modification() -> None:
+    result = check_scope(
+        [
+            ChangedFile(".servo/control-state.md", " M"),
+            ChangedFile(".agents/skills/example/SKILL.md", "A "),
+        ],
+        ("docs/project-maintenance/",),
+    )
+
+    assert result.passed is False
+    assert result.violations == [
+        ".servo/control-state.md",
+        ".agents/skills/example/SKILL.md",
+    ]
 
 
 def test_normalize_status_path_decodes_git_quoted_utf8_path() -> None:
@@ -735,7 +767,7 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
     result = closeout_acceptance_gate.run_test_gate(tmp_path, sys.executable)
     commands = [command for command, _, _ in calls]
     root_tarball_smoke = next(
-        item for item in result["subchecks"] if item["name"] == "root_npm_tarball_smoke_aw_installer"
+        item for item in result["subchecks"] if item["name"] == "root_npm_tarball_smoke_servo_installer"
     )
 
     assert result["passed"] is True
@@ -758,18 +790,18 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         "path_governance_tests",
         "governance_semantic_tests",
         "agents_adapter_contract_tests",
-        "aw_installer_cli_tests",
-        "aw_installer_tui_tests",
+        "servo_installer_cli_tests",
+        "servo_installer_tui_tests",
         "deploy_package_unit_tests",
         "repo_analysis_contract_check",
-        "npm_pack_dry_run_aw_installer",
+        "npm_pack_dry_run_servo_installer",
     ]
     assert any(command[-1] == "toolchain/scripts/test/test_folder_logic_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_path_governance_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_governance_semantic_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_agents_adapter_contract.py" for command in commands)
-    assert any(command[-1] == "toolchain/scripts/test/aw_installer_cli" for command in commands)
-    assert any(command[-1] == "toolchain/scripts/test/aw_installer_tui" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/servo_installer_cli" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/servo_installer_tui" for command in commands)
     assert not any(command[:4] == [sys.executable, "-m", "unittest", "discover"] for command in commands)
     assert any(command == ["npm", "--prefix", "toolchain/scripts/deploy", "test", "--silent"] for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/repo_analysis_contract_check.py" for command in commands)
@@ -788,8 +820,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and "diagnose" in command
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -798,8 +830,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         and "update" in command
         and "--json" in command
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -807,8 +839,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-1] == "tui"
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -816,8 +848,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["install", "--backend", "agents"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -825,8 +857,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["verify", "--backend", "agents"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
@@ -834,27 +866,27 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["update", "--backend", "agents", "--yes"]
         and extra_env is not None
-        and extra_env.get("AW_HARNESS_REPO_ROOT") == str(tmp_path)
-        and extra_env.get("AW_HARNESS_TARGET_REPO_ROOT")
+        and extra_env.get("SERVO_HARNESS_REPO_ROOT") == str(tmp_path)
+        and extra_env.get("SERVO_HARNESS_TARGET_REPO_ROOT")
         and "fake-python-bin" in extra_env.get("PATH", "")
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["update", "--backend", "claude", "--yes"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-4:] == ["diagnose", "--backend", "bundle", "--json"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert any(
         command[:2] == ["npm", "exec"]
         and command[-3:] == ["verify", "--backend", "bundle"]
-        and extra_env == {"AW_HARNESS_REPO_ROOT": "", "AW_HARNESS_TARGET_REPO_ROOT": ""}
+        and extra_env == {"SERVO_HARNESS_REPO_ROOT": "", "SERVO_HARNESS_TARGET_REPO_ROOT": ""}
         for command, _, extra_env in calls
     )
     assert not any("adapter_deploy.py" in command[1] for command in commands if len(command) > 1)
@@ -929,7 +961,7 @@ def test_run_test_gate_fails_on_unexpected_npm_packlist(monkeypatch, tmp_path) -
     assert result["passed"] is False
     assert result["status"] == "failed"
     pack_result = next(
-        item for item in result["subchecks"] if item["name"] == "npm_pack_dry_run_aw_installer"
+        item for item in result["subchecks"] if item["name"] == "npm_pack_dry_run_servo_installer"
     )
     assert pack_result["passed"] is False
     assert "unexpected npm package files" in pack_result["stderr"]
@@ -966,7 +998,7 @@ def test_run_test_gate_fails_on_mismatched_tarball_version(monkeypatch, tmp_path
             return {
                 "command": command,
                 "returncode": 0,
-                "stdout": f"aw-installer {NPM_VERSION}0\n",
+                "stdout": f"servo-installer {NPM_VERSION}0\n",
                 "stderr": "",
                 "passed": True,
             }
@@ -990,7 +1022,7 @@ def test_run_test_gate_fails_on_mismatched_tarball_version(monkeypatch, tmp_path
     tarball_results = [
         item
         for item in result["subchecks"]
-        if item["name"] in {"npm_tarball_smoke_aw_installer", "root_npm_tarball_smoke_aw_installer"}
+        if item["name"] in {"npm_tarball_smoke_servo_installer", "root_npm_tarball_smoke_servo_installer"}
     ]
     assert tarball_results
     assert all(item["passed"] is False for item in tarball_results)
@@ -1079,7 +1111,7 @@ def test_run_test_gate_fails_on_npm_tarball_exec_failure(monkeypatch, tmp_path) 
     assert result["passed"] is False
     assert result["status"] == "failed"
     tarball_result = next(
-        item for item in result["subchecks"] if item["name"] == "npm_tarball_smoke_aw_installer"
+        item for item in result["subchecks"] if item["name"] == "npm_tarball_smoke_servo_installer"
     )
     assert tarball_result["passed"] is False
     exec_result = next(item for item in tarball_result["subchecks"] if item["name"] == "npm_exec_tarball")

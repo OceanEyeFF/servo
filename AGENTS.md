@@ -34,7 +34,7 @@
   - 按任务进入 `product/`、`docs/` 或 `toolchain/` 的局部入口页
   - 只在命中治理、分层、Harness artifact、dispatch / gate / closeout 策略时扩读对应 foundations / governance / artifact 文档
 - `do_not_read_yet`：
-  - `.aw/`（运行 Harness 控制回路时可读取当前 control state 与必要 runtime artifact）
+  - `.servo/`（运行 Harness 控制回路时可读取当前 control state 与必要 runtime artifact）
   - `.agents/`
   - `.claude/`
   - `.autoworkflow/`

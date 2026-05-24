@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills"
 CLAUDE_ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
-AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "aw-installer.js"
+AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
 EXPECTED_AGENTS_SKILLS = {
     "close-worktrack-skill",
     "dispatch-skills",
@@ -36,6 +36,22 @@ EXPECTED_AGENTS_SKILLS = {
 }
 EXPECTED_CLAUDE_SKILLS = {
     *EXPECTED_AGENTS_SKILLS,
+}
+AGENTS_TARGET_DIR_OVERRIDES = {
+    "harness-skill": "servo-harness-skill",
+    "set-harness-goal-skill": "servo-set-harness-goal-skill",
+}
+AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
+    "harness-skill": ["harness-skill"],
+    "repo-change-goal-skill": [
+        "goal-change-control-skill",
+        "repo-change-goal-skill",
+        "aw-repo-change-goal-skill",
+    ],
+}
+CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
+    "harness-skill": ["servo-harness-skill"],
+    "set-harness-goal-skill": ["aw-set-harness-goal-skill", "servo-set-harness-goal-skill"],
 }
 
 
@@ -83,7 +99,15 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["skill_id"], skill_id)
             self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
             self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
-            self.assertIn(payload["target_dir"], (skill_id, f"aw-{skill_id}"))
+            expected_target_dir = AGENTS_TARGET_DIR_OVERRIDES.get(skill_id)
+            if expected_target_dir is None:
+                self.assertEqual(payload["target_dir"], f"servo-{skill_id}")
+            else:
+                self.assertEqual(payload["target_dir"], expected_target_dir)
+            self.assertEqual(
+                payload["legacy_target_dirs"],
+                AGENTS_LEGACY_TARGET_DIR_OVERRIDES.get(skill_id, [skill_id, f"aw-{skill_id}"]),
+            )
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])
@@ -130,7 +154,10 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
             self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
             self.assertEqual(payload["target_dir"], skill_id)
-            self.assertEqual(payload["legacy_target_dirs"], [f"aw-{skill_id}"])
+            self.assertEqual(
+                payload["legacy_target_dirs"],
+                CLAUDE_LEGACY_TARGET_DIR_OVERRIDES.get(skill_id, [f"aw-{skill_id}"]),
+            )
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])
@@ -237,7 +264,7 @@ class AgentsAdapterContractTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             target_root = Path(temp_dir) / "agents-skills"
             target_root.mkdir()
-            (target_root / "aw-harness-skill").write_text("not a directory\n", encoding="utf-8")
+            (target_root / "servo-harness-skill").write_text("not a directory\n", encoding="utf-8")
 
             completed = subprocess.run(
                 [

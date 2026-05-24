@@ -7,7 +7,7 @@
     "product/harness/skills/schedule-worktrack-skill/SKILL.md",
     "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md"
   ],
-  "target_dir": "aw-schedule-worktrack-skill",
+  "target_dir": "servo-schedule-worktrack-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -21,6 +21,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "schedule-worktrack-skill"
+    "schedule-worktrack-skill",
+    "aw-schedule-worktrack-skill"
   ]
 }

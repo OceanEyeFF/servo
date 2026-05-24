@@ -19,7 +19,7 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 
 这个技能会为 `通用高能力模型` `SubAgent` 打包一轮限定范围的收尾后刷新，更新代码仓库级评估，并返回一份供程序员审批的结构化回写交接结果，而不是假设代码仓库真相已经被更新。
 
-这个技能只负责代码仓库级回写。它不会维护、修补或重新打开工作追踪本地 `.aw/worktrack/*` 产物。
+这个技能只负责代码仓库级回写。它不会维护、修补或重新打开工作追踪本地 `.servo/worktrack/*` 产物。
 
 它的主要刷新依据是：
 
@@ -50,9 +50,9 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
    - 已验证回写候选
    - 推迟或仍未验证的项目
    - 收尾后仍开放的代码仓库级风险
-6. 将已关闭 worktrack 的条目（worktrack_id / milestone_id / status / node_type / scope / merge_commit / validation / intake_route）写入 `.aw/repo/worktrack-backlog.md`（若 backlog 不存在则创建）。`status` 按以下映射从 gate verdict 转换后写入：gate pass/merge success → `done`，gate blocked → `blocked`，deferred decision → `deferred`，superseded/resolved → `resolved`。按 `worktrack_id` upsert：若同一 `worktrack_id` 已存在则更新（覆盖旧状态），否则追加新条目。`milestone_id` 按以下优先级获取：Worktrack Contract frontmatter `milestone_id` → close handoff 引用 → `null`（无绑定）。`intake_route` 按以下优先级获取：Worktrack Contract frontmatter → close handoff 中的 append request 引用 → `"direct"` fallback。此步骤对每个已验证关闭的 worktrack 无条件执行。
+6. 将已关闭 worktrack 的条目（worktrack_id / milestone_id / status / node_type / scope / merge_commit / validation / intake_route）写入 `.servo/repo/worktrack-backlog.md`（若 backlog 不存在则创建）。`status` 按以下映射从 gate verdict 转换后写入：gate pass/merge success → `done`，gate blocked → `blocked`，deferred decision → `deferred`，superseded/resolved → `resolved`。按 `worktrack_id` upsert：若同一 `worktrack_id` 已存在则更新（覆盖旧状态），否则追加新条目。`milestone_id` 按以下优先级获取：Worktrack Contract frontmatter `milestone_id` → close handoff 引用 → `null`（无绑定）。`intake_route` 按以下优先级获取：Worktrack Contract frontmatter → close handoff 中的 append request 引用 → `"direct"` fallback。此步骤对每个已验证关闭的 worktrack 无条件执行。
 7. 如果存在活跃 Milestone，检查已关闭 worktrack 是否在 Milestone 的 `worktrack_list` 中；若在列表中，标记 Milestone progress counter 需要由 milestone-status-skill 在下一轮 Observe 中更新。
-7b. **Milestone Backlog 刷新**：若已关闭 worktrack 携带 `milestone_id`，读取 `.aw/repo/milestone-backlog.md`，在该 milestone 的 `worktrack_list` 中标记对应 worktrack 完成。不修改 milestone status（该职责属于 `harness-skill` 在收到 `milestone-status-skill` 输出后的状态更新阶段）。
+7b. **Milestone Backlog 刷新**：若已关闭 worktrack 携带 `milestone_id`，读取 `.servo/repo/milestone-backlog.md`，在该 milestone 的 `worktrack_list` 中标记对应 worktrack 完成。不修改 milestone status（该职责属于 `harness-skill` 在收到 `milestone-status-skill` 输出后的状态更新阶段）。
 8. 在一轮限定范围代码仓库刷新后停止，并返回一份固定格式的 `代码仓库刷新报告` 加一份 `已验证回写交接`。
 
 ## 硬约束

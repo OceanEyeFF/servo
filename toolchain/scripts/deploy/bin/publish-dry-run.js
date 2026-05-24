@@ -6,10 +6,10 @@ const { spawnSync } = require("node:child_process");
 const allowedReleaseChannels = new Set(["latest", "next", "canary"]);
 
 function resolveReleaseChannel(env = process.env) {
-  const releaseChannel = env.AW_INSTALLER_RELEASE_CHANNEL || env.npm_config_tag || "next";
+  const releaseChannel = env.SERVO_INSTALLER_RELEASE_CHANNEL || env.npm_config_tag || "next";
   if (!allowedReleaseChannels.has(releaseChannel)) {
     throw new Error(
-      `unsupported aw-installer release channel: ${releaseChannel}; expected latest, next, or canary`,
+      `unsupported servo-installer release channel: ${releaseChannel}; expected latest, next, or canary`,
     );
   }
   return releaseChannel;

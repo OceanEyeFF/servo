@@ -61,7 +61,7 @@ def test_charter_registry_does_not_promote_runtime_aw_truth(tmp_path: Path) -> N
         "### bugfix\n",
     )
     write_doc(
-        tmp_path / ".aw/goal-charter.md",
+        tmp_path / ".servo/goal-charter.md",
         "\n".join(
             [
                 "### Node Type Registry",

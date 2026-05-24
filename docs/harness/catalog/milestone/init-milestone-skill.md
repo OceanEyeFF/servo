@@ -2,7 +2,7 @@
 title: "Init Milestone Skill"
 status: active
 updated: 2026-05-14
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-14
 ---
 
@@ -23,8 +23,8 @@ canonical executable source：
 
 ## 职责
 
-- 创建或 upsert milestone artifact（`.aw/milestone/{milestone_id}.md`）
-- Upsert milestone-backlog（`.aw/repo/milestone-backlog.md`）
+- 创建或 upsert milestone artifact（`.servo/milestone/{milestone_id}.md`）
+- Upsert milestone-backlog（`.servo/repo/milestone-backlog.md`）
 - 处理 latest-override 语义（同 milestone_id，时间戳最新覆盖）
 - 验证依赖合法性（存在性 + 循环依赖检测）
 - 管理激活规则（同一时刻仅一个 active）
@@ -45,8 +45,8 @@ canonical executable source：
 |------|------|------|
 | Programmer 规格 | 用户输入 | milestone 的 title/purpose/worktrack_list/priority/depends_on 等 |
 | Harness 推理规格 | `repo-whats-next-skill` 输出 | harness 推理的 milestone 建议 |
-| Milestone backlog | `.aw/repo/milestone-backlog.md` | 唯一性检查 + pipeline 上下文 |
-| Control state | `.aw/control-state.md` | active_milestone 状态 |
+| Milestone backlog | `.servo/repo/milestone-backlog.md` | 唯一性检查 + pipeline 上下文 |
+| Control state | `.servo/control-state.md` | active_milestone 状态 |
 
 ## 输出
 

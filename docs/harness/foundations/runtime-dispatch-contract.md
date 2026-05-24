@@ -2,7 +2,7 @@
 title: Harness Runtime Dispatch Contract
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 
@@ -46,7 +46,7 @@ Harness 本体属于控制平面。
 - 默认值为 `auto`
 - `subagent_dispatch_mode`: `auto | delegated | current-carrier`
 - `subagent_dispatch_mode_override_scope`: 默认 `worktrack-contract-primary`
-- 仅 `global-override` 时，`.aw/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack contract
+- 仅 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack contract
 - worktrack 未声明 `runtime_dispatch_mode` 时使用 control-state default
 
 模式语义：

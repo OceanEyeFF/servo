@@ -48,7 +48,7 @@ description: 当工作追踪需要把已验证实现事实追平到正确文档�
 
 - `source version facts`：root/package `package.json`、approval lock、CLI `--version`、release tag
 - `vcs tracking facts`：git branch、commit SHA、tag、remote ref
-- `published version facts`：`npm view aw-installer dist-tags --json`，以及相关 `npm view aw-installer@<tag-or-version> version gitHead dist.tarball --json`
+- `published version facts`：`npm view servo-installer dist-tags --json`，以及相关 `npm view servo-installer@<tag-or-version> version gitHead dist.tarball --json`
 - `release evidence`：GitHub Release、publish workflow run、npx/package smoke 结果
 - `doc update decision`：哪些根入口、governance、testing、usage-help 文档需要更新，哪些不需要更新及理由
 
@@ -87,17 +87,17 @@ description: 当工作追踪需要把已验证实现事实追平到正确文档�
 git status --short --branch
 git rev-parse HEAD
 git describe --tags --always --dirty
-npm view aw-installer dist-tags --json
-npm view aw-installer@latest version gitHead dist.tarball --json
-npm view aw-installer@next version gitHead dist.tarball --json
-node toolchain/scripts/deploy/bin/aw-installer.js --version
+npm view servo-installer dist-tags --json
+npm view servo-installer@latest version gitHead dist.tarball --json
+npm view servo-installer@next version gitHead dist.tarball --json
+node toolchain/scripts/deploy/bin/servo-installer.js --version
 ```
 
 同步目标通常包括：
 
-- `docs/project-maintenance/governance/aw-installer-release-channel-governance.md`
-- `docs/project-maintenance/governance/aw-installer-pre-publish-governance.md`
-- `docs/project-maintenance/governance/aw-installer-release-standard-flow.md`
+- `docs/project-maintenance/governance/servo-installer-release-channel-governance.md`
+- `docs/project-maintenance/governance/servo-installer-pre-publish-governance.md`
+- `docs/project-maintenance/governance/servo-installer-release-standard-flow.md`
 - `docs/project-maintenance/testing/npx-command-test-execution.md`
 - `docs/project-maintenance/usage-help/codex.md`
 - `docs/project-maintenance/usage-help/claude.md`

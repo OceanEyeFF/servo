@@ -23,7 +23,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 - 当前 branch 与 baseline 的差异状态
 - 当前 `Harness Control State`
 
-`代码仓库目标/章程`、`代码仓库快照/状态` 等 Repo 级产物不是工作追踪基准。只有在当前工作追踪观察依赖于理解 Repo 长期基线时才读取它们，并且必须明确让这种使用从属于工作追踪级产物。对 `.aw/repo/*` 产物的唯一合法操作是读取消费。更新或重写 `.aw/repo/*` 产物的行为必须从本技能被阻断。
+`代码仓库目标/章程`、`代码仓库快照/状态` 等 Repo 级产物不是工作追踪基准。只有在当前工作追踪观察依赖于理解 Repo 长期基线时才读取它们，并且必须明确让这种使用从属于工作追踪级产物。对 `.servo/repo/*` 产物的唯一合法操作是读取消费。更新或重写 `.servo/repo/*` 产物的行为必须从本技能被阻断。
 
 ## 何时使用
 
@@ -85,7 +85,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 
 遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
 
-- 对 `.aw/repo/*` 的唯一合法操作是作为次要边界证据读取。重写 `.aw/repo/*` 的行为必须被阻断。
+- 对 `.servo/repo/*` 的唯一合法操作是作为次要边界证据读取。重写 `.servo/repo/*` 的行为必须被阻断。
 - 优先使用标准工作追踪产物，而不是工作追踪本地部署副本或模板。
 - 状态报告的时效性标注必须反映实际状态。将过期状态标注为新鲜状态的行为必须被阻断。
 

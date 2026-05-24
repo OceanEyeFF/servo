@@ -1,8 +1,8 @@
 # Harness Init Assets
 
-`set-harness-goal-skill/assets/` 是 `set-harness-goal-skill` 自带的 `.aw` 初始化资产包。
+`set-harness-goal-skill/assets/` 是 `set-harness-goal-skill` 自带的 `.servo` 初始化资产包。
 
-这里存放的是 `.aw/` 运行目录所需的模板来源，用来在 deploy 后或初始化时生成 `.aw/` 目录结构，以及少量直接属于 Harness 运行管理面的文档。它们是本技能的 canonical executable resources，不是独立的源码根，也不会替代 `docs/harness/` 的 artifact contract 真相层。
+这里存放的是 `.servo/` 运行目录所需的模板来源，用来在 deploy 后或初始化时生成 `.servo/` 目录结构，以及少量直接属于 Harness 运行管理面的文档。它们是本技能的 canonical executable resources，不是独立的源码根，也不会替代 `docs/harness/` 的 artifact contract 真相层。
 
 当前入口：
 
@@ -14,18 +14,18 @@
 
 规则：
 
-- 这些资产只服务 `set-harness-goal-skill` 的 `.aw` 初始化流程
+- 这些资产只服务 `set-harness-goal-skill` 的 `.servo` 初始化流程
 - 默认初始化会生成 [repo/analysis.md](./repo/analysis.md)，作为 RepoScope 的阶段性决策支撑 artifact
-- Existing Code Project Adoption 模式可以额外生成 [repo/discovery-input.md](./repo/discovery-input.md)，把既有代码库观察结果写入 `.aw/repo/discovery-input.md`
+- Existing Code Project Adoption 模式可以额外生成 [repo/discovery-input.md](./repo/discovery-input.md)，把既有代码库观察结果写入 `.servo/repo/discovery-input.md`
 - `repo/discovery-input.md` 是只读事实输入，不是 goal truth；它只能作为 `goal-charter.md` 和 `snapshot-status.md` 的候选来源
-- 建议通过 [../scripts/deploy_aw.js](../scripts/deploy_aw.js) 生成 `.aw/` 样例，而不是手工复制这些文件
-- 用法固定为把目标 repo / worktree 根作为 `--deploy-path` 传入；脚本会在 `<deploy-path>/.aw/` 下生成文件
-- 如果目标 repo 也要给 Claude Code 暴露本技能，可在 `generate` 时追加 `--install-claude-skill`，或单独运行 `install-claude-skill` 子命令；目标路径是 `<deploy-path>/.claude/skills/aw-set-harness-goal-skill/`
+- 建议通过 [../scripts/deploy_servo.js](../scripts/deploy_servo.js) 生成 `.servo/` 样例，而不是手工复制这些文件
+- 用法固定为把目标 repo / worktree 根作为 `--deploy-path` 传入；脚本会在 `<deploy-path>/.servo/` 下生成文件
+- 如果目标 repo 也要给 Claude Code 暴露本技能，可在 `generate` 时追加 `--install-claude-skill`，或单独运行 `install-claude-skill` 子命令；目标路径是 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`
 - Claude install 允许 root 层 symlink / mount，但拒绝目标 skill 目录本身或其内部已有 symlink；完整边界见 `SKILL.md` 与 Claude usage help
 - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为 already installed 并 no-op
-- 需要完整参数说明时，直接运行 `node scripts/deploy_aw.js generate --help`
-- 资产 owner 已固定在本技能；不要再为它们建立独立的 `.aw` 模板源码根
-- goal 修正文档不进入 `.aw/` 路径，只作为 Codex 对话回答流模板存在
+- 需要完整参数说明时，直接运行 `node scripts/deploy_servo.js generate --help`
+- 资产 owner 已固定在本技能；不要再为它们建立独立的 `.servo` 模板源码根
+- goal 修正文档不进入 `.servo/` 路径，只作为 Codex 对话回答流模板存在
 - 不要把 doctrine、运行协议或 backend wrapper 写到这里
 - 不要把这些资产误当成 `docs/` 真相层
 - 运行协议与 artifact 定义以上游 `docs/harness/` 为准
@@ -33,9 +33,9 @@
 示例：
 
 ```bash
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner aw-kernel
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
-node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --force --dry-run
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
+node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --force --dry-run
 ```

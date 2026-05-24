@@ -20,7 +20,7 @@ Harness 是 repo 演进的分层闭环控制协议。它不直接替代执行器
 | [runtime-dispatch-contract.md](./runtime-dispatch-contract.md) | Dispatch / Implement 边界、执行载体选择、dispatch packet 与 fallback 语义 |
 | [runtime-evidence-gate-recovery.md](./runtime-evidence-gate-recovery.md) | Verify / Judge 分离、Gate verdict、Recover route、handback 与交接锁 |
 | [runtime-closeout-refresh.md](./runtime-closeout-refresh.md) | closeout、repo refresh、milestone progress 写回与 pipeline advancement |
-| [runtime-state-hydration.md](./runtime-state-hydration.md) | `.aw/control-state.md` 恢复、authority 配置、baseline traceability 与 autonomy ledger |
+| [runtime-state-hydration.md](./runtime-state-hydration.md) | `.servo/control-state.md` 恢复、authority 配置、baseline traceability 与 autonomy ledger |
 
 ## Global Runtime Invariants
 
@@ -66,7 +66,7 @@ Unpromoted proposal or migration comparison stays in Harness runtime/backlog or 
 4. Read [runtime-dispatch-contract.md](./runtime-dispatch-contract.md) when selecting execution carriers or interpreting dispatch packets.
 5. Read [runtime-evidence-gate-recovery.md](./runtime-evidence-gate-recovery.md) for evidence, gate, handback, and recovery semantics.
 6. Read [runtime-closeout-refresh.md](./runtime-closeout-refresh.md) for merge, refresh, cleanup, milestone progress, and pipeline advancement.
-7. Read [runtime-state-hydration.md](./runtime-state-hydration.md) when starting or resuming a Harness round from `.aw/control-state.md`.
+7. Read [runtime-state-hydration.md](./runtime-state-hydration.md) when starting or resuming a Harness round from `.servo/control-state.md`.
 
 ## 判断标准
 

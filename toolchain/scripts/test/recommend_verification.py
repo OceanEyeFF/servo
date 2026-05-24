@@ -106,12 +106,12 @@ def _check_entry(check_label: str, command: CommandSpec, reason: str) -> Dict[st
 
 
 _NODE_TEST_AW_INSTALLER: CheckRule = (
-    "node --test test_aw_installer.js",
-    _node_test(f"{_DEPLOY}/test_aw_installer.js"),
+    "node --test test_servo_installer.js",
+    _node_test(f"{_DEPLOY}/test_servo_installer.js"),
 )
 _AW_INSTALLER_VERIFY_BUNDLE: CheckRule = (
-    "aw-installer.js verify --backend bundle",
-    _node_check(f"{_DEPLOY}/bin/aw-installer.js", "verify", "--backend", "bundle"),
+    "servo-installer.js verify --backend bundle",
+    _node_check(f"{_DEPLOY}/bin/servo-installer.js", "verify", "--backend", "bundle"),
 )
 _NPM_PACK_DEPLOY_DRY_RUN: CheckRule = (
     "npm pack --dry-run in toolchain/scripts/deploy",
@@ -135,7 +135,7 @@ DOMAIN_RULES: List[Tuple[str, List[CheckRule]]] = [
         ],
     ),
     (
-        f"{_DEPLOY}/bin/aw-installer.js",
+        f"{_DEPLOY}/bin/servo-installer.js",
         [
             _NODE_TEST_AW_INSTALLER,
             ("closeout_acceptance_gate.py --json", _python_check(f"{_TEST}/closeout_acceptance_gate.py", "--json")),
@@ -144,7 +144,7 @@ DOMAIN_RULES: List[Tuple[str, List[CheckRule]]] = [
         ],
     ),
     (
-        f"{_DEPLOY}/test_aw_installer.js",
+        f"{_DEPLOY}/test_servo_installer.js",
         [
             _NODE_TEST_AW_INSTALLER,
         ],
@@ -210,7 +210,7 @@ DOMAIN_RULES: List[Tuple[str, List[CheckRule]]] = [
         ],
     ),
     (
-        ".aw/",
+        ".servo/",
         [
             ("path_governance_check.py", _python_check(f"{_TEST}/path_governance_check.py")),
         ],

@@ -1,6 +1,6 @@
 # Append Request 路由结果模板
 
-> 使用方式：在 `repo-append-request-skill` 需要整理 append-feature / append-design 分类与路由结果时，使用本模板组织输出。它不进入 `.aw/` 路径，除非后续 Harness 明确把本次 intake 结果持久化为控制 artifact。
+> 使用方式：在 `repo-append-request-skill` 需要整理 append-feature / append-design 分类与路由结果时，使用本模板组织输出。它不进入 `.servo/` 路径，除非后续 Harness 明确把本次 intake 结果持久化为控制 artifact。
 
 ## 元数据
 

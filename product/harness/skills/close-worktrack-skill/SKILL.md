@@ -159,7 +159,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 - `代码仓库刷新交接` 的基线追溯字段必须显式填充。省略基线追溯字段的行为必须被阻断
 - `closeout_record` 不单独写入新的长期 Worktrack artifact；它必须作为 `关闭工作追踪报告` 与 `代码仓库刷新交接` 的结构化 section 输出，并由 repo-refresh 后续写入 repo 级 backlog / snapshot。省略 `decision_refs` 或闭环状态字段的行为必须显式说明原因
 - `代码仓库刷新交接` 必须同时填充节点策略字段，并说明 expected baseline 与 actual checkpoint 是否匹配
-- 重复性上下文（如 worktrack contract 摘要）的唯一合法呈现形式是文件路径引用 `[.aw/worktrack/contract.md#section]`。内联全文的行为禁止发生
+- 重复性上下文（如 worktrack contract 摘要）的唯一合法呈现形式是文件路径引用 `[.servo/worktrack/contract.md#section]`。内联全文的行为禁止发生
 - 如果某个字段无实质内容，唯一合法行为是使用 `N/A` 或省略。用占位符填充的行为必须被阻断
 - `Supporting Detail` 保留完整内容，只用于后续查阅，不纳入传递上下文
 

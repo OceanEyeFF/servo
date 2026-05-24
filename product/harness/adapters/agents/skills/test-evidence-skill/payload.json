@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/test-evidence-skill/SKILL.md"
   ],
-  "target_dir": "aw-test-evidence-skill",
+  "target_dir": "servo-test-evidence-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "test-evidence-skill"
+    "test-evidence-skill",
+    "aw-test-evidence-skill"
   ]
 }

@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/close-worktrack-skill/SKILL.md"
   ],
-  "target_dir": "aw-close-worktrack-skill",
+  "target_dir": "servo-close-worktrack-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "close-worktrack-skill"
+    "close-worktrack-skill",
+    "aw-close-worktrack-skill"
   ]
 }

@@ -87,9 +87,9 @@ This table is the source-side backlink to the docs/catalog owner surface. Keep i
 
 The current verified git checkpoint for this source root is recorded by Harness runtime artifacts, not by per-skill prose in this README:
 
-- checkpoint runtime owner: `.aw/repo/snapshot-status.md`
-- idempotency runtime owner: `.aw/control-state.md`
-- closeout evidence runtime owner: `.aw/worktrack/closeout-record.md`
+- checkpoint runtime owner: `.servo/repo/snapshot-status.md`
+- idempotency runtime owner: `.servo/control-state.md`
+- closeout evidence runtime owner: `.servo/worktrack/closeout-record.md`
 - checkpoint contract: [docs/harness/artifact/repo/snapshot-status.md](../../../docs/harness/artifact/repo/snapshot-status.md)
 - idempotency contract: [docs/harness/artifact/control/control-state.md](../../../docs/harness/artifact/control/control-state.md)
 

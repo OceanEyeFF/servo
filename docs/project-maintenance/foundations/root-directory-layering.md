@@ -2,7 +2,7 @@
 title: "根目录分层"
 status: active
 updated: 2026-05-14
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-14
 ---
 # 根目录分层
@@ -23,7 +23,7 @@ last_verified: 2026-05-14
 | Toolchain Layer | `toolchain/` | 脚本与评测工具 | 业务源码真相 |
 | Distribution Manifest Layer | `package.json` | npm/npx 分发包络元数据 | 业务源码真相、运行状态 |
 | Repo-local Install / Mount Layer | `.claude/` `.agents/` | repo-local 安装载荷、挂载与 deploy target | 主线真相、业务源码 |
-| Repo-local State Layer | `.aw/` `.autoworkflow/` `.spec-workflow/` | 运行状态、Harness 控制面运行产物 | 主线入口、业务源码、长期真相 |
+| Repo-local State Layer | `.servo/` `.autoworkflow/` `.spec-workflow/` | 运行状态、Harness 控制面运行产物 | 主线入口、业务源码、长期真相 |
 | Repo-local Execution Config Layer | `.codex/` | repo-local 执行配置 | 长期真相正文、运行产物 |
 | Compatibility Navigation Layer | `.nav/` | 兼容导航 | 结构定义与规则正文 |
 | Compatibility Shim Layer | `tools/` | 兼容入口 shim | canonical 逻辑实现 |
@@ -52,13 +52,13 @@ Repo-local execution config。允许 tracked：`.codex/config.toml`、`.codex/ru
 
 可存在于根目录，不得有 tracked 内容。
 
-### 5. `.aw/`
+### 5. `.servo/`
 
 Repo-local Harness runtime control-plane state，可被治理检查识别为合法根目录对象但必须保持 ignored。运行合同、队列和 evidence 只用于控制回路，不替代 `docs/`、`product/`、`toolchain/` 中的正式真相与源码。
 
 ### 6. `package.json`
 
-只承接 `aw-installer` 的 npm/npx 分发包络元数据，可从根目录打包 `product/` 中的 canonical Harness payload 和 `toolchain/scripts/deploy/` 中的 wrapper 工具，不得把业务源码真相迁出 `product/`。发布动作由 deploy/release 合同控制。
+只承接 `servo-installer` 的 npm/npx 分发包络元数据，可从根目录打包 `product/` 中的 canonical Harness payload 和 `toolchain/scripts/deploy/` 中的 wrapper 工具，不得把业务源码真相迁出 `product/`。发布动作由 deploy/release 合同控制。
 
 ## 四、新增根目录对象规则
 
@@ -66,7 +66,7 @@ Repo-local Harness runtime control-plane state，可被治理检查识别为合�
 
 ## 五、文档域补充
 
-当前 `docs/` 一级文档域：`book.md`、`project-maintenance/`、`harness/`。`book.md` 是 docs 书式章节 spine，只承接当前阅读顺序、章节边界和新增文档放置判断；长期规则正文仍进入最近的 `project-maintenance/` 或 `harness/` 承接文档。`product/` 一级源码根：`harness/`；`product/` 下允许 `.aw_template/`（repo-local execution template layer，非 artifact 模板长期 owner）。
+当前 `docs/` 一级文档域：`book.md`、`project-maintenance/`、`harness/`。`book.md` 是 docs 书式章节 spine，只承接当前阅读顺序、章节边界和新增文档放置判断；长期规则正文仍进入最近的 `project-maintenance/` 或 `harness/` 承接文档。`product/` 一级源码根：`harness/`；`product/` 下允许 `.servo_template/`（repo-local execution template layer，非 artifact 模板长期 owner）。
 
 ## 六、相关文档
 

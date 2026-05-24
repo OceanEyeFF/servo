@@ -2,7 +2,7 @@
 title: "Node Type Registry"
 status: active
 updated: 2026-05-08
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-08
 ---
 

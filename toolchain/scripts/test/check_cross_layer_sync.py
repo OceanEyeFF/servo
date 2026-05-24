@@ -32,7 +32,7 @@ CONTRACT_TEMPLATE_PATH = (
 GOAL_CHARTER_SOURCE_PATH = (
     "product/harness/skills/set-harness-goal-skill/assets/goal-charter.md"
 )
-RUNTIME_CHARTER_PATH = ".aw/goal-charter.md"
+RUNTIME_CHARTER_PATH = ".servo/goal-charter.md"
 REGISTRY_PATH = "docs/harness/artifact/control/node-type-registry.md"
 CONTROL_STATE_CONTRACT_PATH = "docs/harness/artifact/control/control-state.md"
 CONTROL_STATE_TEMPLATE_PATH = (
@@ -259,7 +259,7 @@ def _extract_registry_node_types(text: str) -> set[str]:
 def check_charter_registry_consistency(repo_root: Path) -> dict:
     """Check tracked goal-charter source node types exist in the registry.
 
-    ``.aw/goal-charter.md`` is an ignored runtime instance. Clean CI checkouts
+    ``.servo/goal-charter.md`` is an ignored runtime instance. Clean CI checkouts
     must not require it, and this governance check must not promote runtime
     state into canonical source truth.
     """

@@ -134,7 +134,7 @@ SUBAGENT_DEFAULT_CONTRACT_PATHS = [
     "product/harness/skills/dispatch-skills/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
-    "product/.aw_template/control-state.md",
+    "product/.servo_template/control-state.md",
     "docs/harness/artifact/control/control-state.md",
     "docs/harness/artifact/worktrack/contract.md",
     "docs/harness/foundations/Harness运行协议.md",
@@ -143,7 +143,7 @@ SUBAGENT_DEFAULT_CONTRACT_PATHS = [
 EXECUTION_POLICY_TEMPLATE_REFERENCE_PATHS = [
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
     "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-    "product/.aw_template/worktrack/contract.md",
+    "product/.servo_template/worktrack/contract.md",
 ]
 AGENTS_ADAPTER_SKILLS_DIR = "product/harness/adapters/agents/skills"
 MANUAL_RUNBOOK_AGENTS_SKILL_COUNT_RE = re.compile(
@@ -231,7 +231,7 @@ EXECUTION_POLICY_TEMPLATE_REQUIRED_TERMS = [
 ]
 EXECUTION_POLICY_TEMPLATE_FORBIDDEN_PHRASES = [
     "控制本 worktrack 的执行载体选择。`auto` 按 Dispatch Decision Policy",
-    "默认 scaffold 中 `.aw/control-state.md` 的 `subagent_dispatch_mode_override_scope",
+    "默认 scaffold 中 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope",
 ]
 DISPATCH_CONTEXT_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/dispatch-packet.md",
@@ -254,7 +254,7 @@ RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/dispatch-skills/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
-    "product/.aw_template/control-state.md",
+    "product/.servo_template/control-state.md",
 ]
 RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS = [
     "runtime_dispatch_profile",
@@ -389,7 +389,7 @@ WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS = [
 WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS = [
     "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
-    "product/.aw_template/worktrack/contract.md",
+    "product/.servo_template/worktrack/contract.md",
 ]
 WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS = [
     "worktrack_intake_review",
@@ -444,7 +444,7 @@ AGENTS_ROUTE_REQUIRED_TERMS = [
     "当前任务对应的一个局部入口",
     "仅当任务命中对应边界时才扩读",
     "do_not_read_yet",
-    ".aw/",
+    ".servo/",
 ]
 AGENTS_ROUTE_FORBIDDEN_TERMS = [
     "## Read First",
@@ -1233,9 +1233,9 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
 
 
 def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
-    aw_dir = repo_root / ".aw"
+    aw_dir = repo_root / ".servo"
     if not aw_dir.exists():
-        report.add_info("checked 0 runtime artifacts for consistency, .aw/ directory missing")
+        report.add_info("checked 0 runtime artifacts for consistency, .servo/ directory missing")
         return
 
     control_path = aw_dir / "control-state.md"

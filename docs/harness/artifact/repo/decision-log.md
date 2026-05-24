@@ -2,18 +2,18 @@
 title: "Decision Log"
 status: active
 updated: 2026-05-13
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-13
 ---
 
 # Decision Log
 
-> `.aw/repo/decision-log.md` 是 `RepoScope` 运行时 artifact，用来记录影响后续 worktrack 或 Harness 规则的关键决策理由。它补足 Worktrack Backlog 的"做了什么"，回答"为什么这样做，以及哪些方案被排除"。
+> `.servo/repo/decision-log.md` 是 `RepoScope` 运行时 artifact，用来记录影响后续 worktrack 或 Harness 规则的关键决策理由。它补足 Worktrack Backlog 的"做了什么"，回答"为什么这样做，以及哪些方案被排除"。
 
 ## 定位
 
 - Scope: `RepoScope`
-- 性质: 运行时 artifact（非 git 追溯，`.aw/` 被 gitignore）
+- 性质: 运行时 artifact（非 git 追溯，`.servo/` 被 gitignore）
 - 产生时机: 出现会影响后续实现、调度、治理、分层、权限或 artifact 合同的稳定决策时
 - 更新时机: 决策被接受、替代、废弃或关联 worktrack closeout 时
 - 消费方: `harness-skill`、`repo-status-skill`、`repo-whats-next-skill`、`init-worktrack-skill`、`repo-refresh-skill`

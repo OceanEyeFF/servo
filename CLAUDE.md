@@ -18,7 +18,7 @@
 | `docs/` | 真相层：project-maintenance / harness / analysis / ideas / archive |
 | `product/` | 业务代码唯一源码根：harness skills + adapters |
 | `toolchain/` | 脚本、评测、测试、打包、部署工具 |
-| `.aw/` | runtime control-plane state（非长期真相层） |
+| `.servo/` | runtime control-plane state（非长期真相层） |
 | `.agents/` `.claude/` | deploy target（非源码层） |
 | `.autoworkflow/` `.spec-workflow/` | repo-local state layer |
 | `.nav/` | compatibility navigation layer（非真实结构定义） |
@@ -60,7 +60,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gate.py --json
 
 # adapter / deploy
-node --test toolchain/scripts/deploy/test_aw_installer.js
+node --test toolchain/scripts/deploy/test_servo_installer.js
 ```
 
 Python 命令默认使用 `PYTHONDONTWRITEBYTECODE=1 python3 ...`，避免生成 `__pycache__` 和 `.pyc` 缓存。
@@ -84,8 +84,8 @@ Python 命令默认使用 `PYTHONDONTWRITEBYTECODE=1 python3 ...`，避免生成
 
 - 不要把 Harness 当成直接写代码的执行者；它是分层闭环控制系统
 - `product/` 是业务代码唯一源码根；`.agents/` `.claude/` 只是 deploy target
-- `.aw/` 是 runtime control-plane artifact 目录；不替代 `docs/` `product/` `toolchain/` 中的正式真相
-- 不要把 deploy target、`.agents/` `.claude/` 或 `.aw/` 写成源码真相
+- `.servo/` 是 runtime control-plane artifact 目录；不替代 `docs/` `product/` `toolchain/` 中的正式真相
+- 不要把 deploy target、`.agents/` `.claude/` 或 `.servo/` 写成源码真相
 - 不要把未验证结论写回长期 truth layer
 - 不要在普通 Decide 中修改 repo 目标；目标变更必须走 ChangeGoal
 - Evidence 与 Gate 必须分开；Evidence 证明状态，Gate 判断推进

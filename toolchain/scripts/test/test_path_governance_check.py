@@ -688,7 +688,7 @@ def test_check_gitignore_accepts_required_cache_entries(tmp_path: Path) -> None:
     write_gitignore(
         tmp_path,
         [
-            ".aw/",
+            ".servo/",
             ".agents/",
             ".claude/",
             ".autoworkflow/",
@@ -710,7 +710,7 @@ def test_check_gitignore_flags_missing_cache_entry(tmp_path: Path) -> None:
     write_gitignore(
         tmp_path,
         [
-            ".aw/",
+            ".servo/",
             ".agents/",
             ".claude/",
             ".autoworkflow/",

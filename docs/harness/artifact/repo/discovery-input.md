@@ -2,12 +2,12 @@
 title: "Repo Discovery Input"
 status: active
 updated: 2026-04-25
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-04-25
 ---
 # Repo Discovery Input
 
-`Repo Discovery Input` 是 Existing Code Project Adoption 模式下的只读事实输入，记录 Harness 初始化前对既有代码库的观察结果。运行落位为 `.aw/repo/discovery-input.md`。
+`Repo Discovery Input` 是 Existing Code Project Adoption 模式下的只读事实输入，记录 Harness 初始化前对既有代码库的观察结果。运行落位为 `.servo/repo/discovery-input.md`。
 
 ## Purpose
 

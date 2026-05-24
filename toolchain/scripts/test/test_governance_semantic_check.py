@@ -195,7 +195,7 @@ def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Pat
                 "默认启动只读 `AGENTS.md`、`INDEX.md` 和当前任务对应的一个局部入口。",
                 "仅当任务命中对应边界时才扩读承接层文档。",
                 "## Route Contract",
-                "- `do_not_read_yet`: `.aw/`, `.agents/`, `.claude/`",
+                "- `do_not_read_yet`: `.servo/`, `.agents/`, `.claude/`",
             ]
         )
         + "\n",
@@ -237,7 +237,7 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(tmp_path: P
         "product/harness/skills/dispatch-skills/SKILL.md",
         "product/harness/skills/set-harness-goal-skill/SKILL.md",
         "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
-        "product/.aw_template/control-state.md",
+        "product/.servo_template/control-state.md",
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
         "docs/harness/foundations/Harness运行协议.md",
@@ -250,7 +250,7 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(tmp_path: P
     for relative_path in (
         "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-        "product/.aw_template/worktrack/contract.md",
+        "product/.servo_template/worktrack/contract.md",
     ):
         write_doc(
             tmp_path / relative_path,
@@ -272,7 +272,7 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
         "product/harness/skills/dispatch-skills/SKILL.md",
         "product/harness/skills/set-harness-goal-skill/SKILL.md",
         "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
-        "product/.aw_template/control-state.md",
+        "product/.servo_template/control-state.md",
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
         "docs/harness/foundations/Harness运行协议.md",
@@ -285,7 +285,7 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
     for relative_path in (
         "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-        "product/.aw_template/worktrack/contract.md",
+        "product/.servo_template/worktrack/contract.md",
     ):
         write_doc(
             tmp_path / relative_path,
@@ -329,7 +329,7 @@ def _write_runtime_dispatch_profile_sources(tmp_path: Path, text: str) -> None:
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/dispatch-skills/SKILL.md",
         "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
-        "product/.aw_template/control-state.md",
+        "product/.servo_template/control-state.md",
     ):
         write_doc(tmp_path / relative_path, text)
 
@@ -469,7 +469,7 @@ def _write_worktrack_intake_review_sources(tmp_path: Path, text: str) -> None:
         "docs/harness/artifact/worktrack/contract.md",
         "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
         "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
-        "product/.aw_template/worktrack/contract.md",
+        "product/.servo_template/worktrack/contract.md",
     ):
         write_doc(tmp_path / relative_path, text)
 
@@ -899,7 +899,7 @@ def test_check_root_tool_shims_disable_bytecode_accepts_guard_before_import(tmp_
 def test_check_path_governance_docs_list_gitignore_entries_flags_missing_entry(tmp_path: Path) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/path-governance-checks.md",
-        "` .aw/ `\n",
+        "` .servo/ `\n",
     )
 
     report = SemanticReport()
@@ -913,7 +913,7 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
         tmp_path / "docs/project-maintenance/governance/path-governance-checks.md",
         "\n".join(
             [
-                "`.aw/`",
+                "`.servo/`",
                 "`.agents/`",
                 "`.claude/`",
                 "`.autoworkflow/`",
@@ -1062,7 +1062,7 @@ def _write_runtime_artifacts(
     backlog_entries: str | None = None,
 ) -> None:
     write_doc(
-        tmp_path / ".aw/control-state.md",
+        tmp_path / ".servo/control-state.md",
         "\n".join(
             [
                 "# Harness Control State",
@@ -1093,17 +1093,17 @@ def _write_runtime_artifacts(
             ]
         )
     write_doc(
-        tmp_path / ".aw/repo/milestone-backlog.md",
+        tmp_path / ".servo/repo/milestone-backlog.md",
         "# Repo Milestone Backlog\n\n## Pipeline Entries\n\n" + backlog_entries,
     )
 
 
-def test_check_runtime_artifact_consistency_noops_without_aw(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_noops_without_servo(tmp_path: Path) -> None:
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert report.failures == []
-    assert any(".aw/ directory missing" in item for item in report.infos)
+    assert any(".servo/ directory missing" in item for item in report.infos)
 
 
 def test_check_runtime_artifact_consistency_accepts_consistent_state(tmp_path: Path) -> None:

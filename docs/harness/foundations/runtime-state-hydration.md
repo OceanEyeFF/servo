@@ -2,17 +2,17 @@
 title: Harness Runtime State Hydration
 status: active
 updated: 2026-05-16
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-16
 ---
 
 # Harness Runtime State Hydration
 
-> 目的：固定 Harness 启动或恢复时如何从 `.aw/control-state.md` 恢复控制配置。字段合同见 [control-state.md](../artifact/control/control-state.md)。
+> 目的：固定 Harness 启动或恢复时如何从 `.servo/control-state.md` 恢复控制配置。字段合同见 [control-state.md](../artifact/control/control-state.md)。
 
 ## Hydration First
 
-每次 Harness 启动先读取 `.aw/control-state.md`，恢复控制配置，再判断 Scope / Function。
+每次 Harness 启动先读取 `.servo/control-state.md`，恢复控制配置，再判断 Scope / Function。
 
 最小读取面：
 
@@ -36,14 +36,14 @@ last_verified: 2026-05-16
 - docs truth layer
 - product / toolchain source layer
 
-`.aw/` 是 repo-local runtime control-plane state，不替代 `docs/`、`product/` 或 `toolchain/`。
+`.servo/` 是 repo-local runtime control-plane state，不替代 `docs/`、`product/` 或 `toolchain/`。
 
 ## Authority Updates
 
 如果 programmer 给出长期权限、自动性或分派策略变更，Harness 必须区分一次性审批和持久配置。
 
 - 一次性审批写入本轮 evidence / handoff
-- 持久配置变更写入 `.aw/control-state.md` 对应 policy / ledger 字段
+- 持久配置变更写入 `.servo/control-state.md` 对应 policy / ledger 字段
 - 改变 canonical 字段语义或默认值时，同步更新 control-state artifact 合同与初始化模板
 
 仅当用户明确表达持久授权或更改默认策略时，才可更新长期 authority 字段。

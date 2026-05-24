@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/recover-worktrack-skill/SKILL.md"
   ],
-  "target_dir": "aw-recover-worktrack-skill",
+  "target_dir": "servo-recover-worktrack-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "recover-worktrack-skill"
+    "recover-worktrack-skill",
+    "aw-recover-worktrack-skill"
   ]
 }

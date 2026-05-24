@@ -2,7 +2,7 @@
 title: "Harness Quickstart Tutorial"
 status: active
 updated: 2026-05-18
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-18
 ---
 
@@ -12,7 +12,7 @@ last_verified: 2026-05-18
 
 ## 前置条件
 
-- Node.js >= 18（用于 `npx aw-installer`）
+- Node.js >= 18（用于 `npx servo-installer`）
 - 一个 Git 仓库（已有代码或空项目均可）
 - 一个支持 slash command 的 Coding CLI（Codex 或 Claude Code）
 
@@ -21,7 +21,7 @@ last_verified: 2026-05-18
 在安装前，先诊断目标仓库是否已安装过 Harness：
 
 ```bash
-npx aw-installer diagnose --backend agents --json
+npx servo-installer diagnose --backend agents --json
 ```
 
 输出示例：
@@ -36,21 +36,21 @@ npx aw-installer diagnose --backend agents --json
 **人类 operator 推荐使用 TUI 引导流程：**
 
 ```bash
-npx aw-installer
+npx servo-installer
 ```
 
-不带参数启动 TUI，默认使用 `bundle` backend（同时部署 agents + claude）。TUI 提供六阶段引导：diagnose → preview → confirm → install → verify → summary。详见 [TUI/CLI 合同](../../aw-installer/tui/human-cli-contract.md)。
+不带参数启动 TUI，默认使用 `bundle` backend（同时部署 agents + claude）。TUI 提供六阶段引导：diagnose → preview → confirm → install → verify → summary。详见 [TUI/CLI 合同](../../servo-installer/tui/human-cli-contract.md)。
 
 **AI agent、CI 或脚本使用 CLI：**
 
 ```bash
-npx aw-installer install --backend agents
+npx servo-installer install --backend agents
 ```
 
 验证安装：
 
 ```bash
-npx aw-installer verify --backend agents
+npx servo-installer verify --backend agents
 ```
 
 `agents` 是当前主路径 backend。Claude Code 用户将 `--backend agents` 替换为 `--backend claude`。CLI 必须显式指定 `--backend`。
@@ -63,9 +63,9 @@ npx aw-installer verify --backend agents
 /set-harness-goal-skill
 ```
 
-这一步会创建 `.aw/` 目录并生成 Goal Charter（`repo goal/charter`），定义仓库的长期目标、工程节点类型和系统不变量。
+这一步会创建 `.servo/` 目录并生成 Goal Charter（`repo goal/charter`），定义仓库的长期目标、工程节点类型和系统不变量。
 
-初始化完成后，`.aw/` 下会生成：
+初始化完成后，`.servo/` 下会生成：
 - `control-state.md` — Harness 控制面状态
 - `goal-charter.md` — 仓库目标与约束
 - `repo/` — Repo 级快照和 backlog
@@ -175,7 +175,7 @@ Harness 会在额度耗尽时停止并交还控制权。你可以用新的 `/har
 
 ### Q: 如何查看当前 Milestone 进度？
 
-Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以直接查看 `.aw/milestone/` 目录下的 Milestone artifact。
+Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以直接查看 `.servo/milestone/` 目录下的 Milestone artifact。
 
 ### Q: agents 和 claude backend 有什么区别？
 

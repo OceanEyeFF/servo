@@ -2,7 +2,7 @@
 title: "调整项目目标与追加需求"
 status: active
 updated: 2026-05-07
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-07
 ---
 

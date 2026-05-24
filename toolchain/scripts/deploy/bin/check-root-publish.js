@@ -56,19 +56,19 @@ function main() {
   const scaffoldPackageMetadata = existsSync(scaffoldPackagePath)
     ? readPackageMetadata(scaffoldPackagePath)
     : null;
-  const packageJsonOverride = process.env.AW_INSTALLER_PACKAGE_JSON || "";
+  const packageJsonOverride = process.env.SERVO_INSTALLER_PACKAGE_JSON || "";
   const version = packageMetadata.version || "";
   const isDryRun = process.env.npm_config_dry_run === "true";
   const isLocalVersion = version === "0.0.0-local" || version.includes("-local");
   const prerelease = (version.match(semverPattern) || [])[4] || "";
-  const releaseTag = process.env.AW_INSTALLER_RELEASE_GIT_TAG || "";
-  const envReleaseChannel = process.env.AW_INSTALLER_RELEASE_CHANNEL || "";
+  const releaseTag = process.env.SERVO_INSTALLER_RELEASE_GIT_TAG || "";
+  const envReleaseChannel = process.env.SERVO_INSTALLER_RELEASE_CHANNEL || "";
   const derivedReleaseChannel = deriveReleaseChannelFromTag(releaseTag, version, prerelease);
   const releaseChannel = derivedReleaseChannel || envReleaseChannel;
   const npmDistTag = process.env.npm_config_tag || "latest";
-  const publishApproved = process.env.AW_INSTALLER_PUBLISH_APPROVED === "1";
+  const publishApproved = process.env.SERVO_INSTALLER_PUBLISH_APPROVED === "1";
   const isCiRelease = process.env.CI === "true";
-  const releaseApprovalMetadata = packageMetadata.awInstallerRelease || {};
+  const releaseApprovalMetadata = packageMetadata.servoInstallerRelease || {};
   const metadataPublishApproval = releaseApprovalMetadata.realPublishApproval || "";
   const metadataApprovedVersion = releaseApprovalMetadata.approvedVersion || "";
   const metadataApprovedGitTag = releaseApprovalMetadata.approvedGitTag || "";
@@ -76,26 +76,26 @@ function main() {
 
   runChecks([
     {
-      test: () => packageMetadata.name === "aw-installer",
+      test: () => packageMetadata.name === "servo-installer",
       message: () => `refusing to publish unexpected package ${packageMetadata.name || "<missing-name>"}`,
     },
     {
       test: () => !packageJsonOverride,
       message: () =>
-        "refusing to publish aw-installer; AW_INSTALLER_PACKAGE_JSON override is not supported",
+        "refusing to publish servo-installer; SERVO_INSTALLER_PACKAGE_JSON override is not supported",
     },
     {
       test: () =>
         scaffoldPackageMetadata === null || scaffoldPackageMetadata.version === packageMetadata.version,
       message: () =>
-        `refusing to publish aw-installer; root package version ${packageMetadata.version || "<missing-version>"} does not match local scaffold package version ${scaffoldPackageMetadata.version || "<missing-version>"}`,
+        `refusing to publish servo-installer; root package version ${packageMetadata.version || "<missing-version>"} does not match local scaffold package version ${scaffoldPackageMetadata.version || "<missing-version>"}`,
     },
     {
       test: () =>
         scaffoldPackageMetadata === null ||
         rootFilesCoverScaffoldFiles(packageMetadata.files || [], scaffoldPackageMetadata.files || []),
       message: () =>
-        "refusing to publish aw-installer; root package files must cover every local scaffold package file under toolchain/scripts/deploy/",
+        "refusing to publish servo-installer; root package files must cover every local scaffold package file under toolchain/scripts/deploy/",
     },
   ]);
 
@@ -107,68 +107,68 @@ function main() {
     {
       test: () => !isLocalVersion,
       message: () =>
-        `refusing to publish aw-installer ${version}; choose an approved non-local version first`,
+        `refusing to publish servo-installer ${version}; choose an approved non-local version first`,
     },
     {
       test: () => semverPattern.test(version),
-      message: () => `refusing to publish aw-installer ${version}; version must be valid semver`,
+      message: () => `refusing to publish servo-installer ${version}; version must be valid semver`,
     },
     {
       test: () => publishApproved,
       message: () =>
-        "refusing to publish aw-installer; set AW_INSTALLER_PUBLISH_APPROVED=1 after release approval",
+        "refusing to publish servo-installer; set SERVO_INSTALLER_PUBLISH_APPROVED=1 after release approval",
     },
     {
       test: () => metadataPublishApproval === "approved",
       message: () =>
-        "refusing to publish aw-installer; package metadata realPublishApproval must be approved by the explicit publish worktrack",
+        "refusing to publish servo-installer; package metadata realPublishApproval must be approved by the explicit publish worktrack",
     },
     {
       test: () => metadataApprovedVersion === version,
       message: () =>
-        `refusing to publish aw-installer; package metadata approvedVersion ${metadataApprovedVersion || "<missing-version>"} must match ${version}`,
+        `refusing to publish servo-installer; package metadata approvedVersion ${metadataApprovedVersion || "<missing-version>"} must match ${version}`,
     },
     {
       test: () => metadataApprovedGitTag === releaseTag,
       message: () =>
-        `refusing to publish aw-installer; package metadata approvedGitTag ${metadataApprovedGitTag || "<missing-tag>"} must match ${releaseTag || "<missing-tag>"}`,
+        `refusing to publish servo-installer; package metadata approvedGitTag ${metadataApprovedGitTag || "<missing-tag>"} must match ${releaseTag || "<missing-tag>"}`,
     },
     {
       test: () => metadataApprovedChannel === releaseChannel,
       message: () =>
-        `refusing to publish aw-installer; package metadata approvedChannel ${metadataApprovedChannel || "<missing-channel>"} must match ${releaseChannel || "<missing-channel>"}`,
+        `refusing to publish servo-installer; package metadata approvedChannel ${metadataApprovedChannel || "<missing-channel>"} must match ${releaseChannel || "<missing-channel>"}`,
     },
     {
       test: () => isCiRelease,
-      message: () => "refusing to publish aw-installer; real publish must run from a CI release context",
+      message: () => "refusing to publish servo-installer; real publish must run from a CI release context",
     },
     {
       test: () => ["latest", "next", "canary"].includes(releaseChannel),
       message: () =>
-        "refusing to publish aw-installer; release channel must derive from AW_INSTALLER_RELEASE_GIT_TAG or use AW_INSTALLER_RELEASE_CHANNEL latest, next, or canary",
+        "refusing to publish servo-installer; release channel must derive from SERVO_INSTALLER_RELEASE_GIT_TAG or use SERVO_INSTALLER_RELEASE_CHANNEL latest, next, or canary",
     },
     {
       test: () => npmDistTag === releaseChannel,
       message: () =>
-        `refusing to publish aw-installer; npm dist-tag ${npmDistTag} does not match release channel ${releaseChannel}`,
+        `refusing to publish servo-installer; npm dist-tag ${npmDistTag} does not match release channel ${releaseChannel}`,
     },
     {
       test: () => releaseChannel !== "latest" || !prerelease,
-      message: () => "refusing to publish aw-installer latest; latest releases must not use prerelease versions",
+      message: () => "refusing to publish servo-installer latest; latest releases must not use prerelease versions",
     },
     {
       test: () => releaseChannel !== "next" || /^(alpha|beta|rc)(\.|$)/.test(prerelease),
       message: () =>
-        "refusing to publish aw-installer next; next releases must use alpha, beta, or rc prerelease versions",
+        "refusing to publish servo-installer next; next releases must use alpha, beta, or rc prerelease versions",
     },
     {
       test: () => releaseChannel !== "canary" || /(^|\.)canary(\.|$)/.test(prerelease),
       message: () =>
-        "refusing to publish aw-installer canary; canary releases must include a canary prerelease segment",
+        "refusing to publish servo-installer canary; canary releases must include a canary prerelease segment",
     },
     {
       test: () => releaseTag === `v${version}`,
-      message: () => `refusing to publish aw-installer; AW_INSTALLER_RELEASE_GIT_TAG must be v${version}`,
+      message: () => `refusing to publish servo-installer; SERVO_INSTALLER_RELEASE_GIT_TAG must be v${version}`,
     },
   ]);
 

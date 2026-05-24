@@ -73,7 +73,7 @@
 ## 约束
 
 - 不要输出大型战略报告。
-- 不要把候选 worktrack 写进 `.aw/worktrack/*`。
+- 不要把候选 worktrack 写进 `.servo/worktrack/*`。
 - 不要把 overview 候选当成已经批准的执行范围。
 - 不要绕过 active route boundary；如果当前配置不允许 `进入工作追踪`，推荐必须降级为 `保持并观察` 并把候选作为建议返回。
 - 每个候选必须能收敛到一个小的、可验证的第一切片。

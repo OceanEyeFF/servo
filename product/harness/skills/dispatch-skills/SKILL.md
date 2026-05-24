@@ -15,7 +15,7 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 
 这个技能也是执行前最后一道限定范围防线。如果调度包对单轮而言过大，这个技能应拒绝它并返回调度阶段，而不是把过大的初始切片强行规范成一次执行。
 
-执行载体选择必须由可开关参数控制：先读取 `.aw/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.aw/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 表示按 `docs/harness/foundations/dispatch-decision-policy.md` 判断执行载体，基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。只有 `auto` 命中 runtime fallback、权限边界禁止委派，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。
+执行载体选择必须由可开关参数控制：先读取 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 表示按 `docs/harness/foundations/dispatch-decision-policy.md` 判断执行载体，基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。只有 `auto` 命中 runtime fallback、权限边界禁止委派，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。
 
 ## 何时使用
 

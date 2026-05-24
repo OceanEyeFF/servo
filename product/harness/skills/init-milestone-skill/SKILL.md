@@ -17,10 +17,10 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 
 - Programmer 直接提供的 milestone 规格（title、purpose、worktrack_list、priority、activation_rules、completion_threshold_pct 等）
 - Harness 从 Goal Charter 和 repo snapshot 推理出的 milestone 建议（需经本技能验证后写入）
-- 当前 milestone-backlog（`.aw/repo/milestone-backlog.md`）用于唯一性检查和 pipeline 上下文
-- 当前 control-state（`.aw/control-state.md`）用于 active milestone 状态
+- 当前 milestone-backlog（`.servo/repo/milestone-backlog.md`）用于唯一性检查和 pipeline 上下文
+- 当前 control-state（`.servo/control-state.md`）用于 active milestone 状态
 
-本技能对 `.aw/milestone/` 的写入是创建或 upsert 单个 milestone artifact；对 `.aw/repo/milestone-backlog.md` 的写入是按 milestone_id upsert 条目。本技能不修改 version/release 状态，不触发 worktrack 初始化。
+本技能对 `.servo/milestone/` 的写入是创建或 upsert 单个 milestone artifact；对 `.servo/repo/milestone-backlog.md` 的写入是按 milestone_id upsert 条目。本技能不修改 version/release 状态，不触发 worktrack 初始化。
 
 ## 何时使用
 
@@ -36,7 +36,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 ## 工作流
 
 1. 确认这是一轮 Milestone 初始化轮次，不是 Milestone 状态分析或 Worktrack 初始化。
-2. 读取当前 milestone-backlog（`.aw/repo/milestone-backlog.md`）和 control-state（`.aw/control-state.md`）获取 pipeline 上下文。
+2. 读取当前 milestone-backlog（`.servo/repo/milestone-backlog.md`）和 control-state（`.servo/control-state.md`）获取 pipeline 上下文。
 3. 解析输入来源：
    - 若来自 programmer：直接使用提供的 milestone 规格
    - 若来自 harness 推理：验证规格完整性（至少包含 title、purpose），缺失关键字段时标记为规格不完整并停止
@@ -94,11 +94,11 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - 任一 milestone 的 `active` 判定都要求 `milestone_brief_confirmed == true`
    - 同一时刻仅允许一个 `active`：若设置当前 milestone 为 active 且已有 active milestone，先处理旧 active 的过渡（保持原状，标记冲突由 harness-skill 处理）
 12. 创建或更新 milestone artifact：
-   - 写入 `.aw/milestone/{milestone_id}.md`
+   - 写入 `.servo/milestone/{milestone_id}.md`
    - 使用 milestone 模板字段结构（milestone_id、title、purpose、status、worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、aggregated_evidence、release_version_consideration、developer_decision_boundary、depends_on_milestones、priority、activation_rules、created_by、updated、milestone_kind）
    - upsert 时保留已有字段，仅更新变化字段
 13. 写入或更新 milestone-backlog：
-   - 按 milestone_id upsert 到 `.aw/repo/milestone-backlog.md`
+   - 按 milestone_id upsert 到 `.servo/repo/milestone-backlog.md`
    - 若 backlog 文件不存在则创建
    - 条目包含：milestone_id、title、purpose、status、priority、depends_on_milestones、worktrack_list、created_by、created_at、updated、updated_by、activation_rules、milestone_kind
 14. 更新 control-state（若激活状态变化）：
@@ -118,7 +118,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - 需要创建、upsert 或激活 milestone，但 `milestone_brief_confirmed != true`
 - 当前已有 active milestone 且 programmer 未明确指示替换
 - milestone-backlog 损坏、不可读或不可解析（同上位 milestone-status-skill 的停止条件）
-- 写入 `.aw/milestone/` 或 `.aw/repo/milestone-backlog.md` 失败
+- 写入 `.servo/milestone/` 或 `.servo/repo/milestone-backlog.md` 失败
 
 ## 硬约束
 
@@ -179,6 +179,6 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 
 ## 资源
 
-使用当前 milestone-backlog（`.aw/repo/milestone-backlog.md`）、control-state（`.aw/control-state.md`）、milestone 模板（`.aw/milestone/milestone-template.md`）作为主要输入。当 milestone 规格来自 harness 推理时，还需读取 Goal Charter（`.aw/goal-charter.md`）和 repo snapshot（`.aw/repo/snapshot-status.md`）以验证推理依据。
+使用当前 milestone-backlog（`.servo/repo/milestone-backlog.md`）、control-state（`.servo/control-state.md`）、milestone 模板（`.servo/milestone/milestone-template.md`）作为主要输入。当 milestone 规格来自 harness 推理时，还需读取 Goal Charter（`.servo/goal-charter.md`）和 repo snapshot（`.servo/repo/snapshot-status.md`）以验证推理依据。
 
 结果应保持聚焦于 Milestone 的初始化动作，而不是扩张成 pipeline 分析或 worktrack 规划。输出应可直接作为 `RepoScope.Decide` 和 `harness-skill` 的 pipeline 状态输入。

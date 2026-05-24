@@ -19,7 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "aw-harness-skill"
+    "servo-harness-skill"
   ],
   "claude_frontmatter": {
     "disable-model-invocation": true

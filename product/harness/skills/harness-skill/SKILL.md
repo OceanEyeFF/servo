@@ -74,7 +74,7 @@ Harness 作为控制系统，包含以下系统组件：
 - diff impact analysis
 - 文档 freshness 检查
 - `Harness Control State` 中的控制面信号
-- `Milestone` artifact（`.aw/milestone/`）中的聚合进度、验收状态和 handback 边界信号
+- `Milestone` artifact（`.servo/milestone/`）中的聚合进度、验收状态和 handback 边界信号
 
 没有这些，state 只是"自报状态"。
 
@@ -214,7 +214,7 @@ Harness 文档与控制逻辑应按 3 个正交维度组织：
 
 ```
 参考信号设定（循环外，Goal 在循环中不可变）：
-SetGoal (set-harness-goal-skill) ──→ 仅在 .aw/ 未初始化时
+SetGoal (set-harness-goal-skill) ──→ 仅在 .servo/ 未初始化时
 ChangeGoal (repo-change-goal-skill) ──→ 由外部目标变更请求触发
                                     ↓
                               设定/重设完成后启动常规循环
@@ -340,15 +340,15 @@ Gate 应汇总**正交校验面**的裁决：
 
 ### 10.1 状态估计阶段
 
-1. **现有 `.aw` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.aw/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
-   - 如果 `.aw/control-state.md` 或 `.aw/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `set-harness-goal-skill`，不得凭当前对话临时假设长期配置。
+1. **现有 `.aw` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.servo/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
+   - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `set-harness-goal-skill`，不得凭当前对话临时假设长期配置。
    - 必读控制配置段包括 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 和 `Autonomy Ledger`。
    - 缺失字段按 `docs/harness/artifact/control/control-state.md` 的默认值解释，并在状态估计中记录 `config_hydration_gaps`；缺失不能静默扩大权限或自动性。
-   - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.aw/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 `docs/harness/artifact/control/control-state.md` 与初始化模板。
-   - `.aw/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
+   - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 `docs/harness/artifact/control/control-state.md` 与初始化模板。
+   - `.servo/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
-   - 从 `.aw/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（Harness 管理的目标分支）
+   - 从 `.servo/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（Harness 管理的目标分支）
    - 执行 `git branch --show-current` 获取当前检出的分支
    - 对比两个分支名：
      - 若一致：通过，继续正常状态估计
@@ -361,7 +361,7 @@ Gate 应汇总**正交校验面**的裁决：
    - `RepoScope`：读取 `Repo Goal/Charter`、`Repo Snapshot/Status`
    - `WorktrackScope`：读取 `Worktrack Contract`、`Plan/Task Queue`、当前 evidence
 5. **Git Commit Hash 基线对比（幂等性守卫）**：
-   - 读取 `.aw/control-state.md` 的 `Baseline Traceability` 段，获取 `latest_observed_checkpoint`（即上次刷新时记录的 git commit hash）
+   - 读取 `.servo/control-state.md` 的 `Baseline Traceability` 段，获取 `latest_observed_checkpoint`（即上次刷新时记录的 git commit hash）
    - 执行 `git rev-parse HEAD` 获取当前 HEAD hash
    - 对比两个 hash：若一致，说明 repo 代码基线自上次刷新后未变化，跳过 `repo-refresh-skill` 绑定，仅在状态估计中标记 `repo_baseline_unchanged: true`
    - 若 hash 不一致（或 `latest_observed_checkpoint` 缺失），说明代码基线已变化，必须在本轮合适阶段绑定 `repo-refresh-skill` 刷新 Repo 级慢变量
@@ -401,7 +401,7 @@ Gate 应汇总**正交校验面**的裁决：
 ### 10.4 子代理分派阶段
 
 1. 为选定的 Skill 构建限定范围任务简报和信息包
-2. 读取执行载体开关：先看 `.aw/control-state.md` 的 `subagent_dispatch_mode_override_scope`。默认 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有显式 `global-override` 才让 `.aw/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack。若 worktrack 未声明，再使用 control-state 作为 repo 级默认值，最终默认值为 `auto`
+2. 读取执行载体开关：先看 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope`。默认 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有显式 `global-override` 才让 `.servo/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack。若 worktrack 未声明，再使用 control-state 作为 repo 级默认值，最终默认值为 `auto`
 3. `runtime_dispatch_mode` / `subagent_dispatch_mode` 支持 `auto` / `delegated` / `current-carrier`
 4. `auto` 表示按 `docs/harness/foundations/dispatch-decision-policy.md` 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
@@ -434,20 +434,20 @@ Gate 应汇总**正交校验面**的裁决：
 1. 根据裁决结果更新 `Harness Control State`
 2. 如果是 `通过` → 进入 `Close` → 然后 `RepoScope.Refresh`：
    - **显式绑定 `repo-refresh-skill`**，从已验证 `关卡证据` 刷新 `Repo Snapshot/Status`
-   - 刷新完成后，执行 `git rev-parse HEAD` 获取当前 HEAD hash，将其写入 `.aw/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint` 字段，作为下次状态估计时 git hash 对比的锚点
+   - 刷新完成后，执行 `git rev-parse HEAD` 获取当前 HEAD hash，将其写入 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint` 字段，作为下次状态估计时 git hash 对比的锚点
    - 此 hash 存储确保下次 Harness 轮次启动时能正确判断是否需要重新刷新
 3. 如果是 `失败/阻塞` → 进入 `Recover`
-4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.aw/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
-5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.aw/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
+4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
+5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
    - **Final Acceptance 事务边界**：
      - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
      - programmer 明确接受 goal-driven milestone 后，acceptance writeback 必须作为一个逻辑事务处理：预先校验 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 与 worktrack status 输入；再写入所有相关 artifact；最后做提交后校验。
-     - 该事务的最小写入集合为 `.aw/milestone/{milestone_id}.md`、`.aw/repo/milestone-backlog.md`、`.aw/control-state.md`，以及必要时 `.aw/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
+     - 该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/control-state.md`，以及必要时 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
      - 对 goal-driven milestone，programmer final acceptance 后 backlog 中该 milestone 的所有已闭环 worktrack 不得继续标记为 `(planned)` 或 `(active)`；必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
      - 写回后必须校验：同一时刻最多一个 active milestone；control-state 的 `active_milestone` 与 backlog 唯一 active 条目一致；`milestone_status` 与 active milestone 状态一致；`milestone_pipeline_summary` 与 backlog 计数一致；completed/accepted milestone 不含未完成 worktrack 标记。
      - 任一写入或提交后校验失败时，不得伪装成已完成验收；必须标记 `writeback_incomplete` / `milestone_pipeline_stale`，返回 `proceed_blockers`，并停在 RepoScope.Observe 或 handback，等待恢复或 programmer 决策。
-   - **Milestone Artifact 更新**（`.aw/milestone/{milestone_id}.md`）：
+   - **Milestone Artifact 更新**（`.servo/milestone/{milestone_id}.md`）：
      - 将 `progress_counter` 更新为 milestone-status-skill 计算的值（total/completed/blocked/deferred）
      - goal-driven 且 `milestone_acceptance_verdict == "achieved"`、`milestone_gate_verdict == "pass"` 且双重验收通过：将 `status` 从 `active` 更新为 `completed`
      - work-collection 且 `milestone_acceptance_verdict == "achieved"`（worktrack_list_finished == true）：将 `status` 从 `active` 更新为 `completed`，随后自动标记为 `superseded`
@@ -463,7 +463,7 @@ Gate 应汇总**正交校验面**的裁决：
      - 读取 `milestone-status-skill` 输出的 `pipeline_advancement`
      - 若存在符合条件的下一 planned milestone：更新其 status 为 `active`，更新 control-state 的 `active_milestone`
      - 若不存在：清空 control-state 的 `active_milestone`
-   - **Milestone Backlog 更新**：将上述 status 变更同步 upsert 到 `.aw/repo/milestone-backlog.md`；work-collection milestone 完成时写入 `status: superseded`
+   - **Milestone Backlog 更新**：将上述 status 变更同步 upsert 到 `.servo/repo/milestone-backlog.md`；work-collection milestone 完成时写入 `status: superseded`
    - 若 `milestone_gate_verdict != "pass"`：不得把 Milestone 标记为完成，不得自动推进 pipeline，必须返回 `handback_required = true` 并暴露阻断原因
    - 不得跳过 milestone progress writeback；不得在 `milestone_acceptance_verdict` 未达成时变更 milestone status
 7. 如果命中正式停止条件 → 向程序员返回控制权
@@ -473,7 +473,7 @@ Gate 应汇总**正交校验面**的裁决：
 
 Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `doc-catch-up-worker-skill`。
 
-**存储位置**：`.aw/control-state.md` 的 `Baseline Traceability` 段。
+**存储位置**：`.servo/control-state.md` 的 `Baseline Traceability` 段。
 
 **字段定义**：
 
@@ -541,7 +541,7 @@ Close/Refresh 完成 → 状态更新阶段
 
 | 恢复动作 | 触发条件 | 操作 |
 |---------|---------|------|
-| `rebuild-pipeline` | milestone-backlog 损坏或与 `.aw/milestone/` 目录不一致 | 重新扫描 `.aw/milestone/` 目录，从 artifact 文件重建 milestone-backlog |
+| `rebuild-pipeline` | milestone-backlog 损坏或与 `.servo/milestone/` 目录不一致 | 重新扫描 `.servo/milestone/` 目录，从 artifact 文件重建 milestone-backlog |
 | `reconcile-active` | control-state `active_milestone` 指向不存在的 milestone | 清空 `active_milestone`，标记 `milestone_pipeline_stale: true`，触发 pipeline 重新评估 |
 | `repair-binding` | worktrack-backlog 中存在 milestone_id 但对应 milestone 不存在 | 标记为 orphan binding，在 milestone-status-skill 输出中暴露，等待 programmer 决策 |
 | `clear-stale-reference` | milestone artifact 文件存在但不在 backlog 中 | 按 artifact 文件重建 backlog 条目（保留原始 created_at/created_by） |
@@ -620,7 +620,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 2. **控制结论优先**：影响下一动作决策的信息放在 `Control Signal` 层；完整证据、日志、原始输出放在 `Supporting Detail` 层。
 3. **禁止平铺重复**：已在其他 artifact 中记录的信息，使用引用（文件路径 + section）而不是内联全文复制。
 4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `- ` 或 `待填写`）。
-5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.aw/worktrack/contract.md#Task Goal]`。
+5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.servo/worktrack/contract.md#Task Goal]`。
 6. **压缩不是省略**：`Supporting Detail` 层必须保留完整内容，只是不纳入传递/决策上下文；后续如需查阅细节，可直接读取。
 
 ## 十五、硬约束
@@ -633,8 +633,8 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 - **Function 算子必须在控制面上显性化**为 `Observe → Decide → Dispatch → Verify → Judge → Recover → Close → ChangeGoal` 的控制语义；禁止仅通过技能名称隐式传达当前算子。
 - **Harness 仅负责选择算子、绑定技能和裁决 Gate**；具体代码仓库动作、任务列表内容和执行任务的细节由下游技能的算子实现负责。
 - **SubAgent 使用必须是可开关参数，而不是硬编码行为。** 控制态字段 `subagent_dispatch_mode` 与工作追踪约定字段 `runtime_dispatch_mode` 支持 `auto` / `delegated` / `current-carrier`；控制态字段 `subagent_dispatch_mode_override_scope` 默认是 `worktrack-contract-primary`，只有显式 `global-override` 才是全局覆盖；默认 `auto` 表示按 Dispatch Decision Policy 选择载体，不得把运行时支持 SubAgent 单独当成默认委派理由。未委派时必须将原因记录为 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。
-- **现有 `.aw` 控制配置必须先 hydration 再决策。** Harness 不得忽略上一轮 `.aw/control-state.md` 中的 linked artifact、approval boundary、continuation authority、handback guard、baseline traceability 或 autonomy ledger；缺失字段只能按 artifact 合同默认值降级解释，不能静默扩大权限。
-- **长期权限变更必须写回控制配置。** 程序员授予的持久自动性、分派模式、审批边界或预算变更必须写入 `.aw/control-state.md` 的配置段；若只是本轮一次性批准，必须保留为本轮 evidence / handoff，不得改变长期默认值。
+- **现有 `.aw` 控制配置必须先 hydration 再决策。** Harness 不得忽略上一轮 `.servo/control-state.md` 中的 linked artifact、approval boundary、continuation authority、handback guard、baseline traceability 或 autonomy ledger；缺失字段只能按 artifact 合同默认值降级解释，不能静默扩大权限。
+- **长期权限变更必须写回控制配置。** 程序员授予的持久自动性、分派模式、审批边界或预算变更必须写入 `.servo/control-state.md` 的配置段；若只是本轮一次性批准，必须保留为本轮 evidence / handoff，不得改变长期默认值。
 - **约定后自动工作追踪仅当 `Harness Control State` 明确授予 `约定后自动性：最小委派` 时才可开启**；否则必须保持手动交接模式。
 - **自动继续推进的边界严格等于当前 `Worktrack Contract` 的 scope**；超出 scope 的改动、目标重定义或预算超支必须触发审批门控。
 - **自动切片仅可在当前切片未收束时串接**；一旦切片收束且 `要求自动切片后停止` 为真，必须停止执行并重新交接。

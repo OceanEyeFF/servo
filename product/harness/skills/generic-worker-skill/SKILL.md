@@ -56,7 +56,7 @@ description: 当 Harness 或分派阶段需要一个通用执行载体来接收�
 
 遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
 
-- 仅当任务 Prompt 明确要求并给出边界时，修改 `.aw/` 控制面才合法；否则修改 `.aw/` 控制面的行为必须返回 blocked。
+- 仅当任务 Prompt 明确要求并给出边界时，修改 `.servo/` 控制面才合法；否则修改 `.servo/` 控制面的行为必须返回 blocked。
 - 读取上下文不得越过 `context_budget`；需要扩读时必须说明理由并返回分派或调度阶段。
 - `context_budget.must_read` 是启动前必须读取的事实引用；`context_budget.may_read` 只能按需读取；`context_budget.do_not_read` 禁止读取。
 - 唯一合法行为是仅在存在真实委派载体时声明 SubAgent 身份；在没有真实委派载体时声称自己是 SubAgent 的行为必须显式暴露为 `runtime fallback`。

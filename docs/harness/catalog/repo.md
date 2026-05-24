@@ -2,7 +2,7 @@
 title: "Harness Skill Catalog / RepoScope"
 status: active
 updated: 2026-05-16
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-08
 ---
 # RepoScope Skill Catalog
@@ -19,7 +19,7 @@ last_verified: 2026-05-08
 
 ### 0. set-harness-goal-skill
 
-职责：当 Harness 尚未初始化或 `.aw/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
+职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
 
 主要依赖：
 
@@ -157,7 +157,7 @@ canonical executable source：
 
 ### 5. repo-refresh-skill
 
-职责：在 worktrack closeout 后刷新 repo 慢变量状态，把已验证结果回收到 repo 级正式对象，只处理 repo 级 writeback 不处理 .aw/worktrack/* 维护。刷新成功后必须把当前 HEAD 写回 `Harness Control State` 的 `Baseline Traceability.latest_observed_checkpoint`，并同步 `checkpoint_ref` / `verified_at` 等观测锚点；首次刷新或字段为空时不得把空值解释为可跳过刷新。
+职责：在 worktrack closeout 后刷新 repo 慢变量状态，把已验证结果回收到 repo 级正式对象，只处理 repo 级 writeback 不处理 .servo/worktrack/* 维护。刷新成功后必须把当前 HEAD 写回 `Harness Control State` 的 `Baseline Traceability.latest_observed_checkpoint`，并同步 `checkpoint_ref` / `verified_at` 等观测锚点；首次刷新或字段为空时不得把空值解释为可跳过刷新。
 
 主要依赖：
 

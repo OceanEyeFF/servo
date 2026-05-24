@@ -2,14 +2,14 @@
 title: "Claude Post-Deploy Behavior Tests"
 status: active
 updated: 2026-05-05
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-05
 ---
 # Claude Post-Deploy Behavior Tests
 
 > 目的：固定 Claude Code 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.claude/skills/`、无交互 `claude --bare -p`、多轮观察。
 
-本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
+本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
 
 ## 一、适用范围
 
@@ -45,24 +45,24 @@ printf '.claude/\n' >> "$TMP_REPO/.git/info/exclude"
 printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 ```
 
-默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.aw/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。宿主 `$HOME/.claude` 不可写时用临时 Claude home，只复制登录状态；外发日志前确认不泄露认证文件。
+默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.servo/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。宿主 `$HOME/.claude` 不可写时用临时 Claude home，只复制登录状态；外发日志前确认不泄露认证文件。
 
 ## 四、安装隔离 Claude payload
 
 验证本地 candidate 时优先用 `.tgz`：
 
 ```bash
-PACKAGE_TGZ="/path/to/aw-installer-<version>.tgz"
+PACKAGE_TGZ="/path/to/servo-installer-<version>.tgz"
 (
   cd "$TMP_REPO"
-  AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
-    npx --yes --package "$PACKAGE_TGZ" -- aw-installer install --backend claude
-  AW_HARNESS_REPO_ROOT="" AW_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
-    npx --yes --package "$PACKAGE_TGZ" -- aw-installer verify --backend claude
+  SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
+    npx --yes --package "$PACKAGE_TGZ" -- servo-installer install --backend claude
+  SERVO_HARNESS_REPO_ROOT="" SERVO_HARNESS_TARGET_REPO_ROOT="" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" \
+    npx --yes --package "$PACKAGE_TGZ" -- servo-installer verify --backend claude
 )
 ```
 
-`claude` install 包含全部 20 个 skills（含 Milestone 观测器）；cold-start helper 以 `scripts/deploy_aw.js` 随 payload 分发。
+`claude` install 包含全部 20 个 skills（含 Milestone 观测器）；cold-start helper 以 `scripts/deploy_servo.js` 随 payload 分发。
 
 ## 五、选择观察策略
 
@@ -78,17 +78,17 @@ mkdir -p "$TMP_RUN_ROOT/round-000"
 
 ```text
 Use only `harness-skill` as the top-level control entry.
-This is a cold-start scenario: the repo is empty and `.aw/` does not exist.
+This is a cold-start scenario: the repo is empty and `.servo/` does not exist.
 User requirement: Build a CLI Slay the Spire-lite. Reach full core system with combat, cards, deck, map, and events.
 Working rules: non-interactive test, each subsystem separate Worktrack, complete only first bounded slice unless continuous autonomy, use real files/tests.
-If `.aw/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
+If `.servo/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
 ```
 
 ```bash
 HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "$(cat "$TMP_RUN_ROOT/round-000/init.prompt.md")" --cwd "$TMP_REPO" 2>&1 | tee "$TMP_RUN_ROOT/round-000/session.log"
 ```
 
-保留：`session.log`、Claude 最终输出、`.aw/`、`git status --short`、`git diff --stat`。
+保留：`session.log`、Claude 最终输出、`.servo/`、`git status --short`、`git diff --stat`。
 
 ## 七、后续轮次
 
@@ -96,7 +96,7 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 mkdir -p "$TMP_RUN_ROOT/round-001"
 cat > "$TMP_RUN_ROOT/round-001/continue.prompt.md" <<'EOF'
 Continue via `harness-skill`.
-Respect the current `.aw/control-state.md`, Worktrack artifacts, handback guard, and autonomy budget.
+Respect the current `.servo/control-state.md`, Worktrack artifacts, handback guard, and autonomy budget.
 Do not unlock handback unless the control state already grants continuous autonomy.
 EOF
 
@@ -107,9 +107,9 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 
 ## 八、监督方式
 
-读取每轮完整产物：`session.log`、Claude 最终输出、`.aw/control-state.md`、`.aw/repo/*`、`.aw/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
+读取每轮完整产物：`session.log`、Claude 最终输出、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
 
-观察点：是否从 `.aw/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、策略表现一致。
+观察点：是否从 `.servo/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、策略表现一致。
 
 ## 九、继续与停止
 
@@ -121,6 +121,6 @@ HOME="$CLAUDE_TEST_HOME" NPM_CONFIG_CACHE="$NPM_CONFIG_CACHE" claude --bare -p "
 
 - [Testing Runbooks](./README.md)
 - [Codex Post-Deploy Behavior Tests](./codex-post-deploy-behavior-tests.md)
-- [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md)
+- [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
 - [Claude Repo-local Usage Help](../usage-help/claude.md)
 - [Harness 运行协议](../../harness/foundations/Harness运行协议.md)

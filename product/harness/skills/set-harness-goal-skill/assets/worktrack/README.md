@@ -1,6 +1,6 @@
 # Harness Init Assets / Worktrack
 
-这里承接 `set-harness-goal-skill` 自带的 `.aw/worktrack/` worktrack 级初始化模板。
+这里承接 `set-harness-goal-skill` 自带的 `.servo/worktrack/` worktrack 级初始化模板。
 
 当前入口：
 

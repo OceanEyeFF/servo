@@ -2,7 +2,7 @@
 title: "Dispatch Decision Policy"
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 

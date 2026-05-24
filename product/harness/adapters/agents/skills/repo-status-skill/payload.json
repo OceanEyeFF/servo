@@ -6,9 +6,10 @@
   "canonical_paths": [
     "product/harness/skills/repo-status-skill/SKILL.md"
   ],
-  "target_dir": "aw-repo-status-skill",
+  "target_dir": "servo-repo-status-skill",
   "legacy_target_dirs": [
-    "repo-status-skill"
+    "repo-status-skill",
+    "aw-repo-status-skill"
   ],
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",

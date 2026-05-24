@@ -39,7 +39,7 @@ function deriveReleaseMetadata({ version, releaseTag, releasePrerelease, release
     throw new Error(`GitHub stable releases cannot publish prerelease channel ${channel}`);
   }
 
-  const approvalMarker = `aw-installer-publish-approved: ${releaseTag}`;
+  const approvalMarker = `servo-installer-publish-approved: ${releaseTag}`;
   if (!(releaseBody || "").includes(approvalMarker)) {
     throw new Error(`release body must include explicit approval marker: ${approvalMarker}`);
   }
@@ -63,8 +63,8 @@ function writeGithubEnv(githubEnvPath, metadata) {
 
 function formatGithubEnv(metadata) {
   return [
-    `AW_INSTALLER_RELEASE_GIT_TAG=${metadata.releaseTag}`,
-    `AW_INSTALLER_RELEASE_CHANNEL=${metadata.releaseChannel}`,
+    `SERVO_INSTALLER_RELEASE_GIT_TAG=${metadata.releaseTag}`,
+    `SERVO_INSTALLER_RELEASE_CHANNEL=${metadata.releaseChannel}`,
     `NPM_CONFIG_TAG=${metadata.npmConfigTag}`,
     "",
   ].join("\n");
@@ -85,7 +85,7 @@ function main() {
   }
 
   console.log(
-    `resolved aw-installer release ${metadata.releaseTag} -> npm dist-tag ${metadata.releaseChannel}`,
+    `resolved servo-installer release ${metadata.releaseTag} -> npm dist-tag ${metadata.releaseChannel}`,
   );
   return 0;
 }

@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/dispatch-skills/SKILL.md"
   ],
-  "target_dir": "aw-dispatch-skills",
+  "target_dir": "servo-dispatch-skills",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -19,6 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "dispatch-skills"
+    "dispatch-skills",
+    "aw-dispatch-skills"
   ]
 }

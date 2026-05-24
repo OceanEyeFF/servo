@@ -2,7 +2,7 @@
 title: "Branch / PR 治理规则"
 status: active
 updated: 2026-05-20
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-20
 ---
 # Branch / PR 治理规则
@@ -33,7 +33,7 @@ Decision time: 2026-04-25
 `develop-main -> master` release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。发布型 PR 打开或更新前必须确认：
 
 - root `package.json`、`toolchain/scripts/deploy/package.json`、approval lock、CLI `--version` 和 PR 标题/正文中的版本一致
-- `v<package.version>` tag 不存在，npm registry 中 `aw-installer@<package.version>` 不存在
+- `v<package.version>` tag 不存在，npm registry 中 `servo-installer@<package.version>` 不存在
 - RC PR 明确使用 `next` channel；stable PR 明确使用 `latest` channel
 - PR head SHA 与本地 release-readiness 验证所用 SHA 一致
 - PR 正文必须区分本地已跑证据、远端 CI 证据、pending/skipped/not-run 项；未运行或被跳过的检查不得写成 passed
@@ -79,4 +79,4 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 - `AGENTS.md`
 - `docs/project-maintenance/governance/review-verify-handbook.md`
 - `docs/project-maintenance/governance/path-governance-checks.md`
-- `docs/project-maintenance/governance/aw-installer/aw-installer-release-standard-flow.md`
+- `docs/project-maintenance/governance/servo-installer/servo-installer-release-standard-flow.md`

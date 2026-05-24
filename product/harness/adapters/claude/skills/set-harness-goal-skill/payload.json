@@ -5,7 +5,7 @@
   "canonical_dir": "product/harness/skills/set-harness-goal-skill",
   "canonical_paths": [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
     "product/harness/skills/set-harness-goal-skill/assets/README.md",
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
     "product/harness/skills/set-harness-goal-skill/assets/goal-charter.md",
@@ -29,7 +29,7 @@
   "reference_distribution": "copy-listed-canonical-paths",
   "required_payload_files": [
     "SKILL.md",
-    "scripts/deploy_aw.js",
+    "scripts/deploy_servo.js",
     "assets/README.md",
     "assets/control-state.md",
     "assets/goal-charter.md",
@@ -47,7 +47,8 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "aw-set-harness-goal-skill"
+    "aw-set-harness-goal-skill",
+    "servo-set-harness-goal-skill"
   ],
   "claude_frontmatter": {
     "disable-model-invocation": true

@@ -2,7 +2,7 @@
 title: "Skill Impact Matrix"
 status: active
 updated: 2026-05-14
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-14
 ---
 
@@ -226,7 +226,7 @@ Phase 0 + Phase 1 引入了 Milestone Pipeline 机制，对以下 skills 产生�
 |------|------|------|
 | Milestone Pipeline / Backlog | `docs/harness/artifact/repo/milestone-backlog.md` | Pipeline 运行时 artifact，upsert 语义 |
 | init-milestone-skill | `product/harness/skills/init-milestone-skill/SKILL.md` | RepoScope.Init 算子 |
-| Milestone Backlog runtime | `.aw/repo/milestone-backlog.md` | 运行时实例（gitignore） |
+| Milestone Backlog runtime | `.servo/repo/milestone-backlog.md` | 运行时实例（gitignore） |
 
 ### 概念变更
 

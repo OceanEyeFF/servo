@@ -1,15 +1,15 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-05-16
-owner: aw-kernel
-last_verified: 2026-05-16
+updated: 2026-05-23
+owner: servo-kernel
+last_verified: 2026-05-23
 ---
 # Docs Book Spine
 
 `docs/book.md` 是 `docs/` 的 canonical book-style spine：它定义当前版本中实际存在的完整阅读顺序、章节边界、文档分组关系和路径维护规则。`docs/README.md` 只做入口导航；具体规则正文仍以对应章节内的承接文档为准。
 
-Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路线，不替代 `AGENTS.md` 的 agent boot 规则，不承接 `product/` 源码合同或 `toolchain/` 脚本合同，不把未来迁移计划或后续 Worktrack seed 写成 docs truth。
+Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路线，不替代 `AGENTS.md` 的 agent boot 规则，不承接 `product/` 源码合同或 `toolchain/` 脚本合同，不把未来迁移计划或后续 Worktrack seed 写成 docs truth。
 
 ## How To Read
 
@@ -34,12 +34,12 @@ Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路�
 6. [project-maintenance/governance/path-governance-checks.md](./project-maintenance/governance/path-governance-checks.md)
 7. [project-maintenance/governance/global-language-style.md](./project-maintenance/governance/global-language-style.md)
 8. [project-maintenance/governance/branch-pr-governance.md](./project-maintenance/governance/branch-pr-governance.md)
-9. [project-maintenance/governance/aw-installer/README.md](./project-maintenance/governance/aw-installer/README.md)
-10. [project-maintenance/governance/aw-installer/aw-installer-release-operation-model.md](./project-maintenance/governance/aw-installer/aw-installer-release-operation-model.md)
-11. [project-maintenance/governance/aw-installer/aw-installer-release-channel-governance.md](./project-maintenance/governance/aw-installer/aw-installer-release-channel-governance.md)
-12. [project-maintenance/governance/aw-installer/aw-installer-release-standard-flow.md](./project-maintenance/governance/aw-installer/aw-installer-release-standard-flow.md)
-13. [project-maintenance/governance/aw-installer/aw-installer-pre-publish-governance.md](./project-maintenance/governance/aw-installer/aw-installer-pre-publish-governance.md)
-14. [project-maintenance/governance/aw-installer/aw-installer-external-trial-governance.md](./project-maintenance/governance/aw-installer/aw-installer-external-trial-governance.md)
+9. [project-maintenance/governance/servo-installer/README.md](./project-maintenance/governance/servo-installer/README.md)
+10. [project-maintenance/governance/servo-installer/servo-installer-release-operation-model.md](./project-maintenance/governance/servo-installer/servo-installer-release-operation-model.md)
+11. [project-maintenance/governance/servo-installer/servo-installer-release-channel-governance.md](./project-maintenance/governance/servo-installer/servo-installer-release-channel-governance.md)
+12. [project-maintenance/governance/servo-installer/servo-installer-release-standard-flow.md](./project-maintenance/governance/servo-installer/servo-installer-release-standard-flow.md)
+13. [project-maintenance/governance/servo-installer/servo-installer-pre-publish-governance.md](./project-maintenance/governance/servo-installer/servo-installer-pre-publish-governance.md)
+14. [project-maintenance/governance/servo-installer/servo-installer-external-trial-governance.md](./project-maintenance/governance/servo-installer/servo-installer-external-trial-governance.md)
 14. [project-maintenance/deploy/README.md](./project-maintenance/deploy/README.md)
 15. [project-maintenance/testing/README.md](./project-maintenance/testing/README.md)
 16. [project-maintenance/testing/python-script-test-execution.md](./project-maintenance/testing/python-script-test-execution.md)
@@ -56,21 +56,24 @@ Owner：`aw-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读路�
 27. [project-maintenance/usage-help/quickstart.md](./project-maintenance/usage-help/quickstart.md)
 28. [project-maintenance/repo-onboarding.md](./project-maintenance/repo-onboarding.md)
 
-### 2. aw-installer
+### 2. servo-installer
 
-1. [aw-installer/README.md](./aw-installer/README.md)
-2. [aw-installer/contracts/distribution-entrypoint-contract.md](./aw-installer/contracts/distribution-entrypoint-contract.md)
-3. [aw-installer/contracts/deploy-mapping-spec.md](./aw-installer/contracts/deploy-mapping-spec.md)
-4. [aw-installer/contracts/payload-provenance-trust-boundary.md](./aw-installer/contracts/payload-provenance-trust-boundary.md)
-5. [aw-installer/contracts/version-marker-contract.md](./aw-installer/contracts/version-marker-contract.md)
-6. [aw-installer/runbooks/deploy-runbook.md](./aw-installer/runbooks/deploy-runbook.md)
-7. [aw-installer/runbooks/skill-deployment-maintenance.md](./aw-installer/runbooks/skill-deployment-maintenance.md)
-8. [aw-installer/runbooks/uninstall-remove-runbook.md](./aw-installer/runbooks/uninstall-remove-runbook.md)
-9. [aw-installer/reference/managed-files-ownership.md](./aw-installer/reference/managed-files-ownership.md)
-10. [aw-installer/reference/existing-code-adoption.md](./aw-installer/reference/existing-code-adoption.md)
-11. [aw-installer/tui/README.md](./aw-installer/tui/README.md)
-12. [aw-installer/tui/human-cli-contract.md](./aw-installer/tui/human-cli-contract.md)
-13. [aw-installer/tui/bundle-default-contract.md](./aw-installer/tui/bundle-default-contract.md)
+1. [servo-installer/README.md](./servo-installer/README.md)
+2. [servo-installer/contracts/distribution-entrypoint-contract.md](./servo-installer/contracts/distribution-entrypoint-contract.md)
+3. [servo-installer/contracts/deploy-mapping-spec.md](./servo-installer/contracts/deploy-mapping-spec.md)
+4. [servo-installer/contracts/aw-runtime-upgrade-contract.md](./servo-installer/contracts/aw-runtime-upgrade-contract.md)
+5. [servo-installer/contracts/payload-provenance-trust-boundary.md](./servo-installer/contracts/payload-provenance-trust-boundary.md)
+6. [servo-installer/contracts/version-marker-contract.md](./servo-installer/contracts/version-marker-contract.md)
+7. [servo-installer/runbooks/deploy-runbook.md](./servo-installer/runbooks/deploy-runbook.md)
+8. [servo-installer/runbooks/aw-runtime-upgrade-runbook.md](./servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
+9. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
+10. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
+11. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
+12. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
+13. [servo-installer/reference/legacy-version-handling.md](./servo-installer/reference/legacy-version-handling.md)
+14. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
+15. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
+16. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
 
 ### 3. Harness
 

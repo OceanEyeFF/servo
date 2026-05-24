@@ -2,7 +2,7 @@
 title: "Claude Repo-local Usage Help"
 status: active
 updated: 2026-05-08
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-08
 ---
 # Claude Repo-local Usage Help
@@ -11,16 +11,16 @@ last_verified: 2026-05-08
 
 ## 一、快速试用路径
 
-`claude` 是 Claude Code compatibility lane。`aw-installer --backend claude` 承接完整 Harness skill lifecycle。
+`claude` 是 Claude Code compatibility lane。`servo-installer --backend claude` 承接完整 Harness skill lifecycle。
 
 受管路径：
 
 ```bash
-AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" aw-installer install --backend claude
-AW_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" aw-installer verify --backend claude
+SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer install --backend claude
+SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer verify --backend claude
 ```
 
-Claude backend 的 deploy 入口为 `aw-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。
+Claude backend 的 deploy 入口为 `servo-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。
 
 ## 二、Backend 标识与常见路径
 
@@ -39,19 +39,19 @@ Claude backend 的 deploy 入口为 `aw-installer --backend claude`（Node-only 
 
 ## 五、限制
 
-`claude` 是 compatibility lane；package/local lifecycle 由 Node-owned `aw-installer --backend claude` 承接。本页只承接 Claude runtime 路径与兼容 payload 差异。
+`claude` 是 compatibility lane；package/local lifecycle 由 Node-owned `servo-installer --backend claude` 承接。本页只承接 Claude runtime 路径与兼容 payload 差异。
 
 ## 六、受控例外
 
-`set-harness-goal-skill` 的 `scripts/deploy_aw.js` 可安装自身到 Claude 项目级 skill 目录：
+`set-harness-goal-skill` 的 `scripts/deploy_servo.js` 可安装自身到 Claude 项目级 skill 目录：
 
 ```bash
-node scripts/deploy_aw.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_aw.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
+node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
 ```
 
-目标 `<deploy-path>/.claude/skills/aw-set-harness-goal-skill/`，默认不覆盖（需 `--force`）；`--claude-root` 仅限受控 trial 环境；目标目录不能是 symlink。
+目标 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`，默认不覆盖（需 `--force`）；`--claude-root` 仅限受控 trial 环境；目标目录不能是 symlink。
 
 ## 七、Source 变更后的 operator 决策
 
-与 `agents` 一致：source of truth 在 `product/`，不改 `.claude/skills/` 已安装结果；重新对齐 source 回 [Deploy Runbook](../../aw-installer/runbooks/deploy-runbook.md) 走三步流程；source 命名/cleanup/contract 变化先修 source 再重装。
+与 `agents` 一致：source of truth 在 `product/`，不改 `.claude/skills/` 已安装结果；重新对齐 source 回 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md) 走三步流程；source 命名/cleanup/contract 变化先修 source 再重装。

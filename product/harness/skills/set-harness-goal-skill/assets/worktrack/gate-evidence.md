@@ -1,6 +1,6 @@
 # Gate Evidence
 
-> 这是 `.aw/worktrack/gate-evidence.md` 的模板来源，用来记录当前 worktrack 的 gate 证据与裁决依据。
+> 这是 `.servo/worktrack/gate-evidence.md` 的模板来源，用来记录当前 worktrack 的 gate 证据与裁决依据。
 > 按 `Control Signal` / `Supporting Detail` 双层输出：`Control Signal` 只放影响下一动作决策的关键结论；`Supporting Detail` 放完整证据。
 
 ## Metadata

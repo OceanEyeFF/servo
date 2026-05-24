@@ -2,18 +2,18 @@
 title: "Worktrack Backlog"
 status: active
 updated: 2026-05-10
-owner: aw-kernel
+owner: servo-kernel
 last_verified: 2026-05-10
 ---
 
 # Worktrack Backlog
 
-> `.aw/repo/worktrack-backlog.md` 是 `RepoScope` 运行时 artifact，记录所有 worktrack 的完成状态。不是部署模板。由 `repo-refresh-skill` 在 worktrack closeout 后写入（upsert-by-worktrack_id），`harness-skill` 作为 supervisor/binder 负责调度 `repo-refresh`，由 `milestone-status-skill` 在 Milestone Observe 时消费。
+> `.servo/repo/worktrack-backlog.md` 是 `RepoScope` 运行时 artifact，记录所有 worktrack 的完成状态。不是部署模板。由 `repo-refresh-skill` 在 worktrack closeout 后写入（upsert-by-worktrack_id），`harness-skill` 作为 supervisor/binder 负责调度 `repo-refresh`，由 `milestone-status-skill` 在 Milestone Observe 时消费。
 
 ## 定位
 
 - Scope: `RepoScope`
-- 性质: 运行时 artifact（非 git 追溯，`.aw/` 被 gitignore）
+- 性质: 运行时 artifact（非 git 追溯，`.servo/` 被 gitignore）
 - 产生时机: 首个 worktrack closeout 时由 `repo-refresh-skill` 创建
 - 更新时机: 每次 worktrack closeout 后由 `repo-refresh-skill` 写入（upsert-by-worktrack_id）；`harness-skill` 作为 supervisor 调度 `repo-refresh` 执行写入
 - 消费方: `milestone-status-skill`（Milestone Observe 时对照 `worktrack_list` 计算 progress）
