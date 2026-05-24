@@ -4325,8 +4325,47 @@ async function runNodeOwned(args) {
 }
 
 function question(rl, prompt) {
+  if (ttyIn) {
+    _ensureKeypress();
+    if (typeof rl.pause === "function") {
+      rl.pause();
+    }
+    process.stdout.write(prompt);
+    setTuiRawMode(true);
+    process.stdin.resume();
+    return new Promise((resolve) => {
+      let answer = "";
+      const onKeypress = (str, key) => {
+        if (key && key.ctrl && key.name === "c") {
+          process.stdout.write("^C\n");
+          process.exit(130);
+        }
+        if (key && (key.name === "return" || key.name === "enter")) {
+          process.stdout.write("\n");
+          process.stdin.removeListener("keypress", onKeypress);
+          resolve(answer);
+          return;
+        }
+        if (key && key.name === "backspace") {
+          if (answer.length > 0) {
+            answer = answer.slice(0, -1);
+            process.stdout.write("\b \b");
+          }
+          return;
+        }
+        if (str && str >= " " && str !== "\x7f") {
+          answer += str;
+          process.stdout.write(str);
+        }
+      };
+      process.stdin.on("keypress", onKeypress);
+    });
+  }
+
   return new Promise((resolve) => {
-    setTuiRawMode(false);
+    if (typeof rl.resume === "function") {
+      rl.resume();
+    }
     rl.question(prompt, (answer) => {
       resolve(answer);
     });

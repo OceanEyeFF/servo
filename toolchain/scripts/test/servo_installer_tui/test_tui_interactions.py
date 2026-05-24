@@ -179,7 +179,7 @@ def test_tui_diagnose_menu_action_uses_node_owned_json(
         tmp_path / "diagnose-target",
         [
             *choose_menu_steps(2),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -201,7 +201,7 @@ def test_tui_verify_menu_action_returns_to_menu_after_strict_verify(
         tmp_path / "verify-target",
         [
             *choose_menu_steps(3),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -221,7 +221,7 @@ def test_tui_update_dry_run_menu_action(repo_root: Path, tmp_path: Path) -> None
         tmp_path / "dry-run-target",
         [
             *choose_menu_steps(4),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             quit_menu_step(),
         ],
         env_overrides={"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -242,7 +242,7 @@ def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Pa
         target_repo,
         [
             *choose_menu_steps(0),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             ("No pre-existing paths", "\n"),
             ("Type yes to proceed", "no\n"),
             quit_menu_step(),
@@ -267,13 +267,13 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
         target_repo,
         [
             *choose_menu_steps(0),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             ("No pre-existing paths", "\n"),
             ("Type yes to proceed", "yes\n"),
             ("Install complete for bundle", "\n"),
             ("Verification passed", "\n"),
             ("All stages completed successfully", "\n"),
-            ("Press Enter to return to the installer menu", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
             quit_menu_step(),
         ],
     )
