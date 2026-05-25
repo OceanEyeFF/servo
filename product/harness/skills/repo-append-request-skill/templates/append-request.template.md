@@ -1,14 +1,14 @@
 # Append Request 路由结果模板
 
-> 使用方式：在 `repo-append-request-skill` 需要整理 append-feature / append-design 分类与路由结果时，使用本模板组织输出。它不进入 `.servo/` 路径，除非后续 Harness 明确把本次 intake 结果持久化为控制 artifact。
+> 使用方式：在 `repo-append-request-skill` 需要整理 append-feature / append-design / append-milestone 分类与路由结果时，使用本模板组织输出。它不进入 `.servo/` 路径，除非后续 Harness 明确把本次 intake 结果持久化为控制 artifact。
 
 ## 元数据
 
 - 请求编号：
 - 提出时间：
 - 分析时间：
-- mode：append-feature / append-design
-- 分类结果：goal change / new worktrack / scope expansion / design-only / design-then-implementation
+- mode：append-feature / append-design / append-milestone
+- 分类结果：goal change / new milestone / new worktrack / scope expansion / design-only / design-then-implementation
 - 分类置信度：high / medium / low
 
 ## 原始追加请求
@@ -39,6 +39,15 @@
 - 是否越过当前范围：
 - 是否属于验收缺口：
 - scope expansion 风险：
+
+## Milestone Pipeline 影响
+
+- 是否属于 milestone 级追加：
+- suggested_milestone_action：create / activate / append_worktracks / upsert / N/A
+- 目标 milestone_id：
+- milestone brief boundary：
+- 是否需要 init-milestone-skill：
+- milestone approval boundary：
 
 ## 路由判定
 
@@ -73,6 +82,7 @@
 - continuation_blockers：
 - recommended_next_route：
 - recommended_next_scope：
+- suggested_milestone_action：
 - 不执行声明：
 
 填写规则：

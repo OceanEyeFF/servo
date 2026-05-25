@@ -210,15 +210,15 @@ def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Pat
 def test_check_append_request_contract_terms_flags_drift(tmp_path: Path) -> None:
     write_doc(
         tmp_path / "docs/harness/artifact/control/append-request.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\n",
     )
     write_doc(
         tmp_path / "docs/harness/workflow-families/repo-evolution/append-request-routing.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
         tmp_path / "product/harness/skills/repo-append-request-skill/SKILL.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
         tmp_path / "product/harness/skills/repo-append-request-skill/templates/append-request.template.md",

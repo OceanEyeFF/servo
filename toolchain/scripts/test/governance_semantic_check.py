@@ -416,9 +416,11 @@ APPEND_REQUEST_REQUIRED_TERMS = [
 APPEND_REQUEST_MODES = [
     "append-feature",
     "append-design",
+    "append-milestone",
 ]
 APPEND_REQUEST_CLASSIFICATIONS = [
     "goal change",
+    "new milestone",
     "new worktrack",
     "scope expansion",
     "design-only",

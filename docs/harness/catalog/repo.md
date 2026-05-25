@@ -13,7 +13,7 @@ last_verified: 2026-05-08
 
 ## 原则
 
-`RepoScope` skills 负责长期基线的观察、判断、目标变更和 repo 状态刷新，不承担编码执行。repo-status-skill 对应 `RepoScope` observing，repo-whats-next-skill 对应 `RepoScope` deciding。repo-status-skill 是顺手调用的稳定观测包，非强制前置。repo-whats-next-skill 须能在无 repo-status-skill 产物时直接基于 repo truth 完成判断。三者都不负责 worktrack 级文档维护。structured handoff 优先使用 `recommended_next_route` 与 canonical approval 字段。`RepoScope` 内可挂载有界分析模式但不应为分析框架新增 skill 数量。Repo Analysis 可喂给 repo-whats-next-skill 但不能替代 Goal/Charter 或 Snapshot/Status。append-feature 与 append-design 由同一 skill 分类，不拆分。需要改动系统状态时由 supervisor 决定是否切入 `WorktrackScope`。
+`RepoScope` skills 负责长期基线的观察、判断、目标变更和 repo 状态刷新，不承担编码执行。repo-status-skill 对应 `RepoScope` observing，repo-whats-next-skill 对应 `RepoScope` deciding。repo-status-skill 是顺手调用的稳定观测包，非强制前置。repo-whats-next-skill 须能在无 repo-status-skill 产物时直接基于 repo truth 完成判断。三者都不负责 worktrack 级文档维护。structured handoff 优先使用 `recommended_next_route` 与 canonical approval 字段。`RepoScope` 内可挂载有界分析模式但不应为分析框架新增 skill 数量。Repo Analysis 可喂给 repo-whats-next-skill 但不能替代 Goal/Charter 或 Snapshot/Status。append-feature、append-design 与 append-milestone 由同一 skill 分类，不拆分。需要改动系统状态时由 supervisor 决定是否切入 `WorktrackScope`。
 
 ## Catalog
 
@@ -100,9 +100,9 @@ preferred decision fields：
 
 ### 3. repo-append-request-skill
 
-说明：在 RepoScope 下处理外部追加请求 intake，支持 append-feature 与 append-design 两个 mode，只做分类与路由，不执行目标变更/scope expansion/设计/实现。
+说明：在 RepoScope 下处理外部追加请求 intake，支持 append-feature、append-design 与 append-milestone 三个 mode，只做分类与路由，不执行目标变更/scope expansion/Milestone 创建/设计/实现。
 
-职责：接收请求并判断应归入 goal change/new worktrack/scope expansion/design-only/design-then-implementation；输出路由结果、下一 route/scope、suggested node type、审批边界与最小缺失信息；命中目标变更或范围扩展时显式返回 authority boundary；保持 approval_required/continuation_ready/continuation_blockers 一致。
+职责：接收请求并判断应归入 goal change/new milestone/new worktrack/scope expansion/design-only/design-then-implementation；输出路由结果、下一 route/scope、suggested milestone action、suggested node type、审批边界与最小缺失信息；命中目标变更或范围扩展时显式返回 authority boundary；保持 approval_required/continuation_ready/continuation_blockers 一致。
 
 主要依赖：
 
@@ -127,6 +127,7 @@ preferred decision fields：
 - `classification_confidence`
 - `recommended_next_route`
 - `recommended_next_scope`
+- `suggested_milestone_action`
 - `suggested_node_type`
 - `approval_required`
 - `approval_scope`
