@@ -1234,6 +1234,22 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
     return entries
 
 
+def _runtime_milestone_counts(
+    live_entries: list[dict[str, object]],
+    history_entries: list[dict[str, object]],
+) -> dict[str, int]:
+    counts = {status: 0 for status in ("planned", "active", "completed", "superseded")}
+    for entry in live_entries:
+        status = str(entry.get("status", ""))
+        if status in {"planned", "active"}:
+            counts[status] += 1
+    for entry in history_entries:
+        status = str(entry.get("status", ""))
+        if status in {"completed", "superseded"}:
+            counts[status] += 1
+    return counts
+
+
 def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
     aw_dir = repo_root / ".servo"
     if not aw_dir.exists():
@@ -1242,29 +1258,48 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
 
     control_path = aw_dir / "control-state.md"
     milestone_backlog_path = aw_dir / "repo/milestone-backlog.md"
+    milestone_history_path = aw_dir / "repo/milestone-history.md"
     if not control_path.exists() or not milestone_backlog_path.exists():
         report.add_info("checked 0 runtime artifacts for consistency, control-state or milestone backlog missing")
         return
 
     control_text = control_path.read_text(encoding="utf-8")
     backlog_text = milestone_backlog_path.read_text(encoding="utf-8")
+    history_text = milestone_history_path.read_text(encoding="utf-8") if milestone_history_path.exists() else ""
     control = _parse_control_state(control_text)
-    entries = _parse_milestone_backlog(backlog_text)
-    if not entries:
+    live_entries = _parse_milestone_backlog(backlog_text)
+    history_entries = _parse_milestone_backlog(history_text) if history_text else []
+    if not live_entries and not history_entries:
         report.add_failure("runtime artifact consistency: milestone backlog has no parseable entries")
         return
 
-    counts = {status: 0 for status in ("planned", "active", "completed", "superseded")}
     active_entries: list[dict[str, object]] = []
     by_id: dict[str, dict[str, object]] = {}
-    for entry in entries:
+    for entry in live_entries:
         milestone_id = str(entry["milestone_id"])
         by_id[milestone_id] = entry
         status = str(entry.get("status", ""))
-        if status in counts:
-            counts[status] += 1
+        if status in {"completed", "superseded"}:
+            report.add_failure(
+                "runtime artifact consistency: live milestone backlog contains history status "
+                f"{status!r} for {milestone_id}; move it to milestone-history"
+            )
         if status == "active":
             active_entries.append(entry)
+    for entry in history_entries:
+        milestone_id = str(entry["milestone_id"])
+        if milestone_id in by_id:
+            report.add_failure(
+                "runtime artifact consistency: milestone "
+                f"{milestone_id} exists in both live backlog and milestone-history"
+            )
+        by_id[milestone_id] = entry
+        status = str(entry.get("status", ""))
+        if status not in {"completed", "superseded"}:
+            report.add_failure(
+                "runtime artifact consistency: milestone-history contains live status "
+                f"{status!r} for {milestone_id}"
+            )
         if status in {"completed", "superseded"} or entry.get("accepted") is True:
             worktracks = entry.get("worktrack_list", [])
             if isinstance(worktracks, list):
@@ -1278,6 +1313,7 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
                         "runtime artifact consistency: completed/accepted milestone "
                         f"{milestone_id} has unfinished worktrack markers: {', '.join(stale)}"
                     )
+    counts = _runtime_milestone_counts(live_entries, history_entries)
 
     if len(active_entries) > 1:
         report.add_failure("runtime artifact consistency: milestone backlog has multiple active milestones")
@@ -1314,7 +1350,9 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             f"control-state={summary}, backlog={counts}"
         )
 
-    report.add_info(f"checked {len(entries)} runtime milestone entries for consistency")
+    checked_entries = len(live_entries) + len(history_entries)
+    source_note = "live+history" if milestone_history_path.exists() else "live-only"
+    report.add_info(f"checked {checked_entries} runtime milestone entries for consistency ({source_note})")
 
 
 def _is_readme_or_excluded(rel_path: str) -> bool:

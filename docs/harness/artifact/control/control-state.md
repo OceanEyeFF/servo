@@ -1,9 +1,9 @@
 ---
 title: "Harness Control State"
 status: active
-updated: 2026-05-20
+updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-05-25
 ---
 # Harness Control State
 
@@ -20,11 +20,12 @@ Milestone 是 `RepoScope` 下的聚合对象，control-state 应在 Linked Forma
 - `active_milestone`: 当前活跃 Milestone 的 `milestone_id`（单数，同一时刻仅一个 active）
 - `milestone_status`: 当前活跃 Milestone 的状态（`planned`/`active`/`completed`/`superseded`）
 - `milestone_pipeline_path`: 指向 `.servo/repo/milestone-backlog.md` 的路径指针
-- `milestone_pipeline_summary`: Pipeline 快照（planned/active/completed/superseded 计数）
+- `milestone_history_path`: 指向 `.servo/repo/milestone-history.md` 的路径指针
+- `milestone_pipeline_summary`: Pipeline aggregate 快照（planned/active 来自 live backlog，completed/superseded 来自 milestone history）
 
 `active_milestone` 缺失但 `milestone_pipeline_path` 存在且 pipeline 非空时，表示 pipeline 中有 planned milestone 但尚未激活。设置后 Milestone 进度由 `milestone-status-skill` 独立分析，Pipeline 推进由 `harness-skill` 在收到 `milestone_acceptance_verdict` 后执行，不替代 `RepoScope.Decide` 的决策权。
 
-Milestone final acceptance 写回后，Control State 必须与 `.servo/repo/milestone-backlog.md` 保持一致：`active_milestone` 只能指向 backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active/completed/superseded 计数必须等于 backlog 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
+Milestone final acceptance 写回后，Control State 必须与 `.servo/repo/milestone-backlog.md` 和 `.servo/repo/milestone-history.md` 保持一致：`active_milestone` 只能指向 live backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active 计数必须等于 live backlog 实际条目，completed/superseded 计数必须等于 milestone history 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
 
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
@@ -71,7 +72,7 @@ Long-term docs should link to the source root or catalog owner, not embed one-of
 
 `milestone_input_checkpoint` 是 Milestone 输入指纹锚点，由 `milestone-status-skill` 按 `milestone-input-checkpoint/v1` 计算（格式 `sha256:<64 位小写 hex>`）。算法对 milestone artifact、worktrack backlog、gate evidence、repo snapshot 的已纳入字段取 SHA-256，使用字典键排序、repo-relative POSIX path、稳定列表顺序和显式 `null` 值。不得纳入文件 mtime、时间戳、绝对路径、上次 checkpoint 或 progress counter 等易变/派生值。该指纹与 git HEAD 独立（`.servo/` 下 artifact 变化不产生 git commit）。下一轮 `Observe` 仅当 `milestone_input_checkpoint` 与新指纹一致且 `latest_observed_checkpoint` 与 `git rev-parse HEAD` 一致时，才可跳过 Milestone 进度重算。
 
-`milestone_pipeline_checkpoint` 是 Milestone Pipeline 指纹锚点，由 `milestone-status-skill` 在 pipeline 存在多条目时计算。算法对 `milestone-backlog.md` 中所有条目的 (`milestone_id`, `status`, `priority`, `depends_on_milestones`, `worktrack_list`) 取 SHA-256，使用字典键排序。该指纹用于判断 pipeline 结构是否变化（新增/移除/重排 milestone），与单个 milestone 的进度指纹（`milestone_input_checkpoint`）互补。当 `milestone_pipeline_checkpoint` 与已存指纹一致时，可跳过 pipeline 结构重分析；但单个 milestone 的 progress counter 仍由 `milestone_input_checkpoint` 独立判定。
+`milestone_pipeline_checkpoint` 是 Milestone Pipeline 指纹锚点，由 `milestone-status-skill` 在 pipeline 存在多条目时计算。算法对 live `milestone-backlog.md` 与 `milestone-history.md` 中所有条目的 (`milestone_id`, `status`, `priority`, `depends_on_milestones`, `worktrack_list`) 取 SHA-256，使用字典键排序，并标记来源为 `live` 或 `history`。该指纹用于判断 pipeline 结构是否变化（新增/移除/重排 milestone、完成项移入 history），与单个 milestone 的进度指纹（`milestone_input_checkpoint`）互补。当 `milestone_pipeline_checkpoint` 与已存指纹一致时，可跳过 pipeline 结构重分析；但单个 milestone 的 progress counter 仍由 `milestone_input_checkpoint` 独立判定。
 
 空值或缺失表示该锚点尚未建立，须执行完整状态估计。不得将空值解释为”当前基线无需刷新”。以上字段属于 traceability metadata，不替代 `RepoSnapshot/Status`。
 

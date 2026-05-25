@@ -443,9 +443,9 @@ Gate 应汇总**正交校验面**的裁决：
    - **Final Acceptance 事务边界**：
      - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
      - programmer 明确接受 goal-driven milestone 后，acceptance writeback 必须作为一个逻辑事务处理：预先校验 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 与 worktrack status 输入；再写入所有相关 artifact；最后做提交后校验。
-     - 该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/control-state.md`，以及必要时 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
+     - 该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，以及必要时 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
      - 对 goal-driven milestone，programmer final acceptance 后 backlog 中该 milestone 的所有已闭环 worktrack 不得继续标记为 `(planned)` 或 `(active)`；必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
-     - 写回后必须校验：同一时刻最多一个 active milestone；control-state 的 `active_milestone` 与 backlog 唯一 active 条目一致；`milestone_status` 与 active milestone 状态一致；`milestone_pipeline_summary` 与 backlog 计数一致；completed/accepted milestone 不含未完成 worktrack 标记。
+     - 写回后必须校验：同一时刻最多一个 active milestone；control-state 的 `active_milestone` 与 live backlog 唯一 active 条目一致；`milestone_status` 与 active milestone 状态一致；`milestone_pipeline_summary` 与 live backlog + milestone history aggregate 计数一致；completed/accepted history milestone 不含未完成 worktrack 标记。
      - 任一写入或提交后校验失败时，不得伪装成已完成验收；必须标记 `writeback_incomplete` / `milestone_pipeline_stale`，返回 `proceed_blockers`，并停在 RepoScope.Observe 或 handback，等待恢复或 programmer 决策。
    - **Milestone Artifact 更新**（`.servo/milestone/{milestone_id}.md`）：
      - 将 `progress_counter` 更新为 milestone-status-skill 计算的值（total/completed/blocked/deferred）
@@ -455,7 +455,7 @@ Gate 应汇总**正交校验面**的裁决：
      - 不修改 `progress_counter` 以外的派生字段
    - **Control State 更新**：
      - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
-     - 若 milestone 状态变更（active→completed）：更新 `milestone_status` 和 `milestone_pipeline_summary`
+     - 若 milestone 状态变更（active→completed）：更新 `milestone_status`、`milestone_pipeline_summary` 和 milestone-history
      - 若 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct` 在本轮被上游修改：必须使旧的 milestone 完成结论失效，并强制重新进入下一轮 `milestone-status-skill` 观察
    - **Pipeline 推进**（仅在 milestone achieved 后，按 `milestone_kind` 分化）：
      - goal-driven：handback 等 programmer 验收，不自动推进
@@ -463,7 +463,7 @@ Gate 应汇总**正交校验面**的裁决：
      - 读取 `milestone-status-skill` 输出的 `pipeline_advancement`
      - 若存在符合条件的下一 planned milestone：更新其 status 为 `active`，更新 control-state 的 `active_milestone`
      - 若不存在：清空 control-state 的 `active_milestone`
-   - **Milestone Backlog 更新**：将上述 status 变更同步 upsert 到 `.servo/repo/milestone-backlog.md`；work-collection milestone 完成时写入 `status: superseded`
+   - **Milestone Backlog / History 更新**：planned/active 条目同步 upsert 到 `.servo/repo/milestone-backlog.md`；completed/superseded 条目从 live backlog 移入 `.servo/repo/milestone-history.md`；work-collection milestone 完成时写入 history `status: superseded`
    - 若 `milestone_gate_verdict != "pass"`：不得把 Milestone 标记为完成，不得自动推进 pipeline，必须返回 `handback_required = true` 并暴露阻断原因
    - 不得跳过 milestone progress writeback；不得在 `milestone_acceptance_verdict` 未达成时变更 milestone status
 7. 如果命中正式停止条件 → 向程序员返回控制权
