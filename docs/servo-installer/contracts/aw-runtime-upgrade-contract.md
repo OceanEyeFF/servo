@@ -1,7 +1,7 @@
 ---
 title: ".aw Runtime Upgrade Contract"
 status: active
-updated: 2026-05-24
+updated: 2026-05-25
 owner: servo-kernel
 last_verified: 2026-05-24
 ---
@@ -95,10 +95,11 @@ Required behavior:
 - fail before partial overwrite when `.servo/` already exists
 - if a partial copy fails, report both source and destination state and leave recovery guidance
 - never clean up partial destination data silently
+- **after a successful copy, recursively scan text files (`.md`, `.json`, `.txt`) under `.servo/` and rewrite `.aw` path references to `.servo`** so that migrated Harness artifacts (control-state, milestone, worktrack) reference the current runtime directory instead of the legacy one; the rewrite must preserve branch names (`develop-aw`, `aw/demo-*`) and `aw.marker` references unchanged
 
 Cleanup of `.aw/` is a separate operator decision. It must not be bundled into the default successful migration path.
 
-If an idempotence sentinel is introduced, it should live under `.servo/` and record only migration metadata such as source path, timestamp, source hash summary, and installer version. It must not replace `control-state.md`, `goal-charter.md`, or other Harness runtime artifacts as truth.
+If an idempotence sentinel is introduced, it should live under `.servo/` and record only migration metadata such as source path, timestamp, source hash summary, installer version, and rewritten file count. It must not replace `control-state.md`, `goal-charter.md`, or other Harness runtime artifacts as truth.
 
 ## Reinstall / Update Coupling
 
@@ -179,6 +180,7 @@ The implementation worktracks must include `/tmp` target repository smoke tests 
 - failed copy exposes recovery guidance
 - Windows / non-ASCII target path migration succeeds without relying on `fs.cpSync`
 - reinstall/update refreshes managed skill markers and payload fingerprints through the existing installer path
+- **path reference rewriting: `.aw/` → `.servo/`, `` `.aw` `` → `` `.servo` ``, `aw-set-harness-goal-skill` → `servo-set-harness-goal-skill` in migrated text files; branch names (`develop-aw`, `aw/demo-*`) and `aw.marker` must not be rewritten**
 
 Current verified test coverage also includes update preflight blocking before runtime copy and bundle reinstall installing both backend payloads.
 

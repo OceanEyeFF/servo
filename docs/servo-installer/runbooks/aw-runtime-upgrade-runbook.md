@@ -1,7 +1,7 @@
 ---
 title: "Legacy .aw Runtime Upgrade Runbook"
 status: active
-updated: 2026-05-24
+updated: 2026-05-25
 owner: servo-kernel
 last_verified: 2026-05-24
 ---
@@ -41,7 +41,7 @@ When the preview reports `.aw/` only and no blocking issues, apply the copy:
 servo-installer migrate-runtime --from aw --to servo --yes
 ```
 
-The command copies `.aw/` to `.servo/` and writes a migration sentinel under `.servo/`. It preserves `.aw/` in place. Cleanup of `.aw/` is a separate operator decision and is not part of this runbook.
+The command copies `.aw/` to `.servo/`, rewrites `.aw` path references to `.servo` inside migrated text files (`.md`, `.json`, `.txt`), and writes a migration sentinel under `.servo/`. Branch names (`develop-aw`, `aw/demo-*`) and `aw.marker` are left unchanged. It preserves `.aw/` in place. Cleanup of `.aw/` is a separate operator decision and is not part of this runbook.
 
 Re-running after a successful migration is safe: the sentinel lets the command report `already-migrated` instead of overwriting `.servo/`.
 
@@ -104,6 +104,7 @@ The installer test suite verifies the upgrade path using `/tmp` target repositor
 - no `.aw/` and no `.servo/`
 - `.aw/` only dry-run
 - `.aw/` only `--yes`
+- path reference rewriting (`.aw/` → `.servo/`, branch names preserved)
 - successful rerun idempotence
 - both `.aw/` and `.servo/` present
 - malformed `.aw` path
