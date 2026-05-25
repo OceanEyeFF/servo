@@ -1133,6 +1133,28 @@ function runValidate(selectedSpecs, staticAssets) {
   return hadIssue ? 1 : 0;
 }
 
+function ensureGitignoreServo(deployPath, dryRun) {
+  const gitignorePath = path.join(deployPath, ".gitignore");
+  const servoEntry = `${DEFAULT_AW_DIRNAME}/`;
+  let existing = "";
+  if (fs.existsSync(gitignorePath)) {
+    existing = fs.readFileSync(gitignorePath, "utf8");
+  }
+  const lines = existing.split(/\r?\n/);
+  const alreadyPresent = lines.some((line) => line.trim() === servoEntry);
+  if (alreadyPresent) {
+    console.log(`[gitignore] ${servoEntry} already present`);
+    return;
+  }
+  const updated = existing.trimEnd() + "\n" + servoEntry + "\n";
+  if (dryRun) {
+    console.log(`[gitignore] dry-run: would add ${servoEntry} to ${gitignorePath}`);
+    return;
+  }
+  fs.writeFileSync(gitignorePath, updated, "utf8");
+  console.log(`[gitignore] added ${servoEntry} to ${gitignorePath}`);
+}
+
 function runGenerate(selectedSpecs, staticAssets, args) {
   const deployPath = resolveDeployPath(args);
   args.deployPath = deployPath;
@@ -1153,6 +1175,7 @@ function runGenerate(selectedSpecs, staticAssets, args) {
   }
   preflightOutputPaths(selectedSpecs, staticAssets, outputRoot, args.force);
   if (installClaudeSkill) preflightClaudeSkillInstall(claudePackageFiles, claudeTargetDir, args.force);
+  ensureGitignoreServo(deployPath, args.dryRun);
   for (const [spec, rendered] of renderedTemplates) writeRenderedTemplate(spec, rendered, outputRoot, args.force, args.dryRun);
   for (const spec of staticAssets) copyStaticAsset(spec, outputRoot, args.force, args.dryRun);
   if (installClaudeSkill) installClaudeSkillPackage(claudePackageFiles, claudeTargetDir, args.force, args.dryRun);

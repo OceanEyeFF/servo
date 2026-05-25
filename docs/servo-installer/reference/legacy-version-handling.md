@@ -1,9 +1,9 @@
 ---
 title: "Legacy Version Handling"
 status: active
-updated: 2026-05-23
+updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-23
+last_verified: 2026-05-25
 ---
 # Legacy Version Handling
 
@@ -35,7 +35,7 @@ This is a transitional support document.
 
 | Legacy state | Current handling |
 |---|---|
-| `.aw/` exists and `.servo/` is absent | `servo-installer migrate-runtime --from aw --to servo --json` reports a ready copy plan. `--yes` creates `.servo/` and retains `.aw/`. |
+| `.aw/` exists and `.servo/` is absent | `servo-installer migrate-runtime --from aw --to servo --json` reports a ready copy plan. `--yes` creates `.servo/`, rewrites `.aw` path references to `.servo` in migrated text files, and retains `.aw/`. |
 | `.aw/` and `.servo/` both exist | Migration is blocked by default unless a prior migration sentinel proves the target is already migrated. |
 | `.agents/skills/aw-*` managed dirs exist | `servo-installer update --backend agents --yes` replaces managed old target dirs with current `servo-*` target dirs. |
 | `.agents/skills/servo-*` exists | Current agents target shape; normal verify/update applies. |
@@ -86,10 +86,10 @@ The following evidence was collected on 2026-05-23 using a packaged `servo-insta
 
 | Scenario | Result |
 |---|---|
-| `/tmp/repo-rating-function` with `.aw/` and old `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` copied `.aw` to `.servo`, replaced old managed agents dirs with 21 `servo-*` dirs, and passed verify/diagnose. |
+| `/tmp/repo-rating-function` with `.aw/` and old `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` copied `.aw` to `.servo`, rewrote path references, replaced old managed agents dirs with 21 `servo-*` dirs, and passed verify/diagnose. |
 | Repeat migration on `/tmp/repo-rating-function` | Packaged JSON returned `state=already-migrated`, `verdict=already-migrated`, and `sentinel_present=true`. |
 | `/tmp/servo-dual-backend-smoke.OZuLrQ` with `.aw/`, `.agents/skills/servo-*`, and `.claude/skills/<skill-id>` | Packaged `migrate-runtime --yes --reinstall --backend bundle` refreshed both backends independently and passed bundle verify/diagnose. |
-| Runtime equivalence checks | `.aw/` and `.servo/` matched in both smoke targets when excluding `.servo-installer-aw-migration.json`. |
+| Runtime equivalence checks | `.aw/` and `.servo/` matched in both smoke targets when excluding `.servo-installer-aw-migration.json`. After path reference rewriting (v0.5.6+), `.aw` path references inside `.servo/` text files are rewritten to `.servo`; raw file equality is no longer expected. |
 
 ## Related Documents
 

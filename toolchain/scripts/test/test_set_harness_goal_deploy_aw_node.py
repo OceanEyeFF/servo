@@ -142,6 +142,7 @@ def test_node_deploy_servo_blocks_unverified_baseline_before_writes(tmp_path: Pa
     assert completed.returncode == 1
     assert "unable to resolve baseline branch" in completed.stderr
     assert not (tmp_path / ".servo").exists()
+    assert not (tmp_path / ".gitignore").exists()
 
 
 def test_node_deploy_servo_installs_claude_skill_without_python_helper(tmp_path: Path) -> None:

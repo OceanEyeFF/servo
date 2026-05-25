@@ -4599,6 +4599,79 @@ test("migrate-runtime --yes --reinstall bundle installs both backend payloads", 
   }
 });
 
+test("migrate-runtime --yes rewrites .aw path references to .servo in text files", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
+  try {
+    mkdirSync(join(root, ".aw", "milestone"), { recursive: true });
+    mkdirSync(join(root, ".aw", "worktrack"), { recursive: true });
+    writeFileSync(join(root, ".aw", "control-state.md"), [
+      "---",
+      'generated_from: "aw-set-harness-goal-skill/assets/control-state.md"',
+      "---",
+      "> 这是 `.aw/control-state.md` 的运行实例",
+      "",
+      "- scope: 更新 `.aw` 文档/控制面",
+      "- source: `.aw/milestone/MS-001.md`",
+      "- helper: aw-set-harness-goal-skill",
+      "- single_quoted: 'aw-set-harness-goal-skill/assets/control-state.md'",
+      "- backticked: `aw-set-harness-goal-skill`",
+    ].join("\n") + "\n", "utf8");
+    writeFileSync(join(root, ".aw", "milestone", "MS-001.md"), [
+      "---",
+      "title: MS-001",
+      "---",
+      "- scope: 更新 `docs/` 与 `.aw` 设计文档",
+      "- 只改 `.aw` 和 `docs/` 设计/规划文档",
+      "",
+      "## Worktrack",
+      "- branch: aw/demo-v1",
+      "- baseline: develop-aw",
+    ].join("\n") + "\n", "utf8");
+    writeFileSync(join(root, ".aw", "worktrack", "contract.md"), [
+      "# Contract",
+      "- baseline_branch: develop-aw",
+      "- scope: `.aw` 控制面更新",
+    ].join("\n") + "\n", "utf8");
+
+    const result = runNodeMigrateRuntime(root, ["--from", "aw", "--to", "servo", "--yes"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /state: migrated/);
+    assert.match(result.stdout, /rewritten files: 3/);
+
+    // Verify .aw source is unchanged
+    const awControl = readFileSync(join(root, ".aw", "control-state.md"), "utf8");
+    assert.match(awControl, /`\.aw\/control-state\.md`/);
+    assert.match(awControl, /aw-set-harness-goal-skill/);
+
+    // Verify .servo destination has rewritten paths
+    const servoControl = readFileSync(join(root, ".servo", "control-state.md"), "utf8");
+    assert.match(servoControl, /`\.servo\/control-state\.md`/);
+    assert.match(servoControl, /servo-set-harness-goal-skill/);
+    assert.doesNotMatch(servoControl, /`\.aw\/control-state\.md`/);
+    assert.doesNotMatch(servoControl, /aw-set-harness-goal-skill/);
+
+    const servoMilestone = readFileSync(join(root, ".servo", "milestone", "MS-001.md"), "utf8");
+    assert.match(servoMilestone, /与 `\.servo` 设计文档/);
+    assert.match(servoMilestone, /`\.servo` 和 `docs\/`/);
+    assert.doesNotMatch(servoMilestone, /`\.aw`/);
+    // branch names and baseline should NOT be rewritten
+    assert.match(servoMilestone, /aw\/demo-v1/);
+    assert.match(servoMilestone, /develop-aw/);
+
+    const servoContract = readFileSync(join(root, ".servo", "worktrack", "contract.md"), "utf8");
+    assert.match(servoContract, /`\.servo` 控制面更新/);
+    assert.doesNotMatch(servoContract, /`\.aw`/);
+    // baseline branch name should NOT be rewritten
+    assert.match(servoContract, /develop-aw/);
+
+    // Verify sentinel records rewrite count
+    const sentinel = JSON.parse(readFileSync(join(root, ".servo", ".servo-installer-aw-migration.json"), "utf8"));
+    assert.equal(sentinel.rewritten_file_count, 3);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // CLI backward compat: prune rejects without --all
 test("cli: prune --backend agents without --all is rejected", () => {
   const result = runTuiInTempTarget(["prune", "--backend", "agents"], "");

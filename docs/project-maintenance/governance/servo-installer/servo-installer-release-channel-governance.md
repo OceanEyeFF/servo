@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-05-24
+updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-24
+last_verified: 2026-05-25
 ---
 # servo-installer Release Channel Governance
 
@@ -24,16 +24,14 @@ last_verified: 2026-05-24
 
 ## 当前 source release tuple
 
-2026-05-24，本地 source tuple 已发布为 `v0.5.5` 的 `latest` channel release：
+2026-05-25，本地 source tuple 已准备为 `v0.5.6` 的 `latest` channel candidate；registry published fact 仍以上一节为准，发布后才可同步为 published version fact：
 
-- root `package.json` version：`0.5.5`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.5`
-- approval lock：`approvedVersion=0.5.5`、`approvedGitTag=v0.5.5`、`approvedChannel=latest`
-- release scope：修复 Windows / non-ASCII target path 下 `migrate-runtime --yes` 复制 `.aw/` 到 `.servo/` 时 Node native copy crash 的问题
-- GitHub Release 是 stable release，target commit `34515def745076f348e13d4725792a40e9785fd3`，publish workflow run `26365685544` 已成功
-- npm `servo-installer@0.5.5` 已发布到 `latest` dist-tag，tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.5.tgz`
+- root `package.json` version：`0.5.6`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.6`
+- approval lock：`approvedVersion=0.5.6`、`approvedGitTag=v0.5.6`、`approvedChannel=latest`
+- release scope：修复 `migrate-runtime` 迁移文本中旧 `aw-set-harness-goal-skill` 引用覆盖不足的问题，并防止 `.servo` scaffold generate 在 preflight 失败前写入 `.gitignore`
 
-注意：`0.5.5` 是 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.5.5`。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.5.6` 是 stable release candidate；默认 `servo-installer` 仍解析到 registry `latest` 的 `0.5.5`，直到 `v0.5.6` GitHub Release 触发 publish workflow 并完成 registry 验证。当前 npm registry 未设置 `next` dist-tag。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
