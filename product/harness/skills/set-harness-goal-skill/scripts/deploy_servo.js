@@ -1160,7 +1160,6 @@ function runGenerate(selectedSpecs, staticAssets, args) {
   args.deployPath = deployPath;
   const outputRoot = path.join(deployPath, DEFAULT_AW_DIRNAME);
   const installClaudeSkill = args.installClaudeSkill;
-  ensureGitignoreServo(deployPath, args.dryRun);
   const claudePackageFiles = installClaudeSkill ? collectSkillPackageFiles() : [];
   const claudeTargetDir = installClaudeSkill ? claudeSkillTargetDirFor(args, deployPath) : null;
   args.repo = args.repo || path.basename(deployPath);
@@ -1176,6 +1175,7 @@ function runGenerate(selectedSpecs, staticAssets, args) {
   }
   preflightOutputPaths(selectedSpecs, staticAssets, outputRoot, args.force);
   if (installClaudeSkill) preflightClaudeSkillInstall(claudePackageFiles, claudeTargetDir, args.force);
+  ensureGitignoreServo(deployPath, args.dryRun);
   for (const [spec, rendered] of renderedTemplates) writeRenderedTemplate(spec, rendered, outputRoot, args.force, args.dryRun);
   for (const spec of staticAssets) copyStaticAsset(spec, outputRoot, args.force, args.dryRun);
   if (installClaudeSkill) installClaudeSkillPackage(claudePackageFiles, claudeTargetDir, args.force, args.dryRun);

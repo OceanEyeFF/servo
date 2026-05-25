@@ -51,7 +51,7 @@ const runtimeMigrationAwPathReplacements = [
   [/\.aw\//g, ".servo/"],
   [/`\.aw`/g, "`.servo`"],
   [/\.aw(?=\s)/g, ".servo"],
-  [/"aw-set-harness-goal-skill/g, '"servo-set-harness-goal-skill'],
+  [/aw-set-harness-goal-skill/g, "servo-set-harness-goal-skill"],
 ];
 const defaultGithubRepo = "OceanEyeFF/servo";
 const githubRepoPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;

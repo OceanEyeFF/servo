@@ -3,7 +3,7 @@ title: "Legacy .aw Runtime Upgrade Runbook"
 status: active
 updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-24
+last_verified: 2026-05-25
 ---
 # Legacy .aw Runtime Upgrade Runbook
 
@@ -114,4 +114,4 @@ The installer test suite verifies the upgrade path using `/tmp` target repositor
 - update conflict blocks before runtime copy
 - bundle `--reinstall` installs both backend payloads
 
-The latest closeout evidence for this milestone recorded the full installer suite passing with 145 tests.
+The current deploy regression file defines 148 subtests; closeout evidence should record the exact passing count from the verification run used for release or handoff.

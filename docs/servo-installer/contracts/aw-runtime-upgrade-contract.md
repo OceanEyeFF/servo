@@ -3,7 +3,7 @@ title: ".aw Runtime Upgrade Contract"
 status: active
 updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-24
+last_verified: 2026-05-25
 ---
 # .aw Runtime Upgrade Contract
 

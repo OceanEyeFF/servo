@@ -4612,6 +4612,9 @@ test("migrate-runtime --yes rewrites .aw path references to .servo in text files
       "",
       "- scope: 更新 `.aw` 文档/控制面",
       "- source: `.aw/milestone/MS-001.md`",
+      "- helper: aw-set-harness-goal-skill",
+      "- single_quoted: 'aw-set-harness-goal-skill/assets/control-state.md'",
+      "- backticked: `aw-set-harness-goal-skill`",
     ].join("\n") + "\n", "utf8");
     writeFileSync(join(root, ".aw", "milestone", "MS-001.md"), [
       "---",
