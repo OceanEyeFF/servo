@@ -1133,11 +1133,34 @@ function runValidate(selectedSpecs, staticAssets) {
   return hadIssue ? 1 : 0;
 }
 
+function ensureGitignoreServo(deployPath, dryRun) {
+  const gitignorePath = path.join(deployPath, ".gitignore");
+  const servoEntry = `${DEFAULT_AW_DIRNAME}/`;
+  let existing = "";
+  if (fs.existsSync(gitignorePath)) {
+    existing = fs.readFileSync(gitignorePath, "utf8");
+  }
+  const lines = existing.split(/\r?\n/);
+  const alreadyPresent = lines.some((line) => line.trim() === servoEntry);
+  if (alreadyPresent) {
+    console.log(`[gitignore] ${servoEntry} already present`);
+    return;
+  }
+  const updated = existing.trimEnd() + "\n" + servoEntry + "\n";
+  if (dryRun) {
+    console.log(`[gitignore] dry-run: would add ${servoEntry} to ${gitignorePath}`);
+    return;
+  }
+  fs.writeFileSync(gitignorePath, updated, "utf8");
+  console.log(`[gitignore] added ${servoEntry} to ${gitignorePath}`);
+}
+
 function runGenerate(selectedSpecs, staticAssets, args) {
   const deployPath = resolveDeployPath(args);
   args.deployPath = deployPath;
   const outputRoot = path.join(deployPath, DEFAULT_AW_DIRNAME);
   const installClaudeSkill = args.installClaudeSkill;
+  ensureGitignoreServo(deployPath, args.dryRun);
   const claudePackageFiles = installClaudeSkill ? collectSkillPackageFiles() : [];
   const claudeTargetDir = installClaudeSkill ? claudeSkillTargetDirFor(args, deployPath) : null;
   args.repo = args.repo || path.basename(deployPath);

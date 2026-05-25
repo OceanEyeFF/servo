@@ -46,6 +46,13 @@ const legacyAwRuntimeDir = ".aw";
 const servoRuntimeDir = ".servo";
 const runtimeMigrationSentinel = ".servo-installer-aw-migration.json";
 const runtimeMigrationSentinelVersion = "aw-to-servo-runtime-migration.v1";
+const runtimeMigrationTextExtensions = new Set([".md", ".json", ".txt"]);
+const runtimeMigrationAwPathReplacements = [
+  [/\.aw\//g, ".servo/"],
+  [/`\.aw`/g, "`.servo`"],
+  [/\.aw(?=\s)/g, ".servo"],
+  [/"aw-set-harness-goal-skill/g, '"servo-set-harness-goal-skill'],
+];
 const defaultGithubRepo = "OceanEyeFF/servo";
 const githubRepoPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const githubRefPattern = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/;
@@ -3417,6 +3424,41 @@ function assertRuntimeSymlinksStayInsideSource(sourcePath) {
   }
 }
 
+function rewriteAwPathsInDirectory(dirPath) {
+  const pending = [dirPath];
+  let rewrittenFileCount = 0;
+  while (pending.length > 0) {
+    const current = pending.pop();
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const entryPath = join(current, entry.name);
+      if (entry.isSymbolicLink()) {
+        continue;
+      }
+      if (entry.isDirectory()) {
+        pending.push(entryPath);
+        continue;
+      }
+      if (!entry.isFile()) {
+        continue;
+      }
+      const ext = entry.name.slice(entry.name.lastIndexOf("."));
+      if (!runtimeMigrationTextExtensions.has(ext)) {
+        continue;
+      }
+      const original = readFileSync(entryPath, "utf8");
+      let rewritten = original;
+      for (const [pattern, replacement] of runtimeMigrationAwPathReplacements) {
+        rewritten = rewritten.replace(pattern, replacement);
+      }
+      if (rewritten !== original) {
+        writeFileSync(entryPath, rewritten, "utf8");
+        rewrittenFileCount++;
+      }
+    }
+  }
+  return rewrittenFileCount;
+}
+
 function copyRuntimeDirectory(sourcePath, destinationPath) {
   const sourceStat = lstatSync(sourcePath);
   if (sourceStat.isSymbolicLink()) {
@@ -3504,7 +3546,7 @@ function runtimeMigrationSummary(context) {
     state,
     verdict: issues.length > 0 ? "blocked" : state,
     action,
-    planned_actions: mutationAllowed ? ["copy .aw to .servo"] : [],
+    planned_actions: mutationAllowed ? ["copy .aw to .servo", "rewrite .aw path references to .servo in migrated text files"] : [],
     backup_policy: "retain .aw in place; no default cleanup",
     mutation_allowed: mutationAllowed,
     mutation_performed: false,
@@ -3532,6 +3574,7 @@ function applyRuntimeMigration(context) {
   }
   assertRuntimeSymlinksStayInsideSource(context.sourceRuntimePath);
   copyRuntimeDirectory(context.sourceRuntimePath, context.destinationRuntimePath);
+  const rewrittenCount = rewriteAwPathsInDirectory(context.destinationRuntimePath);
   writeFileSync(
     context.sentinelPath,
     `${JSON.stringify({
@@ -3541,6 +3584,7 @@ function applyRuntimeMigration(context) {
       source_runtime_path: context.sourceRuntimePath,
       destination_runtime_path: context.destinationRuntimePath,
       migrated_at: new Date().toISOString(),
+      rewritten_file_count: rewrittenCount,
     }, null, 2)}\n`,
     "utf8",
   );
@@ -3549,6 +3593,7 @@ function applyRuntimeMigration(context) {
     state: "migrated",
     action: "copy",
     mutation_performed: true,
+    rewritten_file_count: rewrittenCount,
   };
 }
 
@@ -3568,6 +3613,9 @@ function printRuntimeMigrationSummary(summary) {
     console.log(`reinstall plan: ${summary.reinstall_plan.command}`);
     console.log(`reinstall status: ${summary.reinstall_plan.status}`);
     console.log(`reinstall blocking issues: ${summary.reinstall_plan.blocking_issue_count}`);
+  }
+  if (summary.rewritten_file_count !== undefined && summary.rewritten_file_count > 0) {
+    console.log(`rewritten files: ${summary.rewritten_file_count}`);
   }
   if (!summary.mutation_performed && summary.mutation_allowed) {
     console.log("dry-run only; pass --yes to copy .aw into .servo");
