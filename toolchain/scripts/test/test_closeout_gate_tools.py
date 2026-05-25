@@ -12,12 +12,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import closeout_acceptance_gate
 from scope_gate_check import ChangedFile, check_scope, normalize_status_path
-from gate_status_backfill import update_state
+from gate_status_backfill import DEFAULT_CLOSEOUT_ROOT, DEFAULT_STATE_FILE, update_state
 
 
 def test_closeout_gate_does_not_require_python_deploy_reference_entrypoints() -> None:
     assert not hasattr(closeout_acceptance_gate, "SUPPORTED_DEPLOY_VERIFY_BACKENDS")
     assert not hasattr(closeout_acceptance_gate, "DEPLOY_VERIFY_ENTRYPOINTS")
+
+
+def test_gate_status_backfill_defaults_to_tmp_runtime_root() -> None:
+    assert DEFAULT_STATE_FILE.is_absolute()
+    assert DEFAULT_CLOSEOUT_ROOT.is_absolute()
+    assert ".autoworkflow" not in DEFAULT_STATE_FILE.parts
+    assert ".autoworkflow" not in DEFAULT_CLOSEOUT_ROOT.parts
+    assert "servo-closeout" in DEFAULT_STATE_FILE.parts
+    assert "servo-closeout" in DEFAULT_CLOSEOUT_ROOT.parts
 
 
 def test_claude_required_payload_skills_are_discovered_from_payload_descriptors() -> None:

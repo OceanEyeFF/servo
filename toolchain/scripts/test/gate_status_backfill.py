@@ -4,14 +4,25 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_STATE_FILE = REPO_ROOT / ".autoworkflow" / "state" / "harness-task-list.json"
-DEFAULT_CLOSEOUT_ROOT = REPO_ROOT / ".autoworkflow" / "closeout"
+
+
+def default_backfill_root(repo_root: Path = REPO_ROOT) -> Path:
+    repo_path = repo_root.resolve()
+    repo_key = hashlib.sha256(str(repo_path).encode("utf-8")).hexdigest()[:12]
+    return Path(tempfile.gettempdir()) / "servo-closeout" / f"{repo_path.name}-{repo_key}"
+
+
+DEFAULT_BACKFILL_ROOT = default_backfill_root()
+DEFAULT_STATE_FILE = DEFAULT_BACKFILL_ROOT / "state" / "harness-task-list.json"
+DEFAULT_CLOSEOUT_ROOT = DEFAULT_BACKFILL_ROOT / "closeout"
 
 
 def parse_args() -> argparse.Namespace:

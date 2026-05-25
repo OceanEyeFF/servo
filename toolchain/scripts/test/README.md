@@ -12,7 +12,7 @@
 - `servo_installer_cli/`：覆盖 `servo-installer` CLI 命令面，包含 help/version/无参、agents 与 claude 的 diagnose / update dry-run / check_paths_exist / prune / install / verify / update apply，以及 GitHub source Node-owned / unsupported 边界和 TUI 非交互保护
 - `servo_installer_tui/`：通过 PTY 驱动 `servo-installer tui`，覆盖菜单 1-6、guided update cancel/apply、diagnose、verify、update dry-run、help、未知输入和退出别名
 - `closeout_acceptance_gate.py`：按 closeout 顺序聚合 scope/spec/static/cache/test/smoke gates；其中 cache gate 会拒绝 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存，test gate 会运行 closeout、folder、path、semantic、agents adapter、servo-installer CLI/TUI、deploy package Node unit、Repo Analysis contract 回归测试、本地 `servo-installer` npm deploy package与根 package envelope 的 packlist dry-run、根 package publish dry-run及其 `prepublishOnly` guard、临时 `.tgz` help/version/TUI non-interactive guard/diagnose/update dry-run/install/verify/update apply tarball smoke
-- `gate_status_backfill.py`：把 gate 结果回填到 `.autoworkflow/state/` 和 closeout 摘要
+- `gate_status_backfill.py`：默认把 gate 结果回填到 `/tmp/servo-closeout/<repo>/state/` 和 closeout 摘要；可用 `--state-file` / `--closeout-root` 显式覆盖
 - `governance_assess.py`：对 `rule / folders / document / code` 四维输入做最小治理收口评估
 - `repo_governance_eval.py`：对五维 repo maintainability 输入做总分、评级和 AI compatibility 评估
 
