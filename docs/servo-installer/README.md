@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Documentation"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # servo-installer Documentation
 
@@ -126,6 +126,13 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |
 | 理解 TUI 和 CLI 的职责边界 | tui/human-cli-contract.md |
+
+## 诊断日志
+
+- CLI 命令可加 `--log-dir <path>` 写入一份 sanitized JSON run log。
+- TUI 默认把日志写到目标仓库 `.logs/servo-installer/`，并在退出时打印具体日志文件路径。
+- 日志包含平台、shell hint、Node/npm 版本、命令参数、backend/source selector、目标 `.aw/.servo/.agents/.claude` 状态、阶段输出摘要和最终 verdict。
+- 日志不写入完整环境变量 dump；token、secret、password 等敏感参数会被 redacted。
 
 ## 与旧路径的关系
 

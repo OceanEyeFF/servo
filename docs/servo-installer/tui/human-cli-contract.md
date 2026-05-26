@@ -1,9 +1,9 @@
 ---
 title: "TUI / CLI Responsibility Split Contract"
 status: active
-updated: 2026-05-19
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-19
+last_verified: 2026-05-27
 ---
 # TUI / CLI Responsibility Split Contract
 
@@ -54,6 +54,7 @@ TUI 必须包含以下固定状态信息，在整个交互过程中持续可见�
 | **当前 backend** | 用户选择或默认 `bundle` | 当前操作的 backend |
 | **当前步骤** | 流程阶段 | `diagnose → preview → confirm → install → verify → done` |
 | **验证结果** | `verify` 命令输出 | 最后验证的状态（通过/失败/未执行） |
+| **日志位置** | target-local `.logs/servo-installer/` 或 `--log-dir` | 可上传的 sanitized run log 路径 |
 
 屏幕模型是合同要求，具体布局由 MS-004 实现。各信息项须在固定区域渲染，不随交互滚动而移出视野。
 
@@ -91,6 +92,8 @@ diagnose → preview paths → confirm → install/update → verify → summary
 每一步都可以取消。取消时 TUI 不执行任何 mutating 操作。
 
 当 diagnose 发现 installer-managed legacy target dirs（例如 agents backend 的旧 `aw-*` skill 目录）时，TUI 必须展示与 CLI 相同的更新指引，并把 mutating 收敛动作映射到 `servo-installer update --backend <backend> --yes` 或 runtime 迁移路径中的 `migrate-runtime --from aw --to servo --yes --reinstall --backend <backend>`。TUI 不得引入独立的 legacy cleanup verb。
+
+TUI 默认必须写入 sanitized run log，并在退出时打印具体日志路径。默认位置为目标仓库 `.logs/servo-installer/`；若实现支持 `--log-dir`，显式路径优先。日志只能记录诊断所需的命令、环境摘要、目标状态、阶段输出和最终 verdict，不得写入完整环境变量 dump、token、credential 或 secret 值。
 
 ## 受众路径
 

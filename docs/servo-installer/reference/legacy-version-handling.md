@@ -1,9 +1,9 @@
 ---
 title: "旧版本处理"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # 旧版本处理
 
@@ -52,6 +52,14 @@ servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend
 servo-installer verify --backend agents
 servo-installer diagnose --backend agents
 ```
+
+如果需要上传诊断证据，CLI 可加 `--log-dir`：
+
+```bash
+servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend bundle --log-dir .logs/servo-installer
+```
+
+TUI 会默认写入目标仓库 `.logs/servo-installer/` 并打印具体日志文件路径。
 
 对于同时有 agents 和 claude deploy targets 的目标：
 
