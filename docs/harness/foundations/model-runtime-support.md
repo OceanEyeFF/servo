@@ -1,46 +1,46 @@
 ---
-title: "Model Runtime Support Boundary"
+title: "模型 Runtime 支持边界"
 status: active
 updated: 2026-05-26
 owner: servo-kernel
 last_verified: 2026-05-26
 ---
-# Model Runtime Support Boundary
+# 模型 Runtime 支持边界
 
-> Purpose: record the tested model/runtime support boundary for Servo without turning observed compatibility into a permanent certification claim.
+> 目的：记录 Servo 已测试过的 model/runtime 支持边界，同时避免把观察到的兼容性写成永久认证声明。
 
-Servo is designed as a repo-side contract layer. The stable contract is the artifact/skill protocol in this repository; model runtimes are execution carriers that may differ in tool shells, SubAgent support, context handling, and permission behavior.
+Servo 的定位是 repo-side contract layer。稳定合同来自本仓库中的 artifact / skill 协议；model runtime 是执行载体，不同 runtime 在工具 shell、SubAgent 支持、上下文处理和权限行为上可能不同。
 
-## Tested Support
+## 已测试支持
 
-As of 2026-05-26, Servo workflows have been exercised with generally good support on these model/runtime families:
+截至 2026-05-26，Servo workflow 已在以下 model/runtime 家族上进行过使用验证，整体支持情况良好：
 
-| Runtime family | Observed support | Notes |
+| Runtime family | 观察到的支持情况 | 说明 |
 | --- | --- | --- |
-| Deepseek V4 Pro | Good | Suitable for Harness control-loop work when the surrounding CLI/tool shell exposes the required filesystem and git operations. |
-| Deepseek V4 Lite | Good | Suitable for lighter Harness and documentation work; use stricter verification for broad implementation changes. |
-| Claude | Good | Supported through the `claude` backend compatibility lane and repo-local `.claude/skills/` payload. |
-| Pi | Good | Treated as an execution carrier compatibility observation; require the same artifact and gate evidence as other carriers. |
-| GPT-5.5 | Good | Suitable for complex control, implementation, review, and recovery work when available through Codex-compatible tooling. |
-| GPT-5.4 / CodeX | Good | Current primary Codex-facing lane for `agents` backend workflows and repo-local `.agents/skills/` payload. |
+| Deepseek V4 Pro | 良好 | 当外层 CLI / tool shell 提供所需 filesystem 和 git 操作时，适合承载 Harness control-loop 工作。 |
+| Deepseek V4 Lite | 良好 | 适合较轻量的 Harness 和文档工作；涉及大范围实现变更时应使用更严格的验证。 |
+| Claude | 良好 | 通过 `claude` backend 兼容路径和 repo-local `.claude/skills/` payload 支持。 |
+| Pi | 良好 | 作为执行载体兼容性观察记录；仍需与其他载体一样提供 artifact 和 gate evidence。 |
+| GPT-5.5 | 良好 | 在可通过 Codex-compatible tooling 使用时，适合复杂控制、实现、审查和恢复工作。 |
+| GPT-5.4 / CodeX | 良好 | 当前 `agents` backend workflow 和 repo-local `.agents/skills/` payload 的主要 Codex-facing 路径。 |
 
-These observations mean the model/runtime family has been used successfully with Servo workflows. They do not bypass Worktrack contracts, gate evidence, or repo governance checks.
+这些观察只表示对应 model/runtime 家族已经成功承载过 Servo workflow。它们不能绕过 Worktrack contract、gate evidence 或 repo governance checks。
 
-## Boundary
+## 边界
 
-Model support is not a substitute for:
+模型支持事实不能替代：
 
-- `servo-installer verify` proving deploy target alignment
-- Worktrack Contract scope, non-goals, and acceptance criteria
-- test/review/rule evidence
-- Milestone final acceptance by the programmer
-- release-channel approval for npm publication
+- `servo-installer verify` 对 deploy target alignment 的证明
+- Worktrack Contract 中的 scope、non-goals 和 acceptance criteria
+- test / review / rule evidence
+- programmer 对 Milestone 的最终验收
+- npm 发布所需的 release-channel approval
 
-When a runtime cannot prove SubAgent dispatch support, Harness should use the dispatch decision policy and record a current-carrier fallback rather than claiming delegated execution.
+当某个 runtime 无法证明 SubAgent dispatch 支持时，Harness 应使用 dispatch decision policy，并记录 current-carrier fallback，而不是声明已经完成 delegated execution。
 
-## Where To Look Next
+## 后续入口
 
-- Codex / agents usage: [../../project-maintenance/usage-help/codex.md](../../project-maintenance/usage-help/codex.md)
-- Claude backend usage: [../../project-maintenance/usage-help/claude.md](../../project-maintenance/usage-help/claude.md)
-- Dispatch carrier policy: [dispatch-decision-policy.md](./dispatch-decision-policy.md)
-- Runtime dispatch contract: [runtime-dispatch-contract.md](./runtime-dispatch-contract.md)
+- Codex / agents 使用说明：[../../project-maintenance/usage-help/codex.md](../../project-maintenance/usage-help/codex.md)
+- Claude backend 使用说明：[../../project-maintenance/usage-help/claude.md](../../project-maintenance/usage-help/claude.md)
+- Dispatch carrier policy：[dispatch-decision-policy.md](./dispatch-decision-policy.md)
+- Runtime dispatch contract：[runtime-dispatch-contract.md](./runtime-dispatch-contract.md)
