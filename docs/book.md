@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-05-23
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-23
+last_verified: 2026-05-26
 ---
 # Docs Book Spine
 
@@ -72,9 +72,10 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 11. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
 12. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
 13. [servo-installer/reference/legacy-version-handling.md](./servo-installer/reference/legacy-version-handling.md)
-14. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
-15. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
-16. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
+14. [servo-installer/reference/tui-aw-runtime-migration-repro.md](./servo-installer/reference/tui-aw-runtime-migration-repro.md)
+15. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
+16. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
+17. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
 
 ### 3. Harness
 
