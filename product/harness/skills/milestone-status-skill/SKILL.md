@@ -173,8 +173,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `handoff_signal`：交接信号
 - `requires_developer_decision`：boolean
 - `milestone_input_checkpoint`：本次分析按 `milestone-input-checkpoint/v1` 算法计算出的 `sha256:<hex>` 输入指纹，供 harness-skill 写入 control-state 的 `Baseline Traceability.milestone_input_checkpoint`，下一轮 Observe 用于幂等性对比
-- `pipeline_advancement`：若当前 milestone `achieved`，推荐激活的下一个 milestone_id（从 milestone-backlog 中按 priority 选取满足前置条件的 planned milestone）
-- `pipeline_state`：Pipeline 快照（planned/active/completed/superseded 计数）
+- `pipeline_advancement`：若当前 milestone `achieved`，推荐激活的下一个 milestone_id（从 live milestone-backlog 中按 priority 选取满足前置条件的 planned milestone；前置依赖可由 milestone-history 中 completed/superseded 条目满足）
+- `pipeline_state`：Pipeline aggregate 快照（planned/active 来自 live milestone-backlog，completed/superseded 来自 milestone-history）
 - `writeback_required`：boolean — 是否需要 harness-skill 执行写回
 - `writeback_instructions`：object — 包含 `milestone_artifact_updates`（需更新的 milestone artifact 字段）、`control_state_updates`（需写入 control-state 的字段）、`backlog_updates`（需 upsert 到 milestone-backlog 的条目）、`pipeline_advancement_action`（若有下一 milestone 待激活，包含激活指令）
 
@@ -220,7 +220,9 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - **Control State**（`.servo/control-state.md`）：
   - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
   - 更新 `milestone_status`（若发生变化）
-- **Milestone Backlog**（`.servo/repo/milestone-backlog.md`）：
+- **Milestone Backlog / History**（`.servo/repo/milestone-backlog.md` / `.servo/repo/milestone-history.md`）：
+  - live backlog 只保留 `planned` / `active` 条目
+  - completed / superseded 条目应写入 milestone-history
   - 按 milestone_id upsert，更新 status 和 updated
 - **Pipeline Advancement**（仅在 `milestone_acceptance_verdict == "achieved"` 时）：
   - 读取本技能输出的 `pipeline_advancement`
@@ -229,4 +231,4 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 `harness-skill` 不得跳过以上写回步骤。若本技能输出标记 `writeback_required: false`，可跳过。若标记 `writeback_required: true` 但 `harness-skill` 无法安全执行全部写回（如文件写入失败），必须作为 `proceed_blockers` 返回。
 
-对于 goal-driven milestone，本技能输出的 `achieved` 是 programmer final acceptance 的前置信号，不等于已获得最终验收。programmer final acceptance 发生后，`harness-skill` 必须把 acceptance writeback 当作一个逻辑事务执行：milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 和相关 worktrack 状态必须一起校验、写入并提交后复核。若任何写入失败或提交后出现 completed/accepted milestone 仍含 `(planned)` / `(active)` worktrack、control-state pipeline summary 与 backlog 计数不一致、或 active pointer 不一致，必须返回 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞项，而不是继续推进。
+对于 goal-driven milestone，本技能输出的 `achieved` 是 programmer final acceptance 的前置信号，不等于已获得最终验收。programmer final acceptance 发生后，`harness-skill` 必须把 acceptance writeback 当作一个逻辑事务执行：milestone artifact、live milestone-backlog、milestone-history、control-state、handback guard、baseline traceability 和相关 worktrack 状态必须一起校验、写入并提交后复核。若任何写入失败或提交后出现 completed/accepted history milestone 仍含 `(planned)` / `(active)` worktrack、control-state pipeline summary 与 live+history aggregate 计数不一致、或 active pointer 不一致，必须返回 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞项，而不是继续推进。

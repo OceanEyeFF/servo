@@ -6,6 +6,7 @@
 
 - [quickstart.md](./quickstart.md)：**新 operator 先读这里**。10 分钟快速教程：安装（TUI 推荐 / CLI 备选）、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
 - [recommended-usage.md](./recommended-usage.md)：Skills 使用教程，覆盖 skill 调用方式、backend 差异（agents vs claude）、常见工作流和场景速查。
+- [usage-flow-examples.md](./usage-flow-examples.md)：已观察的 Servo 使用流程实例，用于理解真实项目中的 Harness state、docs 和应用代码如何并存。
 - [TUI/CLI 合同](../../servo-installer/tui/human-cli-contract.md)：TUI 是人类推荐路径；CLI 是 AI/CI/脚本接口。理解两者的职责边界和引导流程。
 
 ## 按 backend 进入
@@ -14,6 +15,8 @@
 |---|---|---|
 | `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、[quickstart 快速入门](./quickstart.md)、source 变更决策、Codex Harness manual run |
 | `claude` | [claude.md](./claude.md) | Claude runtime 路径、[quickstart 快速入门](./quickstart.md)、source 变更决策、冷启动 runbook |
+
+Model/runtime support observations for Deepseek V4 Pro/Lite, Claude, Pi, GPT-5.5, and GPT-5.4/CodeX are recorded in [Model Runtime Support Boundary](../../harness/foundations/model-runtime-support.md). Treat those observations as tested support evidence, not as a replacement for backend install verification or worktrack gate evidence.
 
 ## 按初始化场景进入
 

@@ -1,9 +1,9 @@
 ---
 title: "根目录分层"
 status: active
-updated: 2026-05-14
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-14
+last_verified: 2026-05-26
 ---
 # 根目录分层
 
@@ -23,7 +23,7 @@ last_verified: 2026-05-14
 | Toolchain Layer | `toolchain/` | 脚本与评测工具 | 业务源码真相 |
 | Distribution Manifest Layer | `package.json` | npm/npx 分发包络元数据 | 业务源码真相、运行状态 |
 | Repo-local Install / Mount Layer | `.claude/` `.agents/` | repo-local 安装载荷、挂载与 deploy target | 主线真相、业务源码 |
-| Repo-local State Layer | `.servo/` `.autoworkflow/` `.spec-workflow/` | 运行状态、Harness 控制面运行产物 | 主线入口、业务源码、长期真相 |
+| Repo-local State Layer | `.servo/` `.autoworkflow/` `.spec-workflow/` | 运行状态、Harness 控制面运行产物；`.autoworkflow/` 与 `.spec-workflow/` 仅保留 legacy / compatibility state 语义 | 主线入口、业务源码、长期真相 |
 | Repo-local Execution Config Layer | `.codex/` | repo-local 执行配置 | 长期真相正文、运行产物 |
 | Compatibility Navigation Layer | `.nav/` | 兼容导航 | 结构定义与规则正文 |
 | Compatibility Shim Layer | `tools/` | 兼容入口 shim | canonical 逻辑实现 |

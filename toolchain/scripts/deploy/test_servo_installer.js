@@ -4286,6 +4286,59 @@ function runTuiInTempTarget(args, input, env = {}) {
   }
 }
 
+function applyPromptKeys(keys) {
+  let answer = "";
+  let output = "";
+  let done = false;
+  for (const [str, key] of keys) {
+    const next = installer.applyPromptInputKey(answer, str, key);
+    answer = next.answer;
+    output += next.output;
+    done = next.done;
+    if (done) {
+      break;
+    }
+  }
+  return { answer, output, done };
+}
+
+test("tui prompt editor echoes typed input once", () => {
+  assert.deepEqual(
+    applyPromptKeys([
+      ["p", { name: "p" }],
+      ["r", { name: "r" }],
+      ["u", { name: "u" }],
+      ["n", { name: "n" }],
+      ["e", { name: "e" }],
+      ["", { name: "return" }],
+    ]),
+    { answer: "prune", output: "prune\n", done: true },
+  );
+  assert.deepEqual(
+    applyPromptKeys([
+      ["y", { name: "y" }],
+      ["e", { name: "e" }],
+      ["s", { name: "s" }],
+      ["", { name: "return" }],
+    ]),
+    { answer: "yes", output: "yes\n", done: true },
+  );
+});
+
+test("tui prompt editor does not backspace beyond typed input", () => {
+  assert.deepEqual(
+    applyPromptKeys([
+      ["", { name: "backspace" }],
+      ["", { name: "delete" }],
+      ["y", { name: "y" }],
+      ["", { name: "backspace" }],
+      ["", { name: "backspace" }],
+      ["", { name: "return" }],
+    ]),
+    { answer: "", output: "y\b \b\n", done: true },
+  );
+});
+
 // TUI guard: non-TTY with explicit "tui" arg must print error
 test("tui guard refuses non-TTY with explicit tui arg", () => {
   const result = runTui(["tui"], "", {});

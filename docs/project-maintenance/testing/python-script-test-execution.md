@@ -31,7 +31,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 
 ## Closeout Gate
 
-涉及 closeout/gate/package/doc/adapter 时：`PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gate.py --json`，聚合 scope/spec/static/cache/test/smoke gates 并检查缓存污染。
+涉及 closeout/gate/package/doc/adapter 时：`PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gate.py --json`，聚合 scope/spec/static/cache/test/smoke gates 并检查缓存污染；gate backfill 默认写入 `/tmp/servo-closeout/<repo>/`，不在 repo 根生成 `.autoworkflow/` 运行态。
 
 ## Diff Hygiene
 

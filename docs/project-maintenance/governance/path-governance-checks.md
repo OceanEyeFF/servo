@@ -1,9 +1,9 @@
 ---
 title: "路径与文档治理检查运行说明"
 status: active
-updated: 2026-05-16
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-16
+last_verified: 2026-05-26
 ---
 # 路径与文档治理检查运行说明
 
@@ -25,14 +25,14 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 
 ## 三、脚本当前会检查什么
 
-1. `folder_logic_check.py` — 根目录 object 是否在 allowlist（`product/`、`docs/`、`toolchain/`、`.codex/`、`.agents/`、`.claude/`、`.servo/`、`.autoworkflow/`、`.spec-workflow/`、`.nav/`、`tools/`、`.pytest_cache/`、入口/基础设施文件，包括 Claude Code 适配入口 `CLAUDE.md`）；裸 `.pyc`/`.pyo` 不允许
+1. `folder_logic_check.py` — 根目录 object 是否在 allowlist（`product/`、`docs/`、`toolchain/`、`.codex/`、`.agents/`、`.claude/`、`.servo/`、legacy / compatibility state `.autoworkflow/`、`.spec-workflow/`、`.nav/`、`tools/`、`.pytest_cache/`、入口/基础设施文件，包括 Claude Code 适配入口 `CLAUDE.md`）；裸 `.pyc`/`.pyo` 不允许
 2. `product/`、`docs/`、`toolchain/` 一级子目录合规；错放内容拦截（product 无 runbook/缓存/state，docs 无可执行/缓存，toolchain 无业务源码/mount，tools 无 Python 缓存）
 3. hidden/state/mount 层 tracked 状态受控：`.agents/`、`.claude/` tracked 即失败；`.codex/` 仅 `config.toml`+`rules/repo.rules`；`tools/` 仅显式 compat shim；`.pytest_cache/` tracked 即失败
 4. `.nav/` 仅含 `README.md`、`@docs`、`@skills`；`@docs` 与 `@skills` 是 symlink 且解析到合法目标
 5. `path_governance_check.py` — 根入口、`docs/book.md` 与主线入口存在且 markdown 相对链接可达；所有 `docs/` 下非 `README.md` 正文必须能从 `docs/book.md` 沿相对 markdown 链接到达，新增正文需挂到 book spine 或最近章节入口；除 `docs/book.md` 自身外的所有 `docs/**/*.md` 必须在 `docs/book.md` 的显式阅读顺序中有直接链接；`docs/book.md` 反引号中的具体路径必须指向当前 checkout 中存在的路径；`docs/book.md` 或章节 `README.md` 链接 `status: superseded` 文档时必须位于 `Retained Historical References` / `Historical References` 章节；每个 `product/harness/skills/*/SKILL.md` source 目录必须在 `product/harness/skills/README.md#Docs Owner Traceability` 的第一列有 docs owner 反链，并在 `docs/harness/catalog/README.md#Canonical Source Traceability` 的第二列有 canonical source 映射；traceability 链接不得指向 `.agents/` / `.claude/` deploy targets；`AGENTS.md` 被关键入口页引用；scope gate 中不带 `/` 的允许项按精确文件路径匹配，带 `/` 的允许项才按目录前缀匹配
 6. `docs/harness/README.md` 及子入口存在，继续链接 foundations/scope/artifact/Skills/workflow-families
 7. `docs/` 正文保留 frontmatter；`project-maintenance/` 与 `harness/` status 匹配语义；无 `status:suspended` 误用
-8. `.gitignore` 忽略 `.servo/`、`.agents/`、`.claude/`、`.autoworkflow/`、`.spec-workflow/`、`**/__pycache__/`、`.pytest_cache/`、`*.pyc`、`*.pyo`
+8. `.gitignore` 忽略 `.servo/`、`.agents/`、`.claude/`、legacy / compatibility state `.autoworkflow/`、`.spec-workflow/`、`**/__pycache__/`、`.pytest_cache/`、`*.pyc`、`*.pyo`
 9. `governance_semantic_check.py` — 关键承接关系存在（toolchain-layering -> scripts、docs/harness -> 子入口、product/harness -> docs/harness、artifact/worktrack -> contract/queue/gate）
 10. foundations 无同名前缀 shadow 文件；关键入口无已退役 placeholder 回流；根兼容入口不引用已退役 adjacent-systems
 11. `product/harness/` 及子目录保持最小 executable root 骨架

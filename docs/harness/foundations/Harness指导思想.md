@@ -99,7 +99,7 @@ Harness 依赖的正式对象：
 | `Gate Evidence` | 保存 review / validation / policy 等证据面 |
 | `Harness Control State` | 保存控制级别、活跃 worktrack、baseline 和下一动作 |
 | `Goal Change Request` | 管理目标变更影响分析、确认与单独 gate |
-| `Append Request` | 对追加 feature / design 请求做分类与路由 |
+| `Append Request` | 对追加 milestone / feature / design 请求做分类与路由 |
 
 字段细节以 [artifact/](../artifact/README.md) 和 [Harness运行协议.md](./Harness运行协议.md) 为准。
 

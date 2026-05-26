@@ -4394,7 +4394,7 @@ async function runNodeOwned(args) {
 function question(rl, prompt) {
   if (ttyIn) {
     _ensureKeypress();
-    if (typeof rl.pause === "function") {
+    if (rl && typeof rl.pause === "function") {
       rl.pause();
     }
     process.stdout.write(prompt);
@@ -4403,26 +4403,17 @@ function question(rl, prompt) {
     return new Promise((resolve) => {
       let answer = "";
       const onKeypress = (str, key) => {
-        if (key && key.ctrl && key.name === "c") {
-          process.stdout.write("^C\n");
+        const next = applyPromptInputKey(answer, str, key);
+        answer = next.answer;
+        if (next.output) {
+          process.stdout.write(next.output);
+        }
+        if (next.exitCode !== undefined) {
           process.exit(130);
         }
-        if (key && (key.name === "return" || key.name === "enter")) {
-          process.stdout.write("\n");
+        if (next.done) {
           process.stdin.removeListener("keypress", onKeypress);
           resolve(answer);
-          return;
-        }
-        if (key && key.name === "backspace") {
-          if (answer.length > 0) {
-            answer = answer.slice(0, -1);
-            process.stdout.write("\b \b");
-          }
-          return;
-        }
-        if (str && str >= " " && str !== "\x7f") {
-          answer += str;
-          process.stdout.write(str);
         }
       };
       process.stdin.on("keypress", onKeypress);
@@ -4430,13 +4421,32 @@ function question(rl, prompt) {
   }
 
   return new Promise((resolve) => {
-    if (typeof rl.resume === "function") {
+    if (rl && typeof rl.resume === "function") {
       rl.resume();
     }
     rl.question(prompt, (answer) => {
       resolve(answer);
     });
   });
+}
+
+function applyPromptInputKey(answer, str, key) {
+  if (key && key.ctrl && key.name === "c") {
+    return { answer, output: "^C\n", done: true, exitCode: 130 };
+  }
+  if (key && (key.name === "return" || key.name === "enter")) {
+    return { answer, output: "\n", done: true };
+  }
+  if (key && (key.name === "backspace" || key.name === "delete")) {
+    if (answer.length === 0) {
+      return { answer, output: "", done: false };
+    }
+    return { answer: answer.slice(0, -1), output: "\b \b", done: false };
+  }
+  if (str && str >= " " && str !== "\x7f") {
+    return { answer: answer + str, output: str, done: false };
+  }
+  return { answer, output: "", done: false };
 }
 
 async function pause(rl) {
@@ -4996,12 +5006,6 @@ async function runTui() {
   // Bundle default per TUI contract
   tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: true,
-  });
-
   try {
     process.stdout.write(CSI_CLEAR_SCREEN);
     process.stdout.write(CSI_HIDE_CURSOR);
@@ -5020,21 +5024,21 @@ async function runTui() {
       refreshTui(tuiState);
       process.stdout.write(`\n${colorBold("TUI Menu")}  ${colorDim("backend: " + tuiState.backend + "  |  b to cycle: " + backendCycle.join("/"))}\n`);
 
-      const idx = await interactiveSelect(rl, menuOptions, " ");
+      const idx = await interactiveSelect(null, menuOptions, " ");
 
       if (idx === -1) { break; }
 
       if (idx === 0) {
-        await runGuidedFullFlow(rl, tuiState);
+        await runGuidedFullFlow(null, tuiState);
       } else if (idx === 1) {
         tuiState.currentStep = "guided-update";
-        await runGuidedUpdateFlow(rl, tuiState);
+        await runGuidedUpdateFlow(null, tuiState);
       } else if (idx === 2) {
         tuiState.currentStep = "diagnose";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
         await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
-        await pause(rl);
+        await pause(null);
       } else if (idx === 3) {
         tuiState.currentStep = "verify";
         tuiState.verifyResult = "running...";
@@ -5042,13 +5046,13 @@ async function runTui() {
         process.stdout.write(`\n${SYM_ARROW} Running verify --backend ${tuiState.backend}...\n`);
         const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
         tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
-        await pause(rl);
+        await pause(null);
       } else if (idx === 4) {
         tuiState.currentStep = "dry-run";
         refreshTui(tuiState);
         process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
         await runNodeOwned(["update", "--backend", tuiState.backend]);
-        await pause(rl);
+        await pause(null);
       } else if (idx === 5) {
         break;
       }
@@ -5061,7 +5065,6 @@ async function runTui() {
     process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
     process.stdout.write(csiEraseToEnd());
     try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
-    rl.close();
   }
 }
 
@@ -5125,6 +5128,7 @@ module.exports = {
   collectUpdateTargetEntryIssues,
   computePayloadFingerprint,
   crc32,
+  applyPromptInputKey,
   dedupeIssues,
   describeExistingTargetPath,
   diagnosticSummary,

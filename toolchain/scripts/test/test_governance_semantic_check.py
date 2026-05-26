@@ -210,15 +210,15 @@ def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Pat
 def test_check_append_request_contract_terms_flags_drift(tmp_path: Path) -> None:
     write_doc(
         tmp_path / "docs/harness/artifact/control/append-request.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\n",
     )
     write_doc(
         tmp_path / "docs/harness/workflow-families/repo-evolution/append-request-routing.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
         tmp_path / "product/harness/skills/repo-append-request-skill/SKILL.md",
-        "append-feature\nappend-design\ngoal change\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
+        "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
         tmp_path / "product/harness/skills/repo-append-request-skill/templates/append-request.template.md",
@@ -1060,6 +1060,7 @@ def _write_runtime_artifacts(
     milestone_status: str = "active",
     summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
     backlog_entries: str | None = None,
+    history_entries: str | None = None,
 ) -> None:
     write_doc(
         tmp_path / ".servo/control-state.md",
@@ -1083,6 +1084,11 @@ def _write_runtime_artifacts(
                 "  - worktrack_list:",
                 "    - WT-001 (planned)",
                 "",
+            ]
+        )
+    if history_entries is None:
+        history_entries = "\n".join(
+            [
                 "- milestone_id: MS-000",
                 "  - status: completed",
                 "  - acceptance:",
@@ -1095,6 +1101,10 @@ def _write_runtime_artifacts(
     write_doc(
         tmp_path / ".servo/repo/milestone-backlog.md",
         "# Repo Milestone Backlog\n\n## Pipeline Entries\n\n" + backlog_entries,
+    )
+    write_doc(
+        tmp_path / ".servo/repo/milestone-history.md",
+        "# Repo Milestone History\n\n## History Entries\n\n" + history_entries,
     )
 
 
@@ -1167,7 +1177,8 @@ def test_check_runtime_artifact_consistency_flags_completed_milestone_planned_wo
         active_milestone="none",
         milestone_status="none",
         summary="planned=0 / active=0 / completed=1 / superseded=0",
-        backlog_entries="\n".join(
+        backlog_entries="",
+        history_entries="\n".join(
             [
                 "- milestone_id: MS-001",
                 "  - status: completed",
@@ -1184,6 +1195,55 @@ def test_check_runtime_artifact_consistency_flags_completed_milestone_planned_wo
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("unfinished worktrack markers" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_history_status_in_live_backlog(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_milestone="none",
+        milestone_status="none",
+        summary="planned=0 / active=0 / completed=1 / superseded=0",
+        backlog_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: completed",
+                "  - worktrack_list:",
+                "    - WT-001 (done)",
+                "",
+            ]
+        ),
+        history_entries="",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("live milestone backlog contains history status" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_live_status_in_history(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        summary="planned=0 / active=1 / completed=0 / superseded=0",
+        history_entries="\n".join(
+            [
+                "- milestone_id: MS-002",
+                "  - status: planned",
+                "  - worktrack_list:",
+                "    - WT-002 (planned)",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("milestone-history contains live status" in item for item in report.failures)
 
 
 def test_check_runtime_artifact_consistency_flags_malformed_summary(tmp_path: Path) -> None:

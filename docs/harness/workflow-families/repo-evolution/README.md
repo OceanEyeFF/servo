@@ -4,7 +4,7 @@
 
 当前入口：
 
-- [append-request-routing.md](./append-request-routing.md)：append-feature / append-design 的分类与路由规则
+- [append-request-routing.md](./append-request-routing.md)：append-feature / append-design / append-milestone 的分类与路由规则
 
 ## Retained Historical References
 
