@@ -4580,6 +4580,75 @@ function checkAwHealth() {
   return checks;
 }
 
+function buildTuiMigrationArgs(state, includeYes) {
+  const args = [
+    "migrate-runtime",
+    "--from",
+    "aw",
+    "--to",
+    "servo",
+    "--backend",
+    state.backend,
+    "--reinstall",
+  ];
+  if (includeYes) {
+    args.push("--yes");
+  }
+  return args;
+}
+
+function legacyRuntimeMigrationSummaryForTui(state) {
+  return runtimeMigrationSummary(runtimeMigrationContext({
+    backend: state.backend,
+    from: "aw",
+    to: "servo",
+    json: false,
+    yes: false,
+    reinstall: true,
+  }));
+}
+
+async function guidedRuntimeMigration(rl, state) {
+  const summary = legacyRuntimeMigrationSummaryForTui(state);
+  state.runtimeMigration = summary.state;
+
+  if (summary.state === "no-runtime" || summary.state === "destination-only" || summary.state === "already-migrated") {
+    return true;
+  }
+
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Legacy runtime migration check.`);
+  printRuntimeMigrationSummary(summary);
+
+  if (summary.issue_count > 0 || summary.action === "blocked") {
+    console.log(`${SYM_FAIL} Runtime migration is blocked; guided install/update will not continue.`);
+    console.log(`  ${colorDim("Preserve .aw, resolve the reported issue, then rerun guided install/update or migrate-runtime.")}`);
+    return false;
+  }
+
+  const confirmation = (await question(
+    rl,
+    `\n${SYM_ARROW} Type ${colorYellow("migrate")} to copy .aw into .servo and reinstall ${state.backend}: `,
+  )).trim().toLowerCase();
+  if (confirmation !== "migrate") {
+    console.log("Guided flow cancelled. No runtime migration performed.");
+    return false;
+  }
+
+  state.currentStep = "runtime migration";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Migrating .aw runtime state into .servo.`);
+  const status = await runNodeOwned(buildTuiMigrationArgs(state, true));
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Runtime migration failed.`);
+    return false;
+  }
+  state.runtimeMigrationPerformed = true;
+  state.runtimeMigration = "migrated";
+  console.log(`${SYM_OK} Runtime migration complete.`);
+  return true;
+}
+
 async function guidedDiagnose(rl, state) {
   state.currentStep = "1/6 diagnose";
   refreshTui(state);
@@ -4810,6 +4879,30 @@ async function runGuidedFullFlow(rl, state) {
   // Stage 1: Diagnose (non-blocking)
   results[0] = await guidedDiagnose(rl, state);
   await pause(rl);
+
+  const migrationOk = await guidedRuntimeMigration(rl, state);
+  if (!migrationOk) { return; }
+  if (state.runtimeMigrationPerformed) {
+    await pause(rl);
+    results[1] = true;
+    results[2] = true;
+    results[3] = true;
+    state.currentStep = "5/6 verify";
+    refreshTui(state);
+    state.verifyResult = "running...";
+    const vStatus = await runNodeOwned(["verify", "--backend", state.backend]);
+    state.verifyResult = vStatus === 0 ? "passed" : "failed";
+    results[4] = vStatus === 0;
+    if (results[4]) {
+      console.log(`${SYM_OK} Verification passed.`);
+    } else {
+      console.log(`${SYM_FAIL} Verification failed. Summary will be marked incomplete.`);
+    }
+    await pause(rl);
+    await guidedSummary(rl, state, results);
+    await pause(rl);
+    return;
+  }
 
   // Stage 2: Preview paths (blocking)
   results[1] = await guidedPreviewPaths(rl, state);
