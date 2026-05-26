@@ -1,11 +1,11 @@
 ---
-title: "AutoWorkflow"
+title: "Servo"
 status: active
 updated: 2026-05-24
 owner: servo-kernel
 last_verified: 2026-05-24
 ---
-# AutoWorkflow
+# Servo
 
 > 一个 Codex-first 的 AI coding harness 平台，通过 repo-side contract layer 实现可控的 AI 编程工作流。
 

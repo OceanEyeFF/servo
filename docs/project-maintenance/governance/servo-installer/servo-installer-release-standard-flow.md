@@ -31,7 +31,7 @@ npm view servo-installer@<package.version> version --json
 
 If tag or published version exists, stop and resolve conflict before continuing.
 
-If npm fails because the default cache path is not writable, retry the registry queries with an explicit cache outside the source tree, for example `NPM_CONFIG_CACHE=/tmp/aw-npm-cache npm view ...`.
+If npm fails because the default cache path is not writable, retry the registry queries with an explicit cache outside the source tree, for example `NPM_CONFIG_CACHE=/tmp/servo-npm-cache npm view ...`.
 
 ## 2. Push And Open The Merge PR
 
