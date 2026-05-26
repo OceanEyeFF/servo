@@ -287,13 +287,6 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
     assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known v0.5.7 gap: TUI option 1 runs install/update, not "
-        "migrate-runtime, so legacy .aw runtime is not copied to .servo."
-    ),
-)
 def test_tui_guided_install_update_migrates_legacy_aw_runtime(
     repo_root: Path,
     tmp_path: Path,
@@ -311,9 +304,8 @@ def test_tui_guided_install_update_migrates_legacy_aw_runtime(
         [
             *choose_menu_steps(0),
             ("Press Enter to return to the installer menu...", "\n"),
-            ("No pre-existing paths", "\n"),
-            ("Type yes to proceed", "yes\n"),
-            ("Install complete for bundle", "\n"),
+            ("Type migrate to copy .aw into .servo", "migrate\n"),
+            ("Runtime migration complete", "\n"),
             ("Verification passed", "\n"),
             ("All stages completed successfully", "\n"),
             ("Press Enter to return to the installer menu...", "\n"),
@@ -323,10 +315,39 @@ def test_tui_guided_install_update_migrates_legacy_aw_runtime(
 
     assert code == 0, output
     assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+    assert (target_repo / ".claude" / "skills" / "harness-skill" / "SKILL.md").is_file()
     assert (target_repo / ".servo" / "control-state.md").is_file()
     assert ".servo/control-state.md" in (target_repo / ".servo" / "control-state.md").read_text(
         encoding="utf-8",
     )
+    assert (target_repo / ".aw" / "control-state.md").is_file()
+
+
+def test_tui_guided_install_update_blocks_aw_servo_runtime_conflict(
+    repo_root: Path,
+    tmp_path: Path,
+) -> None:
+    target_repo = tmp_path / "runtime-conflict-target"
+    (target_repo / ".aw").mkdir(parents=True)
+    (target_repo / ".aw" / "control-state.md").write_text("legacy\n", encoding="utf-8")
+    (target_repo / ".servo").mkdir()
+    (target_repo / ".servo" / "control-state.md").write_text("existing\n", encoding="utf-8")
+
+    code, output = run_tui_script(
+        repo_root,
+        target_repo,
+        [
+            *choose_menu_steps(0),
+            ("Press Enter to return to the installer menu...", "\n"),
+            quit_menu_step(),
+        ],
+    )
+
+    assert code == 0, output
+    assert "Runtime migration is blocked" in output
+    assert "destination-runtime-exists" in output
+    assert "Installing bundle" not in output
+    assert not (target_repo / ".agents" / "skills").exists()
 
 
 def test_tui_unknown_key_stays_on_menu_then_quits(repo_root: Path, tmp_path: Path) -> None:
