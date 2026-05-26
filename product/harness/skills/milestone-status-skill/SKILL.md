@@ -76,6 +76,10 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 15. 向 Harness 返回结构化的 Milestone 状态报告。
 16. 如果没有命中正式停止条件，允许监督器直接进入下一个合法判定。
 
+当 goal-driven milestone 的 `worktrack_list_finished == true` 时，必须生成或消费一份 composite acceptance report。需要稳定格式时使用 `templates/composite-acceptance-report.template.md`。若运行时无法委派 SubAgent lanes，仍必须保留六条 lane，并在每条 lane 中记录 `carrier`、`delegation_attempted`、`fallback_reason`、`verdict`、`severity`、`evidence_refs`、`residual_risks` 与 `required_followups`。
+
+`milestone_acceptance_verdict == achieved` 的前置条件包括：composite acceptance verdict 为 `accepted` 或 `accepted_with_residual_risk`；没有 `blocked` lane；没有未被 programmer 接受为后续范围的 `needs_followup_worktrack` lane；没有 high severity finding；所有 mandatory lane 的 fallback evidence 足以支撑判断。
+
 ## 正式停止条件
 
 至少在以下任一条件成立时停止并返回控制权：
@@ -183,7 +187,9 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 资源
 
-使用当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）、当前 worktrack backlog（`.servo/repo/worktrack-backlog.md`）、gate evidence（`.servo/worktrack/gate-evidence.md`）和 repo snapshot（`.servo/repo/snapshot-status.md`）作为主要输入。只有当工作追踪本地产物会实质影响 Milestone 进度计数或目的达成判定时才读取额外的 worktrack 细节文件；仅允许将它们作为辅助边界证据使用，禁止将它们当作 Milestone 真相的替代品。
+使用当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）、当前 worktrack backlog（`.servo/repo/worktrack-backlog.md`）、gate evidence（`.servo/worktrack/gate-evidence.md`）、composite acceptance report（若存在）和 repo snapshot（`.servo/repo/snapshot-status.md`）作为主要输入。只有当工作追踪本地产物会实质影响 Milestone 进度计数或目的达成判定时才读取额外的 worktrack 细节文件；仅允许将它们作为辅助边界证据使用，禁止将它们当作 Milestone 真相的替代品。
+
+当需要整理 composite acceptance report 时，使用 `templates/composite-acceptance-report.template.md` 作为格式参考。模板是输出格式辅助；权威字段语义仍以 `docs/harness/artifact/control/composite-milestone-acceptance.md` 为准。
 
 结果应保持聚焦于 Milestone 级别的聚合分析，而不是扩张成单个 worktrack 的逐条审查或下一 worktrack 的选择规划。输出应可直接作为 `RepoScope.Decide` 和 `harness-skill` continuous execution 流程中的 handback 判断依据。
 
