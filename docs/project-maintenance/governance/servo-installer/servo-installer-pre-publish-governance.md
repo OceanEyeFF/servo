@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Pre-Publish Governance"
 status: active
-updated: 2026-05-11
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-27
 ---
 # servo-installer Pre-Publish Governance
 
@@ -52,7 +52,7 @@ npm pkg set servoInstallerRelease.approvedChannel="<latest|next|canary>"
 
 ```bash
 node toolchain/scripts/deploy/bin/servo-installer.js --version
-node toolchain/scripts/deploy/bin/check-root-publish.js
+npm_config_dry_run=true node toolchain/scripts/deploy/bin/check-root-publish.js
 SERVO_INSTALLER_RELEASE_GIT_TAG="v<version>" \
   SERVO_INSTALLER_RELEASE_CHANNEL="<latest|next|canary>" \
   npm_config_tag="<latest|next|canary>" \
@@ -61,7 +61,7 @@ SERVO_INSTALLER_RELEASE_GIT_TAG="v<version>" \
   node toolchain/scripts/deploy/bin/check-root-publish.js
 ```
 
-第一条必须输出 `servo-installer <version>`；第二条只验证 dry-run 前也必须成立的 package/scaffold 结构；第三条模拟真实 publish guard 的 tuple/channel 判断，不执行 publish。
+第一条必须输出 `servo-installer <version>`；第二条只验证 dry-run 前也必须成立的 package/scaffold 结构；第三条模拟真实 publish guard 的 tuple/channel 判断，不执行 publish。不要把裸跑 `node toolchain/scripts/deploy/bin/check-root-publish.js` 当作发布前通过条件；缺少 `SERVO_INSTALLER_PUBLISH_APPROVED=1` 时它应拒绝，这是防发布保护。
 
 5. 做 source-version docs freshness：若 release channel governance、testing/usage docs 或 root README 仍指向旧 source tuple，先更新 source version facts。此时不得把未发布 candidate 写成 npm registry published fact。
 
