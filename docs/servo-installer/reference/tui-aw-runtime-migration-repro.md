@@ -105,7 +105,7 @@ Follow-up product work should make this scan visible after runtime migration, pr
 
 ## Regression Coverage
 
-`toolchain/scripts/test/servo_installer_tui/test_tui_interactions.py` contains a strict xfail test for the desired future behavior:
+`toolchain/scripts/test/servo_installer_tui/test_tui_interactions.py` now contains passing regression coverage for the repaired TUI migration flow:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest \
@@ -113,4 +113,4 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest \
   -q
 ```
 
-The xfail records that option 1 currently does not create `.servo/` from `.aw/`. When the TUI migration flow is fixed, the test should be converted into a normal passing regression.
+The suite covers the guided install/update path creating `.servo/` from `.aw/` when migration is safe, and blocking `.aw/ + .servo/` conflicts without installing skills.
