@@ -156,17 +156,21 @@ def quit_menu_step() -> tuple[str, str]:
 
 
 def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: Path) -> None:
+    target_repo = tmp_path / "menu-target"
     code, output = run_tui_script(
         repo_root,
-        tmp_path / "menu-target",
+        target_repo,
         choose_menu_steps(5),
     )
 
     assert code == 0, output
     assert "AW Installer" in output
+    assert "servo-installer log:" in output
     assert "Guided install/update" in output
     assert "Show update dry-run plan" in output
     assert "Exit" in output
+    log_files = list((target_repo / ".logs" / "servo-installer").glob("*.json"))
+    assert len(log_files) == 1
 
 
 def test_tui_diagnose_menu_action_uses_node_owned_json(
