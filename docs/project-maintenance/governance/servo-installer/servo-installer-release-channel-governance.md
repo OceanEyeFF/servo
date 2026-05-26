@@ -15,24 +15,25 @@ last_verified: 2026-05-26
 
 ## 当前 registry 事实
 
-2026-05-25 已核对 npm registry：
+2026-05-26 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.5.6`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`
-- GitHub Release `v0.5.6` 已发布，target commit `06deb1e848b3600e3d766e89dc81accc95e910b8`；npm `servo-installer@0.5.6` 的 `gitHead` 同为 `06deb1e848b3600e3d766e89dc81accc95e910b8`
-- npm `servo-installer@0.5.6` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.6.tgz`
+- npm registry 真实状态：`latest` -> `0.5.7`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`
+- GitHub Release `v0.5.7` 已发布，target commit `7be50a43bf635d3966294387df249ff307470b1b`；npm `servo-installer@0.5.7` 的 `gitHead` 同为 `7be50a43bf635d3966294387df249ff307470b1b`
+- publish workflow run `26448942207` completed successfully for `v0.5.7`
+- npm `servo-installer@0.5.7` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.7.tgz`
 
 ## 当前 source release tuple
 
-2026-05-26，本地 source tuple 已准备为 `v0.5.7` 的 `latest` channel candidate：
+2026-05-26，`v0.5.7` source tuple 已发布到 `latest` channel：
 
 - root `package.json` version：`0.5.7`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.7`
 - approval lock：`approvedVersion=0.5.7`、`approvedGitTag=v0.5.7`、`approvedChannel=latest`
 - release scope：发布 Milestone Pipeline Intake & Backlog Hygiene 更新，包括 `append-milestone` request routing、milestone live backlog/history split，以及本地 `develop-aw` 上的近期 installer 修复。
-- GitHub Release 与 npm registry 发布事实尚未生成；发布后必须回写 target commit、publish workflow run、dist-tag、gitHead 与 tarball URL。
+- GitHub Release target、publish workflow run、dist-tag、gitHead 与 tarball URL 已同步到当前 registry 事实。
 
-注意：`0.5.7` 是 stable release candidate；发布前默认 `servo-installer` 仍解析到 registry `latest` 的 `0.5.6`。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.5.7` 是 stable release；默认 `servo-installer` 现在解析到 registry `latest` 的 `0.5.7`。当前 npm registry 未设置 `next` dist-tag。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
