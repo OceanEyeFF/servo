@@ -199,6 +199,175 @@ NODE
   printf '%s\t%s\t%s\tpassed\t%s\n' "$target_name" "${target_url:-local-empty}" "$target_repo" "$package_path" >> "$summary_tsv"
 done
 
+legacy_summary_tsv="$output_dir/legacy-migration-summary.tsv"
+printf 'scenario\ttarget_repo\tresult\n' > "$legacy_summary_tsv"
+
+legacy_aw_only_target="$targets_root/legacy-aw-only-中文"
+legacy_aw_only_evidence="$evidence_root/legacy-aw-only"
+mkdir -p "$legacy_aw_only_target/.aw/worktrack" "$legacy_aw_only_evidence"
+git -C "$legacy_aw_only_target" init > "$legacy_aw_only_evidence/git-init.out" 2> "$legacy_aw_only_evidence/git-init.err"
+cat > "$legacy_aw_only_target/.aw/control-state.md" <<'EOF_AW_ONLY_CONTROL'
+# Legacy Control State
+
+- runtime: `.aw/control-state.md`
+- skill: aw-set-harness-goal-skill
+- branch: develop-aw
+EOF_AW_ONLY_CONTROL
+cat > "$legacy_aw_only_target/.aw/worktrack/contract.md" <<'EOF_AW_ONLY_CONTRACT'
+# Legacy Worktrack
+
+- scope: `.aw` runtime migration
+- branch: aw/demo-migration
+EOF_AW_ONLY_CONTRACT
+
+run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --yes > "$legacy_aw_only_evidence/migrate.out" 2> "$legacy_aw_only_evidence/migrate.err"
+run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --json > "$legacy_aw_only_evidence/migrate.rerun.json" 2> "$legacy_aw_only_evidence/migrate.rerun.err"
+
+node - "$legacy_aw_only_target" "$legacy_aw_only_evidence/migrate.rerun.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const [targetRepo, rerunPath] = process.argv.slice(2).map((value) => path.resolve(value));
+const rerun = JSON.parse(fs.readFileSync(rerunPath, "utf8"));
+function fail(message) {
+  throw new Error(message);
+}
+function mustExist(relativePath) {
+  if (!fs.existsSync(path.join(targetRepo, relativePath))) {
+    fail(`expected ${relativePath} to exist`);
+  }
+}
+mustExist(".aw/control-state.md");
+mustExist(".servo/control-state.md");
+mustExist(".servo/.servo-installer-aw-migration.json");
+const awControl = fs.readFileSync(path.join(targetRepo, ".aw", "control-state.md"), "utf8");
+const servoControl = fs.readFileSync(path.join(targetRepo, ".servo", "control-state.md"), "utf8");
+if (!awControl.includes("`.aw/control-state.md`")) {
+  fail("legacy .aw source should be retained without rewrite");
+}
+if (!servoControl.includes("`.servo/control-state.md`")) {
+  fail("migrated .servo control-state should rewrite .aw path references");
+}
+if (!servoControl.includes("servo-set-harness-goal-skill")) {
+  fail("migrated .servo control-state should rewrite legacy skill reference");
+}
+if (!servoControl.includes("develop-aw")) {
+  fail("branch names containing aw must be preserved");
+}
+const servoContract = fs.readFileSync(path.join(targetRepo, ".servo", "worktrack", "contract.md"), "utf8");
+if (!servoContract.includes("aw/demo-migration")) {
+  fail("aw/* branch names must be preserved");
+}
+if (rerun.state !== "already-migrated" || rerun.action !== "noop" || rerun.sentinel_present !== true) {
+  fail(`expected idempotent rerun, got state=${rerun.state} action=${rerun.action} sentinel=${rerun.sentinel_present}`);
+}
+NODE
+printf 'legacy-aw-only-nonascii-idempotent\t%s\tpassed\n' "$legacy_aw_only_target" >> "$legacy_summary_tsv"
+
+legacy_bundle_target="$targets_root/legacy-bundle"
+legacy_bundle_evidence="$evidence_root/legacy-bundle"
+mkdir -p \
+  "$legacy_bundle_target/.aw" \
+  "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill" \
+  "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill" \
+  "$legacy_bundle_evidence"
+git -C "$legacy_bundle_target" init > "$legacy_bundle_evidence/git-init.out" 2> "$legacy_bundle_evidence/git-init.err"
+printf 'runtime\n' > "$legacy_bundle_target/.aw/control-state.md"
+printf '# legacy agents close worktrack\n' > "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/SKILL.md"
+printf '# legacy claude close worktrack\n' > "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/SKILL.md"
+cat > "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_AGENTS_MARKER'
+{
+  "marker_version": "aw-managed-skill-marker.v2",
+  "backend": "agents",
+  "skill_id": "close-worktrack-skill",
+  "payload_version": "agents-skill-payload.v0",
+  "payload_fingerprint": "legacy-agents"
+}
+EOF_AGENTS_MARKER
+cat > "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_CLAUDE_MARKER'
+{
+  "marker_version": "aw-managed-skill-marker.v2",
+  "backend": "claude",
+  "skill_id": "close-worktrack-skill",
+  "payload_version": "claude-skill-payload.v0",
+  "payload_fingerprint": "legacy-claude"
+}
+EOF_CLAUDE_MARKER
+
+run_aw "$legacy_bundle_target" migrate-runtime --from aw --to servo --yes --reinstall --backend bundle > "$legacy_bundle_evidence/migrate.bundle.out" 2> "$legacy_bundle_evidence/migrate.bundle.err"
+run_aw "$legacy_bundle_target" verify --backend bundle > "$legacy_bundle_evidence/verify.bundle.out" 2> "$legacy_bundle_evidence/verify.bundle.err"
+run_aw "$legacy_bundle_target" diagnose --backend bundle --json > "$legacy_bundle_evidence/diagnose.bundle.json" 2> "$legacy_bundle_evidence/diagnose.bundle.err"
+
+node - "$legacy_bundle_target" "$legacy_bundle_evidence/diagnose.bundle.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const [targetRepo, diagnosePath] = process.argv.slice(2).map((value) => path.resolve(value));
+const diagnose = JSON.parse(fs.readFileSync(diagnosePath, "utf8"));
+function fail(message) {
+  throw new Error(message);
+}
+function mustExist(relativePath) {
+  if (!fs.existsSync(path.join(targetRepo, relativePath))) {
+    fail(`expected ${relativePath} to exist`);
+  }
+}
+function mustNotExist(relativePath) {
+  if (fs.existsSync(path.join(targetRepo, relativePath))) {
+    fail(`expected ${relativePath} to be removed`);
+  }
+}
+mustExist(".aw/control-state.md");
+mustExist(".servo/control-state.md");
+mustExist(".agents/skills/servo-close-worktrack-skill/aw.marker");
+mustExist(".claude/skills/close-worktrack-skill/aw.marker");
+mustNotExist(".agents/skills/aw-close-worktrack-skill");
+mustNotExist(".claude/skills/aw-close-worktrack-skill");
+if (diagnose.bundle !== true || !diagnose.backends || !diagnose.backends.agents || !diagnose.backends.claude) {
+  fail("expected bundle diagnose payload with agents and claude backend summaries");
+}
+for (const backend of ["agents", "claude"]) {
+  const summary = diagnose.backends[backend];
+  if (summary.conflict_count !== 0 || summary.unrecognized_count !== 0) {
+    fail(`expected clean ${backend} diagnose, got conflicts=${summary.conflict_count} unrecognized=${summary.unrecognized_count}`);
+  }
+  if (summary.managed_install_count <= 0) {
+    fail(`expected ${backend} managed installs, got ${summary.managed_install_count}`);
+  }
+}
+if (diagnose.total_issues !== 0 || diagnose.total_managed <= 0) {
+  fail(`expected clean bundle totals, got total_issues=${diagnose.total_issues} total_managed=${diagnose.total_managed}`);
+}
+NODE
+printf 'legacy-bundle-reinstall-convergence\t%s\tpassed\n' "$legacy_bundle_target" >> "$legacy_summary_tsv"
+
+legacy_conflict_target="$targets_root/legacy-conflict"
+legacy_conflict_evidence="$evidence_root/legacy-conflict"
+mkdir -p "$legacy_conflict_target/.aw" "$legacy_conflict_target/.servo" "$legacy_conflict_evidence"
+git -C "$legacy_conflict_target" init > "$legacy_conflict_evidence/git-init.out" 2> "$legacy_conflict_evidence/git-init.err"
+printf 'legacy\n' > "$legacy_conflict_target/.aw/control-state.md"
+printf 'current\n' > "$legacy_conflict_target/.servo/control-state.md"
+if run_aw "$legacy_conflict_target" migrate-runtime --from aw --to servo --json > "$legacy_conflict_evidence/migrate.conflict.json" 2> "$legacy_conflict_evidence/migrate.conflict.err"; then
+  echo "expected packaged migrate-runtime to block .aw + existing .servo conflict" >&2
+  exit 1
+fi
+
+node - "$legacy_conflict_target" "$legacy_conflict_evidence/migrate.conflict.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const [targetRepo, conflictPath] = process.argv.slice(2).map((value) => path.resolve(value));
+const conflict = JSON.parse(fs.readFileSync(conflictPath, "utf8"));
+if (conflict.state !== "blocked" || !Array.isArray(conflict.issues) || conflict.issues[0]?.code !== "destination-runtime-exists") {
+  throw new Error(`expected destination-runtime-exists block, got ${JSON.stringify(conflict)}`);
+}
+const servoControl = fs.readFileSync(path.join(targetRepo, ".servo", "control-state.md"), "utf8");
+if (servoControl !== "current\n") {
+  throw new Error("conflict run must not rewrite existing .servo runtime");
+}
+NODE
+printf 'legacy-conflict-blocking\t%s\tpassed\n' "$legacy_conflict_target" >> "$legacy_summary_tsv"
+
 {
   echo "# servo-installer Multi Temporary Workdir Smoke Report"
   echo
@@ -221,10 +390,22 @@ done
     echo "| $target_name | $target_url | $target_repo | $result |"
   done
   echo
+  echo "## Legacy Migration Regression Summary"
+  echo
+  echo "| Scenario | Target repo | Result |"
+  echo "| --- | --- | --- |"
+  tail -n +2 "$legacy_summary_tsv" | while IFS=$'\t' read -r scenario target_repo result; do
+    echo "| $scenario | $target_repo | $result |"
+  done
+  echo
   echo "## Verdict"
   echo
   echo "- result: passed"
   echo "- target_count: ${#target_specs[@]}"
+  echo "- legacy_migration_scenario_count: $(($(wc -l < "$legacy_summary_tsv") - 1))"
+  echo "- packaged_legacy_aw_only_migration: passed"
+  echo "- packaged_legacy_bundle_reinstall_convergence: passed"
+  echo "- packaged_legacy_conflict_blocking: passed"
   echo "- source_root_checkout_leakage: not observed"
   echo "- source_root_target_repo_leakage: not observed"
   echo "- target_root_cross_workdir_leakage: not observed"
