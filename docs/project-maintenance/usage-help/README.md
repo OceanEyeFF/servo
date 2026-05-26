@@ -15,6 +15,8 @@
 | `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、[quickstart 快速入门](./quickstart.md)、source 变更决策、Codex Harness manual run |
 | `claude` | [claude.md](./claude.md) | Claude runtime 路径、[quickstart 快速入门](./quickstart.md)、source 变更决策、冷启动 runbook |
 
+Model/runtime support observations for Deepseek V4 Pro/Lite, Claude, Pi, GPT-5.5, and GPT-5.4/CodeX are recorded in [Model Runtime Support Boundary](../../harness/foundations/model-runtime-support.md). Treat those observations as tested support evidence, not as a replacement for backend install verification or worktrack gate evidence.
+
 ## 按初始化场景进入
 
 | 场景 | 文档 |
