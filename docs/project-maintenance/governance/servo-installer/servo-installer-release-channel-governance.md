@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # servo-installer Release Channel Governance
 
@@ -25,15 +25,15 @@ last_verified: 2026-05-26
 
 ## 当前 source release tuple
 
-2026-05-26，`v0.5.7` source tuple 已发布到 `latest` channel：
+2026-05-27，`v0.5.8` source tuple 已准备为 `latest` channel candidate；它仍未发布，registry facts 仍以上一节为准：
 
-- root `package.json` version：`0.5.7`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.7`
-- approval lock：`approvedVersion=0.5.7`、`approvedGitTag=v0.5.7`、`approvedChannel=latest`
-- release scope：发布 Milestone Pipeline Intake & Backlog Hygiene 更新，包括 `append-milestone` request routing、milestone live backlog/history split，以及本地 `develop-aw` 上的近期 installer 修复。
-- GitHub Release target、publish workflow run、dist-tag、gitHead 与 tarball URL 已同步到当前 registry 事实。
+- root `package.json` version：`0.5.8`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.8`
+- approval lock：`approvedVersion=0.5.8`、`approvedGitTag=v0.5.8`、`approvedChannel=latest`
+- release scope：发布 v0.5.8 migration recovery 更新，包括 TUI `.aw -> .servo` runtime migration recovery、sanitized installer logs、packaged migration regression smoke、composite milestone acceptance flow，以及 stale `.aw` control-plane instruction scan guidance。
+- publish status：candidate source tuple only；尚未创建 `v0.5.8` tag、GitHub Release、publish workflow、npm publish 或 npm dist-tag 变更。
 
-注意：`0.5.7` 是 stable release；默认 `servo-installer` 现在解析到 registry `latest` 的 `0.5.7`。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.5.8` 是 stable candidate；默认 `servo-installer` 在 registry 上仍解析到 `latest` 的 `0.5.7`，直到显式 release approval 后完成 GitHub Release + publish workflow。当前 npm registry 未设置 `next` dist-tag。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
