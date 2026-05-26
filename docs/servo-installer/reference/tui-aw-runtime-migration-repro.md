@@ -1,9 +1,9 @@
 ---
 title: "TUI .aw Runtime Migration Repro"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # TUI .aw Runtime Migration Repro
 
@@ -89,7 +89,9 @@ Migration can succeed technically while old repo-local documentation still tells
 Operator-facing guidance after migration should therefore recommend a target-local scan for stale `.aw` control-plane instructions. A safe first pass is:
 
 ```bash
-rg -n "\.aw|aw control|aw/|\.servo/\.aw|\.aw/\.servo" docs .servo .agents .claude
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
 ```
 
 The scan should distinguish:

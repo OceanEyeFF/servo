@@ -49,6 +49,9 @@ last_verified: 2026-05-27
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
 servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend agents
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
 servo-installer verify --backend agents
 servo-installer diagnose --backend agents
 ```
@@ -66,6 +69,9 @@ TUI 会默认写入目标仓库 `.logs/servo-installer/` 并打印具体日志�
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
 servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend bundle
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
 servo-installer verify --backend bundle
 servo-installer diagnose --backend bundle
 ```
@@ -82,6 +88,7 @@ servo-installer verify --backend agents
 - 普通 `install`、`update`、`verify`、`diagnose`、`check_paths_exist` 和 `prune --all` 不会静默把 `.aw/` 迁移到 `.servo/`。
 - 成功迁移后，默认保留 `.aw/`。
 - 清理 `.aw/` 是显式 operator decision，不属于默认升级路径。
+- 迁移后应只读扫描目标仓库的 `docs/`、`.servo/`、`.agents/` 和 `.claude/`，找出仍要求写入、刷新或同步 `.aw/` control state 的当前指令。历史说明、branch names、legacy 复现文本和 `aw.marker` 不应被无差别替换。
 - managed skill target dirs 内的 `aw.marker` 是 deploy identity metadata；它不等同于根目录 `.aw/` runtime state。
 - agents 和 claude deploy targets 有不同的 canonical target naming：
   - agents：`.agents/skills/servo-<skill-id>`
