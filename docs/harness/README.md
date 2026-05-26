@@ -39,6 +39,8 @@
 | Executable root / 实现层入口 | [../../product/harness/README.md](../../product/harness/README.md) |
 | Executable skill source / 可执行技能源 | [../../product/harness/skills/README.md](../../product/harness/skills/README.md) |
 
+Model/runtime 支持边界见 [foundations/model-runtime-support.md](./foundations/model-runtime-support.md)。该页记录 Deepseek、Claude、Pi、GPT/CodeX 等执行载体的已测试支持状态，但不替代 Worktrack Contract、Gate evidence 或 release approval。
+
 未升格的方案分析、迁移比较或实现前设计不作为当前 docs truth 层长期保留；先留在 Harness runtime/backlog 或工作追踪证据中，等内容验证后再升格到对应 owner。
 
 `catalog/` 不承接 doctrine、runtime protocol、artifact contract、workflow policy、方案分析或 executable source。若 catalog 页面为了定位 skill 而引用这些内容，只能作为摘要和反向链接；权威正文仍在对应 owner。
