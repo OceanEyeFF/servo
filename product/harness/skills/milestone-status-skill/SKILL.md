@@ -39,7 +39,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 2. 识别当前活跃 Milestone：从 Harness 控制状态或 repo snapshot 中获取当前 active milestone_id。
 3. 读取 Milestone artifact（`.servo/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
 4. 读取 worktrack backlog（`.servo/repo/worktrack-backlog.md`）：若文件不存在（首个 worktrack 尚未 closeout），视为空 backlog（completed/blocked/deferred 均为 0），`total` 仍取自 Milestone artifact 的 `worktrack_list` 长度，继续正常分析，不触发停止条件。若文件存在但无法按 Worktrack Backlog 合同解析为包含 `worktrack_id` 与 `status` 的条目，或出现无法归一化的状态值、损坏 frontmatter / markdown 结构、同一条目缺少必需字段等 present-but-damaged / unparseable 情况，必须命中正式停止条件，不得把损坏 backlog 当成空 backlog，也不得用部分解析结果继续计算。若文件存在且可解析，按以下规则处理：backlog 存储的状态值为 `done / deferred / blocked / resolved`，读取时须做归一化映射：`done → completed`、`resolved → completed`、`blocked → blocked`、`deferred → deferred`。映射后按 `worktrack_id` 去重（保留最新条目），以 `completed / blocked / deferred` 三类参与 progress 计算。
-5. 读取 gate evidence：先读取 Milestone artifact 的 `aggregated_evidence` 引用列表（包含各 worktrack 的 evidence 路径以及可选的 milestone gate evidence 路径），逐条读取；若 `aggregated_evidence` 为空，回退读取 `.servo/worktrack/gate-evidence.md` 获取最近关闭 worktrack 的 evidence 记录。聚合所有 evidence 后参与 `Milestone Gate` 和 `purpose_achieved` 判定。
+5. 读取 gate evidence：先读取 Milestone artifact 的 `aggregated_evidence` 引用列表（包含各 worktrack 的 evidence 路径、可选的 milestone gate evidence 路径和 composite acceptance report 路径），逐条读取；若 `aggregated_evidence` 为空，回退读取 `.servo/worktrack/gate-evidence.md` 获取最近关闭 worktrack 的 evidence 记录。聚合所有 evidence 后参与 `Milestone Gate` 和 `purpose_achieved` 判定。
 6. 读取 repo snapshot（`.servo/repo/snapshot-status.md`），获取当前 repo 基准状态和治理信号。
 7. 检查前置 Milestone 依赖：若 `depends_on_milestones` 非空，验证前置 Milestone 是否已完成。
 8. 计算 Milestone 进度计数器：
@@ -53,7 +53,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
        - `black-box`：从 milestone 外部视角验证最终用户可见结果和跨 worktrack 集成行为
        - `white-box`：从内部实现视角验证关键集成路径、接口拼接、状态传递和依赖关系
        - `anti-cheat`：检查是否存在以 mock/stub、跳过真实验证、伪造 evidence、只验证局部而未验证集成等方式“压过验收”的信号
-       - 判定规则：`Milestone Gate` 必须为 `pass` 才允许进入 `purpose_achieved`；任一 `soft-fail`、`hard-fail`、`blocked` 或命中反作弊信号，均视为 Milestone 级阻断，不得替代或回写为 worktrack gate 通过
+       - `composite-acceptance`：消费 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes；每条 lane 必须记录 carrier、delegation/fallback、verdict、severity 和 evidence refs
+       - 判定规则：`Milestone Gate` 必须为 `pass` 才允许进入 `purpose_achieved`；任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或命中反作弊信号，均视为 Milestone 级阻断，不得替代或回写为 worktrack gate 通过
      - **purpose_achieved**：Milestone 原始目的是否经聚合 evidence 证明达成（对照 `completion_signals`、`acceptance_criteria` 和 `completion_threshold_pct`，按 `purpose_achieved 操作化判定` 章节逐条验证）
    - **work-collection**：执行单重验收
      - **worktrack_list_finished**：同上
@@ -84,7 +85,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - Worktrack backlog 文件存在但损坏、不可读或不可按合同解析；包括无法提取 `worktrack_id` / `status`、状态值不在 `done / deferred / blocked / resolved`、frontmatter / markdown 结构损坏，或只能得到部分可信条目的情况
 - Worktrack backlog 与 Milestone 声明的 worktrack_list 之间存在不可自动解决的矛盾
 - 前置 Milestone 依赖未完成，且无法自动判定是否应阻塞当前 Milestone
-- `Milestone Gate` 所需的 black-box / white-box / anti-cheat 证据缺失、过期或互相冲突，导致无法做出可信集成判定
+- `Milestone Gate` 所需的 black-box / white-box / anti-cheat / composite acceptance lane 证据缺失、过期或互相冲突，导致无法做出可信集成判定
 - `Milestone Gate` 命中 `soft-fail` / `hard-fail` / `blocked` 或反作弊告警，且当前轮无合法自动恢复路径
 - 双重验收检查中 `purpose_achieved` 的判断需要 developer 主观裁定，且无足够的自动判定依据
 - 聚合 evidence 不足以支撑 purpose_achieved 判定，且无法通过限定范围探查补全
@@ -105,7 +106,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - 顶层字段：`schema_version` 固定为 `milestone-input-checkpoint/v1`，并包含 `active_milestone_id`、`milestone_artifact`、`worktrack_backlog`、`gate_evidence`、`repo_snapshot`。
 - `milestone_artifact` 输入字段：artifact path、`milestone_id`、`status`、`worktrack_list`（保持 Milestone 声明顺序）、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`depends_on_milestones`、`aggregated_evidence`。不得纳入由本技能或上游刷新产生的 `progress_counter`、前次 `milestone_input_checkpoint` 或分析时间戳。
 - `worktrack_backlog` 输入字段：backlog path、`state`（`missing` / `present`）、以及按 `worktrack_id` 字典序排列的最新有效条目。文件缺失时写入 `state: missing` 与空 entries；文件存在时必须先完成解析、状态归一化和按 `worktrack_id` 去重，条目字段至少包括 `worktrack_id`、归一化后的 `status`（completed / blocked / deferred）、`node_type`、`scope`、`merge_commit`、`validation`、`intake_route`。backlog 存在但损坏或不可解析时不得生成 partial checkpoint，必须停止并返回 `proceed_blockers`。
-- `gate_evidence` 输入字段：使用 Milestone artifact 的 `aggregated_evidence` 路径列表；若该列表为空，使用 `.servo/worktrack/gate-evidence.md` fallback。证据路径按 repo-relative POSIX path 字典序排列；每个 evidence 只纳入影响 `Milestone Gate` 或 `purpose_achieved` 的关键字段，包括 `worktrack_id`（如有）、`verdict`、review/validation/policy 维度结论、black-box/white-box 集成结论、anti-cheat 结论、absorbed issues、freshness / missing 状态和后续动作摘要。
+- `gate_evidence` 输入字段：使用 Milestone artifact 的 `aggregated_evidence` 路径列表；若该列表为空，使用 `.servo/worktrack/gate-evidence.md` fallback。证据路径按 repo-relative POSIX path 字典序排列；每个 evidence 只纳入影响 `Milestone Gate` 或 `purpose_achieved` 的关键字段，包括 `worktrack_id`（如有）、`verdict`、review/validation/policy 维度结论、black-box/white-box 集成结论、anti-cheat 结论、composite acceptance lane verdicts/fallbacks/residual risks、absorbed issues、freshness / missing 状态和后续动作摘要。
 - `repo_snapshot` 输入字段：snapshot path、`baseline_branch`、`last_verified_checkpoint`、`checkpoint_type`、`checkpoint_ref`、当前 active milestone 指针（如有）、治理状态、已知问题与风险标识。不得纳入纯展示性更新时间、文件 mtime 或本轮分析时间。
 - Markdown 解析规范：从 frontmatter、表格、列表和 keyed lines 中提取字段时，字段名应先规范化为小写 snake_case；字符串 trim 首尾空白；列表中本来有业务顺序的字段保持原顺序，其余 map/object 键排序；缺失可选字段用 `null`，不得省略同一 schema 下的键。
 - 重算时机：每次 RepoScope.Observe 至少重新计算该输入指纹；若已存 `milestone_input_checkpoint` 与新指纹一致，且 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 一致，才允许跳过 progress counter 和 purpose evidence 的完整重算。任一输入源的存在状态、路径集合、上述纳入字段、active milestone、schema_version 或 stored checkpoint 变化时，都必须完整重算并返回新的 checkpoint。
@@ -155,6 +156,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `worktrack_list_finished`：boolean
 - `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped
 - `milestone_gate_summary`：black-box / white-box / anti-cheat 的聚合摘要
+- `composite_acceptance_verdict`：accepted / accepted_with_residual_risk / needs_followup_worktrack / blocked / skipped
+- `composite_acceptance_summary`：code-review / feature-completeness / related-influence / intent-completeness / operator-simulation / professional-review lanes 的 carrier、fallback、verdict、severity、evidence refs 和 residual risks
 - `purpose_achieved`：boolean
 - `signal_satisfaction_pct`：number
 - `criteria_pass_pct`：number
@@ -206,8 +209,9 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 1. **black-box**：从 milestone 外部视角检查最终行为、跨 worktrack 集成结果和用户可见产出是否成立。
 2. **white-box**：从内部实现视角检查关键依赖关系、接口契约、状态拼接和系统级回归风险是否成立。
 3. **anti-cheat**：检查是否存在伪造通过的信号，例如只跑局部测试、跳过真实集成路径、以 mock/stub 代替必要验证、复用过期 evidence、或只验证中间态而未验证里程碑目的。
-4. **通过规则**：三类检查均为可信 `pass` 时，`milestone_gate_verdict = "pass"`；只要存在任一 `soft-fail`、`hard-fail`、`blocked` 或反作弊命中，即 `milestone_gate_verdict != "pass"`。
-5. **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`，并把修复/回退/重新验证要求交还给 developer 或上游 supervisor。
+4. **composite acceptance**：goal-driven milestone 必须消费复合验收 lanes；deep review 在 release、installer/deploy、migration、authority、destructive operation、path governance、安全/隐私、跨 worktrack 集成或 release-prep 前置场景为 mandatory。SubAgent 不可用时可 fallback 到 current-carrier 或 human，但必须保留 lane、记录 fallback，并在证据不足时阻断。
+5. **通过规则**：black-box、white-box、anti-cheat 为可信 `pass`，且 composite acceptance 为 `accepted` 或已记录低风险 `accepted_with_residual_risk` 时，`milestone_gate_verdict = "pass"`；只要存在任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或反作弊命中，即 `milestone_gate_verdict != "pass"`。
+6. **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`，并把修复/回退/重新验证要求交还给 developer 或上游 supervisor。
 
 ## Writeback 指令
 
