@@ -30,7 +30,7 @@ Tuple 不一致、preflight/smoke 证据缺失、docs 指向错误选择器或�
 2. 确认 candidate 没有被占用：
 
 ```bash
-NPM_CONFIG_CACHE=/tmp/aw-npm-cache npm view servo-installer@<version> version --json
+NPM_CONFIG_CACHE=/tmp/servo-npm-cache npm view servo-installer@<version> version --json
 git tag --list "v<version>"
 git ls-remote --tags origin "v<version>"
 ```
@@ -118,7 +118,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gat
 
 证明 candidate surface 与 publish guard，不执行 publish。
 
-在只读 home/cache 环境中运行 npm registry 或 pack 命令时，允许显式 pin cache，例如 `NPM_CONFIG_CACHE=/tmp/aw-npm-cache npm view ...`；这只改变本地缓存位置，不改变发布准入。
+在只读 home/cache 环境中运行 npm registry 或 pack 命令时，允许显式 pin cache，例如 `NPM_CONFIG_CACHE=/tmp/servo-npm-cache npm view ...`；这只改变本地缓存位置，不改变发布准入。
 
 ## 4. Local Package Smoke
 

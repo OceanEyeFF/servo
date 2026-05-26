@@ -1,9 +1,9 @@
 ---
 title: "Repository Onboarding"
 status: active
-updated: 2026-05-07
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-07
+last_verified: 2026-05-26
 ---
 
 # Repository Onboarding
@@ -29,7 +29,7 @@ last_verified: 2026-05-07
 | `toolchain/` | 脚本/评测/测试/打包/部署工具 |
 | `.servo/` | runtime control-plane state（非长期真相层） |
 | `.agents/` `.claude/` | deploy target（非源码层） |
-| `.autoworkflow/` `.spec-workflow/` | repo-local state layer |
+| `.autoworkflow/` `.spec-workflow/` | legacy / compatibility repo-local state layer |
 | `.nav/` | compatibility navigation layer（非真实结构定义） |
 
 ### 核心定位
@@ -41,7 +41,7 @@ last_verified: 2026-05-07
 这三块之外：
 
 - `.agents/`、`.claude/` 是 repo-local deploy target
-- `.autoworkflow/`、`.spec-workflow/` 是 repo-local state/config
+- `.autoworkflow/`、`.spec-workflow/` 是 legacy / compatibility repo-local state/config；当前 Harness runtime 主线使用 `.servo/`
 - `.nav/` 是 compatibility navigation
 
 更完整的分层定义见 [`根目录分层`](./foundations/root-directory-layering.md)。
@@ -98,6 +98,6 @@ Review / Verify / Writeback
 ## 提醒
 
 - `.agents/`、`.claude/` 是 deploy target，非源码层或真相层
-- `.autoworkflow/`、`.spec-workflow/` 是 repo-local state/config，非默认阅读主线
+- `.autoworkflow/`、`.spec-workflow/` 是 legacy / compatibility repo-local state/config，非默认阅读主线
 - `.nav/` 是 compatibility navigation，非结构定义层
 - 后端 prompt/wrapper 不替代跨后端共享 truth

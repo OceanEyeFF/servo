@@ -1,9 +1,9 @@
 ---
 title: "Toolchain 分层"
 status: active
-updated: 2026-04-24
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-04-24
+last_verified: 2026-05-26
 ---
 # Toolchain 分层
 
@@ -41,7 +41,7 @@ toolchain/
 
 ## 三、输出落点
 
-`toolchain/` 脚本的运行输出应落到 repo-local state（例如 `.autoworkflow/`）。
+`toolchain/` 脚本的运行输出应落到 repo-local state（当前主线为 `.servo/`；`.autoworkflow/` 只作为 legacy / compatibility state 语义保留）。
 
 不要写回 `toolchain/` 的内容：
 
