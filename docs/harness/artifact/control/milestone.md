@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-05-20
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-05-27
 ---
 
 # Milestone Artifact
@@ -32,6 +32,7 @@ last_verified: 2026-05-20
 | progress_counter | object | 进度计数器（total / completed / blocked / deferred） |
 | environment_probe | object | [reserved] 预留字段，暂无操作语义 |
 | aggregated_evidence | array | 聚合的 evidence 引用 |
+| composite_acceptance | object | goal-driven milestone 的复合验收证据引用与 verdict；字段合同见 [composite-milestone-acceptance.md](./composite-milestone-acceptance.md) |
 | release_version_consideration | string | 对 version/release 的提示（不接管 decision） |
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
 | depends_on_milestones | array | 前置 Milestone 列表 |
@@ -141,7 +142,7 @@ goal-driven milestone 完成判定必须满足以下顺序约束：
 
 其中：
 
-- `Milestone Gate` 是独立的 milestone 级验证层，最少包含黑盒测试、白盒测试和反作弊检测。
+- `Milestone Gate` 是独立的 milestone 级验证层，最少包含黑盒测试、白盒测试、反作弊检测，以及 goal-driven milestone 的 [Composite Milestone Acceptance](./composite-milestone-acceptance.md) lanes。
 - `signal_satisfaction_pct` = 已满足的 `completion_signals` 数 / 总 `completion_signals` 数。
 - `criteria_pass_pct` = 已通过的 `acceptance_criteria` 数 / 总 `acceptance_criteria` 数。
 - `purpose_achieved == true` 仅当 `signal_satisfaction_pct >= completion_threshold_pct` 且 `criteria_pass_pct >= completion_threshold_pct`。默认阈值 `completion_threshold_pct = 100`。
@@ -152,8 +153,21 @@ goal-driven milestone 完成判定必须满足以下顺序约束：
 
 - Worktrack Gate 位于 `WorktrackScope`，负责单个 worktrack 的 closeout 裁决。
 - Milestone Gate 位于 `RepoScope` 的 milestone 验收路径中，只在相关 worktrack 全部关闭后运行，验证跨 worktrack 的集成结果。
-- Milestone Gate 不回溯替代 Worktrack Gate；它消费各 worktrack Gate 产出的 evidence，并补充 milestone 级黑盒/白盒/反作弊检查。
+- Milestone Gate 不回溯替代 Worktrack Gate；它消费各 worktrack Gate 产出的 evidence，并补充 milestone 级黑盒/白盒/反作弊检查和复合验收 lanes。
 - 该分层仍属于既有 `RepoScope` / `WorktrackScope` 结构，不创建第三 Scope。
+
+### 复合验收与 Final Acceptance
+
+goal-driven milestone 在交给 programmer final acceptance 前，必须提供 composite acceptance report，或在 report 中记录每个 mandatory lane 的合法 fallback。复合验收最少覆盖：
+
+- `code-review`
+- `feature-completeness`
+- `related-influence`
+- `intent-completeness`
+- `operator-simulation`
+- `professional-review`
+
+当 milestone 触及 release、installer/deploy、migration、authority、destructive operation、path governance、安全/隐私或跨 worktrack 集成时，必须使用 deep composite review。任一 required lane 为 `blocked`，或 `needs_followup_worktrack` 未经 programmer 明确接受为后续范围，均不得把 milestone 判为 final-acceptance-ready。
 
 ### work-collection：单重验收模型
 

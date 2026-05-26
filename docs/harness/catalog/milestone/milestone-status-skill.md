@@ -1,9 +1,9 @@
 ---
 title: "Milestone Status Skill"
 status: active
-updated: 2026-05-20
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-05-27
 ---
 
 # Milestone Status Skill
@@ -25,7 +25,8 @@ canonical executable source：
 
 - 读取 Milestone artifact 和关联的 worktrack 状态
 - 计算 progress counter
-- 对 goal-driven milestone 执行 `Milestone Gate`（黑盒/白盒/反作弊）并在其后判定 `purpose_achieved`
+- 对 goal-driven milestone 执行 `Milestone Gate`（黑盒/白盒/反作弊/composite acceptance lanes）并在其后判定 `purpose_achieved`
+- 消费 composite acceptance report，覆盖 code review、feature completeness、related influence、intent completeness、operator simulation 和 professional review lanes
 - 按 `completion_threshold_pct` 计算 `signal_satisfaction_pct` / `criteria_pass_pct`
 - 执行双重验收检查（worktrack_list_finished + purpose_achieved）
 - 识别 signals / criteria / threshold 改写是否触发 milestone 重新评估
@@ -64,6 +65,8 @@ canonical executable source：
 | signal_satisfaction_pct | integer/null | goal-driven 的 completion_signals 满足率；work-collection 为 `null` |
 | criteria_pass_pct | integer/null | goal-driven 的 acceptance_criteria 通过率；work-collection 为 `null` |
 | milestone_gate_verdict | enum | pass / fail / blocked / skipped |
+| composite_acceptance_verdict | enum | accepted / accepted_with_residual_risk / needs_followup_worktrack / blocked / skipped |
+| composite_acceptance_lanes | array | 每条 composite lane 的 carrier、fallback、verdict、severity 与 evidence refs |
 | purpose_achieved | boolean | 目的是否经聚合 evidence 证明达成 |
 | milestone_reevaluation_required | boolean | 是否因 signals / criteria / threshold 改写而需要重新评估 milestone |
 | milestone_acceptance_verdict | enum | achieved / not_achieved / blocked / deferred |
@@ -92,7 +95,7 @@ canonical executable source：
 
 - `RepoScope.Observe` 阶段（harness-skill 在状态估计时调用）
 - Worktrack closeout 后（repo-refresh 完成后检查 Milestone 进度）
-- goal-driven milestone 的所有声明 worktrack 关闭后（先跑 `Milestone Gate`，再判定 `purpose_achieved`）
+- goal-driven milestone 的所有声明 worktrack 关闭后（先跑包含 composite acceptance lanes 的 `Milestone Gate`，再判定 `purpose_achieved`）
 - Milestone 验收边界触发时（判定 handback 或 pipeline 推进）
 - programmer 显式请求 Milestone 状态检查
 
