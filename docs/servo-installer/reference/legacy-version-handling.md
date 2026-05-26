@@ -1,50 +1,50 @@
 ---
-title: "Legacy Version Handling"
+title: "旧版本处理"
 status: active
-updated: 2026-05-25
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-25
+last_verified: 2026-05-26
 ---
-# Legacy Version Handling
+# 旧版本处理
 
-> Temporary compatibility note for old target repositories that still carry `.aw/` runtime state or old installer-managed skill target dirs. This document is expected to be removed in the `0.7.x` series after the legacy migration window closes.
+> 这是面向旧目标仓库的临时兼容说明：这些仓库仍可能保留 `.aw/` runtime state，或保留旧 installer-managed skill target dirs。预计在 `0.7.x` 系列、legacy migration window 关闭后移除此文档。
 
-## Scope
+## 范围
 
-This page documents the current compatibility behavior for legacy targets produced before the current `servo-*` agents target-dir convention stabilized.
+本文记录当前对 legacy target 的兼容行为，覆盖 current `servo-*` agents target-dir 约定稳定前产生的旧状态。
 
-It covers:
+覆盖范围：
 
-- root `.aw/` Harness runtime state
-- old `.agents/skills/aw-*` managed skill target dirs
-- existing `.claude/skills/*` targets when agents and claude are both installed
-- packaged installer upgrade smoke expectations for the `0.5.x` and `0.6.x` compatibility window
+- 根目录 `.aw/` Harness runtime state
+- 旧 `.agents/skills/aw-*` managed skill target dirs
+- 当 agents 和 claude 同时安装时，已有 `.claude/skills/*` targets 的处理
+- `0.5.x` 与 `0.6.x` compatibility window 内的 packaged installer upgrade smoke 预期
 
-It does not define release policy, npm dist-tags, package version approval, or future removal mechanics. Release governance remains in `docs/project-maintenance/governance/servo-installer/`.
+本文不定义 release policy、npm dist-tags、package version approval 或未来移除机制。Release governance 仍归 `docs/project-maintenance/governance/servo-installer/` 承接。
 
-## Removal Window
+## 移除窗口
 
-This is a transitional support document.
+本文是过渡期支持文档。
 
-- Keep this page during the `0.5.x` and `0.6.x` compatibility window.
-- Expect to remove this page in `0.7.x`.
-- Before removing it, verify that operator-facing runbooks no longer need dedicated old-version handling for `.aw/` runtime state or old `aw-*` agents target dirs.
-- Removing this page must not silently remove runtime migration code; code removal, if any, needs its own worktrack and verification.
+- 在 `0.5.x` 与 `0.6.x` compatibility window 内保留本文。
+- 预计在 `0.7.x` 移除本文。
+- 移除前必须确认 operator-facing runbooks 不再需要针对 `.aw/` runtime state 或旧 `aw-*` agents target dirs 的专门处理。
+- 移除本文不能静默删除 runtime migration code；任何代码移除都需要独立 worktrack 和验证。
 
-## Legacy States
+## Legacy 状态
 
-| Legacy state | Current handling |
+| Legacy state | 当前处理 |
 |---|---|
-| `.aw/` exists and `.servo/` is absent | `servo-installer migrate-runtime --from aw --to servo --json` reports a ready copy plan. `--yes` creates `.servo/`, rewrites `.aw` path references to `.servo` in migrated text files, and retains `.aw/`. |
-| `.aw/` and `.servo/` both exist | Migration is blocked by default unless a prior migration sentinel proves the target is already migrated. |
-| `.agents/skills/aw-*` managed dirs exist | `servo-installer update --backend agents --yes` replaces managed old target dirs with current `servo-*` target dirs. |
-| `.agents/skills/servo-*` exists | Current agents target shape; normal verify/update applies. |
-| `.claude/skills/<skill-id>` exists | Current claude target shape; normal verify/update applies. |
-| `.agents` and `.claude` both exist | Use `--backend bundle` for aggregate verify/update/reinstall when both should converge together. |
+| 存在 `.aw/` 且不存在 `.servo/` | `servo-installer migrate-runtime --from aw --to servo --json` 报告 ready copy plan。带 `--yes` 时创建 `.servo/`，把迁移文本文件中的 `.aw` path references 改写为 `.servo`，并保留 `.aw/`。 |
+| `.aw/` 与 `.servo/` 同时存在 | 默认阻断迁移，除非已有 prior migration sentinel 能证明目标已迁移。 |
+| 存在 `.agents/skills/aw-*` managed dirs | `servo-installer update --backend agents --yes` 会把旧 managed target dirs 替换为当前 `servo-*` target dirs。 |
+| 存在 `.agents/skills/servo-*` | 当前 agents target shape；按正常 verify / update 处理。 |
+| 存在 `.claude/skills/<skill-id>` | 当前 claude target shape；按正常 verify / update 处理。 |
+| `.agents` 与 `.claude` 同时存在 | 当两个 backend 都需要一起收敛时，使用 `--backend bundle` 做 aggregate verify / update / reinstall。 |
 
-## Operator Path
+## Operator 路径
 
-For a legacy target with `.aw/` runtime state:
+对于带 `.aw/` runtime state 的 legacy target：
 
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
@@ -53,7 +53,7 @@ servo-installer verify --backend agents
 servo-installer diagnose --backend agents
 ```
 
-For a target that has both agents and claude deploy targets:
+对于同时有 agents 和 claude deploy targets 的目标：
 
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
@@ -62,36 +62,36 @@ servo-installer verify --backend bundle
 servo-installer diagnose --backend bundle
 ```
 
-For a target that has already migrated runtime state but still has old agents target dirs:
+对于 runtime state 已迁移、但仍保留旧 agents target dirs 的目标：
 
 ```bash
 servo-installer update --backend agents --yes
 servo-installer verify --backend agents
 ```
 
-## Safety Rules
+## 安全规则
 
-- Ordinary `install`, `update`, `verify`, `diagnose`, `check_paths_exist`, and `prune --all` do not silently migrate `.aw/` to `.servo/`.
-- `.aw/` is retained by default after a successful migration.
-- Cleanup of `.aw/` is an explicit operator decision and is not part of the default upgrade path.
-- `aw.marker` inside managed skill target dirs is deploy identity metadata; it is not the same thing as root `.aw/` runtime state.
-- Agents and claude deploy targets have different canonical target naming:
-  - agents: `.agents/skills/servo-<skill-id>`
-  - claude: `.claude/skills/<skill-id>`
-- Bundle mode must refresh each backend inside its own target root; it must not rename claude targets to agents naming, or agents targets to claude naming.
+- 普通 `install`、`update`、`verify`、`diagnose`、`check_paths_exist` 和 `prune --all` 不会静默把 `.aw/` 迁移到 `.servo/`。
+- 成功迁移后，默认保留 `.aw/`。
+- 清理 `.aw/` 是显式 operator decision，不属于默认升级路径。
+- managed skill target dirs 内的 `aw.marker` 是 deploy identity metadata；它不等同于根目录 `.aw/` runtime state。
+- agents 和 claude deploy targets 有不同的 canonical target naming：
+  - agents：`.agents/skills/servo-<skill-id>`
+  - claude：`.claude/skills/<skill-id>`
+- Bundle mode 必须在各自 target root 内刷新每个 backend；不能把 claude targets 重命名为 agents naming，也不能把 agents targets 重命名为 claude naming。
 
-## Verified Compatibility Evidence
+## 已验证兼容证据
 
-The following evidence was collected on 2026-05-23 using a packaged `servo-installer-0.5.3.tgz` generated from the source tree.
+以下证据收集于 2026-05-23，使用从源码树生成的 packaged `servo-installer-0.5.3.tgz`。
 
-| Scenario | Result |
+| 场景 | 结果 |
 |---|---|
-| `/tmp/repo-rating-function` with `.aw/` and old `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` copied `.aw` to `.servo`, rewrote path references, replaced old managed agents dirs with 21 `servo-*` dirs, and passed verify/diagnose. |
-| Repeat migration on `/tmp/repo-rating-function` | Packaged JSON returned `state=already-migrated`, `verdict=already-migrated`, and `sentinel_present=true`. |
-| `/tmp/servo-dual-backend-smoke.OZuLrQ` with `.aw/`, `.agents/skills/servo-*`, and `.claude/skills/<skill-id>` | Packaged `migrate-runtime --yes --reinstall --backend bundle` refreshed both backends independently and passed bundle verify/diagnose. |
-| Runtime equivalence checks | `.aw/` and `.servo/` matched in both smoke targets when excluding `.servo-installer-aw-migration.json`. After path reference rewriting (v0.5.6+), `.aw` path references inside `.servo/` text files are rewritten to `.servo`; raw file equality is no longer expected. |
+| `/tmp/repo-rating-function` 带 `.aw/` 和旧 `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` 将 `.aw` 复制到 `.servo`，改写 path references，将旧 managed agents dirs 替换为 21 个 `servo-*` dirs，并通过 verify / diagnose。 |
+| 在 `/tmp/repo-rating-function` 上重复迁移 | Packaged JSON 返回 `state=already-migrated`、`verdict=already-migrated`、`sentinel_present=true`。 |
+| `/tmp/servo-dual-backend-smoke.OZuLrQ` 带 `.aw/`、`.agents/skills/servo-*` 和 `.claude/skills/<skill-id>` | Packaged `migrate-runtime --yes --reinstall --backend bundle` 独立刷新两个 backend，并通过 bundle verify / diagnose。 |
+| Runtime equivalence checks | 在排除 `.servo-installer-aw-migration.json` 后，两个 smoke targets 中 `.aw/` 与 `.servo/` 匹配。自 path reference rewriting（v0.5.6+）后，`.servo/` 文本文件内的 `.aw` path references 会改写为 `.servo`；不再要求 raw file equality。 |
 
-## Related Documents
+## 相关文档
 
 - [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md)
 - [Legacy `.aw` Runtime Upgrade Runbook](../runbooks/aw-runtime-upgrade-runbook.md)

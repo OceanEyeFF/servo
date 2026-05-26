@@ -1,23 +1,23 @@
 ---
-title: "Contributing"
+title: "贡献指南"
 status: active
-updated: 2026-05-06
+updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-06
+last_verified: 2026-05-26
 ---
-# Contributing
+# 贡献指南
 
-This repository is a repo-side contract layer. Keep contributions narrow, explicit, and aligned to the governance rules.
+本仓库是 repo-side contract layer。贡献应保持范围收敛、意图明确，并与治理规则对齐。
 
-## Default Workflow
+## 默认工作流
 
-1. Create a branch for the change.
-2. Use a pull request for review and merge.
-3. Run the minimal governance checks before requesting review.
+1. 为当前变更创建独立分支。
+2. 使用 Pull Request 完成审查和合并。
+3. 在请求 review 前运行最小治理检查。
 
-## Required Checks (Local)
+## 必需本地检查
 
-Run these before requesting review:
+请求 review 前运行以下命令：
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py
@@ -26,12 +26,12 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test/test_folder_logic_check.py toolchain/scripts/test/test_closeout_gate_tools.py toolchain/scripts/test/test_agents_adapter_contract.py
 ```
 
-## Review Expectations
+## Review 预期
 
-- Follow `docs/project-maintenance/governance/review-verify-handbook.md`.
-- If you touch governance rules, update the matching docs and checks in the same PR.
-- If you introduce a new root-level object, update `docs/project-maintenance/foundations/root-directory-layering.md` and folder logic checks.
+- 遵循 `docs/project-maintenance/governance/review-verify-handbook.md`。
+- 如果修改治理规则，同一个 PR 中必须同步更新对应文档和检查脚本。
+- 如果新增根目录对象，必须同步更新 `docs/project-maintenance/foundations/root-directory-layering.md` 和 folder logic checks。
 
-## PR / Branch Rules
+## PR / 分支规则
 
-See `docs/project-maintenance/governance/branch-pr-governance.md` for the branch model, PR requirements, and CI expectations.
+分支模型、PR 要求和 CI 预期见 `docs/project-maintenance/governance/branch-pr-governance.md`。
