@@ -90,13 +90,18 @@ servo-installer verify --backend agents
 
 ## 已验证兼容证据
 
-以下证据收集于 2026-05-23，使用从源码树生成的 packaged `servo-installer-0.5.3.tgz`。
+以下证据最初收集于 2026-05-23，使用从源码树生成的 packaged `servo-installer-0.5.3.tgz`。
+
+2026-05-27 起，`toolchain/scripts/test/servo_installer_multi_temp_workdir_smoke.sh --skip-remote` 会从当前源码打包本地 `.tgz`，并在隔离临时 target 中回归以下 legacy migration 场景。
 
 | 场景 | 结果 |
 |---|---|
 | `/tmp/repo-rating-function` 带 `.aw/` 和旧 `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` 将 `.aw` 复制到 `.servo`，改写 path references，将旧 managed agents dirs 替换为 21 个 `servo-*` dirs，并通过 verify / diagnose。 |
 | 在 `/tmp/repo-rating-function` 上重复迁移 | Packaged JSON 返回 `state=already-migrated`、`verdict=already-migrated`、`sentinel_present=true`。 |
 | `/tmp/servo-dual-backend-smoke.OZuLrQ` 带 `.aw/`、`.agents/skills/servo-*` 和 `.claude/skills/<skill-id>` | Packaged `migrate-runtime --yes --reinstall --backend bundle` 独立刷新两个 backend，并通过 bundle verify / diagnose。 |
+| `legacy-aw-only-中文` 临时 target | Packaged `.tgz` 入口执行 `.aw -> .servo`，保留 `.aw/`，改写 `.servo/` 文本 path references，并证明 `develop-aw` 与 `aw/*` branch names 不被误改；重复执行返回 already-migrated no-op。 |
+| `legacy-bundle` 临时 target | Packaged `.tgz` 入口执行 `migrate-runtime --yes --reinstall --backend bundle`，移除 managed legacy `aw-*` target dirs，收敛 agents `servo-*` 与 claude canonical target dirs，并通过 bundle verify / diagnose。 |
+| `legacy-conflict` 临时 target | Packaged `.tgz` 入口在 `.aw/ + .servo/` 无 migration sentinel 时阻塞，返回 `destination-runtime-exists`，且不改写既有 `.servo/`。 |
 | Runtime equivalence checks | 在排除 `.servo-installer-aw-migration.json` 后，两个 smoke targets 中 `.aw/` 与 `.servo/` 匹配。自 path reference rewriting（v0.5.6+）后，`.servo/` 文本文件内的 `.aw` path references 会改写为 `.servo`；不再要求 raw file equality。 |
 
 ## 相关文档
