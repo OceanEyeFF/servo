@@ -13,6 +13,7 @@ from governance_semantic_check import (
     check_append_request_contract_terms,
     check_adapter_wrappers_are_thin,
     check_artifact_skill_alignment,
+    check_aw_residue_classification_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
     check_debug_evidence_contract,
@@ -203,6 +204,71 @@ def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Pat
 
     report = SemanticReport()
     check_agents_route_slimming_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_aw_residue_contract(tmp_path: Path) -> None:
+    write_doc(
+        tmp_path / "docs/servo-installer/contracts/aw-residue-classification-contract.md",
+        "compatibility-allowed\nruntime-migration-contract\nmarker-identity-contract\n"
+        "legacy-target-dir-contract\ntest-fixture-only\nhistorical-doc-only\n"
+        "navigation-only\nremediation-required\nunclassified-aw-residue\n",
+    )
+
+
+def test_check_aw_residue_classification_contract_flags_canonical_marker(tmp_path: Path) -> None:
+    _write_aw_residue_contract(tmp_path)
+    write_doc(
+        tmp_path / "product/harness/skills/demo-skill/aw.marker",
+        "",
+    )
+    write_doc(
+        tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
+        '{"required_payload_files":["SKILL.md","payload.json","aw.marker"],"legacy_target_dirs":["aw-demo-skill"]}\n',
+    )
+
+    report = SemanticReport()
+    check_aw_residue_classification_contract(tmp_path, report)
+
+    assert any("canonical source" in item for item in report.failures)
+
+
+def test_check_aw_residue_classification_contract_flags_payload_marker_drift(tmp_path: Path) -> None:
+    _write_aw_residue_contract(tmp_path)
+    write_doc(
+        tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
+        '{"required_payload_files":["SKILL.md","payload.json"],"legacy_target_dirs":["aw-demo-skill"]}\n',
+    )
+
+    report = SemanticReport()
+    check_aw_residue_classification_contract(tmp_path, report)
+
+    assert any("required_payload_files" in item for item in report.failures)
+
+
+def test_check_aw_residue_classification_contract_flags_unclassified_aw_target_dir(tmp_path: Path) -> None:
+    _write_aw_residue_contract(tmp_path)
+    write_doc(
+        tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
+        '{"target_dir":"aw-demo-skill","required_payload_files":["SKILL.md","payload.json","aw.marker"],"legacy_target_dirs":[]}\n',
+    )
+
+    report = SemanticReport()
+    check_aw_residue_classification_contract(tmp_path, report)
+
+    assert any("legacy aw-* adapter value" in item for item in report.failures)
+
+
+def test_check_aw_residue_classification_contract_accepts_adapter_compatibility_payload(tmp_path: Path) -> None:
+    _write_aw_residue_contract(tmp_path)
+    write_doc(
+        tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
+        '{"target_dir":"servo-demo-skill","required_payload_files":["SKILL.md","payload.json","aw.marker"],"legacy_target_dirs":["demo-skill","aw-demo-skill"],"legacy_skill_ids":["aw-demo-skill"]}\n',
+    )
+
+    report = SemanticReport()
+    check_aw_residue_classification_contract(tmp_path, report)
 
     assert report.failures == []
 
