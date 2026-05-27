@@ -67,7 +67,7 @@ An occurrence is `remediation-required` when any of the following is true:
 - It appears in package payload or generated install content without a documented compatibility category from this contract.
 - It is a stale historical statement that contradicts current verified behavior, for example saying the fixed TUI path still does not run migration.
 
-The current inventory marks `product/harness/skills/init-milestone-skill/aw.marker` as a candidate `remediation-required` item because it is a zero-byte marker file in canonical skill source and appears in the npm packlist. The remediation worktrack must either remove it or produce a specific contract proving why it is not canonical source residue.
+The current inventory marked `product/harness/skills/init-milestone-skill/aw.marker` as a candidate `remediation-required` item because it was a zero-byte marker file in canonical skill source and appeared in the npm packlist. `WT-20260527-distribution-template-remediation` removed that source marker. Future occurrences of the same shape remain `remediation-required` unless a specific contract proves why the marker must exist in canonical source.
 
 ## Evidence Requirements
 
