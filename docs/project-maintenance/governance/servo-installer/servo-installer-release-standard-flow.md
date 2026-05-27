@@ -79,9 +79,10 @@ The tag must exactly match `v<package.version>`, and the body must include `serv
 gh release create v<package.version> \
   --target <master-merge-commit-sha> \
   --title "servo-installer v<package.version>" \
-  --prerelease \
   --notes $'servo-installer-publish-approved: v<package.version>\n\n<version-specific release notes>'
 ```
+
+Use GitHub prerelease only for prerelease semver channels (`next` / `canary`). Stable `latest` releases must be created without `--prerelease`; the publish workflow rejects GitHub prerelease releases that would publish to `latest`.
 
 ## 5. Watch The Publish Workflow
 

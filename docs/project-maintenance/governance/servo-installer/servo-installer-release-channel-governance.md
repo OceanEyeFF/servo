@@ -15,25 +15,25 @@ last_verified: 2026-05-27
 
 ## 当前 registry 事实
 
-2026-05-26 已核对 npm registry：
+2026-05-27 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.5.7`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`
-- GitHub Release `v0.5.7` 已发布，target commit `7be50a43bf635d3966294387df249ff307470b1b`；npm `servo-installer@0.5.7` 的 `gitHead` 同为 `7be50a43bf635d3966294387df249ff307470b1b`
-- publish workflow run `26448942207` completed successfully for `v0.5.7`
-- npm `servo-installer@0.5.7` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.7.tgz`
+- npm registry 真实状态：`latest` -> `0.5.8`；`next` 未设置；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`
+- GitHub Release `v0.5.8` 已发布，target commit `ad363e818adc5da01049f1808db9376830c05d09`；npm `servo-installer@0.5.8` 的 `gitHead` 同为 `ad363e818adc5da01049f1808db9376830c05d09`
+- publish workflow run `26509952967` completed successfully for `v0.5.8`
+- npm `servo-installer@0.5.8` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.8.tgz`
 
 ## 当前 source release tuple
 
-2026-05-27，`v0.5.8` source tuple 已准备为 `latest` channel candidate；它仍未发布，registry facts 仍以上一节为准：
+2026-05-27，`v0.5.8` source tuple 已发布到 `latest` channel：
 
 - root `package.json` version：`0.5.8`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.8`
 - approval lock：`approvedVersion=0.5.8`、`approvedGitTag=v0.5.8`、`approvedChannel=latest`
 - release scope：发布 v0.5.8 migration recovery 更新，包括 TUI `.aw -> .servo` runtime migration recovery、sanitized installer logs、packaged migration regression smoke、composite milestone acceptance flow，以及 stale `.aw` control-plane instruction scan guidance。
-- publish status：candidate source tuple only；尚未创建 `v0.5.8` tag、GitHub Release、publish workflow、npm publish 或 npm dist-tag 变更。
+- publish status：GitHub Release `v0.5.8`、publish workflow、npm publish 与 `latest` dist-tag 变更均已完成。
 
-注意：`0.5.8` 是 stable candidate；默认 `servo-installer` 在 registry 上仍解析到 `latest` 的 `0.5.7`，直到显式 release approval 后完成 GitHub Release + publish workflow。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.5.8` 是 stable release；默认 `servo-installer` 在 registry 上解析到 `latest` 的 `0.5.8`。当前 npm registry 未设置 `next` dist-tag。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
