@@ -23,7 +23,8 @@ const {
   writeFileSync,
 } = require("node:fs");
 const https = require("node:https");
-const { tmpdir } = require("node:os");
+const { platform, release, tmpdir } = require("node:os");
+const { spawnSync } = require("node:child_process");
 const { inflateRawSync } = require("node:zlib");
 const { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } = require("node:path");
 const { createHash } = require("node:crypto");
@@ -109,6 +110,7 @@ const cliFlags = Object.freeze({
   githubRef: "--github-ref",
   githubRepo: "--github-repo",
   json: "--json",
+  logDir: "--log-dir",
   reinstall: "--reinstall",
   source: "--source",
   to: "--to",
@@ -331,6 +333,7 @@ options:
   --github-ref REF            GitHub branch/ref for --source github
   --github-archive-sha256 SHA256
                               optional SHA256 digest for the GitHub source archive
+  --log-dir PATH              write a sanitized run log JSON file
 `);
 }
 
@@ -372,6 +375,224 @@ function readPackageVersion() {
 
 function printVersion() {
   console.log(`servo-installer ${readPackageVersion()}`);
+}
+
+function parseLogDirOption(args) {
+  const strippedArgs = [];
+  let logDir;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === cliFlags.logDir) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return { error: "missing value for --log-dir", args, logDir: undefined };
+      }
+      logDir = value;
+      index += 1;
+      continue;
+    }
+    const logDirValue = readEqualsOption(arg, cliFlags.logDir);
+    if (logDirValue !== null) {
+      logDir = logDirValue;
+      continue;
+    }
+    strippedArgs.push(arg);
+  }
+  return { args: strippedArgs, logDir };
+}
+
+function defaultInstallerLogDir(targetRepoRoot) {
+  return join(targetRepoRoot || process.cwd(), ".logs", "servo-installer");
+}
+
+function timestampForFileName(date = new Date()) {
+  return date.toISOString().replace(/[:.]/g, "-");
+}
+
+function boundedLines(lines, maxLines = 240) {
+  if (lines.length <= maxLines) {
+    return lines;
+  }
+  return [
+    ...lines.slice(0, maxLines),
+    `[truncated ${lines.length - maxLines} additional line(s)]`,
+  ];
+}
+
+function safeCommandArgs(args) {
+  const redacted = [];
+  let redactNext = false;
+  for (const arg of args) {
+    if (redactNext) {
+      redacted.push("<redacted>");
+      redactNext = false;
+      continue;
+    }
+    if (/token|secret|password|credential/i.test(arg)) {
+      redacted.push("<redacted>");
+      if (!arg.includes("=") && arg.startsWith("--")) {
+        redactNext = true;
+      }
+      continue;
+    }
+    redacted.push(arg);
+  }
+  return redacted;
+}
+
+function shellHint() {
+  if (process.env.PSModulePath && process.platform === "win32") {
+    return "PowerShell";
+  }
+  if (process.env.SHELL) {
+    return basename(process.env.SHELL);
+  }
+  if (process.env.ComSpec) {
+    return basename(process.env.ComSpec);
+  }
+  return "unknown";
+}
+
+function npmVersion() {
+  try {
+    const result = spawnSync("npm", ["--version"], {
+      encoding: "utf8",
+      timeout: 5000,
+      env: { ...process.env, npm_config_update_notifier: "false" },
+    });
+    if (result.status === 0) {
+      return result.stdout.trim();
+    }
+  } catch (error) {
+    return "unavailable";
+  }
+  return "unavailable";
+}
+
+function targetStateSummary(targetRepoRoot) {
+  const root = targetRepoRoot || process.cwd();
+  return {
+    target_repo_root: root,
+    aw_exists: pathExists(join(root, legacyAwRuntimeDir)),
+    servo_exists: pathExists(join(root, servoRuntimeDir)),
+    agents_exists: pathExists(join(root, ".agents")),
+    claude_exists: pathExists(join(root, ".claude")),
+  };
+}
+
+function backendFromArgs(args) {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === cliFlags.backend) {
+      return readOptionValue(args, index) || null;
+    }
+    const backendValue = readEqualsOption(arg, cliFlags.backend);
+    if (backendValue !== null) {
+      return backendValue;
+    }
+  }
+  return null;
+}
+
+function sourceFromArgs(args) {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === cliFlags.source) {
+      return readOptionValue(args, index) || packageSource;
+    }
+    const sourceValue = readEqualsOption(arg, cliFlags.source);
+    if (sourceValue !== null) {
+      return sourceValue;
+    }
+  }
+  return packageSource;
+}
+
+function createRunLogger({ logDir, args, targetRepoRoot, tui }) {
+  if (!logDir) {
+    return null;
+  }
+  mkdirSync(logDir, { recursive: true });
+  const startedAt = new Date();
+  const output = [];
+  return {
+    logDir,
+    logPath: join(logDir, `${timestampForFileName(startedAt)}-${tui ? "tui" : (args[0] || "default")}.json`),
+    startedAt: startedAt.toISOString(),
+    args: safeCommandArgs(args),
+    targetRepoRoot: targetRepoRoot || process.cwd(),
+    tui: Boolean(tui),
+    output,
+    capture(stream, text) {
+      for (const line of String(text).split(/\r?\n/)) {
+        if (line.length > 0) {
+          output.push({ stream, line: line.slice(0, 1000) });
+        }
+      }
+    },
+  };
+}
+
+async function withRunLogger(logger, callback) {
+  if (logger === null) {
+    return await callback();
+  }
+  const originalLog = console.log;
+  const originalError = console.error;
+  console.log = (...args) => {
+    const line = args.join(" ");
+    logger.capture("stdout", line);
+    originalLog(...args);
+  };
+  console.error = (...args) => {
+    const line = args.join(" ");
+    logger.capture("stderr", line);
+    originalError(...args);
+  };
+  let status = 1;
+  let errorMessage = null;
+  try {
+    status = await callback();
+    return status;
+  } catch (error) {
+    errorMessage = error.message;
+    logger.capture("stderr", `servo-installer failed: ${error.message}`);
+    throw error;
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+    const completedAt = new Date().toISOString();
+    const logPayload = {
+      schema_version: "servo-installer-run-log/v1",
+      started_at: logger.startedAt,
+      completed_at: completedAt,
+      command: logger.args,
+      backend: backendFromArgs(logger.args),
+      source: sourceFromArgs(logger.args),
+      tui: logger.tui,
+      environment: {
+        platform: process.platform,
+        os_platform: platform(),
+        os_release: release(),
+        shell: shellHint(),
+        node: process.version,
+        npm: npmVersion(),
+      },
+      target_state: targetStateSummary(logger.targetRepoRoot),
+      verdict: status === 0 ? "pass" : "fail",
+      exit_status: status,
+      error: errorMessage,
+      output: boundedLines(logger.output),
+      sanitization: {
+        full_environment_dumped: false,
+        sensitive_values_redacted: true,
+        max_output_lines: 240,
+        max_line_chars: 1000,
+      },
+    };
+    writeFileSync(logger.logPath, `${JSON.stringify(logPayload, null, 2)}\n`, "utf8");
+    originalLog(`servo-installer log: ${logger.logPath}`);
+  }
 }
 
 function pathExists(path) {
@@ -4580,6 +4801,75 @@ function checkAwHealth() {
   return checks;
 }
 
+function buildTuiMigrationArgs(state, includeYes) {
+  const args = [
+    "migrate-runtime",
+    "--from",
+    "aw",
+    "--to",
+    "servo",
+    "--backend",
+    state.backend,
+    "--reinstall",
+  ];
+  if (includeYes) {
+    args.push("--yes");
+  }
+  return args;
+}
+
+function legacyRuntimeMigrationSummaryForTui(state) {
+  return runtimeMigrationSummary(runtimeMigrationContext({
+    backend: state.backend,
+    from: "aw",
+    to: "servo",
+    json: false,
+    yes: false,
+    reinstall: true,
+  }));
+}
+
+async function guidedRuntimeMigration(rl, state) {
+  const summary = legacyRuntimeMigrationSummaryForTui(state);
+  state.runtimeMigration = summary.state;
+
+  if (summary.state === "no-runtime" || summary.state === "destination-only" || summary.state === "already-migrated") {
+    return true;
+  }
+
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Legacy runtime migration check.`);
+  printRuntimeMigrationSummary(summary);
+
+  if (summary.issue_count > 0 || summary.action === "blocked") {
+    console.log(`${SYM_FAIL} Runtime migration is blocked; guided install/update will not continue.`);
+    console.log(`  ${colorDim("Preserve .aw, resolve the reported issue, then rerun guided install/update or migrate-runtime.")}`);
+    return false;
+  }
+
+  const confirmation = (await question(
+    rl,
+    `\n${SYM_ARROW} Type ${colorYellow("migrate")} to copy .aw into .servo and reinstall ${state.backend}: `,
+  )).trim().toLowerCase();
+  if (confirmation !== "migrate") {
+    console.log("Guided flow cancelled. No runtime migration performed.");
+    return false;
+  }
+
+  state.currentStep = "runtime migration";
+  refreshTui(state);
+  console.log(`\n${SYM_ARROW} Migrating .aw runtime state into .servo.`);
+  const status = await runNodeOwned(buildTuiMigrationArgs(state, true));
+  if (status !== 0) {
+    console.log(`${SYM_FAIL} Runtime migration failed.`);
+    return false;
+  }
+  state.runtimeMigrationPerformed = true;
+  state.runtimeMigration = "migrated";
+  console.log(`${SYM_OK} Runtime migration complete.`);
+  return true;
+}
+
 async function guidedDiagnose(rl, state) {
   state.currentStep = "1/6 diagnose";
   refreshTui(state);
@@ -4811,6 +5101,30 @@ async function runGuidedFullFlow(rl, state) {
   results[0] = await guidedDiagnose(rl, state);
   await pause(rl);
 
+  const migrationOk = await guidedRuntimeMigration(rl, state);
+  if (!migrationOk) { return; }
+  if (state.runtimeMigrationPerformed) {
+    await pause(rl);
+    results[1] = true;
+    results[2] = true;
+    results[3] = true;
+    state.currentStep = "5/6 verify";
+    refreshTui(state);
+    state.verifyResult = "running...";
+    const vStatus = await runNodeOwned(["verify", "--backend", state.backend]);
+    state.verifyResult = vStatus === 0 ? "passed" : "failed";
+    results[4] = vStatus === 0;
+    if (results[4]) {
+      console.log(`${SYM_OK} Verification passed.`);
+    } else {
+      console.log(`${SYM_FAIL} Verification failed. Summary will be marked incomplete.`);
+    }
+    await pause(rl);
+    await guidedSummary(rl, state, results);
+    await pause(rl);
+    return;
+  }
+
   // Stage 2: Preview paths (blocking)
   results[1] = await guidedPreviewPaths(rl, state);
   if (!results[1]) {
@@ -4994,7 +5308,7 @@ function statusSymbol(pass) {
   return pass ? SYM_OK : SYM_FAIL;
 }
 
-async function runTui() {
+async function runTui(logDir) {
   if (!ttyIn || !ttyOut) {
     console.error("servo-installer tui requires an interactive terminal.");
     return 1;
@@ -5002,82 +5316,99 @@ async function runTui() {
 
   const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
   const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
+  const effectiveLogDir = logDir || defaultInstallerLogDir(targetRepo);
+  const logger = createRunLogger({
+    logDir: effectiveLogDir,
+    args: ["tui"],
+    targetRepoRoot: targetRepo,
+    tui: true,
+  });
 
-  // Bundle default per TUI contract
-  tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
+  return await withRunLogger(logger, async () => {
+    console.log(`servo-installer log location: ${effectiveLogDir}`);
 
-  try {
-    process.stdout.write(CSI_CLEAR_SCREEN);
-    process.stdout.write(CSI_HIDE_CURSOR);
+    // Bundle default per TUI contract
+    tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
 
-    const menuOptions = [
-      "Guided install/update (6-stage: diagnose → preview → confirm → install → verify → summary)",
-      "Quick update (compact 4-step)",
-      "Diagnose current install",
-      "Verify current install",
-      "Show update dry-run plan",
-      "Exit",
-    ];
+    try {
+      process.stdout.write(CSI_CLEAR_SCREEN);
+      process.stdout.write(CSI_HIDE_CURSOR);
 
-    while (true) {
-      tuiState.currentStep = "menu";
-      refreshTui(tuiState);
-      process.stdout.write(`\n${colorBold("TUI Menu")}  ${colorDim("backend: " + tuiState.backend + "  |  b to cycle: " + backendCycle.join("/"))}\n`);
+      const menuOptions = [
+        "Guided install/update (6-stage: diagnose → preview → confirm → install → verify → summary)",
+        "Quick update (compact 4-step)",
+        "Diagnose current install",
+        "Verify current install",
+        "Show update dry-run plan",
+        "Exit",
+      ];
 
-      const idx = await interactiveSelect(null, menuOptions, " ");
-
-      if (idx === -1) { break; }
-
-      if (idx === 0) {
-        await runGuidedFullFlow(null, tuiState);
-      } else if (idx === 1) {
-        tuiState.currentStep = "guided-update";
-        await runGuidedUpdateFlow(null, tuiState);
-      } else if (idx === 2) {
-        tuiState.currentStep = "diagnose";
+      while (true) {
+        tuiState.currentStep = "menu";
         refreshTui(tuiState);
-        process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
-        await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
-        await pause(null);
-      } else if (idx === 3) {
-        tuiState.currentStep = "verify";
-        tuiState.verifyResult = "running...";
-        refreshTui(tuiState);
-        process.stdout.write(`\n${SYM_ARROW} Running verify --backend ${tuiState.backend}...\n`);
-        const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
-        tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
-        await pause(null);
-      } else if (idx === 4) {
-        tuiState.currentStep = "dry-run";
-        refreshTui(tuiState);
-        process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
-        await runNodeOwned(["update", "--backend", tuiState.backend]);
-        await pause(null);
-      } else if (idx === 5) {
-        break;
+        process.stdout.write(`\n${colorBold("TUI Menu")}  ${colorDim("backend: " + tuiState.backend + "  |  b to cycle: " + backendCycle.join("/"))}\n`);
+
+        const idx = await interactiveSelect(null, menuOptions, " ");
+
+        if (idx === -1) { break; }
+
+        if (idx === 0) {
+          await runGuidedFullFlow(null, tuiState);
+        } else if (idx === 1) {
+          tuiState.currentStep = "guided-update";
+          await runGuidedUpdateFlow(null, tuiState);
+        } else if (idx === 2) {
+          tuiState.currentStep = "diagnose";
+          refreshTui(tuiState);
+          process.stdout.write(`\n${SYM_ARROW} Running diagnose --backend ${tuiState.backend}...\n`);
+          await runNodeOwned(["diagnose", "--backend", tuiState.backend, "--json"]);
+          await pause(null);
+        } else if (idx === 3) {
+          tuiState.currentStep = "verify";
+          tuiState.verifyResult = "running...";
+          refreshTui(tuiState);
+          process.stdout.write(`\n${SYM_ARROW} Running verify --backend ${tuiState.backend}...\n`);
+          const vStatus = await runNodeOwned(["verify", "--backend", tuiState.backend]);
+          tuiState.verifyResult = vStatus === 0 ? "passed" : "failed";
+          await pause(null);
+        } else if (idx === 4) {
+          tuiState.currentStep = "dry-run";
+          refreshTui(tuiState);
+          process.stdout.write(`\n${SYM_ARROW} Running update --backend ${tuiState.backend} (dry-run)...\n`);
+          await runNodeOwned(["update", "--backend", tuiState.backend]);
+          await pause(null);
+        } else if (idx === 5) {
+          break;
+        }
+
+        tuiState.currentStep = "menu";
       }
-
-      tuiState.currentStep = "menu";
+      return 0;
+    } finally {
+      process.stdout.write(CSI_SHOW_CURSOR);
+      process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
+      process.stdout.write(csiEraseToEnd());
+      try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
     }
-    return 0;
-  } finally {
-    process.stdout.write(CSI_SHOW_CURSOR);
-    process.stdout.write(csiCursorTo(STATUS_LINES + 1, 0));
-    process.stdout.write(csiEraseToEnd());
-    try { process.stdin.setRawMode(false); } catch (_) { /* ignore */ }
-  }
+  });
 }
 
 
 async function main() {
-  const args = process.argv.slice(2);
+  const parsedLogging = parseLogDirOption(process.argv.slice(2));
+  if (parsedLogging.error) {
+    console.error(`error: ${parsedLogging.error}`);
+    return 1;
+  }
+  const args = parsedLogging.args;
 
   // Package/runtime agents and Claude deploy commands are Node-owned. Python
   // deploy sources may remain in the repository as reference/test assets, but
   // this distribution entrypoint must not fall back to Python.
   if (args.length === 0) {
     if (process.stdin.isTTY && process.stdout.isTTY) {
-      return runTui();
+      const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
+      return runTui(parsedLogging.logDir || defaultInstallerLogDir(targetRepo));
     }
     printHelp();
     return 0;
@@ -5094,10 +5425,18 @@ async function main() {
   }
 
   if (args[0] === "tui") {
-    return runTui();
+    const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
+    return runTui(parsedLogging.logDir || defaultInstallerLogDir(targetRepo));
   }
 
-  return await runNodeOwned(args);
+  const targetRepoRoot = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
+  const logger = createRunLogger({
+    logDir: parsedLogging.logDir,
+    args,
+    targetRepoRoot,
+    tui: false,
+  });
+  return await withRunLogger(logger, () => runNodeOwned(args));
 }
 
 if (require.main === module) {

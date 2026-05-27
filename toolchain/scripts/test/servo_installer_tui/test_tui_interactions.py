@@ -156,17 +156,21 @@ def quit_menu_step() -> tuple[str, str]:
 
 
 def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: Path) -> None:
+    target_repo = tmp_path / "menu-target"
     code, output = run_tui_script(
         repo_root,
-        tmp_path / "menu-target",
+        target_repo,
         choose_menu_steps(5),
     )
 
     assert code == 0, output
     assert "AW Installer" in output
+    assert "servo-installer log:" in output
     assert "Guided install/update" in output
     assert "Show update dry-run plan" in output
     assert "Exit" in output
+    log_files = list((target_repo / ".logs" / "servo-installer").glob("*.json"))
+    assert len(log_files) == 1
 
 
 def test_tui_diagnose_menu_action_uses_node_owned_json(
@@ -285,6 +289,69 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
     assert "[bundle] install complete for both backends" in output
     assert "All stages completed successfully." in output
     assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+
+
+def test_tui_guided_install_update_migrates_legacy_aw_runtime(
+    repo_root: Path,
+    tmp_path: Path,
+) -> None:
+    target_repo = tmp_path / "中文 path guided migration target"
+    (target_repo / ".aw" / "worktrack").mkdir(parents=True)
+    (target_repo / ".aw" / "control-state.md").write_text(
+        "runtime path reference: `.aw/control-state.md`\n",
+        encoding="utf-8",
+    )
+
+    code, output = run_tui_script(
+        repo_root,
+        target_repo,
+        [
+            *choose_menu_steps(0),
+            ("Press Enter to return to the installer menu...", "\n"),
+            ("Type migrate to copy .aw into .servo", "migrate\n"),
+            ("Runtime migration complete", "\n"),
+            ("Verification passed", "\n"),
+            ("All stages completed successfully", "\n"),
+            ("Press Enter to return to the installer menu...", "\n"),
+            quit_menu_step(),
+        ],
+    )
+
+    assert code == 0, output
+    assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+    assert (target_repo / ".claude" / "skills" / "harness-skill" / "SKILL.md").is_file()
+    assert (target_repo / ".servo" / "control-state.md").is_file()
+    assert ".servo/control-state.md" in (target_repo / ".servo" / "control-state.md").read_text(
+        encoding="utf-8",
+    )
+    assert (target_repo / ".aw" / "control-state.md").is_file()
+
+
+def test_tui_guided_install_update_blocks_aw_servo_runtime_conflict(
+    repo_root: Path,
+    tmp_path: Path,
+) -> None:
+    target_repo = tmp_path / "runtime-conflict-target"
+    (target_repo / ".aw").mkdir(parents=True)
+    (target_repo / ".aw" / "control-state.md").write_text("legacy\n", encoding="utf-8")
+    (target_repo / ".servo").mkdir()
+    (target_repo / ".servo" / "control-state.md").write_text("existing\n", encoding="utf-8")
+
+    code, output = run_tui_script(
+        repo_root,
+        target_repo,
+        [
+            *choose_menu_steps(0),
+            ("Press Enter to return to the installer menu...", "\n"),
+            quit_menu_step(),
+        ],
+    )
+
+    assert code == 0, output
+    assert "Runtime migration is blocked" in output
+    assert "destination-runtime-exists" in output
+    assert "Installing bundle" not in output
+    assert not (target_repo / ".agents" / "skills").exists()
 
 
 def test_tui_unknown_key_stays_on_menu_then_quits(repo_root: Path, tmp_path: Path) -> None:

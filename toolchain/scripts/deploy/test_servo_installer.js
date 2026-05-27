@@ -678,6 +678,52 @@ test("node-owned summary and context helpers are exported for unit coverage", ()
   );
 });
 
+test("servo-installer --log-dir writes sanitized run log without env dump", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-log-"));
+  try {
+    const logDir = join(root, "logs");
+    const sourceRoot = join(__dirname, "..", "..", "..");
+    const result = spawnSync(
+      process.execPath,
+      [
+        join(__dirname, "bin", "servo-installer.js"),
+        "diagnose",
+        "--backend=agents",
+        "--log-dir",
+        logDir,
+      ],
+      {
+        cwd: root,
+        env: {
+          ...checkPathsExistEnv(root),
+          SERVO_HARNESS_REPO_ROOT: sourceRoot,
+          SECRET_TOKEN: "super-secret-value",
+          PASSWORD: "should-not-appear",
+        },
+        encoding: "utf8",
+      },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /servo-installer log: /);
+    const logFiles = readdirSync(logDir).filter((name) => name.endsWith(".json"));
+    assert.equal(logFiles.length, 1);
+    const logText = readFileSync(join(logDir, logFiles[0]), "utf8");
+    assert.equal(logText.includes("super-secret-value"), false);
+    assert.equal(logText.includes("should-not-appear"), false);
+    const logPayload = JSON.parse(logText);
+    assert.equal(logPayload.schema_version, "servo-installer-run-log/v1");
+    assert.deepEqual(logPayload.command, ["diagnose", "--backend=agents"]);
+    assert.equal(logPayload.backend, "agents");
+    assert.equal(logPayload.verdict, "pass");
+    assert.equal(logPayload.sanitization.full_environment_dumped, false);
+    assert.equal(logPayload.target_state.aw_exists, false);
+    assert.ok(Array.isArray(logPayload.output));
+    assert.ok(logPayload.output.some((entry) => entry.line.includes("[agents] diagnose")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("path safety policy is loaded from the shared deploy JSON", () => {
   const policy = installer.pathSafetyPolicy();
 

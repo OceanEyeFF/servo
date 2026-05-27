@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Standard Flow"
 status: active
-updated: 2026-05-11
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-11
+last_verified: 2026-05-27
 ---
 # servo-installer Release Standard Flow
 
@@ -34,6 +34,8 @@ If tag or published version exists, stop and resolve conflict before continuing.
 If npm fails because the default cache path is not writable, retry the registry queries with an explicit cache outside the source tree, for example `NPM_CONFIG_CACHE=/tmp/servo-npm-cache npm view ...`.
 
 ## 2. Push And Open The Merge PR
+
+If the approved candidate currently lives on a development integration branch such as `develop-aw`, first merge or fast-forward that candidate into local `develop-main` through the approved local integration path, rerun the release-prep validation that changed or depends on the merge, and confirm `develop-main` now contains the candidate tuple commit. Do not open the `develop-main -> master` release PR from a stale `develop-main` that lacks the candidate.
 
 ```bash
 git push origin develop-main

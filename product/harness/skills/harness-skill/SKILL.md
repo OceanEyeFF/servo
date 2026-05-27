@@ -319,7 +319,7 @@ Gate 应汇总**正交校验面**的裁决：
 
 最后由汇总 `gate-skill` 生成最终 verdict。
 
-对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于“全部 worktrack 关闭”之后、“`purpose_achieved` 判定”之前；必须同时覆盖 black-box、white-box 和 anti-cheat 三类检查。`Milestone Gate` 以每个已闭环 worktrack 的 closeout record、gate evidence 和 repo-refresh 结果为聚合输入，在逐 worktrack 可追溯基础上形成 milestone 级集成放行条件。
+对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于“全部 worktrack 关闭”之后、“`purpose_achieved` 判定”之前；必须同时覆盖 black-box、white-box、anti-cheat 和 composite acceptance lanes。`Milestone Gate` 以每个已闭环 worktrack 的 closeout record、gate evidence、repo-refresh 结果和 composite acceptance report 为聚合输入，在逐 worktrack 可追溯基础上形成 milestone 级集成放行条件。
 
 ---
 
@@ -442,6 +442,7 @@ Gate 应汇总**正交校验面**的裁决：
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
    - **Final Acceptance 事务边界**：
      - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
+     - goal-driven milestone handback 前必须存在 composite acceptance report，或存在逐 lane 记录的合法 fallback evidence。报告必须覆盖 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation 和 professional-review。任一 lane 为 `blocked`、任一 high severity finding、或未被 programmer 接受为后续范围的 `needs_followup_worktrack`，均不得进入 final acceptance ready。
      - programmer 明确接受 goal-driven milestone 后，acceptance writeback 必须作为一个逻辑事务处理：预先校验 milestone artifact、milestone-backlog、control-state、handback guard、baseline traceability 与 worktrack status 输入；再写入所有相关 artifact；最后做提交后校验。
      - 该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，以及必要时 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 的状态归一化。
      - 对 goal-driven milestone，programmer final acceptance 后 backlog 中该 milestone 的所有已闭环 worktrack 不得继续标记为 `(planned)` 或 `(active)`；必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。

@@ -1,9 +1,9 @@
 ---
 title: "旧版本处理"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # 旧版本处理
 
@@ -49,15 +49,29 @@ last_verified: 2026-05-26
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
 servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend agents
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
 servo-installer verify --backend agents
 servo-installer diagnose --backend agents
 ```
+
+如果需要上传诊断证据，CLI 可加 `--log-dir`：
+
+```bash
+servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend bundle --log-dir .logs/servo-installer
+```
+
+TUI 会默认写入目标仓库 `.logs/servo-installer/` 并打印具体日志文件路径。
 
 对于同时有 agents 和 claude deploy targets 的目标：
 
 ```bash
 servo-installer migrate-runtime --from aw --to servo --json
 servo-installer migrate-runtime --from aw --to servo --yes --reinstall --backend bundle
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
 servo-installer verify --backend bundle
 servo-installer diagnose --backend bundle
 ```
@@ -74,6 +88,7 @@ servo-installer verify --backend agents
 - 普通 `install`、`update`、`verify`、`diagnose`、`check_paths_exist` 和 `prune --all` 不会静默把 `.aw/` 迁移到 `.servo/`。
 - 成功迁移后，默认保留 `.aw/`。
 - 清理 `.aw/` 是显式 operator decision，不属于默认升级路径。
+- 迁移后应只读扫描目标仓库的 `docs/`、`.servo/`、`.agents/` 和 `.claude/`，找出仍要求写入、刷新或同步 `.aw/` control state 的当前指令。历史说明、branch names、legacy 复现文本和 `aw.marker` 不应被无差别替换。
 - managed skill target dirs 内的 `aw.marker` 是 deploy identity metadata；它不等同于根目录 `.aw/` runtime state。
 - agents 和 claude deploy targets 有不同的 canonical target naming：
   - agents：`.agents/skills/servo-<skill-id>`
@@ -82,13 +97,18 @@ servo-installer verify --backend agents
 
 ## 已验证兼容证据
 
-以下证据收集于 2026-05-23，使用从源码树生成的 packaged `servo-installer-0.5.3.tgz`。
+以下证据最初收集于 2026-05-23，使用从源码树生成的 packaged `servo-installer-0.5.3.tgz`。
+
+2026-05-27 起，`toolchain/scripts/test/servo_installer_multi_temp_workdir_smoke.sh --skip-remote` 会从当前源码打包本地 `.tgz`，并在隔离临时 target 中回归以下 legacy migration 场景。
 
 | 场景 | 结果 |
 |---|---|
 | `/tmp/repo-rating-function` 带 `.aw/` 和旧 `.agents/skills/aw-*` dirs | Packaged `migrate-runtime --yes --reinstall --backend agents` 将 `.aw` 复制到 `.servo`，改写 path references，将旧 managed agents dirs 替换为 21 个 `servo-*` dirs，并通过 verify / diagnose。 |
 | 在 `/tmp/repo-rating-function` 上重复迁移 | Packaged JSON 返回 `state=already-migrated`、`verdict=already-migrated`、`sentinel_present=true`。 |
 | `/tmp/servo-dual-backend-smoke.OZuLrQ` 带 `.aw/`、`.agents/skills/servo-*` 和 `.claude/skills/<skill-id>` | Packaged `migrate-runtime --yes --reinstall --backend bundle` 独立刷新两个 backend，并通过 bundle verify / diagnose。 |
+| `legacy-aw-only-中文` 临时 target | Packaged `.tgz` 入口执行 `.aw -> .servo`，保留 `.aw/`，改写 `.servo/` 文本 path references，并证明 `develop-aw` 与 `aw/*` branch names 不被误改；重复执行返回 already-migrated no-op。 |
+| `legacy-bundle` 临时 target | Packaged `.tgz` 入口执行 `migrate-runtime --yes --reinstall --backend bundle`，移除 managed legacy `aw-*` target dirs，收敛 agents `servo-*` 与 claude canonical target dirs，并通过 bundle verify / diagnose。 |
+| `legacy-conflict` 临时 target | Packaged `.tgz` 入口在 `.aw/ + .servo/` 无 migration sentinel 时阻塞，返回 `destination-runtime-exists`，且不改写既有 `.servo/`。 |
 | Runtime equivalence checks | 在排除 `.servo-installer-aw-migration.json` 后，两个 smoke targets 中 `.aw/` 与 `.servo/` 匹配。自 path reference rewriting（v0.5.6+）后，`.servo/` 文本文件内的 `.aw` path references 会改写为 `.servo`；不再要求 raw file equality。 |
 
 ## 相关文档

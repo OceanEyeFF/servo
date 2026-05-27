@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-05-23
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-23
+last_verified: 2026-05-27
 ---
 # Docs Book Spine
 
@@ -63,18 +63,20 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 2. [servo-installer/contracts/distribution-entrypoint-contract.md](./servo-installer/contracts/distribution-entrypoint-contract.md)
 3. [servo-installer/contracts/deploy-mapping-spec.md](./servo-installer/contracts/deploy-mapping-spec.md)
 4. [servo-installer/contracts/aw-runtime-upgrade-contract.md](./servo-installer/contracts/aw-runtime-upgrade-contract.md)
-5. [servo-installer/contracts/payload-provenance-trust-boundary.md](./servo-installer/contracts/payload-provenance-trust-boundary.md)
-6. [servo-installer/contracts/version-marker-contract.md](./servo-installer/contracts/version-marker-contract.md)
-7. [servo-installer/runbooks/deploy-runbook.md](./servo-installer/runbooks/deploy-runbook.md)
-8. [servo-installer/runbooks/aw-runtime-upgrade-runbook.md](./servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
-9. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
-10. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
-11. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
-12. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
-13. [servo-installer/reference/legacy-version-handling.md](./servo-installer/reference/legacy-version-handling.md)
-14. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
-15. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
-16. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
+5. [servo-installer/contracts/aw-residue-classification-contract.md](./servo-installer/contracts/aw-residue-classification-contract.md)
+6. [servo-installer/contracts/payload-provenance-trust-boundary.md](./servo-installer/contracts/payload-provenance-trust-boundary.md)
+7. [servo-installer/contracts/version-marker-contract.md](./servo-installer/contracts/version-marker-contract.md)
+8. [servo-installer/runbooks/deploy-runbook.md](./servo-installer/runbooks/deploy-runbook.md)
+9. [servo-installer/runbooks/aw-runtime-upgrade-runbook.md](./servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
+10. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
+11. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
+12. [servo-installer/reference/managed-files-ownership.md](./servo-installer/reference/managed-files-ownership.md)
+13. [servo-installer/reference/existing-code-adoption.md](./servo-installer/reference/existing-code-adoption.md)
+14. [servo-installer/reference/legacy-version-handling.md](./servo-installer/reference/legacy-version-handling.md)
+15. [servo-installer/reference/tui-aw-runtime-migration-repro.md](./servo-installer/reference/tui-aw-runtime-migration-repro.md)
+16. [servo-installer/tui/README.md](./servo-installer/tui/README.md)
+17. [servo-installer/tui/human-cli-contract.md](./servo-installer/tui/human-cli-contract.md)
+18. [servo-installer/tui/bundle-default-contract.md](./servo-installer/tui/bundle-default-contract.md)
 
 ### 3. Harness
 
@@ -113,20 +115,21 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 33. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
 34. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
 35. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
-36. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
-37. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
-38. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
-39. [harness/catalog/README.md](./harness/catalog/README.md)
-40. [harness/catalog/supervisor.md](./harness/catalog/supervisor.md)
-41. [harness/catalog/repo.md](./harness/catalog/repo.md)
-42. [harness/catalog/worktrack.md](./harness/catalog/worktrack.md)
-43. [harness/catalog/milestone/README.md](./harness/catalog/milestone/README.md)
-44. [harness/catalog/milestone/init-milestone-skill.md](./harness/catalog/milestone/init-milestone-skill.md)
-45. [harness/catalog/milestone/milestone-status-skill.md](./harness/catalog/milestone/milestone-status-skill.md)
-46. [harness/catalog/skill-impact-matrix.md](./harness/catalog/skill-impact-matrix.md)
-47. [harness/workflow-families/README.md](./harness/workflow-families/README.md)
-48. [harness/workflow-families/repo-evolution/README.md](./harness/workflow-families/repo-evolution/README.md)
-49. [harness/workflow-families/repo-evolution/append-request-routing.md](./harness/workflow-families/repo-evolution/append-request-routing.md)
+36. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
+37. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
+38. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
+39. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
+40. [harness/catalog/README.md](./harness/catalog/README.md)
+41. [harness/catalog/supervisor.md](./harness/catalog/supervisor.md)
+42. [harness/catalog/repo.md](./harness/catalog/repo.md)
+43. [harness/catalog/worktrack.md](./harness/catalog/worktrack.md)
+44. [harness/catalog/milestone/README.md](./harness/catalog/milestone/README.md)
+45. [harness/catalog/milestone/init-milestone-skill.md](./harness/catalog/milestone/init-milestone-skill.md)
+46. [harness/catalog/milestone/milestone-status-skill.md](./harness/catalog/milestone/milestone-status-skill.md)
+47. [harness/catalog/skill-impact-matrix.md](./harness/catalog/skill-impact-matrix.md)
+48. [harness/workflow-families/README.md](./harness/workflow-families/README.md)
+49. [harness/workflow-families/repo-evolution/README.md](./harness/workflow-families/repo-evolution/README.md)
+50. [harness/workflow-families/repo-evolution/append-request-routing.md](./harness/workflow-families/repo-evolution/append-request-routing.md)
 
 ### Retained Historical References
 

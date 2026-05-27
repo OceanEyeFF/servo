@@ -1,9 +1,9 @@
 ---
 title: "Legacy .aw Runtime 升级手册"
 status: active
-updated: 2026-05-26
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-05-27
 ---
 # Legacy .aw Runtime 升级手册
 
@@ -46,6 +46,28 @@ servo-installer migrate-runtime --from aw --to servo --yes
 成功迁移后重复运行是安全的：sentinel 会让命令报告 `already-migrated`，而不是覆盖 `.servo/`。
 
 复制路径使用 installer-owned recursive file copying，而不是 Node 原生 `fs.cpSync`，因此 installer migration path 支持包含非 ASCII 字符的 Windows target paths。
+
+## 扫描旧 `.aw` 写回指令
+
+Runtime 迁移只能处理 `.aw/` 复制到 `.servo/` 过程中的文本 path references。它不会、也不应该自动重写目标仓库里由用户维护的设计文档、运行记录或历史 handback。迁移完成后，operator 应在目标仓库执行一次只读扫描，确认当前文档和运行产物不会继续引导 agent 或人工同步 `.aw/`。
+
+建议从目标仓库根目录运行：
+
+```bash
+rg -n --hidden --glob '!.git/**' --glob '!node_modules/**' \
+  '(\.aw/|`\.aw`|\.aw control|\.aw 控制|write.*\.aw|写.*\.aw|sync.*\.aw|同步.*\.aw|\.servo/\.aw|\.aw/\.servo)' \
+  docs .servo .agents .claude
+```
+
+如果目标仓库仍保留 `.aw/` 作为迁移源或历史归档，可单独扫描它作为参考；不要把 `.aw/` 里的旧文字当作迁移后的当前控制指令。
+
+扫描结果需要区分：
+
+- 可保留的历史说明、兼容性说明、复现记录、branch name（例如 `develop-aw`、`aw/demo-*`）和 installer deploy metadata（例如 `aw.marker`）。
+- 需要修正的当前指令：要求写入、刷新、同步或验收 `.aw/` control state 的文字。
+- 需要修正的迁移后 runtime 产物：`.servo/` 下仍写着 `.aw/.servo` 双写、同步 `.aw`、或把 `.aw` 当作当前 Harness 控制面的记录。
+
+修正时只替换当前控制面语义：把“写入/同步 `.aw/`”改成“写入/同步 `.servo/`”。不要对所有 `aw` 字符串做无差别替换，因为 branch names、legacy history 和 `aw.marker` 仍可能是正确内容。若需要留存证据，可把 `migrate-runtime` 或 TUI 的 `--log-dir .logs/servo-installer` 输出与扫描结果一起附到 issue。
 
 ## 执行迁移并刷新已安装 Skills
 

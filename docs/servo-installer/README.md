@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Documentation"
 status: active
-updated: 2026-05-23
+updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-23
+last_verified: 2026-05-27
 ---
 # servo-installer Documentation
 
@@ -29,6 +29,7 @@ docs/servo-installer/
 │   ├── distribution-entrypoint-contract.md
 │   ├── deploy-mapping-spec.md
 │   ├── aw-runtime-upgrade-contract.md
+│   ├── aw-residue-classification-contract.md
 │   ├── payload-provenance-trust-boundary.md
 │   └── version-marker-contract.md
 │
@@ -41,7 +42,8 @@ docs/servo-installer/
 ├── reference/                      ← 参考与说明（explanatory）
 │   ├── managed-files-ownership.md
 │   ├── existing-code-adoption.md
-│   └── legacy-version-handling.md
+│   ├── legacy-version-handling.md
+│   └── tui-aw-runtime-migration-repro.md
 │
 └── tui/                            ← TUI 合同与实现（MS-003, MS-004）
     ├── README.md                   ← TUI 章节索引
@@ -59,6 +61,7 @@ docs/servo-installer/
 | `distribution-entrypoint-contract.md` | CLI/TUI 包装层语义、命令面合同、backend 枚举、bundle aggregate 模式 |
 | `deploy-mapping-spec.md` | canonical source → target 映射链路、最小字段、target 命名约定 |
 | `aw-runtime-upgrade-contract.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` 的安全边界 |
+| `aw-residue-classification-contract.md` | `.aw` / `aw-*` / `aw.marker` 遗留的分类、allowlist 与 remediation 判定 |
 | `payload-provenance-trust-boundary.md` | payload 来源种类、source/target root 分离、GitHub source 准入 |
 | `version-marker-contract.md` | VERSION 标记文件的位置、格式、语义和 operator 解读规则 |
 
@@ -82,6 +85,7 @@ operator 执行具体任务时使用。
 | `managed-files-ownership.md` | 文件所有权分类：installer payload / .servo/ 运行时 / deploy target / 用户自有 |
 | `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.servo/repo/discovery-input.md` 生成边界 |
 | `legacy-version-handling.md` | 0.5.x/0.6.x 兼容窗口内旧 `.aw/` runtime 和旧 `aw-*` target dirs 的处理说明；预计 0.7.x 移除 |
+| `tui-aw-runtime-migration-repro.md` | TUI first option 未触发 `.aw -> .servo` runtime migration 的 v0.5.7 复现记录、手动 Windows 步骤和旧文档残留扫描风险 |
 
 ### tui/ — TUI 合同与实现
 
@@ -118,11 +122,20 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | 理解 CLI 命令不变量 | contracts/distribution-entrypoint-contract.md |
 | 理解 canonical source 到 target 的映射 | contracts/deploy-mapping-spec.md |
 | 升级 legacy `.aw/` runtime state | runbooks/aw-runtime-upgrade-runbook.md |
+| 分类 `.aw` / `aw-*` / `aw.marker` 分发遗留 | contracts/aw-residue-classification-contract.md |
 | 理解旧版本兼容处理窗口 | reference/legacy-version-handling.md |
+| 复现 TUI `.aw -> .servo` migration 缺口 | reference/tui-aw-runtime-migration-repro.md |
 | 理解 payload 来源与信任边界 | contracts/payload-provenance-trust-boundary.md |
 | 理解版本标记的语义 | contracts/version-marker-contract.md |
 | 既有项目接入 Harness | reference/existing-code-adoption.md |
 | 理解 TUI 和 CLI 的职责边界 | tui/human-cli-contract.md |
+
+## 诊断日志
+
+- CLI 命令可加 `--log-dir <path>` 写入一份 sanitized JSON run log。
+- TUI 默认把日志写到目标仓库 `.logs/servo-installer/`，并在退出时打印具体日志文件路径。
+- 日志包含平台、shell hint、Node/npm 版本、命令参数、backend/source selector、目标 `.aw/.servo/.agents/.claude` 状态、阶段输出摘要和最终 verdict。
+- 日志不写入完整环境变量 dump；token、secret、password 等敏感参数会被 redacted。
 
 ## 与旧路径的关系
 

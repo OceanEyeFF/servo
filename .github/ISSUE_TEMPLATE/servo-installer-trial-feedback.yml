@@ -108,10 +108,10 @@ body:
     validations:
       required: true
   - type: textarea
-    id: aw_initialization
+    id: servo_initialization
     attributes:
-      label: .aw initialization result
-      description: Say whether Codex or Claude Code initialized `.servo/`, which files were created or reused, and what questions remain.
+      label: .servo initialization result
+      description: Say whether Codex or Claude Code initialized `.servo/`, whether legacy `.aw -> .servo` migration was involved, which files were created or reused, and what questions remain.
       placeholder: ".servo/goal-charter.md created; .servo/control-state.md created; baseline branch detected as main."
     validations:
       required: true

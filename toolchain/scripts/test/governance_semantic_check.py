@@ -457,6 +457,25 @@ REPO_PYTHON_COMMAND_RE = re.compile(
     r"(?:toolchain/scripts|tools|scripts/deploy_aw\.py|product/harness/skills)/"
     r")"
 )
+AW_RESIDUE_CLASSIFICATION_CONTRACT = (
+    "docs/servo-installer/contracts/aw-residue-classification-contract.md"
+)
+ADAPTER_PAYLOAD_GLOB = "product/harness/adapters/*/skills/*/payload.json"
+CANONICAL_SOURCE_MARKER_GLOB = "product/harness/skills/**/aw.marker"
+ADAPTER_SOURCE_MARKER_GLOB = "product/harness/adapters/**/aw.marker"
+AW_RESIDUE_CONTRACT_REQUIRED_TERMS = [
+    "compatibility-allowed",
+    "runtime-migration-contract",
+    "marker-identity-contract",
+    "legacy-target-dir-contract",
+    "test-fixture-only",
+    "historical-doc-only",
+    "navigation-only",
+    "remediation-required",
+    "unclassified-aw-residue",
+]
+AW_LEGACY_COMPATIBILITY_KEYS = {"legacy_target_dirs", "legacy_skill_ids"}
+AW_MARKER_COMPATIBILITY_KEYS = {"required_payload_files"}
 
 
 @dataclass
@@ -804,6 +823,92 @@ def check_agents_route_slimming_contract(repo_root: Path, report: SemanticReport
                 f"{AGENTS_ROUTE_CONTRACT_PATH}"
             )
     report.add_info("checked AGENTS route slimming contract")
+
+
+def _json_scalar_paths(value: object, path: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], object]]:
+    if isinstance(value, dict):
+        result: list[tuple[tuple[str, ...], object]] = []
+        for key, child in value.items():
+            result.extend(_json_scalar_paths(child, (*path, str(key))))
+        return result
+    if isinstance(value, list):
+        result = []
+        for index, child in enumerate(value):
+            result.extend(_json_scalar_paths(child, (*path, str(index))))
+        return result
+    return [(path, value)]
+
+
+def _json_path_label(path: tuple[str, ...]) -> str:
+    return ".".join(path) if path else "<root>"
+
+
+def check_aw_residue_classification_contract(repo_root: Path, report: SemanticReport) -> None:
+    contract_path = repo_root / AW_RESIDUE_CLASSIFICATION_CONTRACT
+    if not contract_path.exists():
+        report.add_failure(
+            f"missing .aw residue classification contract: {AW_RESIDUE_CLASSIFICATION_CONTRACT}"
+        )
+    else:
+        contract_text = contract_path.read_text(encoding="utf-8")
+        for term in AW_RESIDUE_CONTRACT_REQUIRED_TERMS:
+            if term not in contract_text:
+                report.add_failure(
+                    f".aw residue classification contract missing required term {term!r}: "
+                    f"{AW_RESIDUE_CLASSIFICATION_CONTRACT}"
+                )
+
+    checked = 0
+    for marker_path in sorted(repo_root.glob(CANONICAL_SOURCE_MARKER_GLOB)):
+        if marker_path.is_file():
+            checked += 1
+            report.add_failure(
+                "unclassified-aw-residue: canonical source must not contain runtime marker "
+                f"{to_relative_posix(marker_path, repo_root)}"
+            )
+    for marker_path in sorted(repo_root.glob(ADAPTER_SOURCE_MARKER_GLOB)):
+        if marker_path.is_file():
+            checked += 1
+            report.add_failure(
+                "unclassified-aw-residue: adapter source must not store runtime-generated marker "
+                f"{to_relative_posix(marker_path, repo_root)}"
+            )
+
+    payload_paths = sorted(repo_root.glob(ADAPTER_PAYLOAD_GLOB))
+    for payload_path in payload_paths:
+        checked += 1
+        relative_path = to_relative_posix(payload_path, repo_root)
+        try:
+            payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(f"adapter payload JSON is invalid: {relative_path}:{exc.lineno}")
+            continue
+
+        required_payload_files = payload.get("required_payload_files")
+        if not isinstance(required_payload_files, list) or "aw.marker" not in required_payload_files:
+            report.add_failure(
+                "aw-residue marker-identity-contract drift: adapter payload must declare "
+                f"runtime-generated aw.marker in required_payload_files: {relative_path}"
+            )
+
+        for json_path, scalar in _json_scalar_paths(payload):
+            if not isinstance(scalar, str):
+                continue
+            leaf_key = json_path[-2] if json_path and json_path[-1].isdigit() and len(json_path) >= 2 else json_path[-1]
+            if scalar == "aw.marker" and leaf_key not in AW_MARKER_COMPATIBILITY_KEYS:
+                report.add_failure(
+                    "unclassified-aw-residue: aw.marker is only allowed in adapter "
+                    f"required_payload_files: {relative_path}:{_json_path_label(json_path)}"
+                )
+            if re.search(r"\baw-[A-Za-z0-9_.-]+", scalar) and leaf_key not in AW_LEGACY_COMPATIBILITY_KEYS:
+                report.add_failure(
+                    "unclassified-aw-residue: legacy aw-* adapter value is only allowed in "
+                    f"legacy_target_dirs or legacy_skill_ids: {relative_path}:{_json_path_label(json_path)}"
+                )
+
+    report.add_info(
+        f"checked {checked} .aw residue classification entries and {len(payload_paths)} adapter payloads"
+    )
 
 
 def check_path_governance_docs_list_gitignore_entries(repo_root: Path, report: SemanticReport) -> None:
@@ -1465,6 +1570,7 @@ def main() -> int:
     check_repo_python_commands_are_bytecode_free(repo_root, report)
     check_root_tool_shims_disable_bytecode(repo_root, report)
     check_agents_route_slimming_contract(repo_root, report)
+    check_aw_residue_classification_contract(repo_root, report)
     check_path_governance_docs_list_gitignore_entries(repo_root, report)
     check_review_verify_docs_list_closeout_steps(repo_root, report)
     check_docs_list_closeout_cache_roots(repo_root, report)

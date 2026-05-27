@@ -4,7 +4,8 @@
   "skill_id": "milestone-status-skill",
   "canonical_dir": "product/harness/skills/milestone-status-skill",
   "canonical_paths": [
-    "product/harness/skills/milestone-status-skill/SKILL.md"
+    "product/harness/skills/milestone-status-skill/SKILL.md",
+    "product/harness/skills/milestone-status-skill/templates/composite-acceptance-report.template.md"
   ],
   "target_dir": "servo-milestone-status-skill",
   "legacy_target_dirs": [
@@ -19,6 +20,7 @@
   "reference_distribution": "copy-listed-canonical-paths",
   "required_payload_files": [
     "SKILL.md",
+    "templates/composite-acceptance-report.template.md",
     "payload.json",
     "aw.marker"
   ]
