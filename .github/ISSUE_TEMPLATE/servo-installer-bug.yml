@@ -22,8 +22,9 @@ body:
         - install
         - verify
         - update --yes
-        - Codex .aw initialization
-        - Claude Code .aw initialization
+        - Codex .servo initialization
+        - Claude Code .servo initialization
+        - legacy .aw -> .servo migration
         - documentation / operator confusion
         - other
     validations:
