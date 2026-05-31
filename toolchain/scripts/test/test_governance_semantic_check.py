@@ -39,6 +39,7 @@ from governance_semantic_check import (
     check_runtime_dispatch_profile_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
+    check_weak_doc_temporary_understanding_contract,
     check_worktrack_intake_review_contract,
     is_bytecode_free_command_excluded,
 )
@@ -1109,6 +1110,165 @@ def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semant
 
     assert any("questions_required" in item for item in report.failures)
     assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
+
+
+def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "truth_boundary",
+            "programmer confirmation",
+            "verified evidence",
+            "not Goal Charter truth",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/SKILL.md",
+            "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        ],
+        "required_payload_files": [
+            "SKILL.md",
+            "assets/repo/temporary-understanding.md",
+            "payload.json",
+            "aw.marker",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_weak_doc_temporary_understanding_contract_flags_payload_gap(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "truth_boundary",
+            "programmer confirmation",
+            "verified evidence",
+            "not Goal Charter truth",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": ["product/harness/skills/set-harness-goal-skill/SKILL.md"],
+        "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert any("missing canonical template path" in item for item in report.failures)
+    assert any("missing required template file" in item for item in report.failures)
+
+
+def test_check_weak_doc_temporary_understanding_contract_flags_truth_boundary_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "programmer confirmation",
+            "verified evidence",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
+        ],
+        "required_payload_files": ["assets/repo/temporary-understanding.md"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert any("truth_boundary" in item for item in report.failures)
+    assert any("not Goal Charter truth" in item for item in report.failures)
 
 
 def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:

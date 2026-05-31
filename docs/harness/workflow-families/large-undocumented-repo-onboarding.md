@@ -62,6 +62,8 @@ The output should state what was inspected and what was intentionally not inspec
 
 For weakly documented large repos, the initial charter is temporary and must say so.
 
+Use `product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md` as the reusable template when `set-harness-goal-skill` initializes or adopts a weak-doc repo. The generated runtime artifact should be `.servo/repo/temporary-understanding.md`, and structured handoff may refer to it as `temporary_understanding`. When using `deploy_servo.js`, automatic generation requires `--adoption-mode existing-code-adoption --weak-doc-onboarding`; plain existing-code adoption should only emit discovery input.
+
 It should include:
 
 - `observed_facts`: cited facts from the repo;
@@ -70,9 +72,18 @@ It should include:
 - `known_risks`: high-impact areas and stale or missing docs;
 - `unknowns`: questions that block confident long-term purpose;
 - `confirmation_questions`: a short list for the programmer;
-- `promotion_plan`: what must be confirmed before writing long-lived truth.
+- `programmer_decisions_required`: decisions that cannot be inferred from repo evidence;
+- `promotion_plan`: what must be confirmed before writing long-lived truth;
+- `truth_boundary`: where temporary runtime evidence may live, and where it must not be promoted;
+- `token_budget_note`: the token-cost tradeoff behind the selected discovery mode.
 
-Do not hide uncertainty by rewriting it as confident project intent.
+Do not hide uncertainty by rewriting it as confident project intent. The temporary understanding is runtime evidence, not Goal Charter truth.
+
+## Discovery Modes
+
+Use a `lightweight` mode when the repo only needs low-token orientation for a narrow safe first slice. This mode should record coverage limits and keep assumptions visible.
+
+Use a `full` mode when purpose, ownership, verification authority, or high-risk boundaries are unclear and materially affect the requested work. Full mode has higher token and time cost; if it cannot fit the current round, Servo should recommend a separate discovery milestone or worktrack instead of guessing.
 
 ## Programmer Confirmation
 
@@ -134,7 +145,7 @@ Current policy is docs-first.
 
 Current skill policy implications:
 
-- `set-harness-goal-skill`: should emit a temporary inferred charter when documentation is weak, instead of pretending to know long-lived purpose.
+- `set-harness-goal-skill`: should emit `.servo/repo/temporary-understanding.md` from `assets/repo/temporary-understanding.md` when documentation is weak, instead of pretending to know long-lived purpose.
 - `repo-status-skill`: should flag weak-doc initialization risk and stale or missing purpose evidence.
 - `repo-whats-next-skill`: should prefer discovery or intake clarification before implementation when unknowns affect scope.
 - `init-worktrack-skill`: should record unconfirmed assumptions as risks or blockers, not as accepted scope.
