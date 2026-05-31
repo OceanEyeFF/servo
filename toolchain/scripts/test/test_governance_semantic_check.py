@@ -1502,16 +1502,26 @@ def _write_runtime_artifacts(
     tmp_path: Path,
     *,
     active_milestone: str = "MS-001",
+    active_worktrack: str = "none",
     milestone_status: str = "active",
     summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
     backlog_entries: str | None = None,
     history_entries: str | None = None,
+    milestone_artifact_status: str = "active",
+    milestone_artifact_completed: int = 0,
+    milestone_artifact_total: int = 1,
+    milestone_artifact_worktrack_status: str = "planned",
+    milestone_artifact_worktrack_status_key: str = "status",
 ) -> None:
     write_doc(
         tmp_path / ".servo/control-state.md",
         "\n".join(
             [
                 "# Harness Control State",
+                "",
+                "## Active Worktrack",
+                f"- active_worktrack: {active_worktrack}",
+                "- latest_closed_worktrack: none",
                 "",
                 "## Milestone Pipeline",
                 f"- active_milestone: {active_milestone}",
@@ -1550,6 +1560,60 @@ def _write_runtime_artifacts(
     write_doc(
         tmp_path / ".servo/repo/milestone-history.md",
         "# Repo Milestone History\n\n## History Entries\n\n" + history_entries,
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-001.md",
+        "\n".join(
+            [
+                "# Test Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-001"',
+                "",
+                "## status",
+                f'status: "{milestone_artifact_status}"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-001"',
+                f'    {milestone_artifact_worktrack_status_key}: "{milestone_artifact_worktrack_status}"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                f"  total: {milestone_artifact_total}",
+                f"  completed: {milestone_artifact_completed}",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-000.md",
+        "\n".join(
+            [
+                "# Completed Test Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-000"',
+                "",
+                "## status",
+                'status: "completed"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-000"',
+                '    status: "completed"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                "  total: 1",
+                "  completed: 1",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
     )
 
 
@@ -1666,6 +1730,144 @@ def test_check_runtime_artifact_consistency_flags_history_status_in_live_backlog
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("live milestone backlog contains history status" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_completed_artifact_still_live(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        milestone_artifact_status="completed",
+        milestone_artifact_completed=1,
+        milestone_artifact_worktrack_status="completed",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("completed/superseded milestone artifact MS-001 remains live" in item for item in report.failures)
+    assert any("active_milestone MS-001 points to completed/superseded" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_worktrack_status="completed",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_active_worktrack_closed_expected_status(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_status="completed",
+        milestone_artifact_worktrack_status="completed",
+        milestone_artifact_worktrack_status_key="expected_status",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_allows_active_expected_status_completed(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_status="active",
+        milestone_artifact_worktrack_status="completed",
+        milestone_artifact_worktrack_status_key="expected_status",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_runtime_artifact_consistency_flags_completed_artifact_incomplete_progress(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_milestone="none",
+        milestone_status="none",
+        summary="planned=0 / active=0 / completed=1 / superseded=0",
+        backlog_entries="",
+        history_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-001 (done)",
+                "",
+            ]
+        ),
+        milestone_artifact_status="completed",
+        milestone_artifact_completed=0,
+        milestone_artifact_total=1,
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("completed milestone artifact MS-001 has incomplete progress 0/1" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_allows_legacy_completed_artifact_not_in_history(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        milestone_artifact_status="active",
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-LEGACY.md",
+        "\n".join(
+            [
+                "# Legacy Completed Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-LEGACY"',
+                "",
+                "## status",
+                'status: "completed"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-LEGACY"',
+                '    expected_status: "done"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                "  total: 1",
+                "  completed: 1",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_runtime_artifact_consistency_flags_live_status_in_history(
