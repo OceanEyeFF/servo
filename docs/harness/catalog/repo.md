@@ -39,6 +39,8 @@ canonical executable source：
 
 职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
 
+下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
+
 主要依赖：
 
 - Programmer request
@@ -61,6 +63,7 @@ preferred handoff fields：
 
 - `pre_milestone_intake_review`
 - `intake_status`
+- `request_summary`
 - `observed_facts`
 - `inferred_assumptions`
 - `unknowns`

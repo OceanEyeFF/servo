@@ -445,6 +445,27 @@ PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
 PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE = (
     "templates/pre-milestone-intake-review.template.md"
 )
+INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS = [
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "docs/harness/catalog/repo.md",
+]
+INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
+    *PRE_MILESTONE_INTAKE_REQUIRED_TERMS,
+    "pre_milestone_intake_review",
+    "intake_status",
+    "request_summary",
+    "ready",
+    "skipped",
+    "questions_required",
+    "blocked",
+    "missing",
+    "handback",
+    "approval",
+    "不自动 create",
+    "状态矛盾",
+    "不得把薄弱的 milestone brief 伪装成已确认",
+]
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1312,6 +1333,23 @@ def check_pre_milestone_intake_template_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} pre-milestone intake template contract sources")
 
 
+def check_init_milestone_intake_handoff_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing init-milestone intake handoff source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"init-milestone intake handoff missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} init-milestone intake handoff sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1670,6 +1708,7 @@ def main() -> int:
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
+    check_init_milestone_intake_handoff_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
