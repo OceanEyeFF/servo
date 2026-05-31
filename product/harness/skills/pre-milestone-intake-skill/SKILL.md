@@ -13,6 +13,8 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 
 本技能不创建 milestone，不写入 `.servo/milestone/`，不更新 milestone-backlog，不创建 worktrack，不修改代码，不替 programmer 确认业务目标。
 
+当需要稳定输出格式时，使用 `templates/pre-milestone-intake-review.template.md`。模板是 before-start question contract 的执行载体，必须保留事实、推断、未知项、问题、推荐答案、取舍、范围边界、验收信号、确认状态和跳过风险记录的分区。
+
 ## 何时使用
 
 以下情况应使用本技能：
@@ -44,12 +46,13 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 4. 生成 `request_summary` 和 `suggested_milestone_brief` 草案，至少包含 title、purpose、scope、non_goals、candidate worktracks、completion signals、acceptance criteria、risk flags。
 5. 执行 grill gate：
    - 优先提出 3 到 5 个最高杠杆问题；
-   - 每个问题必须说明为什么要问；
+   - 每个问题必须说明为什么要问，并写入 `why_it_matters`；
    - 每个问题必须给出 recommended answer；
    - 每个 recommended answer 必须说明取舍影响；
    - 能从 repo 查到的事实先查，不把可发现事实全部推给 programmer。
 6. 判定是否 ready：
    - 若关键 scope、non-goal、acceptance 或 risk boundary 缺失，`ready_for_init_milestone = false`；
+   - 若 high-risk trigger 命中，必须存在 `open_questions` 的明确回答或 `intake_skipped = true` 的风险接受记录；
    - 若剩余未知项不影响安全初始化，可记录 residual risk 并设置 ready；
    - 若 programmer 已确认必要问题，设置 `programmer_confirmed = true`。
 7. 输出结构化 `pre_milestone_intake_review`。
@@ -66,6 +69,9 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - 每个 open question 必须携带 recommended answer 和 tradeoff。
 - 当 high-risk trigger 命中且缺少 programmer confirmation 时，必须设置 `ready_for_init_milestone = false`。
 - 若用户明确要求跳过 intake，应记录 `intake_skipped = true`、`skip_reason` 和 `accepted_risk`，不得假装已经完成 grill gate。
+- `intake_status = ready` 只能在 `programmer_confirmed = true` 且 `ready_for_init_milestone = true` 时使用；跳过 intake 时只能使用 `intake_status = skipped`，不得同时标记为 ready。
+- `observed_facts`、`inferred_assumptions`、`unknowns` 和 `programmer_decisions_required` 必须分开写；未经 programmer 确认的推断不得进入长期 truth 或 milestone artifact 的确认字段。
+- `suggested_milestone_brief` 必须保持草案身份，直到 `init-milestone-skill` 消费已确认的 intake review 后再写入正式 milestone artifact。
 - 本技能输出的 milestone brief 是草案；只有 `init-milestone-skill` 可以写入 artifact 和 backlog。
 
 ## 预期输出
@@ -77,15 +83,18 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `Observed Facts`
 - `Inferred Assumptions`
 - `Unknowns`
+- `Programmer Decisions Required`
 - `Risk Flags`
 - `Open Questions`
 - `Recommended Answers`
 - `Scope Boundary`
 - `Non Goals`
+- `out_of_scope`
 - `Acceptance Signals`
 - `Suggested Milestone Brief`
 - `Confirmation State`
 - `Handoff To Init Milestone`
+- `Skip Record`
 
 字段至少包含：
 
@@ -94,6 +103,7 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `observed_facts`
 - `inferred_assumptions`
 - `unknowns`
+- `programmer_decisions_required`
 - `risk_flags`
 - `open_questions`
 - `recommended_answers`
@@ -108,6 +118,7 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `skip_reason`
 - `accepted_risk`
 - `handoff_to_init_milestone`
+- `template_contract_ref`
 
 ## 资源
 

@@ -1,0 +1,172 @@
+# Pre-Milestone Intake Review Template
+
+> Use this template when `pre-milestone-intake-skill` needs to organize a before-start question review before `init-milestone-skill` may create, update, or activate a milestone. This template is an output scaffold, not a long-term truth source.
+
+## Intake Status
+
+```yaml
+intake_status: "questions_required | ready | blocked | skipped"
+programmer_confirmed: false
+ready_for_init_milestone: false
+confirmation_required: true
+intake_skipped: false
+skip_reason: null
+accepted_risk: []
+template_contract_ref: "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+```
+
+## Request Summary
+
+```yaml
+request_summary: ""
+```
+
+## Observed Facts
+
+`observed_facts`:
+
+Facts must be directly supported by programmer input, repo artifacts, or explicitly cited checks.
+
+- N/A
+
+## Inferred Assumptions
+
+`inferred_assumptions`:
+
+Assumptions are model inferences. Do not write them as programmer-confirmed truth.
+
+- N/A
+
+## Unknowns
+
+`unknowns`:
+
+Unknowns are unresolved facts that could affect scope, risk, acceptance, or ownership.
+
+- N/A
+
+## Programmer Decisions Required
+
+`programmer_decisions_required`:
+
+Decisions in this section cannot be inferred by the agent. They must be confirmed by the programmer or represented as a blocked/skipped intake.
+
+```yaml
+programmer_decisions_required:
+  - id: "D1"
+    decision: ""
+    why_required: ""
+    blocks_ready: true
+```
+
+## Risk Flags
+
+```yaml
+risk_flags:
+  - id: ""
+    kind: "scope_creep | release_boundary | migration | compatibility | security | data | weak_docs | multi_repo | governance_gap | other"
+    severity: "low | medium | high"
+    description: ""
+```
+
+## Open Questions
+
+Ask only the highest-leverage questions needed before initialization. Each question must include why it matters, a recommended answer, and the tradeoff if the recommendation is wrong.
+
+```yaml
+open_questions:
+  - id: "Q1"
+    question: ""
+    why_it_matters: ""
+    recommended_answer: ""
+    tradeoff: ""
+    blocks_ready: true
+```
+
+## Recommended Answers
+
+```yaml
+recommended_answers:
+  Q1:
+    answer: ""
+    impact_if_accepted: ""
+    impact_if_rejected: ""
+```
+
+## Scope Boundary
+
+```yaml
+scope_boundary:
+  in_scope:
+    - ""
+  out_of_scope:
+    - ""
+```
+
+## Non Goals
+
+```yaml
+non_goals:
+  - ""
+```
+
+## Acceptance Signals
+
+```yaml
+acceptance_signals:
+  - ""
+```
+
+## Suggested Milestone Brief
+
+This brief is a draft. It is not a milestone artifact until `init-milestone-skill` consumes a confirmed intake review.
+
+```yaml
+suggested_milestone_brief:
+  title: ""
+  purpose: ""
+  milestone_kind: "goal-driven"
+  candidate_worktracks:
+    - worktrack_id: ""
+      title: ""
+      purpose: ""
+  completion_signals:
+    - ""
+  acceptance_criteria:
+    - ""
+  completion_threshold_pct: 100
+```
+
+## Confirmation State
+
+```yaml
+confirmation_state:
+  confirmation_required: true
+  programmer_confirmed: false
+  confirmed_answers: []
+  residual_risk: []
+```
+
+## Skip Record
+
+Use this section only when the programmer explicitly asks to skip intake and accepts the risk. A skipped intake must not be represented as ready.
+
+```yaml
+skip_record:
+  intake_skipped: false
+  skip_reason: null
+  accepted_risk: []
+  ready_for_init_milestone: false
+```
+
+## Handoff To Init Milestone
+
+```yaml
+handoff_to_init_milestone:
+  allowed: false
+  handoff_reason: ""
+  required_inputs:
+    - "programmer_confirmed = true"
+    - "ready_for_init_milestone = true"
+  blocked_by: []
+```

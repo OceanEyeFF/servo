@@ -50,10 +50,12 @@ canonical executable source：
 canonical executable source：
 
 - [../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md](../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md)
+- [../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md](../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md)
 
 当前状态：
 
 - `initial canonical executable skeleton landed`
+- `before-start question template contract landed`
 
 preferred handoff fields：
 
@@ -61,11 +63,27 @@ preferred handoff fields：
 - `intake_status`
 - `observed_facts`
 - `inferred_assumptions`
+- `unknowns`
+- `programmer_decisions_required`
+- `risk_flags`
 - `open_questions`
+- `why_it_matters`
 - `recommended_answers`
+- `recommended_answer`
+- `tradeoff`
+- `scope_boundary`
+- `out_of_scope`
+- `non_goals`
+- `acceptance_signals`
 - `suggested_milestone_brief`
+- `confirmation_required`
+- `template_contract_ref`
+- `intake_skipped`
+- `skip_reason`
+- `accepted_risk`
 - `programmer_confirmed`
 - `ready_for_init_milestone`
+- `handoff_to_init_milestone`
 
 ### 2. repo-status-skill
 

@@ -408,6 +408,43 @@ WORKTRACK_INTAKE_REVIEW_VERDICTS = [
     "adjust_worktracks",
     "blocked",
 ]
+PRE_MILESTONE_INTAKE_CONTRACT_PATHS = [
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "docs/harness/catalog/repo.md",
+]
+PRE_MILESTONE_INTAKE_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+    "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+]
+PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
+    "observed_facts",
+    "inferred_assumptions",
+    "unknowns",
+    "programmer_decisions_required",
+    "risk_flags",
+    "open_questions",
+    "why_it_matters",
+    "recommended_answer",
+    "tradeoff",
+    "recommended_answers",
+    "scope_boundary",
+    "out_of_scope",
+    "non_goals",
+    "acceptance_signals",
+    "suggested_milestone_brief",
+    "confirmation_required",
+    "programmer_confirmed",
+    "ready_for_init_milestone",
+    "intake_skipped",
+    "skip_reason",
+    "accepted_risk",
+    "handoff_to_init_milestone",
+    "template_contract_ref",
+]
+PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE = (
+    "templates/pre-milestone-intake-review.template.md"
+)
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1227,6 +1264,54 @@ def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticRepo
     report.add_info(f"checked {checked} worktrack intake review contract sources")
 
 
+def check_pre_milestone_intake_template_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in PRE_MILESTONE_INTAKE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing pre-milestone intake contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in PRE_MILESTONE_INTAKE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"pre-milestone intake template missing required term {term!r}: {relative_path}"
+                )
+
+    for relative_path in PRE_MILESTONE_INTAKE_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing pre-milestone intake payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(f"pre-milestone intake payload JSON is invalid: {relative_path}:{exc.lineno}")
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+            not in canonical_paths
+        ):
+            report.add_failure(
+                "pre-milestone intake payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "pre-milestone intake payload missing required template file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} pre-milestone intake template contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1584,6 +1669,7 @@ def main() -> int:
     check_closeout_record_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_worktrack_intake_review_contract(repo_root, report)
+    check_pre_milestone_intake_template_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
