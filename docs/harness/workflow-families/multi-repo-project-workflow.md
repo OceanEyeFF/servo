@@ -140,4 +140,4 @@ Current policy is docs-first. Existing skills can support this model if they pre
 - `init-worktrack-skill`: Worktrack Contract should identify the current execution repo and treat other repos as external dependencies unless a project coordination surface authorizes broader access.
 - `test-evidence-skill`: integration evidence must cite exact refs/releases/environments.
 
-If future work needs first-class project coordination artifacts, add them explicitly instead of overloading repo-local `.servo/`.
+If first-class project coordination artifacts are required, they must be introduced explicitly instead of overloading repo-local `.servo/`.

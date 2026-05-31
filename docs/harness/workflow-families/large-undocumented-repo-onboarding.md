@@ -132,11 +132,11 @@ This is an operational purpose, not a substitute for understanding the product.
 
 Current policy is docs-first.
 
-Expected future skill behavior:
+Current skill policy implications:
 
 - `set-harness-goal-skill`: should emit a temporary inferred charter when documentation is weak, instead of pretending to know long-lived purpose.
 - `repo-status-skill`: should flag weak-doc initialization risk and stale or missing purpose evidence.
 - `repo-whats-next-skill`: should prefer discovery or intake clarification before implementation when unknowns affect scope.
 - `init-worktrack-skill`: should record unconfirmed assumptions as risks or blockers, not as accepted scope.
 
-If this behavior becomes mandatory, add explicit artifact fields rather than overloading free-form notes.
+Mandatory enforcement requires explicit artifact fields rather than overloading free-form notes.
