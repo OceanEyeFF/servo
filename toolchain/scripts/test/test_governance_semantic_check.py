@@ -43,6 +43,7 @@ from governance_semantic_check import (
     check_worktrack_intake_review_contract,
     is_bytecode_free_command_excluded,
 )
+from runtime_artifact_consistency_simulation import SCENARIOS, run_scenario
 
 
 def write_doc(path: Path, content: str) -> None:
@@ -1868,6 +1869,21 @@ def test_check_runtime_artifact_consistency_allows_legacy_completed_artifact_not
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert report.failures == []
+
+
+def test_runtime_artifact_consistency_simulation_matches_expected_outcomes() -> None:
+    results = [run_scenario(scenario) for scenario in SCENARIOS]
+
+    assert all(result["expected_pass"] == result["actual_pass"] for result in results)
+    failures_by_id = {
+        str(result["scenario_id"]): list(result["failures"])
+        for result in results
+    }
+    assert failures_by_id["consistent-active"] == []
+    assert any("remains live as status 'active'" in item for item in failures_by_id["completed-artifact-still-live"])
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in failures_by_id["active-worktrack-closed"])
+    assert any("incomplete progress 0/1" in item for item in failures_by_id["completed-artifact-incomplete-progress"])
+    assert failures_by_id["active-expected-status-completed"] == []
 
 
 def test_check_runtime_artifact_consistency_flags_live_status_in_history(
