@@ -40,10 +40,11 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 2. 读取当前 live milestone-backlog（`.servo/repo/milestone-backlog.md`）、milestone-history（`.servo/repo/milestone-history.md`，若存在）和 control-state（`.servo/control-state.md`）获取 pipeline 上下文。
 3. 检查 `pre_milestone_intake_review`：
    - 当 milestone creation/upsert/activation 命中以下任一触发条件时，必须存在 intake review：需求模糊；release/publish/migration；数据、权限、安全、兼容性或部署边界；多 repo/跨系统；大型无文档或弱文档代码库；Harness doctrine、artifact contract、canonical skill 或 workflow family 变更。
-   - intake review 必须包含 `intake_status`、`observed_facts`、`inferred_assumptions`、`open_questions`、`recommended_answers`、`suggested_milestone_brief`、`programmer_confirmed`、`ready_for_init_milestone`。
-   - 只有 `ready_for_init_milestone == true` 且 `programmer_confirmed == true` 时，才允许继续 create / upsert / activate。
-   - 若用户明确要求跳过 intake，必须记录 `intake_skipped = true`、`skip_reason` 和 `accepted_risk`；高风险触发条件仍需要显式 programmer confirmation。
-   - intake review 缺失或未 ready 时，返回 blocked，建议先调用 `pre-milestone-intake-skill`，不得把薄弱的 milestone brief 伪装成已确认。
+   - intake review 必须包含 `intake_status`、`request_summary`、`observed_facts`、`inferred_assumptions`、`unknowns`、`programmer_decisions_required`、`risk_flags`、`open_questions`、`why_it_matters`、`recommended_answer`、`tradeoff`、`recommended_answers`、`scope_boundary`、`out_of_scope`、`non_goals`、`acceptance_signals`、`suggested_milestone_brief`、`confirmation_required`、`programmer_confirmed`、`ready_for_init_milestone`、`intake_skipped`、`skip_reason`、`accepted_risk`、`handoff_to_init_milestone` 和 `template_contract_ref`。
+   - 正常 ready handoff 的唯一可继续条件是 `intake_status == "ready"`、`ready_for_init_milestone == true`、`programmer_confirmed == true` 且 `intake_skipped == false`。
+   - `intake_status == "skipped"` 只能表示 programmer 显式接受跳过 intake 的风险；必须同时记录 `intake_skipped = true`、`skip_reason`、`accepted_risk` 和 programmer confirmation。skipped 不等同 ready；本技能不自动 create / upsert / activate，必须 handback 给 programmer 或 RepoScope.Decide 暴露 approval 状态，除非本轮输入同时携带明确的“跳过 intake 后仍允许初始化”的 programmer 授权。
+   - `intake_status == "questions_required"` 或 `intake_status == "blocked"` 时，必须返回 blocked 并建议回到 `pre-milestone-intake-skill`；不得创建、upsert 或激活 milestone。
+   - intake review 缺失、字段不全、状态矛盾（例如 skipped 同时 ready）、或未 ready 时，返回 blocked，建议先调用 `pre-milestone-intake-skill`，不得把薄弱的 milestone brief 伪装成已确认。
 4. 解析输入来源：
    - 若来自 programmer：直接使用提供的 milestone 规格
    - 若来自 harness 推理：验证规格完整性（至少包含 title、purpose），缺失关键字段时标记为规格不完整并停止
@@ -143,6 +144,8 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - append worktrack 只有在 programmer 确认其归属当前 milestone，且 `coverage_verdict` 不为 `not_covered` 时才可继续；否则必须建议其他 milestone 路径，避免静默 scope creep
 - 在 create / upsert / activate 之前必须先输出结构化 `milestone brief` 并等待 programmer 确认；brief 不是可选摘要，而是激活前约束边界
 - 高风险或模糊 milestone 在 create / upsert / activate 前必须先通过 `pre-milestone-intake-skill` 的 `pre_milestone_intake_review`；薄确认不得替代 intake review
+- `init-milestone-skill` 只消费并验证 `pre_milestone_intake_review`；不得在本技能中生成 intake 问题、补写未确认事实或把 `inferred_assumptions` 升格为 programmer-confirmed truth。
+- `intake_status = ready`、`intake_status = skipped`、`intake_status = questions_required`、`intake_status = blocked` 与 intake missing 必须有不同的 operator-facing 路由；把 skipped/questions_required/blocked/missing 归并为 ready 的行为必须返回 blocked。
 - 本技能不创建 worktrack、不触发 worktrack 初始化、不修改 version/release 状态
 
 ## 预期输出

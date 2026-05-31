@@ -24,6 +24,7 @@ from governance_semantic_check import (
     check_foundations_authority_shadows,
     check_orphan_docs,
     check_manual_runbook_agents_skill_count,
+    check_init_milestone_intake_handoff_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -1004,6 +1005,110 @@ def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path
 
     assert any("missing canonical template path" in item for item in report.failures)
     assert any("missing required template file" in item for item in report.failures)
+
+
+def test_check_init_milestone_intake_handoff_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+            "pre_milestone_intake_review",
+            "intake_status",
+            "request_summary",
+            "ready",
+            "skipped",
+            "questions_required",
+            "blocked",
+            "missing",
+            "handback",
+            "approval",
+            "不自动 create",
+            "状态矛盾",
+            "不得把薄弱的 milestone brief 伪装成已确认",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_init_milestone_intake_handoff_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semantics(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+            "pre_milestone_intake_review",
+            "intake_status",
+            "request_summary",
+            "ready",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_init_milestone_intake_handoff_contract(tmp_path, report)
+
+    assert any("questions_required" in item for item in report.failures)
+    assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
 
 
 def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:
