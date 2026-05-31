@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -25,6 +26,7 @@ from governance_semantic_check import (
     check_manual_runbook_agents_skill_count,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
+    check_pre_milestone_intake_template_contract,
     check_pull_request_template_release_evidence,
     check_repo_python_commands_are_bytecode_free,
     check_repo_whats_next_overview_fallback_contract,
@@ -890,6 +892,118 @@ def test_check_manual_runbook_agents_skill_count_flags_mismatch(tmp_path: Path) 
     check_manual_runbook_agents_skill_count(tmp_path, report)
 
     assert any("documents 2, adapter payload source has 3" in item for item in report.failures)
+
+
+def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and_payloads(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+            "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        ],
+        "required_payload_files": [
+            "SKILL.md",
+            "templates/pre-milestone-intake-review.template.md",
+            "payload.json",
+            "aw.marker",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+        "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_pre_milestone_intake_template_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path: Path) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+    payload = {
+        "canonical_paths": ["product/harness/skills/pre-milestone-intake-skill/SKILL.md"],
+        "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+        "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_pre_milestone_intake_template_contract(tmp_path, report)
+
+    assert any("missing canonical template path" in item for item in report.failures)
+    assert any("missing required template file" in item for item in report.failures)
 
 
 def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:

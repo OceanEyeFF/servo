@@ -21,6 +21,7 @@ EXPECTED_AGENTS_SKILLS = {
     "init-milestone-skill",
     "init-worktrack-skill",
     "milestone-status-skill",
+    "pre-milestone-intake-skill",
     "recover-worktrack-skill",
     "repo-append-request-skill",
     "repo-change-goal-skill",
