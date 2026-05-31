@@ -26,14 +26,43 @@ last_verified: 2026-05-08
 - Programmer goal input
 - Repo structure
 - Harness Control State 初始化模板
+- Weak-doc Temporary Understanding 模板（仅弱文档 adoption / onboarding）
 
 canonical executable source：
 
 - [../../../product/harness/skills/set-harness-goal-skill/SKILL.md](../../../product/harness/skills/set-harness-goal-skill/SKILL.md)
+- [../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md)
 
 当前状态：
 
 - `initial canonical executable skeleton landed`
+- `weak-doc temporary understanding template contract landed`
+
+preferred handoff fields：
+
+- `temporary_understanding`
+- `understanding_mode`
+- `lightweight`
+- `full`
+- `token_budget_note`
+- `token-cost tradeoff`
+- `observed_facts`
+- `inferred_purpose`
+- `operational_purpose`
+- `known_risks`
+- `unknowns`
+- `confirmation_questions`
+- `recommended_answers`
+- `programmer_decisions_required`
+- `promotion_plan`
+- `truth_boundary`
+- `programmer_confirmed`
+- `verified_evidence`
+- `programmer confirmation`
+- `verified evidence`
+- `not_goal_truth`
+- `not Goal Charter truth`
+- `--weak-doc-onboarding`
 
 ### 1. pre-milestone-intake-skill
 

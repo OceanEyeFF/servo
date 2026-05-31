@@ -466,6 +466,41 @@ INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
     "状态矛盾",
     "不得把薄弱的 milestone brief 伪装成已确认",
 ]
+WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS = [
+    "temporary-understanding.md",
+    "temporary_understanding",
+    "lightweight",
+    "full",
+    "token_budget_note",
+    "token-cost tradeoff",
+    "observed_facts",
+    "inferred_purpose",
+    "operational_purpose",
+    "known_risks",
+    "unknowns",
+    "confirmation_questions",
+    "programmer_decisions_required",
+    "promotion_plan",
+    "truth_boundary",
+    "programmer confirmation",
+    "verified evidence",
+    "not Goal Charter truth",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = (
+    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
+)
+WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1350,6 +1385,57 @@ def check_init_milestone_intake_handoff_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} init-milestone intake handoff sources")
 
 
+def check_weak_doc_temporary_understanding_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing weak-doc temporary understanding source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"weak-doc temporary understanding missing required term {term!r}: {relative_path}"
+                )
+
+    for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing weak-doc temporary understanding payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(
+                f"weak-doc temporary understanding payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH not in canonical_paths
+        ):
+            report.add_failure(
+                "weak-doc temporary understanding payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "weak-doc temporary understanding payload missing required template file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} weak-doc temporary understanding contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1709,6 +1795,7 @@ def main() -> int:
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
+    check_weak_doc_temporary_understanding_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)

@@ -240,6 +240,92 @@ const TEMPLATE_SPECS = {
       ],
     },
   }),
+  "repo-temporary-understanding": templateSpec({
+    templateId: "repo-temporary-understanding",
+    sourceRelpath: "assets/repo/temporary-understanding.md",
+    outputRelpath: "repo/temporary-understanding.md",
+    artifactType: "repo-temporary-understanding",
+    title: "Temporary Understanding",
+    instanceNote:
+      "这是 `.servo/repo/temporary-understanding.md` 的运行样例，用于弱文档 adoption / onboarding 场景记录 temporary-inferred 理解。它是 runtime evidence, not Goal Charter truth；promotion 需要 programmer confirmation 或 verified evidence，并记录 token-cost tradeoff。",
+    requiredSections: [
+      "Metadata",
+      "Mode Selection",
+      "Discovery Coverage",
+      "Observed Facts",
+      "Inferred Purpose",
+      "Operational Purpose",
+      "Known Risks",
+      "Unknowns",
+      "Confirmation Questions",
+      "Promotion Plan",
+      "Truth Boundary",
+      "Handoff",
+    ],
+    requiredKeyedFieldsBySection: {
+      Metadata: [
+        "repo",
+        "owner",
+        "updated",
+        "adoption_mode",
+        "temporary_understanding",
+        "understanding_mode",
+        "token_budget_note",
+        "source_scope",
+        "generated_by",
+        "truth_status",
+        "promotion_allowed",
+      ],
+      "Mode Selection": [
+        "selected_mode",
+        "selection_reason",
+        "lightweight_mode",
+        "full_mode",
+        "recommended_next_mode",
+      ],
+      "Observed Facts": ["observed_facts"],
+      "Inferred Purpose": [
+        "inferred_purpose",
+        "confidence",
+        "evidence_refs",
+        "competing_interpretations",
+      ],
+      "Operational Purpose": [
+        "operational_purpose",
+        "safe_first_slice",
+        "allowed_until_confirmed",
+        "not_allowed_until_confirmed",
+      ],
+      "Known Risks": [
+        "known_risks",
+        "high_risk_paths",
+        "stale_or_missing_docs",
+        "verification_risks",
+      ],
+      Unknowns: ["unknowns", "blockers", "assumptions_that_must_not_be_promoted"],
+      "Confirmation Questions": [
+        "confirmation_questions",
+        "recommended_answers",
+        "impact_if_wrong",
+        "programmer_decisions_required",
+      ],
+      "Promotion Plan": [
+        "promotion_plan",
+        "promotable_now",
+        "needs_programmer_confirmation",
+        "needs_verified_evidence",
+        "forbidden_promotion_targets",
+      ],
+      "Truth Boundary": [
+        "truth_boundary",
+        "long_lived_truth_targets",
+        "runtime_evidence_targets",
+        "goal_charter_promotion_rule",
+        "docs_promotion_rule",
+      ],
+      Handoff: ["recommended_next_route", "handoff_summary", "required_context_for_next_step"],
+    },
+  }),
   "worktrack-contract": templateSpec({
     templateId: "worktrack-contract",
     sourceRelpath: "assets/worktrack/contract.md",
@@ -456,6 +542,7 @@ const PROFILE_STATIC_ASSETS = {
 const LINKED_PATH_FIELDS = {
   repo_snapshot: "repo-snapshot-status",
   repo_analysis: "repo-analysis",
+  temporary_understanding: "repo-temporary-understanding",
   worktrack_contract: "worktrack-contract",
   plan_task_queue: "worktrack-plan-task-queue",
   gate_evidence: "worktrack-gate-evidence",
@@ -496,6 +583,7 @@ function usage() {
     "Examples:",
     "  node deploy_servo.js validate",
     "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --owner servo-kernel",
+    "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --adoption-mode existing-code-adoption --weak-doc-onboarding",
     "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --install-claude-skill",
     "  node deploy_servo.js install-claude-skill --deploy-path \"$DEPLOY_PATH\"",
   ].join("\n");
@@ -530,6 +618,7 @@ function parseArgs(argv) {
     installClaudeSkill: false,
     noStaticAssets: false,
     adoptionMode: "new-goal-initialization",
+    weakDocOnboarding: false,
     repo: undefined,
     owner: undefined,
     updated: todayLocalIsoDate(),
@@ -558,6 +647,7 @@ function parseArgs(argv) {
     else if (token === "--install-claude-skill") args.installClaudeSkill = true;
     else if (token === "--no-static-assets") args.noStaticAssets = true;
     else if (token === "--adoption-mode") args.adoptionMode = nextValue();
+    else if (token === "--weak-doc-onboarding") args.weakDocOnboarding = true;
     else if (token === "--repo") args.repo = nextValue();
     else if (token === "--owner") args.owner = nextValue();
     else if (token === "--updated") args.updated = nextValue();
@@ -578,6 +668,9 @@ function parseArgs(argv) {
   }
   if (!["new-goal-initialization", "existing-code-adoption"].includes(args.adoptionMode)) {
     throw new DeployAwError(`unsupported adoption mode: ${args.adoptionMode}`);
+  }
+  if (args.weakDocOnboarding && args.adoptionMode !== "existing-code-adoption") {
+    throw new DeployAwError("--weak-doc-onboarding requires --adoption-mode existing-code-adoption");
   }
   return args;
 }
@@ -606,6 +699,16 @@ function resolveSelectedSpecs(args) {
   ) {
     const insertAt = templateIds.indexOf("repo-snapshot-status");
     templateIds.splice(insertAt >= 0 ? insertAt : 0, 0, "repo-discovery-input");
+  }
+  if (
+    args.mode === "generate" &&
+    args.adoptionMode === "existing-code-adoption" &&
+    args.weakDocOnboarding &&
+    !args.template.length &&
+    !templateIds.includes("repo-temporary-understanding")
+  ) {
+    const insertAt = templateIds.indexOf("repo-analysis");
+    templateIds.splice(insertAt >= 0 ? insertAt : templateIds.length, 0, "repo-temporary-understanding");
   }
 
   const seen = new Set();
@@ -800,6 +903,12 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     owner: args.owner || placeholder("owner"),
     updated: args.updated,
     adoption_mode: args.adoptionMode,
+    understanding_mode: placeholder("lightweight_or_full"),
+    token_budget_note: "lightweight is low-token and quick; full is deeper and may require a separate discovery milestone or worktrack",
+    source_scope: placeholder("source_scope"),
+    generated_by: "set-harness-goal-skill",
+    truth_status: "temporary-inferred",
+    promotion_allowed: "false",
     repository_path: args.deployPath || placeholder("repository_path"),
     baseline_branch: args.baselineBranch || placeholder("baseline_branch"),
     baseline_ref: placeholder("baseline_ref"),
