@@ -31,7 +31,10 @@
 - `gate-skill`
 - `generic-worker-skill`
 - `harness-skill`
+- `init-milestone-skill`
 - `init-worktrack-skill`
+- `milestone-status-skill`
+- `pre-milestone-intake-skill`
 - `recover-worktrack-skill`
 - `repo-append-request-skill`
 - `repo-change-goal-skill`

@@ -1,9 +1,9 @@
 ---
 title: "Branch / PR 治理规则"
 status: active
-updated: 2026-05-20
+updated: 2026-06-01
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-01
 ---
 # Branch / PR 治理规则
 
@@ -30,7 +30,7 @@ Decision time: 2026-04-25
 
 变更必须通过 PR 提交，target 来自 Worktrack Contract 的 `baseline_branch`（合同缺失时用 `origin/HEAD` 解析后补齐或阻断收尾）；PR 必须包含变更摘要、验证结果与风险说明，默认遵循 `.github/pull_request_template.md`。
 
-`develop-main -> master` release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。发布型 PR 打开或更新前必须确认：
+发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 `v0.6.0-rc.0` 发布周期使用 `develop -> master`，且 `develop-servo` 只作为 Harness 更新分支。发布型 PR 打开或更新前必须确认：
 
 - root `package.json`、`toolchain/scripts/deploy/package.json`、approval lock、CLI `--version` 和 PR 标题/正文中的版本一致
 - `v<package.version>` tag 不存在，npm registry 中 `servo-installer@<package.version>` 不存在
@@ -72,7 +72,7 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 
 ## 九、发布后分支同步
 
-发布后若 `doc-catch-up-worker-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把 `develop-main` fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
+发布后若 `doc-catch-up-worker-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
 
 ## 十、相关文档
 

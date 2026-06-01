@@ -408,6 +408,99 @@ WORKTRACK_INTAKE_REVIEW_VERDICTS = [
     "adjust_worktracks",
     "blocked",
 ]
+PRE_MILESTONE_INTAKE_CONTRACT_PATHS = [
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "docs/harness/catalog/repo.md",
+]
+PRE_MILESTONE_INTAKE_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+    "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+]
+PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
+    "observed_facts",
+    "inferred_assumptions",
+    "unknowns",
+    "programmer_decisions_required",
+    "risk_flags",
+    "open_questions",
+    "why_it_matters",
+    "recommended_answer",
+    "tradeoff",
+    "recommended_answers",
+    "scope_boundary",
+    "out_of_scope",
+    "non_goals",
+    "acceptance_signals",
+    "suggested_milestone_brief",
+    "confirmation_required",
+    "programmer_confirmed",
+    "ready_for_init_milestone",
+    "intake_skipped",
+    "skip_reason",
+    "accepted_risk",
+    "handoff_to_init_milestone",
+    "template_contract_ref",
+]
+PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE = (
+    "templates/pre-milestone-intake-review.template.md"
+)
+INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS = [
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "docs/harness/catalog/repo.md",
+]
+INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
+    *PRE_MILESTONE_INTAKE_REQUIRED_TERMS,
+    "pre_milestone_intake_review",
+    "intake_status",
+    "request_summary",
+    "ready",
+    "skipped",
+    "questions_required",
+    "blocked",
+    "missing",
+    "handback",
+    "approval",
+    "不自动 create",
+    "状态矛盾",
+    "不得把薄弱的 milestone brief 伪装成已确认",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS = [
+    "temporary-understanding.md",
+    "temporary_understanding",
+    "lightweight",
+    "full",
+    "token_budget_note",
+    "token-cost tradeoff",
+    "observed_facts",
+    "inferred_purpose",
+    "operational_purpose",
+    "known_risks",
+    "unknowns",
+    "confirmation_questions",
+    "programmer_decisions_required",
+    "promotion_plan",
+    "truth_boundary",
+    "programmer confirmation",
+    "verified evidence",
+    "not Goal Charter truth",
+]
+WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = (
+    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
+)
+WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1227,6 +1320,122 @@ def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticRepo
     report.add_info(f"checked {checked} worktrack intake review contract sources")
 
 
+def check_pre_milestone_intake_template_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in PRE_MILESTONE_INTAKE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing pre-milestone intake contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in PRE_MILESTONE_INTAKE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"pre-milestone intake template missing required term {term!r}: {relative_path}"
+                )
+
+    for relative_path in PRE_MILESTONE_INTAKE_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing pre-milestone intake payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(f"pre-milestone intake payload JSON is invalid: {relative_path}:{exc.lineno}")
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+            not in canonical_paths
+        ):
+            report.add_failure(
+                "pre-milestone intake payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "pre-milestone intake payload missing required template file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} pre-milestone intake template contract sources")
+
+
+def check_init_milestone_intake_handoff_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing init-milestone intake handoff source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"init-milestone intake handoff missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} init-milestone intake handoff sources")
+
+
+def check_weak_doc_temporary_understanding_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing weak-doc temporary understanding source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"weak-doc temporary understanding missing required term {term!r}: {relative_path}"
+                )
+
+    for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing weak-doc temporary understanding payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(
+                f"weak-doc temporary understanding payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH not in canonical_paths
+        ):
+            report.add_failure(
+                "weak-doc temporary understanding payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "weak-doc temporary understanding payload missing required template file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} weak-doc temporary understanding contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -1272,15 +1481,19 @@ def check_artifact_skill_alignment(repo_root: Path, report: SemanticReport) -> N
 
 def _parse_control_state(text: str) -> dict[str, str]:
     fields: dict[str, str] = {}
-    in_milestone_pipeline = False
+    current_section = ""
     for line in text.splitlines():
         if line.startswith("## "):
-            in_milestone_pipeline = line.strip() == "## Milestone Pipeline"
-            continue
-        if not in_milestone_pipeline:
+            current_section = line.removeprefix("## ").strip()
             continue
         stripped = line.strip()
-        for key in ("active_milestone", "milestone_status", "milestone_pipeline_summary"):
+        if current_section == "Milestone Pipeline":
+            keys = ("active_milestone", "milestone_status", "milestone_pipeline_summary")
+        elif current_section == "Active Worktrack":
+            keys = ("active_worktrack", "latest_closed_worktrack")
+        else:
+            continue
+        for key in keys:
             prefix = f"- {key}:"
             if stripped.startswith(prefix):
                 fields[key] = stripped.removeprefix(prefix).strip()
@@ -1339,6 +1552,69 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
     return entries
 
 
+def _parse_milestone_artifact(text: str) -> dict[str, object]:
+    milestone: dict[str, object] = {
+        "milestone_id": "",
+        "status": "",
+        "progress_total": None,
+        "progress_completed": None,
+        "worktrack_statuses": {},
+        "worktrack_status_sources": {},
+    }
+    current_worktrack_id = ""
+    in_worktrack_list = False
+    in_progress_counter = False
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            heading = stripped.removeprefix("## ").strip()
+            in_worktrack_list = heading == "worktrack_list"
+            in_progress_counter = heading == "progress_counter"
+            current_worktrack_id = ""
+            continue
+
+        if stripped.startswith("milestone_id:") and not milestone["milestone_id"]:
+            milestone["milestone_id"] = stripped.split(":", 1)[1].strip().strip('"')
+            continue
+        if stripped.startswith("status:") and not milestone["status"]:
+            milestone["status"] = stripped.split(":", 1)[1].strip().strip('"')
+            continue
+
+        if in_worktrack_list:
+            if stripped.startswith("- worktrack_id:"):
+                current_worktrack_id = stripped.split(":", 1)[1].strip().strip('"')
+                worktrack_statuses = milestone["worktrack_statuses"]
+                assert isinstance(worktrack_statuses, dict)
+                worktrack_statuses.setdefault(current_worktrack_id, "")
+                continue
+            if current_worktrack_id and (
+                stripped.startswith("status:") or stripped.startswith("expected_status:")
+            ):
+                key = stripped.split(":", 1)[0].strip()
+                worktrack_statuses = milestone["worktrack_statuses"]
+                worktrack_status_sources = milestone["worktrack_status_sources"]
+                assert isinstance(worktrack_statuses, dict)
+                assert isinstance(worktrack_status_sources, dict)
+                worktrack_statuses[current_worktrack_id] = stripped.split(":", 1)[1].strip().strip('"')
+                worktrack_status_sources[current_worktrack_id] = key
+                continue
+
+        if in_progress_counter:
+            if stripped.startswith("total:"):
+                try:
+                    milestone["progress_total"] = int(stripped.split(":", 1)[1].strip())
+                except ValueError:
+                    milestone["progress_total"] = None
+            elif stripped.startswith("completed:"):
+                try:
+                    milestone["progress_completed"] = int(stripped.split(":", 1)[1].strip())
+                except ValueError:
+                    milestone["progress_completed"] = None
+
+    return milestone
+
+
 def _runtime_milestone_counts(
     live_entries: list[dict[str, object]],
     history_entries: list[dict[str, object]],
@@ -1362,6 +1638,7 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
         return
 
     control_path = aw_dir / "control-state.md"
+    milestone_dir = aw_dir / "milestone"
     milestone_backlog_path = aw_dir / "repo/milestone-backlog.md"
     milestone_history_path = aw_dir / "repo/milestone-history.md"
     if not control_path.exists() or not milestone_backlog_path.exists():
@@ -1420,6 +1697,38 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
                     )
     counts = _runtime_milestone_counts(live_entries, history_entries)
 
+    milestone_artifacts: dict[str, dict[str, object]] = {}
+    if milestone_dir.exists():
+        for milestone_path in sorted(milestone_dir.glob("MS-*.md")):
+            if milestone_path.name.endswith("-composite-acceptance-report.md"):
+                continue
+            milestone = _parse_milestone_artifact(milestone_path.read_text(encoding="utf-8"))
+            milestone_id = str(milestone.get("milestone_id") or milestone_path.stem)
+            if not milestone_id:
+                continue
+            milestone_artifacts[milestone_id] = milestone
+            artifact_status = str(milestone.get("status", ""))
+            entry = by_id.get(milestone_id)
+            entry_status = str(entry.get("status", "")) if entry else ""
+            if artifact_status in {"completed", "superseded"}:
+                if entry is not None and entry_status not in {"completed", "superseded"}:
+                    report.add_failure(
+                        "runtime artifact consistency: completed/superseded milestone artifact "
+                        f"{milestone_id} remains live as status {entry_status!r}; move accepted writeback to milestone-history and clear active backlog"
+                    )
+                total = milestone.get("progress_total")
+                completed = milestone.get("progress_completed")
+                if isinstance(total, int) and isinstance(completed, int) and completed < total:
+                    report.add_failure(
+                        "runtime artifact consistency: completed milestone artifact "
+                        f"{milestone_id} has incomplete progress {completed}/{total}"
+                    )
+            elif artifact_status and entry and entry_status in {"completed", "superseded"}:
+                report.add_failure(
+                    "runtime artifact consistency: milestone artifact "
+                    f"{milestone_id} status {artifact_status!r} disagrees with history status {entry_status!r}"
+                )
+
     if len(active_entries) > 1:
         report.add_failure("runtime artifact consistency: milestone backlog has multiple active milestones")
 
@@ -1441,10 +1750,43 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             report.add_failure(
                 "runtime artifact consistency: control-state milestone_status does not match active milestone"
             )
+        artifact = milestone_artifacts.get(active_milestone)
+        artifact_status = str(artifact.get("status", "")) if artifact else ""
+        if artifact_status in {"completed", "superseded"}:
+            report.add_failure(
+                "runtime artifact consistency: control-state active_milestone "
+                f"{active_milestone} points to completed/superseded milestone artifact status {artifact_status!r}"
+            )
     elif active_entries:
         report.add_failure(
             "runtime artifact consistency: milestone backlog has active milestone but control-state active_milestone is none"
         )
+
+    active_worktrack = control.get("active_worktrack", "")
+    if active_worktrack and active_worktrack != "none":
+        for milestone_id, artifact in milestone_artifacts.items():
+            worktrack_statuses = artifact.get("worktrack_statuses", {})
+            if not isinstance(worktrack_statuses, dict) or active_worktrack not in worktrack_statuses:
+                continue
+            artifact_status = str(artifact.get("status", ""))
+            worktrack_status = str(worktrack_statuses.get(active_worktrack, ""))
+            worktrack_status_sources = artifact.get("worktrack_status_sources", {})
+            worktrack_status_source = (
+                str(worktrack_status_sources.get(active_worktrack, ""))
+                if isinstance(worktrack_status_sources, dict)
+                else ""
+            )
+            worktrack_is_closed = worktrack_status in {"completed", "done"} and (
+                worktrack_status_source == "status"
+                or artifact_status in {"completed", "superseded"}
+            )
+            if artifact_status in {"completed", "superseded"} or worktrack_is_closed:
+                report.add_failure(
+                    "runtime artifact consistency: control-state active_worktrack "
+                    f"{active_worktrack} points to closed worktrack in milestone {milestone_id} "
+                    f"(milestone_status={artifact_status!r}, worktrack_status={worktrack_status!r})"
+                )
+            break
 
     summary = _parse_pipeline_summary(control.get("milestone_pipeline_summary", ""))
     if summary is None:
@@ -1584,6 +1926,9 @@ def main() -> int:
     check_closeout_record_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_worktrack_intake_review_contract(repo_root, report)
+    check_pre_milestone_intake_template_contract(repo_root, report)
+    check_init_milestone_intake_handoff_contract(repo_root, report)
+    check_weak_doc_temporary_understanding_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)

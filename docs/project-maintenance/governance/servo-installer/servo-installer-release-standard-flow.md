@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Standard Flow"
 status: active
-updated: 2026-05-27
+updated: 2026-06-01
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-01
 ---
 # servo-installer Release Standard Flow
 
@@ -17,13 +17,13 @@ Manages branch/merge sequence, GitHub Release creation, publish workflow observa
 
 Only start after passing Pre-Publish Governance, tuple still satisfies Channel Governance, root `package.json` has approved version+lock, and release notes are ready. If the release requires a version change, complete [Prepare Candidate Version](./servo-installer-pre-publish-governance.md#0-prepare-candidate-version) before opening or updating the release PR.
 
-For `develop-main -> master` release PRs, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on `develop-main`, rerun preflight, and push the correction to the PR.
+For release PRs from the approved release development branch to `master`, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on the release development branch, rerun preflight, and push the correction to the PR. The current v0.6.0-rc.0 release cycle uses `develop` as the release development branch and `develop-servo` as the Harness update branch.
 
 ## 1. Refresh Local State
 
 ```bash
 git status --short --branch
-git fetch --no-tags origin master develop-main --prune
+git fetch --no-tags origin master <release-development-branch> --prune
 git fetch --no-tags origin refs/tags/v<package.version>:refs/tags/v<package.version>
 gh release view v<package.version> --json tagName,url,isPrerelease,isDraft,name,targetCommitish,publishedAt
 npm view servo-installer@<package.version> version --json
@@ -35,18 +35,18 @@ If npm fails because the default cache path is not writable, retry the registry 
 
 ## 2. Push And Open The Merge PR
 
-If the approved candidate currently lives on a development integration branch such as `develop-aw`, first merge or fast-forward that candidate into local `develop-main` through the approved local integration path, rerun the release-prep validation that changed or depends on the merge, and confirm `develop-main` now contains the candidate tuple commit. Do not open the `develop-main -> master` release PR from a stale `develop-main` that lacks the candidate.
+If the approved candidate currently lives on a development integration branch such as `develop-servo` or a worktrack branch, first merge or fast-forward that candidate into the approved release development branch through the approved local integration path, rerun the release-prep validation that changed or depends on the merge, and confirm the release development branch now contains the candidate tuple commit. Do not open the release PR from a stale release development branch that lacks the candidate.
 
 ```bash
-git push origin develop-main
+git push origin <release-development-branch>
 ```
 
 ```bash
 gh pr create \
   --draft \
   --base master \
-  --head develop-main \
-  --title "Merge develop-main into master" \
+  --head <release-development-branch> \
+  --title "Release servo-installer v<package.version>" \
   --body "<summary, impact, and validation>"
 ```
 
@@ -69,7 +69,7 @@ git rev-parse origin/master
 
 The GitHub Release must target the merge commit on `master`.
 
-Do not target the `develop-main` head commit if GitHub created a separate merge commit. Record the PR merge commit SHA and use that exact SHA in the release command.
+Do not target the release development branch head commit if GitHub created a separate merge commit. Record the PR merge commit SHA and use that exact SHA in the release command.
 
 ## 4. Create The GitHub Release
 
@@ -130,17 +130,17 @@ The handoff must include:
 
 At minimum, review [Release Channel Governance](./servo-installer-release-channel-governance.md), [Pre-Publish Governance](./servo-installer-pre-publish-governance.md), [npx Command Test Execution](../../testing/npx-command-test-execution.md), backend usage-help pages, and root `README.md`. Update only pages whose facts changed or whose freshness is being verified in this release closeout.
 
-Post-publish registry facts must not be written into the release tag target retroactively. Commit docs fact sync on `develop-main`, open a narrow docs PR to `master`, wait for checks, then merge it.
+Post-publish registry facts must not be written into the release tag target retroactively. Commit docs fact sync on the release development branch, open a narrow docs PR to `master`, wait for checks, then merge it.
 
-## 9. Resync `develop-main`
+## 9. Resync Release Development Branch
 
-After the post-publish docs PR is merged, fast-forward `develop-main` to `origin/master` and push it so the next release starts from the published repository truth:
+After the post-publish docs PR is merged, fast-forward the release development branch to `origin/master` and push it so the next release starts from the published repository truth:
 
 ```bash
-git fetch --no-tags origin master develop-main --prune
+git fetch --no-tags origin master <release-development-branch> --prune
 git merge --ff-only origin/master
-git push origin develop-main
+git push origin <release-development-branch>
 git status --short --branch
 ```
 
-Final handback must report the release tag, publish workflow run, npm dist-tags, registry smoke result, docs PR, and final `develop-main`/`master` SHAs.
+Final handback must report the release tag, publish workflow run, npm dist-tags, registry smoke result, docs PR, and final release development branch / `master` SHAs.
