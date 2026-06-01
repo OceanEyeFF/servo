@@ -11,6 +11,7 @@
   - [doc-catch-up-worker-skill/](./doc-catch-up-worker-skill/) — 将已验证实现事实追平到正确文档层
 - 已落地的 `RepoScope` 技能骨架：
   - [set-harness-goal-skill/](./set-harness-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
+  - [pre-milestone-intake-skill/](./pre-milestone-intake-skill/) — Milestone 写入/激活前的需求核实、追问和确认 review
   - [repo-status-skill/](./repo-status-skill/) — 代码仓库状态观察
   - [repo-whats-next-skill/](./repo-whats-next-skill/) — 代码仓库下一步判断
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
@@ -61,6 +62,7 @@
 |------------------|--------------------|
 | [harness-skill/](./harness-skill/) | [docs/harness/catalog/supervisor.md](../../../docs/harness/catalog/supervisor.md) |
 | [set-harness-goal-skill/](./set-harness-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [pre-milestone-intake-skill/](./pre-milestone-intake-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-status-skill/](./repo-status-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-whats-next-skill/](./repo-whats-next-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-append-request-skill/](./repo-append-request-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |

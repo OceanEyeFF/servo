@@ -121,6 +121,7 @@ def test_node_deploy_servo_generates_existing_code_adoption_profile(tmp_path: Pa
     assert completed.returncode == 0, completed.stderr
     assert (tmp_path / ".servo" / "control-state.md").is_file()
     assert (tmp_path / ".servo" / "repo" / "discovery-input.md").is_file()
+    assert not (tmp_path / ".servo" / "repo" / "temporary-understanding.md").exists()
     assert (tmp_path / ".servo" / "template" / "goal-charter.template.md").is_file()
     discovery = (tmp_path / ".servo" / "repo" / "discovery-input.md").read_text(
         encoding="utf-8"
@@ -134,6 +135,45 @@ def test_node_deploy_servo_generates_existing_code_adoption_profile(tmp_path: Pa
     assert "- worktrack_scope: closed" in control_state
     assert "- latest_observed_checkpoint:" in control_state
     assert "- last_doc_catch_up_checkpoint:" in control_state
+
+
+def test_node_deploy_servo_generates_weak_doc_temporary_understanding_when_requested(
+    tmp_path: Path,
+) -> None:
+    completed = run_node(
+        "generate",
+        "--deploy-path",
+        str(tmp_path),
+        "--baseline-branch",
+        "main",
+        "--owner",
+        "servo-kernel",
+        "--updated",
+        "2026-05-31",
+        "--adoption-mode",
+        "existing-code-adoption",
+        "--weak-doc-onboarding",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    temp_understanding_path = tmp_path / ".servo" / "repo" / "temporary-understanding.md"
+    assert temp_understanding_path.is_file()
+    temp_understanding = temp_understanding_path.read_text(encoding="utf-8")
+    assert "temporary_understanding: repo/temporary-understanding.md" in temp_understanding
+    assert "truth_status: temporary-inferred" in temp_understanding
+    assert "not Goal Charter truth" in temp_understanding
+
+
+def test_node_deploy_servo_rejects_weak_doc_without_adoption_mode(tmp_path: Path) -> None:
+    completed = run_node(
+        "generate",
+        "--deploy-path",
+        str(tmp_path),
+        "--weak-doc-onboarding",
+    )
+
+    assert completed.returncode != 0
+    assert "--weak-doc-onboarding requires --adoption-mode existing-code-adoption" in completed.stderr
 
 
 def test_node_deploy_servo_blocks_unverified_baseline_before_writes(tmp_path: Path) -> None:

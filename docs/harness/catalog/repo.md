@@ -26,16 +26,98 @@ last_verified: 2026-05-08
 - Programmer goal input
 - Repo structure
 - Harness Control State 初始化模板
+- Weak-doc Temporary Understanding 模板（仅弱文档 adoption / onboarding）
 
 canonical executable source：
 
 - [../../../product/harness/skills/set-harness-goal-skill/SKILL.md](../../../product/harness/skills/set-harness-goal-skill/SKILL.md)
+- [../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md)
 
 当前状态：
 
 - `initial canonical executable skeleton landed`
+- `weak-doc temporary understanding template contract landed`
 
-### 1. repo-status-skill
+preferred handoff fields：
+
+- `temporary_understanding`
+- `understanding_mode`
+- `lightweight`
+- `full`
+- `token_budget_note`
+- `token-cost tradeoff`
+- `observed_facts`
+- `inferred_purpose`
+- `operational_purpose`
+- `known_risks`
+- `unknowns`
+- `confirmation_questions`
+- `recommended_answers`
+- `programmer_decisions_required`
+- `promotion_plan`
+- `truth_boundary`
+- `programmer_confirmed`
+- `verified_evidence`
+- `programmer confirmation`
+- `verified evidence`
+- `not_goal_truth`
+- `not Goal Charter truth`
+- `--weak-doc-onboarding`
+
+### 1. pre-milestone-intake-skill
+
+职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
+
+下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
+
+主要依赖：
+
+- Programmer request
+- `Repo Goal / Charter`
+- `Repo Snapshot / Status`
+- `Harness Control State`
+- live Milestone Backlog
+
+canonical executable source：
+
+- [../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md](../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md)
+- [../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md](../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md)
+
+当前状态：
+
+- `initial canonical executable skeleton landed`
+- `before-start question template contract landed`
+
+preferred handoff fields：
+
+- `pre_milestone_intake_review`
+- `intake_status`
+- `request_summary`
+- `observed_facts`
+- `inferred_assumptions`
+- `unknowns`
+- `programmer_decisions_required`
+- `risk_flags`
+- `open_questions`
+- `why_it_matters`
+- `recommended_answers`
+- `recommended_answer`
+- `tradeoff`
+- `scope_boundary`
+- `out_of_scope`
+- `non_goals`
+- `acceptance_signals`
+- `suggested_milestone_brief`
+- `confirmation_required`
+- `template_contract_ref`
+- `intake_skipped`
+- `skip_reason`
+- `accepted_risk`
+- `programmer_confirmed`
+- `ready_for_init_milestone`
+- `handoff_to_init_milestone`
+
+### 2. repo-status-skill
 
 职责：读取当前 repo 基线、汇总主线/活跃分支/治理状态/已知风险、为 harness-skill 产出格式稳定的 observation packet、并明确本轮是否足够进入下一步 repo judgment。
 
@@ -62,7 +144,7 @@ preferred handoff fields：
 - `approval_required`
 - `approval_reason`
 
-### 2. repo-whats-next-skill
+### 3. repo-whats-next-skill
 
 职责：基于当前 repo 状态判断下一步演进方向——切入 worktrack、刷新 baseline 或进入 goal change control。保留 recommended_repo_action 字段同时回写 recommended_next_route 供 supervisor 消费。可直接基于 Goal/Charter、Snapshot/Status 与 Control State 完成一轮判定，不要求先有 repo-status-skill 产物。canonical skill 保留完整 RepoScope.deciding 动作空间但 deploy profile 收窄时输出必须反映 active route boundary。Worktrack Contract 只能作为边界证据而非 repo 级任务队列。默认 next-step 偏松时启用 priority reframe/contradiction analysis 模式；完全无更新内容时启用 overview fallback 模式生成候选建议。用 Facts / Inferences / Unknowns、单一 Primary Contradiction、Top Priority Now、Do Not Do 等字段压缩判断。新鲜 Repo Analysis 可作为结构化输入但无此 artifact 时仍需直接判定。recommended_repo_action 必须投影成 recommended_next_route 等字段。overview fallback 可参考 project-dialectic-planning-skill 的 dialectical planning 方法论但必须压缩为候选建议。只返回 candidate_worktracks 与 top_candidate，不创建工作追踪，不改变 Harness 控制状态。这些模式属于 RepoScope 分析模式，不是新 skill。
 
@@ -98,7 +180,7 @@ preferred decision fields：
 - `candidate_worktracks`
 - `top_candidate`
 
-### 3. repo-append-request-skill
+### 4. repo-append-request-skill
 
 说明：在 RepoScope 下处理外部追加请求 intake，支持 append-feature、append-design 与 append-milestone 三个 mode，只做分类与路由，不执行目标变更/scope expansion/Milestone 创建/设计/实现。
 
@@ -135,7 +217,7 @@ preferred decision fields：
 - `continuation_ready`
 - `continuation_blockers`
 
-### 4. repo-change-goal-skill
+### 5. repo-change-goal-skill
 
 说明：在 RepoScope 下执行目标变更，包含分析→草案→确认→执行改写完整闭环，在当前 carrier 直接分析不再打包给 SubAgent。
 
@@ -156,7 +238,7 @@ canonical executable source：
 
 - `initial canonical executable skeleton landed`
 
-### 5. repo-refresh-skill
+### 6. repo-refresh-skill
 
 职责：在 worktrack closeout 后刷新 repo 慢变量状态，把已验证结果回收到 repo 级正式对象，只处理 repo 级 writeback 不处理 .servo/worktrack/* 维护。刷新成功后必须把当前 HEAD 写回 `Harness Control State` 的 `Baseline Traceability.latest_observed_checkpoint`，并同步 `checkpoint_ref` / `verified_at` 等观测锚点；首次刷新或字段为空时不得把空值解释为可跳过刷新。
 

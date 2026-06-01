@@ -47,6 +47,7 @@ canonical executable source：
 | Harness 推理规格 | `repo-whats-next-skill` 输出 | harness 推理的 milestone 建议 |
 | Milestone backlog | `.servo/repo/milestone-backlog.md` | 唯一性检查 + pipeline 上下文 |
 | Control state | `.servo/control-state.md` | active_milestone 状态 |
+| Pre-milestone intake review | `pre-milestone-intake-skill` 输出 | 高风险或模糊 milestone create/upsert/activate 前的 ready/skipped/blocked 交接证据 |
 
 ## 输出
 
@@ -70,6 +71,46 @@ canonical executable source：
 | override_source | string | programmer / harness / none |
 | can_proceed | boolean | 是否可继续 |
 | proceed_blockers | array | 阻止推进的因素 |
+
+## Pre-Milestone Intake Handoff
+
+`init-milestone-skill` 消费 `pre-milestone-intake-skill` 的 `pre_milestone_intake_review`，不生成 intake 问题，也不把未确认推断写成 milestone truth。
+
+必需 handoff 字段：
+
+- `intake_status`
+- `request_summary`
+- `observed_facts`
+- `inferred_assumptions`
+- `unknowns`
+- `programmer_decisions_required`
+- `risk_flags`
+- `open_questions`
+- `why_it_matters`
+- `recommended_answer`
+- `tradeoff`
+- `recommended_answers`
+- `scope_boundary`
+- `out_of_scope`
+- `non_goals`
+- `acceptance_signals`
+- `suggested_milestone_brief`
+- `confirmation_required`
+- `programmer_confirmed`
+- `ready_for_init_milestone`
+- `intake_skipped`
+- `skip_reason`
+- `accepted_risk`
+- `handoff_to_init_milestone`
+- `template_contract_ref`
+
+状态语义：
+
+- `ready`: 只有 `ready_for_init_milestone = true`、`programmer_confirmed = true` 且 `intake_skipped = false` 时才允许 create/upsert/activate。
+- `skipped`: 只能表示 programmer 显式接受跳过风险；必须记录 `skip_reason` 和 `accepted_risk`，不得伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。
+- `questions_required`: 必须返回 blocked 并路由回 `pre-milestone-intake-skill`。
+- `blocked`: 必须返回 blocked 并暴露阻断原因。
+- missing / 字段不全 / 状态矛盾：必须返回 blocked，不得把薄弱的 milestone brief 伪装成已确认。
 
 ## 激活与稳定性约定
 

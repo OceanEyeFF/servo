@@ -7,6 +7,7 @@
 - `folder_logic_check.py`：检查根目录分层、一级目录白名单、hidden/state/mount layer 例外白名单，以及 `docs/` / `toolchain/` 下的错位内容
 - `path_governance_check.py`：检查 markdown 相对链接、关键主入口、路径/文档治理回链、`docs/project-maintenance/` 与 `docs/harness/` 主线入口完整性、正文文档 frontmatter、目录状态约束和 `.gitignore` 中的关键 hidden-layer 忽略项
 - `governance_semantic_check.py`：检查关键模板是否存在、关键知识页是否回链承接模板、canonical skill 包体是否保持最小 executable shape、adapter 层是否没有重新长出错误的 wrapper 真相、foundations 权威文档是否出现影子文件、已退役的占位口径是否回流，`.aw` residue 是否能按分类合同归入 marker identity / legacy target dir / migration 兼容范围，以及 `.gitignore`、dispatch/context/review/debug/decision/closeout 合同、cache roots、manual runbook skill count 等 operator-facing 文档是否与治理脚本或 adapter source 同步
+- `runtime_artifact_consistency_simulation.py`：在临时目录模拟 milestone/backlog/control-state 的一致与不一致状态，展示 `governance_semantic_check.py` 中 runtime artifact consistency 逻辑会放行或报出的具体 failure 文本
 - `repo_analysis_contract_check.py`：检查 canonical Repo Analysis 模板 sources 是否保留 required sections 与 keyed fields，避免 `Repo Analysis` artifact 合同只停留在 prose 中
 - `scope_gate_check.py`：按 contract 中的 `in_scope` / `out_of_scope` 规则校验本轮改动是否越界
 - `servo_installer_cli/`：覆盖 `servo-installer` CLI 命令面，包含 help/version/无参、agents 与 claude 的 diagnose / update dry-run / check_paths_exist / prune / install / verify / update apply，以及 GitHub source Node-owned / unsupported 边界和 TUI 非交互保护
