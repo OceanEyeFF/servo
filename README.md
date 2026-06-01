@@ -1,9 +1,9 @@
 ---
 title: "Servo"
 status: active
-updated: 2026-05-24
+updated: 2026-06-01
 owner: servo-kernel
-last_verified: 2026-05-24
+last_verified: 2026-06-01
 ---
 # Servo
 
@@ -18,6 +18,13 @@ last_verified: 2026-05-24
 ```bash
 npx servo-installer
 npx servo-installer tui
+```
+
+测试 RC 时使用 `next` selector：
+
+```bash
+npx servo-installer@next
+npx servo-installer@next --version
 ```
 
 交互式终端中，已批准 package entrypoint 可以进入最小 TUI；CI、脚本或非交互环境应使用显式 CLI：
