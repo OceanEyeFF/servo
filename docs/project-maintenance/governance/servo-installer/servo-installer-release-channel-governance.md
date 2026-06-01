@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-05-27
+updated: 2026-06-01
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-01
 ---
 # servo-installer Release Channel Governance
 
@@ -25,15 +25,15 @@ last_verified: 2026-05-27
 
 ## 当前 source release tuple
 
-2026-05-27，`v0.5.8` source tuple 已发布到 `latest` channel：
+2026-06-01，当前 source release tuple 已准备为 `next` channel 的 RC candidate：
 
-- root `package.json` version：`0.5.8`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.5.8`
-- approval lock：`approvedVersion=0.5.8`、`approvedGitTag=v0.5.8`、`approvedChannel=latest`
-- release scope：发布 v0.5.8 migration recovery 更新，包括 TUI `.aw -> .servo` runtime migration recovery、sanitized installer logs、packaged migration regression smoke、composite milestone acceptance flow，以及 stale `.aw` control-plane instruction scan guidance。
-- publish status：GitHub Release `v0.5.8`、publish workflow、npm publish 与 `latest` dist-tag 变更均已完成。
+- root `package.json` version：`0.6.0-rc.0`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.0-rc.0`
+- approval lock：`approvedVersion=0.6.0-rc.0`、`approvedGitTag=v0.6.0-rc.0`、`approvedChannel=next`
+- release scope：发布 v0.6.0-rc.0 RC 测试版本，包含已验收 Harness 更新：pre-milestone intake 模板、init-milestone handoff hardening、weak-doc temporary understanding template、acceptance writeback consistency check 与 runtime artifact consistency simulation。
+- publish status：source candidate only；尚未创建 GitHub Release `v0.6.0-rc.0`，尚未触发 publish workflow，尚未发布 npm `servo-installer@0.6.0-rc.0`，尚未设置或移动 `next` dist-tag。
 
-注意：`0.5.8` 是 stable release；默认 `servo-installer` 在 registry 上解析到 `latest` 的 `0.5.8`。当前 npm registry 未设置 `next` dist-tag。
+注意：`0.6.0-rc.0` 是 prerelease RC；试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
 
 npm dist-tag 由 publish workflow 写入，此页跟随 release commit 同步事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
