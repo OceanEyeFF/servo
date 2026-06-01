@@ -21,6 +21,7 @@ EXPECTED_AGENTS_SKILLS = {
     "init-milestone-skill",
     "init-worktrack-skill",
     "milestone-status-skill",
+    "pre-milestone-intake-skill",
     "recover-worktrack-skill",
     "repo-append-request-skill",
     "repo-change-goal-skill",
@@ -211,6 +212,11 @@ class AgentsAdapterContractTest(unittest.TestCase):
             canonical_paths,
         )
         self.assertIn("assets/repo/analysis.md", required_payload_files)
+        self.assertIn(
+            "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+            canonical_paths,
+        )
+        self.assertIn("assets/repo/temporary-understanding.md", required_payload_files)
 
     def test_repo_whats_next_payload_includes_overview_fallback_reference(self) -> None:
         payload = load_json(

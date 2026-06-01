@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -23,8 +24,10 @@ from governance_semantic_check import (
     check_foundations_authority_shadows,
     check_orphan_docs,
     check_manual_runbook_agents_skill_count,
+    check_init_milestone_intake_handoff_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
+    check_pre_milestone_intake_template_contract,
     check_pull_request_template_release_evidence,
     check_repo_python_commands_are_bytecode_free,
     check_repo_whats_next_overview_fallback_contract,
@@ -36,9 +39,11 @@ from governance_semantic_check import (
     check_runtime_dispatch_profile_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
+    check_weak_doc_temporary_understanding_contract,
     check_worktrack_intake_review_contract,
     is_bytecode_free_command_excluded,
 )
+from runtime_artifact_consistency_simulation import SCENARIOS, run_scenario
 
 
 def write_doc(path: Path, content: str) -> None:
@@ -892,6 +897,381 @@ def test_check_manual_runbook_agents_skill_count_flags_mismatch(tmp_path: Path) 
     assert any("documents 2, adapter payload source has 3" in item for item in report.failures)
 
 
+def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and_payloads(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+            "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        ],
+        "required_payload_files": [
+            "SKILL.md",
+            "templates/pre-milestone-intake-review.template.md",
+            "payload.json",
+            "aw.marker",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+        "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_pre_milestone_intake_template_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path: Path) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+    payload = {
+        "canonical_paths": ["product/harness/skills/pre-milestone-intake-skill/SKILL.md"],
+        "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
+        "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_pre_milestone_intake_template_contract(tmp_path, report)
+
+    assert any("missing canonical template path" in item for item in report.failures)
+    assert any("missing required template file" in item for item in report.failures)
+
+
+def test_check_init_milestone_intake_handoff_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+            "pre_milestone_intake_review",
+            "intake_status",
+            "request_summary",
+            "ready",
+            "skipped",
+            "questions_required",
+            "blocked",
+            "missing",
+            "handback",
+            "approval",
+            "不自动 create",
+            "状态矛盾",
+            "不得把薄弱的 milestone brief 伪装成已确认",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_init_milestone_intake_handoff_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semantics(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "observed_facts",
+            "inferred_assumptions",
+            "unknowns",
+            "programmer_decisions_required",
+            "risk_flags",
+            "open_questions",
+            "why_it_matters",
+            "recommended_answer",
+            "tradeoff",
+            "recommended_answers",
+            "scope_boundary",
+            "out_of_scope",
+            "non_goals",
+            "acceptance_signals",
+            "suggested_milestone_brief",
+            "confirmation_required",
+            "programmer_confirmed",
+            "ready_for_init_milestone",
+            "intake_skipped",
+            "skip_reason",
+            "accepted_risk",
+            "handoff_to_init_milestone",
+            "template_contract_ref",
+            "pre_milestone_intake_review",
+            "intake_status",
+            "request_summary",
+            "ready",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_init_milestone_intake_handoff_contract(tmp_path, report)
+
+    assert any("questions_required" in item for item in report.failures)
+    assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
+
+
+def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "truth_boundary",
+            "programmer confirmation",
+            "verified evidence",
+            "not Goal Charter truth",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/SKILL.md",
+            "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        ],
+        "required_payload_files": [
+            "SKILL.md",
+            "assets/repo/temporary-understanding.md",
+            "payload.json",
+            "aw.marker",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_weak_doc_temporary_understanding_contract_flags_payload_gap(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "truth_boundary",
+            "programmer confirmation",
+            "verified evidence",
+            "not Goal Charter truth",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": ["product/harness/skills/set-harness-goal-skill/SKILL.md"],
+        "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert any("missing canonical template path" in item for item in report.failures)
+    assert any("missing required template file" in item for item in report.failures)
+
+
+def test_check_weak_doc_temporary_understanding_contract_flags_truth_boundary_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "temporary-understanding.md",
+            "temporary_understanding",
+            "lightweight",
+            "full",
+            "token_budget_note",
+            "token-cost tradeoff",
+            "observed_facts",
+            "inferred_purpose",
+            "operational_purpose",
+            "known_risks",
+            "unknowns",
+            "confirmation_questions",
+            "programmer_decisions_required",
+            "promotion_plan",
+            "programmer confirmation",
+            "verified evidence",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
+        ],
+        "required_payload_files": ["assets/repo/temporary-understanding.md"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_weak_doc_temporary_understanding_contract(tmp_path, report)
+
+    assert any("truth_boundary" in item for item in report.failures)
+    assert any("not Goal Charter truth" in item for item in report.failures)
+
+
 def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:
     source_script = Path(__file__).resolve().parent / "governance_semantic_check.py"
     write_doc(tmp_path / "governance_semantic_check.py", source_script.read_text(encoding="utf-8"))
@@ -1123,16 +1503,26 @@ def _write_runtime_artifacts(
     tmp_path: Path,
     *,
     active_milestone: str = "MS-001",
+    active_worktrack: str = "none",
     milestone_status: str = "active",
     summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
     backlog_entries: str | None = None,
     history_entries: str | None = None,
+    milestone_artifact_status: str = "active",
+    milestone_artifact_completed: int = 0,
+    milestone_artifact_total: int = 1,
+    milestone_artifact_worktrack_status: str = "planned",
+    milestone_artifact_worktrack_status_key: str = "status",
 ) -> None:
     write_doc(
         tmp_path / ".servo/control-state.md",
         "\n".join(
             [
                 "# Harness Control State",
+                "",
+                "## Active Worktrack",
+                f"- active_worktrack: {active_worktrack}",
+                "- latest_closed_worktrack: none",
                 "",
                 "## Milestone Pipeline",
                 f"- active_milestone: {active_milestone}",
@@ -1171,6 +1561,60 @@ def _write_runtime_artifacts(
     write_doc(
         tmp_path / ".servo/repo/milestone-history.md",
         "# Repo Milestone History\n\n## History Entries\n\n" + history_entries,
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-001.md",
+        "\n".join(
+            [
+                "# Test Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-001"',
+                "",
+                "## status",
+                f'status: "{milestone_artifact_status}"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-001"',
+                f'    {milestone_artifact_worktrack_status_key}: "{milestone_artifact_worktrack_status}"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                f"  total: {milestone_artifact_total}",
+                f"  completed: {milestone_artifact_completed}",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-000.md",
+        "\n".join(
+            [
+                "# Completed Test Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-000"',
+                "",
+                "## status",
+                'status: "completed"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-000"',
+                '    status: "completed"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                "  total: 1",
+                "  completed: 1",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
     )
 
 
@@ -1287,6 +1731,159 @@ def test_check_runtime_artifact_consistency_flags_history_status_in_live_backlog
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("live milestone backlog contains history status" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_completed_artifact_still_live(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        milestone_artifact_status="completed",
+        milestone_artifact_completed=1,
+        milestone_artifact_worktrack_status="completed",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("completed/superseded milestone artifact MS-001 remains live" in item for item in report.failures)
+    assert any("active_milestone MS-001 points to completed/superseded" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_worktrack_status="completed",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_active_worktrack_closed_expected_status(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_status="completed",
+        milestone_artifact_worktrack_status="completed",
+        milestone_artifact_worktrack_status_key="expected_status",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_allows_active_expected_status_completed(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        milestone_artifact_status="active",
+        milestone_artifact_worktrack_status="completed",
+        milestone_artifact_worktrack_status_key="expected_status",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_runtime_artifact_consistency_flags_completed_artifact_incomplete_progress(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_milestone="none",
+        milestone_status="none",
+        summary="planned=0 / active=0 / completed=1 / superseded=0",
+        backlog_entries="",
+        history_entries="\n".join(
+            [
+                "- milestone_id: MS-001",
+                "  - status: completed",
+                "  - acceptance:",
+                "    - verdict: accepted",
+                "  - worktrack_list:",
+                "    - WT-001 (done)",
+                "",
+            ]
+        ),
+        milestone_artifact_status="completed",
+        milestone_artifact_completed=0,
+        milestone_artifact_total=1,
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("completed milestone artifact MS-001 has incomplete progress 0/1" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_allows_legacy_completed_artifact_not_in_history(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        milestone_artifact_status="active",
+    )
+    write_doc(
+        tmp_path / ".servo/milestone/MS-LEGACY.md",
+        "\n".join(
+            [
+                "# Legacy Completed Milestone",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-LEGACY"',
+                "",
+                "## status",
+                'status: "completed"',
+                "",
+                "## worktrack_list",
+                "worktrack_list:",
+                '  - worktrack_id: "WT-LEGACY"',
+                '    expected_status: "done"',
+                "",
+                "## progress_counter",
+                "progress_counter:",
+                "  total: 1",
+                "  completed: 1",
+                "  blocked: 0",
+                "  deferred: 0",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_runtime_artifact_consistency_simulation_matches_expected_outcomes() -> None:
+    results = [run_scenario(scenario) for scenario in SCENARIOS]
+
+    assert all(result["expected_pass"] == result["actual_pass"] for result in results)
+    failures_by_id = {
+        str(result["scenario_id"]): list(result["failures"])
+        for result in results
+    }
+    assert failures_by_id["consistent-active"] == []
+    assert any("remains live as status 'active'" in item for item in failures_by_id["completed-artifact-still-live"])
+    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in failures_by_id["active-worktrack-closed"])
+    assert any("incomplete progress 0/1" in item for item in failures_by_id["completed-artifact-incomplete-progress"])
+    assert failures_by_id["active-expected-status-completed"] == []
 
 
 def test_check_runtime_artifact_consistency_flags_live_status_in_history(
