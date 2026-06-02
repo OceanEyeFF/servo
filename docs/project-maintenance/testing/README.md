@@ -13,7 +13,11 @@
 | 回归 `servo-installer` CLI/TUI 全命令面 | `toolchain/scripts/test/servo_installer_cli/` 和 `servo_installer_tui/` | CLI 覆盖 agents/claude 命令生命周期；TUI 通过 PTY 覆盖菜单交互 |
 | npm publish 前跑本地 `.tgz` package smoke | [npx-command-test-execution.md](./npx-command-test-execution.md) | 发布前 local package smoke 命令和最小通过证据 |
 | 观察 Codex 部署后 Harness 行为 | [codex-post-deploy-behavior-tests.md](./codex-post-deploy-behavior-tests.md) | 临时 repo、隔离 `.agents/skills/`、无交互 Codex 多轮 |
-| 观察 Claude Code 项目级 skill entry 和冷启动 | [claude-post-deploy-behavior-tests.md](./claude-post-deploy-behavior-tests.md) | 临时 repo、`.claude/skills/` 项目级安装、Claude 非交互读取 |
+| 观察 Claude Code 项目级 skill entry、冷启动和新功能真实 backend 行为 | [claude-post-deploy-behavior-tests.md](./claude-post-deploy-behavior-tests.md) | 临时 repo、`.claude/skills/` 项目级安装、Claude 非交互读取；影响用户实际操作路径的新功能默认补真实 Claude dogfood |
+
+## 真实 Backend Dogfood
+
+Mock、fixture、generator smoke 和单元测试只承接可重复回归层；它们不能单独证明真实 Claude Code 会按新策略工作。新功能只要影响 Harness / skill / adapter / CLI / operator runbook 等实际使用路径，closeout 前默认补 [Claude Post-Deploy Behavior Tests](./claude-post-deploy-behavior-tests.md) 证据。若不跑，closeout 必须说明不适用理由、环境阻塞或后续 Worktrack。
 
 ## 和 Deploy 文档的分工
 
