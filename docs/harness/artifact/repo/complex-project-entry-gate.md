@@ -82,6 +82,14 @@ Each question should carry `why_it_matters`, `recommended_answer`, `tradeoff`, a
 
 Scanner output is evidence, not verdict. A scanner may report thresholds, counts, patterns, confidence, or risk signals, but the gate verdict remains a structured Harness decision over observed facts, programmer confirmation, and runtime context.
 
+The canonical local scanner command is:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json
+```
+
+The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, no destructive writes, and no secret content reading.
+
 `complexity_signals` should preserve scanner thresholds and rationale so an LLM or review carrier can judge:
 
 - why the gate is applicable;

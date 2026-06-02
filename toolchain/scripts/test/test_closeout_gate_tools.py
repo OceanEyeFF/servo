@@ -793,12 +793,13 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         item["name"] == "root_npm_exec_tarball_verify_bundle"
         for item in root_tarball_smoke["subchecks"]
     )
-    assert [item["name"] for item in result["subchecks"][:11]] == [
+    assert [item["name"] for item in result["subchecks"][:12]] == [
         "root_package_version_metadata",
         "gate_tool_tests",
         "folder_logic_tests",
         "path_governance_tests",
         "governance_semantic_tests",
+        "complexity_signal_scanner_tests",
         "agents_adapter_contract_tests",
         "servo_installer_cli_tests",
         "servo_installer_tui_tests",
@@ -809,6 +810,7 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
     assert any(command[-1] == "toolchain/scripts/test/test_folder_logic_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_path_governance_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_governance_semantic_check.py" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/test_complexity_signal_scanner.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_agents_adapter_contract.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_cli" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_tui" for command in commands)

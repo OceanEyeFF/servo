@@ -496,6 +496,36 @@ COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS = [
     "autoreview",
     "yolo",
 ]
+COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
+    "toolchain/scripts/test/complexity_signal_scanner.py",
+    "toolchain/scripts/test/test_complexity_signal_scanner.py",
+    "toolchain/scripts/test/README.md",
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+]
+COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
+    "complexity_signal_scanner.py",
+    "scanner output is evidence",
+    "thresholds",
+    "complexity_signals",
+    "compose",
+    "service",
+    "package",
+    "CI",
+    "deploy",
+    "migration",
+    "debt",
+    "code",
+]
+COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS = [
+    "toolchain/scripts/test/complexity_signal_scanner.py",
+    "toolchain/scripts/test/test_complexity_signal_scanner.py",
+]
+COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
+    "no_network",
+    "no_service_start",
+    "secret_content_read",
+]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
@@ -1432,6 +1462,33 @@ def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticR
     report.add_info(f"checked {checked} complex-project entry gate sources")
 
 
+def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing complexity signal scanner source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complexity signal scanner missing required term {term!r}: {relative_path}"
+                )
+    for relative_path in COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complexity signal scanner safety missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} complexity signal scanner sources")
+
+
 def check_weak_doc_temporary_understanding_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -1976,6 +2033,7 @@ def main() -> int:
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
     check_complex_project_entry_gate_contract(repo_root, report)
+    check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)

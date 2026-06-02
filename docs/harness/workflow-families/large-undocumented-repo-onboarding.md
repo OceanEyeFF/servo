@@ -93,6 +93,8 @@ Weak-doc onboarding can trigger [Complex Project Entry Gate](../artifact/repo/co
 - `reinforcement_milestone_recommendation`: the recommended documentation or project-understanding Milestone when evidence is weak.
 - Worktrack execution modes `normal`, `autoreview`, and `yolo`: user-owned policy choices that do not bypass the gate.
 
+The local read-only scanner is `toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json`. Its JSON should expose scanner thresholds and observations for compose files, service hints, package managers, CI/deploy workflow hints, migration/data hints, debt proxy markers, and code size. The scanner must not access network, start services, execute docker/database/deploy actions, perform destructive writes, or read secret contents.
+
 When weak docs are the blocking factor, the preferred route is a reinforcement documentation / project-understanding Milestone. Temporary understanding may support that recommendation, but it must not be promoted into long-lived truth before programmer confirmation or verified evidence.
 
 ## Discovery Modes

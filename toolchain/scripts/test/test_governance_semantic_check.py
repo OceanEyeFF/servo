@@ -18,6 +18,7 @@ from governance_semantic_check import (
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
     check_complex_project_entry_gate_contract,
+    check_complexity_signal_scanner_contract,
     check_debug_evidence_contract,
     check_decision_traceability_contract,
     check_docs_list_closeout_cache_roots,
@@ -1194,6 +1195,79 @@ def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
     assert any("dialog_review_questions" in item for item in report.failures)
     assert any("reinforcement_milestone_recommendation" in item for item in report.failures)
     assert any("not fixed heavy mode" in item for item in report.failures)
+
+
+def test_check_complexity_signal_scanner_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complexity_signal_scanner.py",
+            "scanner output is evidence",
+            "thresholds",
+            "complexity_signals",
+            "compose",
+            "service",
+            "package",
+            "CI",
+            "deploy",
+            "migration",
+            "debt",
+            "code",
+            "no_network",
+            "no_service_start",
+            "secret_content_read",
+        ]
+    )
+    for relative_path in (
+        "toolchain/scripts/test/complexity_signal_scanner.py",
+        "toolchain/scripts/test/test_complexity_signal_scanner.py",
+        "toolchain/scripts/test/README.md",
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_complexity_signal_scanner_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_complexity_signal_scanner_contract_flags_missing_safety_terms(
+    tmp_path: Path,
+) -> None:
+    required_without_safety = "\n".join(
+        [
+            "complexity_signal_scanner.py",
+            "scanner output is evidence",
+            "thresholds",
+            "complexity_signals",
+            "compose",
+            "service",
+            "package",
+            "CI",
+            "deploy",
+            "migration",
+            "debt",
+            "code",
+        ]
+    )
+    for relative_path in (
+        "toolchain/scripts/test/complexity_signal_scanner.py",
+        "toolchain/scripts/test/test_complexity_signal_scanner.py",
+        "toolchain/scripts/test/README.md",
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    ):
+        write_doc(tmp_path / relative_path, required_without_safety)
+
+    report = SemanticReport()
+    check_complexity_signal_scanner_contract(tmp_path, report)
+
+    assert any("no_network" in item for item in report.failures)
+    assert any("no_service_start" in item for item in report.failures)
+    assert any("secret_content_read" in item for item in report.failures)
 
 
 def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
