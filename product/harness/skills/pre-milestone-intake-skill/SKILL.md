@@ -57,7 +57,7 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 6. 判定是否 ready：
    - 若关键 scope、non-goal、acceptance 或 risk boundary 缺失，`ready_for_init_milestone = false`；
    - 若 high-risk trigger 命中，必须存在 `open_questions` 的明确回答或 `intake_skipped = true` 的风险接受记录；
-   - 若 `complex_project_entry_gate.entry_verdict` 为 `needs_reinforcement_milestone` 或 `blocked`，`ready_for_init_milestone = false`，并通过 `reinforcement_milestone_recommendation` 建议强化文档 / project-understanding Milestone；
+   - 若 `complex_project_entry_gate.entry_verdict` 为 `needs_reinforcement_milestone` 或 `blocked`，`ready_for_init_milestone = false`，并通过结构化 `reinforcement_milestone_recommendation` 建议 reinforcement documentation / project-understanding Milestone；
    - 若剩余未知项不影响安全初始化，可记录 residual risk 并设置 ready；
    - 若 programmer 已确认必要问题，设置 `programmer_confirmed = true`。
 7. 输出结构化 `pre_milestone_intake_review`。
@@ -77,9 +77,11 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `intake_status = ready` 只能在 `programmer_confirmed = true` 且 `ready_for_init_milestone = true` 时使用；跳过 intake 时只能使用 `intake_status = skipped`，不得同时标记为 ready。
 - `observed_facts`、`inferred_assumptions`、`unknowns` 和 `programmer_decisions_required` 必须分开写；未经 programmer 确认的推断不得进入长期 truth 或 milestone artifact 的确认字段。
 - 命中 complex-project trigger 时，必须输出 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`。
+- 当 weak-doc 或 insufficient project understanding 是阻断因素时，`reinforcement_milestone_recommendation` 必须至少携带 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时不得派生 implementation-oriented Worktrack，`needed = false` 才能允许低风险 `clear` / `not_applicable` gate 继续。
 - unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, pending, or incomplete `complex_project_entry_gate` 不得被视为 clear 或 `not_applicable`；默认阻断 create/upsert/activate/derive-worktrack，直到 programmer confirmation 或 verified evidence 存在。
 - scanner output is evidence, not verdict；不得把 scanner 阈值或启发式结果直接写成 `entry_verdict` 或 milestone truth。
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode。小型低风险请求可以记录 `entry_verdict = not_applicable`，但不能因此跳过已命中的高风险安全策略必填项。
+- temporary understanding 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence，不得把 inferred purpose、owner boundary、maintenance rule 或 acceptance rule 升格为 milestone truth、Goal Charter truth 或 docs truth。
 - `suggested_milestone_brief` 必须保持草案身份，直到 `init-milestone-skill` 消费已确认的 intake review 后再写入正式 milestone artifact。
 - 本技能输出的 milestone brief 是草案；只有 `init-milestone-skill` 可以写入 artifact 和 backlog。
 

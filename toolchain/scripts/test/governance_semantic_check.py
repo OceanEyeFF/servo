@@ -505,6 +505,35 @@ COMPLEX_PROJECT_ENTRY_GATE_CONSUMER_SAFE_DEFAULT_TERMS = [
     "incomplete",
     "not_applicable",
 ]
+WEAK_DOC_REINFORCEMENT_ROUTING_CONTRACT_PATHS = [
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+]
+WEAK_DOC_REINFORCEMENT_ROUTING_TERMS = [
+    "reinforcement documentation",
+    "project-understanding",
+    "needed",
+    "recommendation_status",
+    "recommended",
+    "required",
+    "pending_operator_review",
+    "not_needed",
+    "recommendation_type",
+    "suggested_title",
+    "suggested_purpose",
+    "recommendation_reason",
+    "temporary_understanding_ref",
+    "evidence_refs",
+    "confirmation_required",
+    "blocks_implementation_until_resolved",
+]
 COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS = [
     "blocked",
     "block_",
@@ -618,6 +647,11 @@ REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
     "allowed_high_risk_command_modes: pending_programmer_confirmation",
     "entry_verdict: blocked",
     "milestone_blocking_decision: block_derive_worktrack",
+    "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
+    "needed: true",
+    "recommendation_status: pending_operator_review",
+    "recommendation_type: project_understanding",
+    "blocks_implementation_until_resolved: true",
 ]
 REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES = [
     "    - normal",
@@ -1535,6 +1569,13 @@ def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticR
                 "complex-project entry gate unresolved default must map to blocking semantics: "
                 f"{relative_path}"
             )
+        if relative_path in WEAK_DOC_REINFORCEMENT_ROUTING_CONTRACT_PATHS:
+            for term in WEAK_DOC_REINFORCEMENT_ROUTING_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "complex-project entry gate missing weak-doc reinforcement routing term "
+                        f"{term!r}: {relative_path}"
+                    )
         if relative_path == COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH:
             _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
     report.add_info(f"checked {checked} complex-project entry gate sources")
@@ -1667,6 +1708,12 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
                     report.add_failure(
                         f"repo-init complex gate template missing safe default {term!r}: "
                         f"{relative_path}"
+                    )
+            for term in WEAK_DOC_REINFORCEMENT_ROUTING_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "repo-init complex gate template missing weak-doc reinforcement routing term "
+                        f"{term!r}: {relative_path}"
                     )
             for line in REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES:
                 if line in text:

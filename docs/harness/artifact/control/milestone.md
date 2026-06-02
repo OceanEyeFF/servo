@@ -68,7 +68,7 @@ last_verified: 2026-05-27
 
 unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`；必须保持 milestone create / upsert / activate / derive-worktrack 阻断，直到 programmer confirmation 或 verified evidence 存在。
 
-当 `entry_verdict = needs_reinforcement_milestone` 或 `blocked` 时，implementation-oriented milestone 不得继续 activate 或 derive Worktrack。弱文档命中时，默认建议新增 reinforcement documentation / project-understanding milestone，而不是把未确认理解写入当前 milestone truth。
+当 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`blocks_implementation_until_resolved = true` 或 `blocked` 时，implementation-oriented milestone 不得继续 activate 或 derive Worktrack。弱文档命中时，默认建议新增 reinforcement documentation / project-understanding milestone，而不是把未确认理解写入当前 milestone truth。`reinforcement_milestone_recommendation` 至少携带 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`。
 
 Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackScope / user safety policy，不替代 Milestone-side blocker。
 

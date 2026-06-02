@@ -68,9 +68,22 @@
 
 ## Verdict
 
+> Weak-doc blockers should route to a reinforcement documentation / project-understanding Milestone before implementation-oriented Worktrack derivation.
+> Use recommendation_status not_needed only when reinforcement is not required; use recommended, required, or pending_operator_review for blocking weak-doc routes.
+
 - entry_verdict: blocked
 - milestone_blocking_decision: block_derive_worktrack
-- reinforcement_milestone_recommendation: pending_operator_review
+- reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation
+  - needed: true
+  - recommendation_status: pending_operator_review
+  - recommendation_type: project_understanding
+  - suggested_title: Reinforcement Documentation / Project Understanding
+  - suggested_purpose: Confirm repo purpose, core directories, verification authority, service boundaries, and safety policy before implementation-oriented Worktrack derivation.
+  - recommendation_reason: weak-doc or insufficient-understanding signals require programmer confirmation or verified evidence before implementation.
+  - temporary_understanding_ref: temporary-understanding.md or N/A
+  - evidence_refs:
+  - confirmation_required: true
+  - blocks_implementation_until_resolved: true
 - evidence_refs:
 
 ## Handoff

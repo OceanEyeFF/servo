@@ -109,12 +109,23 @@ complex_project_entry_gate:
     - "block_create | block_upsert | block_activate | block_derive_worktrack | allow_create | allow_upsert | allow_activate | allow_derive_worktrack"
   reinforcement_milestone_recommendation:
     needed: false
+    recommendation_status: "not_needed | recommended | required | pending_operator_review"
+    recommendation_type: "reinforcement_documentation | project_understanding | N/A"
     suggested_title: ""
-    reason: ""
+    suggested_purpose: ""
+    recommendation_reason: ""
+    temporary_understanding_ref: null
+    evidence_refs: []
+    confirmation_required: false
+    blocks_implementation_until_resolved: false
   evidence_refs: []
 ```
 
 unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, or incomplete `complex_project_entry_gate` fields must not be treated as clear or `not_applicable`. Consumers should default unresolved gate handoff to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack` or the matching blocked create/upsert/activate action until programmer confirmation or verified evidence exists.
+
+When weak docs or insufficient project understanding are the blocking factor, set `entry_verdict: needs_reinforcement_milestone`, keep implementation-oriented Worktrack derivation blocked, and populate `reinforcement_milestone_recommendation` as a structured handoff for a reinforcement documentation / project-understanding Milestone. The recommendation may reference `.servo/repo/temporary-understanding.md`, but temporary understanding remains runtime evidence only and not Goal Charter truth until programmer confirmation or verified evidence exists.
+
+Use `recommendation_status: not_needed` only when `needed: false` and `blocks_implementation_until_resolved: false`; use `recommended`, `required`, or `pending_operator_review` for blocking or unresolved weak-doc routes.
 
 ## Open Questions
 

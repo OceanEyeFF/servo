@@ -71,8 +71,13 @@ preferred handoff fields：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+- `needed`
+- `recommendation_status`
+- `recommendation_type`
+- `temporary_understanding_ref`
+- `blocks_implementation_until_resolved`
 
-Complex-project adoption handoff is a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain user-owned policy choices and do not bypass `milestone_blocking_decision`.
+Complex-project adoption handoff is a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain user-owned policy choices and do not bypass `milestone_blocking_decision`. Weak-doc reinforcement routing uses structured `reinforcement_milestone_recommendation`; `needed = true` or `blocks_implementation_until_resolved = true` routes to reinforcement documentation / project-understanding Milestone before implementation.
 
 ### 1. pre-milestone-intake-skill
 
@@ -136,6 +141,8 @@ preferred handoff fields：
 - `reinforcement_milestone_recommendation`
 
 These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
+
+When weak docs are the blocker, `reinforcement_milestone_recommendation` must be structured with `needed`, `recommendation_status`, `recommendation_type`, `suggested_title` or `suggested_purpose`, `reason` or `recommendation_reason`, `temporary_understanding_ref`, `evidence_refs`, `confirmation_required`, and `blocks_implementation_until_resolved`. `recommendation_status` values include `not_needed`, `recommended`, `required`, and `pending_operator_review`. `needed = true` or `blocks_implementation_until_resolved = true` blocks implementation-oriented Worktrack derivation; `needed = false` alone must not block a low-risk clear / `not_applicable` gate.
 
 ### 2. repo-status-skill
 
@@ -204,6 +211,7 @@ preferred decision fields：
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
 - unresolved gate blocking default
+- `blocks_implementation_until_resolved`
 
 ### 4. repo-append-request-skill
 

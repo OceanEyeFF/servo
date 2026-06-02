@@ -43,7 +43,7 @@ The gate blocks Milestone entry when the project or requested milestone is not u
 | `forbidden_before_confirmation` | Operations forbidden until programmer confirmation or reinforcement evidence exists. |
 | `entry_verdict` | `clear`, `needs_reinforcement_milestone`, `blocked`, or `not_applicable`. |
 | `milestone_blocking_decision` | Whether create / upsert / activate / derive-worktrack is allowed. |
-| `reinforcement_milestone_recommendation` | Recommended reinforcement documentation or project-understanding Milestone when evidence is weak. |
+| `reinforcement_milestone_recommendation` | Structured recommendation for a reinforcement documentation or project-understanding Milestone when evidence is weak. |
 | `evidence_refs` | Runtime artifacts, docs, commands, scanner outputs, or user confirmations supporting the verdict. |
 | `updated` | Last update timestamp. |
 
@@ -126,6 +126,20 @@ An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone
 ## Weak-Doc Routing
 
 When weak docs prevent safe implementation, Harness should recommend a reinforcement documentation or project-understanding Milestone. The recommendation is represented by `reinforcement_milestone_recommendation`.
+
+`reinforcement_milestone_recommendation` is a structured handoff, not a free-form note. It should contain:
+
+- `needed`: boolean. `true` means implementation-oriented create / activate / derive-worktrack remains blocked.
+- `recommendation_status`: `not_needed`, `recommended`, `required`, or `pending_operator_review`.
+- `recommendation_type`: `reinforcement_documentation`, `project_understanding`, or `N/A`.
+- `suggested_title` or `suggested_purpose`: enough brief content for `repo-whats-next-skill` / `init-milestone-skill` to hand back a candidate reinforcement Milestone without inventing scope.
+- `reason` or `recommendation_reason`: why weak docs or insufficient understanding block implementation.
+- `temporary_understanding_ref`: optional runtime evidence such as `.servo/repo/temporary-understanding.md`.
+- `evidence_refs`: supporting docs, scanner output, or programmer confirmations.
+- `confirmation_required`: whether programmer confirmation is still required.
+- `blocks_implementation_until_resolved`: boolean. `true` blocks implementation-oriented Worktrack derivation.
+
+If `needed = true`, `recommendation_status` is `recommended`, `required`, or `pending_operator_review`, or `blocks_implementation_until_resolved = true`, consumers must route to reinforcement documentation / project-understanding Milestone handback instead of deriving implementation-oriented Worktracks. If `needed = false`, the field alone must not block a low-risk `clear` or `not_applicable` gate.
 
 Weak-doc findings may use `.servo/repo/temporary-understanding.md` as runtime evidence, but unconfirmed inference must not be promoted into Goal Charter, docs truth, Milestone truth, or Worktrack acceptance criteria.
 

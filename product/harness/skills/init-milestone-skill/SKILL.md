@@ -54,7 +54,8 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
    - 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全的 gate 不得被解释为 clear；必须按 unresolved gate blocking default 处理。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
    - 若 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
-   - 若 `entry_verdict = needs_reinforcement_milestone`，必须建议 reinforcement documentation / project-understanding milestone，并不得把弱文档推断升格为当前 milestone truth。
+   - 若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`reinforcement_milestone_recommendation.recommendation_status = recommended|required|pending_operator_review` 或 `reinforcement_milestone_recommendation.blocks_implementation_until_resolved = true`，必须建议 reinforcement documentation / project-understanding Milestone，并不得 create/upsert/activate implementation-oriented milestone，也不得把弱文档推断升格为当前 milestone truth。
+   - `reinforcement_milestone_recommendation` 必须是结构化 handoff，至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；缺失或 placeholder 的 recommendation 不能被当作 implementation clearance。
 5. 解析输入来源：
    - 若来自 programmer：直接使用提供的 milestone 规格
    - 若来自 harness 推理：验证规格完整性（至少包含 title、purpose），缺失关键字段时标记为规格不完整并停止
@@ -159,6 +160,8 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - scanner output is evidence, not verdict；`scanner_evidence_ref` 与 `complexity_signals` 只能作为判定依据，不得替代 programmer confirmation 或 safety policy。
 - `operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation` 缺失时，必须 blocked。
 - 空白、placeholder、pending 或 incomplete `complex_project_entry_gate` 与 missing gate 等价，必须 blocked；消费者不得把 unresolved gate 当成 `clear` 或 `not_applicable`。
+- Weak-doc reinforcement routing 是 Milestone 创建/激活前的安全路由：`needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true` 时，默认 create / upsert / activate 的目标应改为 reinforcement documentation / project-understanding Milestone，不能继续实现型 Milestone；`needed = false` 且 `recommendation_status = not_needed` 不应阻断低风险 `clear` / `not_applicable` gate。
+- Temporary understanding 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence，本技能不得把其中 inferred facts 写入 milestone purpose、completion_signals、acceptance_criteria 或长期 docs truth。
 - `init-milestone-skill` 只消费并验证 `pre_milestone_intake_review`；不得在本技能中生成 intake 问题、补写未确认事实或把 `inferred_assumptions` 升格为 programmer-confirmed truth。
 - `intake_status = ready`、`intake_status = skipped`、`intake_status = questions_required`、`intake_status = blocked` 与 intake missing 必须有不同的 operator-facing 路由；把 skipped/questions_required/blocked/missing 归并为 ready 的行为必须返回 blocked。
 - 本技能不创建 worktrack、不触发 worktrack 初始化、不修改 version/release 状态
