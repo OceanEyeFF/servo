@@ -1200,6 +1200,10 @@ def run_test_gate_subchecks(repo_root: Path, python: str, version_metadata_check
             run_command([python, "-m", "pytest", "toolchain/scripts/test/test_complexity_signal_scanner.py"], cwd=repo_root),
         ),
         (
+            "set_harness_goal_e2e_fixture_tests",
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/test_set_harness_goal_e2e_fixture.py"], cwd=repo_root),
+        ),
+        (
             "agents_adapter_contract_tests",
             run_command([python, "-m", "pytest", "toolchain/scripts/test/test_agents_adapter_contract.py"], cwd=repo_root),
         ),
