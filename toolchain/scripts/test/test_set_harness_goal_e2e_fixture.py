@@ -123,7 +123,9 @@ def test_weak_doc_onboarding_generates_runtime_understanding_and_blocking_gate(
     assert "scanner_output_role: scanner output is evidence, not verdict" in complex_gate_text
     assert "entry_verdict: blocked" in complex_gate_text
     assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate_text
+    assert "needed: true" in complex_gate_text
     assert "recommendation_status: pending_operator_review" in complex_gate_text
+    assert "blocks_implementation_until_resolved: true" in complex_gate_text
     assert "temporary_understanding_ref: temporary-understanding.md" in complex_gate_text
 
 
@@ -185,4 +187,7 @@ def test_complex_fixture_scanner_evidence_and_explicit_gate_without_weak_doc(
     assert "scanner output is evidence, not verdict" in complex_gate_text
     assert "entry_verdict: blocked" in complex_gate_text
     assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate_text
+    assert "needed: false" in complex_gate_text
+    assert "recommendation_status: not_needed" in complex_gate_text
+    assert "blocks_implementation_until_resolved: false" in complex_gate_text
     assert "temporary_understanding_ref: N/A" in complex_gate_text

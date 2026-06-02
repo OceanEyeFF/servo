@@ -575,6 +575,7 @@ COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
     "no_network",
     "no_service_start",
     "secret_content_read",
+    "skipped_symlink_files",
 ]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
@@ -648,10 +649,18 @@ REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
     "entry_verdict: blocked",
     "milestone_blocking_decision: block_derive_worktrack",
     "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
-    "needed: true",
-    "recommendation_status: pending_operator_review",
-    "recommendation_type: project_understanding",
-    "blocks_implementation_until_resolved: true",
+    "needed: false",
+    "recommendation_status: not_needed",
+    "recommendation_type: N/A",
+    "blocks_implementation_until_resolved: false",
+]
+REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS = [
+    "args.weakDocOnboarding",
+    "needed: weakDocReinforcementNeeded ? \"true\" : \"false\"",
+    "recommendation_status: weakDocReinforcementNeeded",
+    "? \"pending_operator_review\"",
+    ": \"not_needed\"",
+    "blocks_implementation_until_resolved: weakDocReinforcementNeeded ? \"true\" : \"false\"",
 ]
 REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES = [
     "    - normal",
@@ -1722,6 +1731,13 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
                         f"high-risk command mode line {line.strip()!r}: {relative_path}"
                     )
             _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
+        if relative_path.endswith("scripts/deploy_servo.js"):
+            for term in REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "repo-init complex gate generator missing weak-doc override term "
+                        f"{term!r}: {relative_path}"
+                    )
 
     for relative_path in REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS:
         path = repo_root / relative_path

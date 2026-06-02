@@ -176,6 +176,9 @@ def test_node_deploy_servo_generates_weak_doc_temporary_understanding_when_reque
     assert "\n    - yolo\n" not in complex_gate
     assert "entry_verdict: blocked" in complex_gate
     assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate
+    assert "needed: true" in complex_gate
+    assert "recommendation_status: pending_operator_review" in complex_gate
+    assert "blocks_implementation_until_resolved: true" in complex_gate
     assert "temporary_understanding_ref: temporary-understanding.md" in complex_gate
 
 
@@ -212,6 +215,9 @@ def test_node_deploy_servo_generates_complex_project_gate_when_requested(
     assert "\n    - yolo\n" not in complex_gate
     assert "entry_verdict: blocked" in complex_gate
     assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate
+    assert "needed: false" in complex_gate
+    assert "recommendation_status: not_needed" in complex_gate
+    assert "blocks_implementation_until_resolved: false" in complex_gate
     assert "temporary_understanding_ref: N/A" in complex_gate
 
 

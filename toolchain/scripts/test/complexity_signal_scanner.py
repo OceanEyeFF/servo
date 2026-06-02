@@ -142,6 +142,7 @@ THRESHOLDS = {
 class RepoFile:
     path: Path
     relative_path: str
+    is_symlink: bool
 
 
 def rel_path(path: Path, repo_root: Path) -> str:
@@ -160,11 +161,18 @@ def iter_repo_files(repo_root: Path) -> Iterable[RepoFile]:
     for root_name, dirs, files in os.walk(repo_root):
         root = Path(root_name)
         dirs[:] = sorted(
-            dirname for dirname in dirs if not should_skip_dir(root / dirname)
+            dirname
+            for dirname in dirs
+            if not should_skip_dir(root / dirname)
+            and not (root / dirname).is_symlink()
         )
         for filename in sorted(files):
             path = root / filename
-            yield RepoFile(path=path, relative_path=rel_path(path, repo_root))
+            yield RepoFile(
+                path=path,
+                relative_path=rel_path(path, repo_root),
+                is_symlink=path.is_symlink(),
+            )
 
 
 def read_text_bounded(path: Path, max_bytes: int = MAX_TEXT_BYTES) -> tuple[str, bool]:
@@ -205,6 +213,7 @@ def scan_compose_file(path: Path) -> dict[str, object]:
     services: set[str] = set()
     in_services = False
     services_indent = 0
+    service_indent: int | None = None
     for line in text.splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -213,13 +222,19 @@ def scan_compose_file(path: Path) -> dict[str, object]:
         if re.match(r"^services\s*:\s*$", stripped):
             in_services = True
             services_indent = indent
+            service_indent = None
             continue
         if in_services:
             if indent <= services_indent and not stripped.startswith("-"):
                 in_services = False
+                service_indent = None
                 continue
             match = re.match(r"^([A-Za-z0-9_.-]+)\s*:\s*(?:#.*)?$", stripped)
             if match and indent > services_indent:
+                if service_indent is None:
+                    service_indent = indent
+                if indent != service_indent:
+                    continue
                 name = match.group(1)
                 if name not in {"build", "image", "ports", "volumes", "env_file", "environment"}:
                     services.add(name)
@@ -261,10 +276,17 @@ def scan_repo(repo_root: Path) -> dict[str, object]:
         raise ValueError(f"repo path is not a directory: {repo_root}")
 
     files = list(iter_repo_files(repo_root))
+    skipped_symlink_files = [item.relative_path for item in files if item.is_symlink]
     skipped_secret_like_files = [
-        item.relative_path for item in files if is_secret_like(item.relative_path)
+        item.relative_path
+        for item in files
+        if not item.is_symlink and is_secret_like(item.relative_path)
     ]
-    readable_files = [item for item in files if not is_secret_like(item.relative_path)]
+    readable_files = [
+        item
+        for item in files
+        if not item.is_symlink and not is_secret_like(item.relative_path)
+    ]
 
     compose_details: dict[str, object] = {}
     compose_paths: list[str] = []
@@ -379,6 +401,7 @@ def scan_repo(repo_root: Path) -> dict[str, object]:
             "no_destructive_writes": True,
             "secret_content_read": False,
             "skipped_secret_like_files": recorded(skipped_secret_like_files),
+            "skipped_symlink_files": recorded(skipped_symlink_files),
             "skipped_directories": sorted(SKIP_DIR_NAMES),
             "truncated_text_files": recorded(truncated_text_files),
         },

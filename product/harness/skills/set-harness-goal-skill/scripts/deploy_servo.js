@@ -1015,6 +1015,7 @@ function validateStaticAssetSource(spec) {
 }
 
 function resolveKeyedValue(key, selectedTemplateIds, args) {
+  const weakDocReinforcementNeeded = Boolean(args.weakDocOnboarding);
   const directValues = {
     repo: args.repo,
     owner: args.owner || placeholder("owner"),
@@ -1048,17 +1049,25 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     entry_verdict: "blocked",
     milestone_blocking_decision: "block_derive_worktrack",
     reinforcement_milestone_recommendation: "structured_reinforcement_milestone_recommendation",
-    needed: "true",
-    recommendation_status: "pending_operator_review",
-    recommendation_type: "project_understanding",
-    suggested_title: "Reinforcement Documentation / Project Understanding",
-    suggested_purpose: "Confirm repo purpose, core directories, verification authority, service boundaries, and safety policy before implementation-oriented Worktrack derivation.",
-    recommendation_reason: "weak-doc or insufficient-understanding signals require programmer confirmation or verified evidence before implementation.",
+    needed: weakDocReinforcementNeeded ? "true" : "false",
+    recommendation_status: weakDocReinforcementNeeded
+      ? "pending_operator_review"
+      : "not_needed",
+    recommendation_type: weakDocReinforcementNeeded ? "project_understanding" : "N/A",
+    suggested_title: weakDocReinforcementNeeded
+      ? "Reinforcement Documentation / Project Understanding"
+      : "N/A",
+    suggested_purpose: weakDocReinforcementNeeded
+      ? "Confirm repo purpose, core directories, verification authority, service boundaries, and safety policy before implementation-oriented Worktrack derivation."
+      : "N/A",
+    recommendation_reason: weakDocReinforcementNeeded
+      ? "weak-doc or insufficient-understanding signals require programmer confirmation or verified evidence before implementation."
+      : "explicit complex-project gate requested; reinforcement milestone is not required unless weak-doc or insufficient-understanding evidence is observed.",
     temporary_understanding_ref: selectedTemplateIds.has("repo-temporary-understanding")
       ? "temporary-understanding.md"
       : "N/A",
-    confirmation_required: "true",
-    blocks_implementation_until_resolved: "true",
+    confirmation_required: weakDocReinforcementNeeded ? "true" : "false",
+    blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false",
     promotion_allowed: "false",
     repository_path: args.deployPath || placeholder("repository_path"),
     baseline_branch: args.baselineBranch || placeholder("baseline_branch"),

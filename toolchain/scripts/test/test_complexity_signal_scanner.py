@@ -110,6 +110,51 @@ def test_scanner_skips_runtime_and_dependency_dirs(tmp_path: Path) -> None:
     assert observations["code_size"]["file_count"] == 1
 
 
+def test_scanner_does_not_count_nested_compose_keys_as_services(tmp_path: Path) -> None:
+    write_file(
+        tmp_path / "docker-compose.yml",
+        textwrap.dedent(
+            """\
+            services:
+              api:
+                image: busybox
+                depends_on:
+                  db:
+                    condition: service_healthy
+                logging:
+                  options:
+                    max-size: "10m"
+              db:
+                image: postgres
+            """
+        ),
+    )
+
+    result = scan_repo(tmp_path)
+
+    detail = result["observations"]["compose_details"]["docker-compose.yml"]
+    assert detail["services"] == ["api", "db"]
+    assert detail["service_count"] == 2
+    assert signal_by_id(result, "compose_services")["observed_value"] == 2
+
+
+def test_scanner_skips_symlink_files_without_reading_targets(tmp_path: Path) -> None:
+    secret_target = tmp_path / "outside-secret.txt"
+    secret_target.write_text("TODO should not be counted through symlink\n", encoding="utf-8")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    write_file(repo / "src" / "app.py", "print('counted')\n")
+    (repo / "src" / "linked.py").symlink_to(secret_target)
+
+    result = scan_repo(repo)
+
+    observations = result["observations"]
+    assert observations["code_size"]["file_count"] == 1
+    assert observations["debt_proxy_signals"]["marker_count"] == 0
+    assert result["safety"]["skipped_symlink_files"] == ["src/linked.py"]
+    assert result["safety"]["secret_content_read"] is False
+
+
 def test_scanner_cli_json_output(tmp_path: Path) -> None:
     write_file(tmp_path / "go.mod", "module demo\n")
     write_file(tmp_path / "cmd/server/main.go", "package main\n")

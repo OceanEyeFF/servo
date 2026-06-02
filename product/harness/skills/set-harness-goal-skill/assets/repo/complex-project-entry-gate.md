@@ -74,16 +74,16 @@
 - entry_verdict: blocked
 - milestone_blocking_decision: block_derive_worktrack
 - reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation
-  - needed: true
-  - recommendation_status: pending_operator_review
-  - recommendation_type: project_understanding
-  - suggested_title: Reinforcement Documentation / Project Understanding
-  - suggested_purpose: Confirm repo purpose, core directories, verification authority, service boundaries, and safety policy before implementation-oriented Worktrack derivation.
-  - recommendation_reason: weak-doc or insufficient-understanding signals require programmer confirmation or verified evidence before implementation.
+  - needed: false
+  - recommendation_status: not_needed
+  - recommendation_type: N/A
+  - suggested_title: N/A
+  - suggested_purpose: N/A
+  - recommendation_reason: explicit complex-project gate requested; reinforcement milestone is not required unless weak-doc or insufficient-understanding evidence is observed.
   - temporary_understanding_ref: temporary-understanding.md or N/A
   - evidence_refs:
-  - confirmation_required: true
-  - blocks_implementation_until_resolved: true
+  - confirmation_required: false
+  - blocks_implementation_until_resolved: false
 - evidence_refs:
 
 ## Handoff
