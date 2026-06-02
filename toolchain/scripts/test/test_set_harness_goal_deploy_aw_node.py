@@ -122,6 +122,7 @@ def test_node_deploy_servo_generates_existing_code_adoption_profile(tmp_path: Pa
     assert (tmp_path / ".servo" / "control-state.md").is_file()
     assert (tmp_path / ".servo" / "repo" / "discovery-input.md").is_file()
     assert not (tmp_path / ".servo" / "repo" / "temporary-understanding.md").exists()
+    assert not (tmp_path / ".servo" / "repo" / "complex-project-entry-gate.md").exists()
     assert (tmp_path / ".servo" / "template" / "goal-charter.template.md").is_file()
     discovery = (tmp_path / ".servo" / "repo" / "discovery-input.md").read_text(
         encoding="utf-8"
@@ -157,11 +158,71 @@ def test_node_deploy_servo_generates_weak_doc_temporary_understanding_when_reque
 
     assert completed.returncode == 0, completed.stderr
     temp_understanding_path = tmp_path / ".servo" / "repo" / "temporary-understanding.md"
+    complex_gate_path = tmp_path / ".servo" / "repo" / "complex-project-entry-gate.md"
     assert temp_understanding_path.is_file()
+    assert complex_gate_path.is_file()
     temp_understanding = temp_understanding_path.read_text(encoding="utf-8")
     assert "temporary_understanding: repo/temporary-understanding.md" in temp_understanding
     assert "truth_status: temporary-inferred" in temp_understanding
     assert "not Goal Charter truth" in temp_understanding
+    complex_gate = complex_gate_path.read_text(encoding="utf-8")
+    assert "gate_id: complex_project_entry_gate" in complex_gate
+    assert "scanner_output_role: scanner output is evidence, not verdict" in complex_gate
+    assert "gate_truth_status: runtime-evidence" in complex_gate
+    assert "trigger_conditions: pending_observed_signal_review" in complex_gate
+    assert "allowed_high_risk_command_modes: pending_programmer_confirmation" in complex_gate
+    assert "\n    - normal\n" not in complex_gate
+    assert "\n    - autoreview\n" not in complex_gate
+    assert "\n    - yolo\n" not in complex_gate
+    assert "entry_verdict: blocked" in complex_gate
+    assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate
+
+
+def test_node_deploy_servo_generates_complex_project_gate_when_requested(
+    tmp_path: Path,
+) -> None:
+    completed = run_node(
+        "generate",
+        "--deploy-path",
+        str(tmp_path),
+        "--baseline-branch",
+        "main",
+        "--owner",
+        "servo-kernel",
+        "--updated",
+        "2026-06-02",
+        "--adoption-mode",
+        "existing-code-adoption",
+        "--complex-project-entry-gate",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    complex_gate_path = tmp_path / ".servo" / "repo" / "complex-project-entry-gate.md"
+    assert complex_gate_path.is_file()
+    assert not (tmp_path / ".servo" / "repo" / "temporary-understanding.md").exists()
+    complex_gate = complex_gate_path.read_text(encoding="utf-8")
+    assert "trigger_source: repo-init" in complex_gate
+    assert "Milestone-side blocking gate, not fixed heavy mode" in complex_gate
+    assert "scanner output is evidence, not verdict" in complex_gate
+    assert "trigger_conditions: pending_observed_signal_review" in complex_gate
+    assert "allowed_high_risk_command_modes: pending_programmer_confirmation" in complex_gate
+    assert "\n    - normal\n" not in complex_gate
+    assert "\n    - autoreview\n" not in complex_gate
+    assert "\n    - yolo\n" not in complex_gate
+    assert "entry_verdict: blocked" in complex_gate
+    assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate
+
+
+def test_node_deploy_servo_rejects_complex_gate_without_adoption_mode(tmp_path: Path) -> None:
+    completed = run_node(
+        "generate",
+        "--deploy-path",
+        str(tmp_path),
+        "--complex-project-entry-gate",
+    )
+
+    assert completed.returncode != 0
+    assert "--complex-project-entry-gate requires --adoption-mode existing-code-adoption" in completed.stderr
 
 
 def test_node_deploy_servo_rejects_weak_doc_without_adoption_mode(tmp_path: Path) -> None:

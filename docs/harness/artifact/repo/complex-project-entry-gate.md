@@ -64,6 +64,8 @@ Minimum required fields:
 
 `allowed_high_risk_command_modes` may include `normal`, `autoreview`, or `yolo`, but these modes are user-owned execution policy choices. They do not make scanner output authoritative and do not bypass Milestone-side blocking when required understanding is missing.
 
+Generated or unresolved gate artifacts must not pre-authorize high-risk modes. Until the programmer confirms the policy, `operator_safety_policy` fields should remain `pending_programmer_confirmation`, and `allowed_high_risk_command_modes` must not enumerate `normal`, `autoreview`, or `yolo` as already allowed.
+
 ## Dialog Review Questions
 
 `dialog_review_questions` should stay short and high leverage. Common questions include:
@@ -118,6 +120,8 @@ The scanner output is a valid `scanner_evidence_ref` source when captured as run
 - `block_derive_worktrack`
 
 For implementation-oriented goal-driven milestones, `needs_reinforcement_milestone` and `blocked` must block activation and Worktrack derivation unless the programmer explicitly accepts a narrower safe slice whose safety boundary is documented.
+
+An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack`. A consumer must not treat missing, blank, placeholder, or pending verdict fields as clear.
 
 ## Weak-Doc Routing
 

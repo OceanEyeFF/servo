@@ -561,6 +561,48 @@ WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = (
     "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
 )
 WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
+REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/README.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+]
+REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
+    "complex-project-entry-gate.md",
+    "complex_project_entry_gate",
+    "scanner_evidence_ref",
+    "complexity_signals",
+    "operator_safety_policy",
+    "dialog_review_questions",
+    "milestone_blocking_decision",
+    "reinforcement_milestone_recommendation",
+    "repo-init",
+    "Milestone-side blocking gate",
+    "not fixed heavy mode",
+    "scanner output is evidence",
+    "weak-doc",
+]
+REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+]
+REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = (
+    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
+)
+REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE = "assets/repo/complex-project-entry-gate.md"
+REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
+    "trigger_conditions: pending_observed_signal_review",
+    "Record only observed signals in trigger_conditions",
+    "allowed_high_risk_command_modes: pending_programmer_confirmation",
+    "entry_verdict: blocked",
+    "milestone_blocking_decision: block_derive_worktrack",
+]
+REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES = [
+    "    - normal",
+    "    - autoreview",
+    "    - yolo",
+]
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1540,6 +1582,69 @@ def check_weak_doc_temporary_understanding_contract(
     report.add_info(f"checked {checked} weak-doc temporary understanding contract sources")
 
 
+def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing repo-init complex gate source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"repo-init complex gate missing required term {term!r}: {relative_path}"
+                )
+
+        if relative_path == REPO_INIT_COMPLEX_GATE_CANONICAL_PATH:
+            for term in REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        f"repo-init complex gate template missing safe default {term!r}: "
+                        f"{relative_path}"
+                    )
+            for line in REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES:
+                if line in text:
+                    report.add_failure(
+                        "repo-init complex gate template must not pre-authorize "
+                        f"high-risk command mode line {line.strip()!r}: {relative_path}"
+                    )
+
+    for relative_path in REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing repo-init complex gate payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(
+                f"repo-init complex gate payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or REPO_INIT_COMPLEX_GATE_CANONICAL_PATH not in canonical_paths
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing required template file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} repo-init complex gate contract sources")
+
+
 def _field_name_in_text(field: str, text: str) -> bool:
     """Check if a field name is referenced in text, with flexible matching."""
     if field in text:
@@ -2035,6 +2140,7 @@ def main() -> int:
     check_complex_project_entry_gate_contract(repo_root, report)
     check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
+    check_repo_init_complex_gate_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
