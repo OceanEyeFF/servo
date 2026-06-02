@@ -1520,18 +1520,25 @@ def test_check_complexity_signal_scanner_contract_accepts_required_terms(
             "code",
             "no_network",
             "no_service_start",
-            "secret_content_read",
+            "file_content_read_mode",
+            "secret_like_path_content_read",
+            "file_contents_emitted",
+            "secret_safety_note",
             "skipped_symlink_files",
         ]
     )
     for relative_path in (
-        "toolchain/scripts/test/complexity_signal_scanner.py",
+        "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
         "toolchain/scripts/test/test_complexity_signal_scanner.py",
         "toolchain/scripts/test/README.md",
         "docs/harness/artifact/repo/complex-project-entry-gate.md",
         "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
     ):
         write_doc(tmp_path / relative_path, required_text)
+    write_doc(
+        tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
+        "CANONICAL_SCANNER = 'product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py'\n",
+    )
 
     report = SemanticReport()
     check_complexity_signal_scanner_contract(tmp_path, report)
@@ -1559,20 +1566,24 @@ def test_check_complexity_signal_scanner_contract_flags_missing_safety_terms(
         ]
     )
     for relative_path in (
-        "toolchain/scripts/test/complexity_signal_scanner.py",
+        "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
         "toolchain/scripts/test/test_complexity_signal_scanner.py",
         "toolchain/scripts/test/README.md",
         "docs/harness/artifact/repo/complex-project-entry-gate.md",
         "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
     ):
         write_doc(tmp_path / relative_path, required_without_safety)
+    write_doc(
+        tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
+        "CANONICAL_SCANNER = 'product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py'\n",
+    )
 
     report = SemanticReport()
     check_complexity_signal_scanner_contract(tmp_path, report)
 
     assert any("no_network" in item for item in report.failures)
     assert any("no_service_start" in item for item in report.failures)
-    assert any("secret_content_read" in item for item in report.failures)
+    assert any("secret_like_path_content_read" in item for item in report.failures)
 
 
 def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
@@ -1752,11 +1763,14 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
             "not fixed heavy mode",
             "scanner output is evidence",
             "weak-doc",
+            "scripts/complexity_signal_scanner.py",
+            ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
             "trigger_conditions: pending_observed_signal_review",
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
             "entry_verdict: blocked",
-            "milestone_blocking_decision: block_derive_worktrack",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
             "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
             "needed: false",
             "recommendation_status: not_needed",
@@ -1786,6 +1800,7 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
         ],
     }
     for relative_path in (
@@ -1868,7 +1883,7 @@ def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
             "entry_verdict: blocked",
-            "milestone_blocking_decision: block_derive_worktrack",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
         ]
     )
     for relative_path in (
@@ -1886,6 +1901,7 @@ def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
         ],
     }
     for relative_path in (
@@ -1927,7 +1943,7 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
             "entry_verdict: blocked",
-            "milestone_blocking_decision: block_derive_worktrack",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
             "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
             "needed: false",
             "recommendation_status: not_needed",
@@ -1972,6 +1988,7 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
         ],
     }
     for relative_path in (
@@ -2009,7 +2026,7 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
             "entry_verdict: blocked",
-            "milestone_blocking_decision: block_derive_worktrack",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
             "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
             "needed: false",
             "recommendation_status: not_needed",
@@ -2050,6 +2067,7 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
         ],
     }
     for relative_path in (

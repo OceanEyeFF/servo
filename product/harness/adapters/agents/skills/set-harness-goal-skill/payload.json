@@ -6,6 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
     "product/harness/skills/set-harness-goal-skill/assets/README.md",
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
     "product/harness/skills/set-harness-goal-skill/assets/goal-charter.md",
@@ -32,6 +33,7 @@
   "required_payload_files": [
     "SKILL.md",
     "scripts/deploy_servo.js",
+    "scripts/complexity_signal_scanner.py",
     "assets/README.md",
     "assets/control-state.md",
     "assets/goal-charter.md",

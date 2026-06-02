@@ -91,7 +91,10 @@ def test_scanner_emits_evidence_only_json_with_visible_thresholds(tmp_path: Path
     assert observations["compose_key_totals"]["env_file"] == 1
     assert "services/api" in observations["service_like_dirs"]
     assert "services/worker" in observations["service_like_dirs"]
-    assert result["safety"]["secret_content_read"] is False
+    assert result["safety"]["secret_like_path_content_read"] is False
+    assert result["safety"]["file_contents_emitted"] is False
+    assert result["safety"]["file_content_read_mode"] == "bounded_text_and_code_reads"
+    assert "skips secret-like paths" in result["safety"]["secret_safety_note"]
     assert result["safety"]["no_network"] is True
     assert result["safety"]["no_service_start"] is True
     assert result["safety"]["skipped_secret_like_files"] == [".env"]
@@ -180,7 +183,8 @@ def test_scanner_skips_symlink_files_without_reading_targets(tmp_path: Path) -> 
     assert observations["code_size"]["file_count"] == 1
     assert observations["debt_proxy_signals"]["marker_count"] == 0
     assert result["safety"]["skipped_symlink_files"] == ["src/linked.py"]
-    assert result["safety"]["secret_content_read"] is False
+    assert result["safety"]["secret_like_path_content_read"] is False
+    assert result["safety"]["file_contents_emitted"] is False
 
 
 def test_scanner_cli_json_output(tmp_path: Path) -> None:

@@ -395,6 +395,9 @@ const TEMPLATE_SPECS = {
       ],
     },
     requiredNestedKeyedFieldsBySection: {
+      "Trigger Signals": [
+        "scanner_command_alternatives",
+      ],
       "Operator Safety Policy": [
         "docker_compose_permission",
         "database_migration_permission",
@@ -1033,7 +1036,8 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     generated_by: "set-harness-goal-skill",
     truth_status: "temporary-inferred",
     gate_truth_status: "runtime-evidence",
-    scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json | PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json",
     scanner_output_role: "scanner output is evidence, not verdict",
     docker_compose_permission: "pending_programmer_confirmation",
     database_migration_permission: "pending_programmer_confirmation",
@@ -1047,7 +1051,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     forbidden_before_confirmation: "milestone_activation_worktrack_derivation_high_risk_commands_deploy_database_destructive_or_secret_operations",
     not_fixed_heavy_mode: "true",
     entry_verdict: "blocked",
-    milestone_blocking_decision: "block_derive_worktrack",
+    milestone_blocking_decision: "block_create, block_upsert, block_activate, block_derive_worktrack",
     reinforcement_milestone_recommendation: "structured_reinforcement_milestone_recommendation",
     needed: weakDocReinforcementNeeded ? "true" : "false",
     recommendation_status: weakDocReinforcementNeeded

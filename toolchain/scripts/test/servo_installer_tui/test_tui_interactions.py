@@ -262,6 +262,7 @@ def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Pa
     assert "Guided flow cancelled. No changes made." in output
     assert "[agents] applying update" not in output
     assert not (target_repo / ".agents" / "skills").exists()
+    assert not (target_repo / ".gitignore").exists()
 
 
 def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_path: Path) -> None:
@@ -289,6 +290,7 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
     assert "[bundle] install complete for both backends" in output
     assert "All stages completed successfully." in output
     assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+    assert ".logs/" in (target_repo / ".gitignore").read_text(encoding="utf-8")
 
 
 def test_tui_guided_install_update_migrates_legacy_aw_runtime(

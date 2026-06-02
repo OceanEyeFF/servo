@@ -66,9 +66,10 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - gate 必须记录 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和结构化 `reinforcement_milestone_recommendation`
    - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker
    - 生成的 `operator_safety_policy` 默认只能写 `pending_programmer_confirmation`，不得默认授权 `normal`、`autoreview` 或 `yolo`
-   - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_derive_worktrack`
+   - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_create, block_upsert, block_activate, block_derive_worktrack`
    - unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`
    - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
+   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；Agents backend 路径为 `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`，Claude backend 路径为 `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写
    - 后续 `control-state.md` 只能把 discovery / temporary understanding 作为 linked evidence / note，不能把其中字段提升为控制指令
@@ -169,7 +170,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - Weak-doc adoption / onboarding 中，`temporary-understanding.md` 只能保存 temporary-inferred runtime evidence；唯一合法行为是经 programmer confirmation 或 verified evidence 后才将其中信号提升到 `goal-charter.md`、`repo/snapshot-status.md` 或 docs truth layer。
 - Weak-doc adoption / onboarding 必须记录 `lightweight` / `full` mode selection 与 token-cost tradeoff；当 full discovery 明显超出当前预算时，必须 handback 或建议新增 discovery milestone / worktrack，而不是把薄弱理解伪装成已确认 goal truth。
 - Weak-doc adoption / onboarding 命中 complex-project trigger 时，必须记录 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`；弱文档命中且安全理解不足时，建议 reinforcement documentation / project-understanding Milestone。
-- 结构化 `reinforcement_milestone_recommendation` 至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`。`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`。`needed = true` 或 `blocks_implementation_until_resolved = true` 时默认保持 `entry_verdict: blocked` / `needs_reinforcement_milestone` 和 `milestone_blocking_decision: block_derive_worktrack`。
+- 结构化 `reinforcement_milestone_recommendation` 至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`。`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`。`needed = true` 或 `blocks_implementation_until_resolved = true` 时默认保持 `entry_verdict: blocked` / `needs_reinforcement_milestone` 和 `milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack`。
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。
 - `complex_project_entry_gate` 的生成样例不得预授权高风险命令模式；未确认样例默认阻断 Worktrack derivation，直到 programmer confirmation 或 reinforcement evidence 写入。
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。

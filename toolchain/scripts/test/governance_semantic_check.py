@@ -547,12 +547,13 @@ COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = (
     "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
 )
 COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
-    "toolchain/scripts/test/complexity_signal_scanner.py",
+    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
     "toolchain/scripts/test/README.md",
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
     "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
 ]
+COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH = "toolchain/scripts/test/complexity_signal_scanner.py"
 COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
     "complexity_signal_scanner.py",
     "scanner output is evidence",
@@ -568,13 +569,16 @@ COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
     "code",
 ]
 COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS = [
-    "toolchain/scripts/test/complexity_signal_scanner.py",
+    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
 ]
 COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
     "no_network",
     "no_service_start",
-    "secret_content_read",
+    "file_content_read_mode",
+    "secret_like_path_content_read",
+    "file_contents_emitted",
+    "secret_safety_note",
     "skipped_symlink_files",
 ]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
@@ -633,6 +637,9 @@ REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
     "not fixed heavy mode",
     "scanner output is evidence",
     "weak-doc",
+    "scripts/complexity_signal_scanner.py",
+    ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
 ]
 REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
     "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
@@ -642,12 +649,13 @@ REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = (
     "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
 )
 REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE = "assets/repo/complex-project-entry-gate.md"
+REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE = "scripts/complexity_signal_scanner.py"
 REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
     "trigger_conditions: pending_observed_signal_review",
     "Record only observed signals in trigger_conditions",
     "allowed_high_risk_command_modes: pending_programmer_confirmation",
     "entry_verdict: blocked",
-    "milestone_blocking_decision: block_derive_worktrack",
+    "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
     "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
     "needed: false",
     "recommendation_status: not_needed",
@@ -1620,6 +1628,18 @@ def _check_pre_intake_complex_gate_template_safe_defaults(
 
 def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
+    wrapper_path = repo_root / COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH
+    if not wrapper_path.exists():
+        report.add_failure(
+            f"missing complexity signal scanner wrapper: {COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH}"
+        )
+    else:
+        wrapper_text = wrapper_path.read_text(encoding="utf-8")
+        if "CANONICAL_SCANNER" not in wrapper_text or "set-harness-goal-skill" not in wrapper_text:
+            report.add_failure(
+                "complexity signal scanner wrapper must delegate to canonical distributable scanner: "
+                f"{COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH}"
+            )
     for relative_path in COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
@@ -1768,6 +1788,14 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
         ):
             report.add_failure(
                 "repo-init complex gate payload missing required template file: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing required scanner file: "
                 f"{relative_path}"
             )
     report.add_info(f"checked {checked} repo-init complex gate contract sources")

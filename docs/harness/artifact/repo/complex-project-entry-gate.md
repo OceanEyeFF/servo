@@ -87,10 +87,12 @@ Scanner output is evidence, not verdict. A scanner may report thresholds, counts
 The canonical local scanner command is:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json
+PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 ```
 
-The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, no destructive writes, and no secret content reading.
+Claude backend installs the same scanner at `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
+
+The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, and no destructive writes. The scanner skips secret-like paths and does not emit file contents, but it does bounded reads of non-secret-like text/code files for aggregate signals.
 
 `complexity_signals` should preserve scanner thresholds and rationale so an LLM or review carrier can judge:
 
@@ -121,7 +123,7 @@ The scanner output is a valid `scanner_evidence_ref` source when captured as run
 
 For implementation-oriented goal-driven milestones, `needs_reinforcement_milestone` and `blocked` must block activation and Worktrack derivation unless the programmer explicitly accepts a narrower safe slice whose safety boundary is documented.
 
-An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack`. This is the unresolved gate blocking default. A consumer must not treat missing, blank, placeholder, pending, or incomplete gate fields as clear or `not_applicable`.
+An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack`. This is the unresolved gate blocking default. A consumer must not treat missing, blank, placeholder, pending, or incomplete gate fields as clear or `not_applicable`.
 
 ## Weak-Doc Routing
 

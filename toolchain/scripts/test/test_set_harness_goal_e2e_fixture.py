@@ -90,7 +90,8 @@ def test_low_risk_existing_code_adoption_stays_lightweight_by_default(tmp_path: 
     assert signal_by_id(scanner_result, "compose_files")["observed_value"] == 0
     assert signal_by_id(scanner_result, "compose_services")["observed_value"] == 0
     assert signal_by_id(scanner_result, "package_managers")["observed_value"] == 1
-    assert scanner_result["safety"]["secret_content_read"] is False
+    assert scanner_result["safety"]["secret_like_path_content_read"] is False
+    assert scanner_result["safety"]["file_contents_emitted"] is False
 
     completed = generate_existing_code_adoption(target)
 
@@ -122,7 +123,7 @@ def test_weak_doc_onboarding_generates_runtime_understanding_and_blocking_gate(
     assert "Milestone-side blocking gate, not fixed heavy mode" in complex_gate_text
     assert "scanner_output_role: scanner output is evidence, not verdict" in complex_gate_text
     assert "entry_verdict: blocked" in complex_gate_text
-    assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate_text
+    assert "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack" in complex_gate_text
     assert "needed: true" in complex_gate_text
     assert "recommendation_status: pending_operator_review" in complex_gate_text
     assert "blocks_implementation_until_resolved: true" in complex_gate_text
@@ -173,7 +174,8 @@ def test_complex_fixture_scanner_evidence_and_explicit_gate_without_weak_doc(
     assert signal_by_id(scanner_result, "compose_services")["observed_value"] == 5
     assert signal_by_id(scanner_result, "package_managers")["observed_value"] == 2
     assert signal_by_id(scanner_result, "migration_data_hints")["observed_value"] >= 1
-    assert scanner_result["safety"]["secret_content_read"] is False
+    assert scanner_result["safety"]["secret_like_path_content_read"] is False
+    assert scanner_result["safety"]["file_contents_emitted"] is False
     assert scanner_result["safety"]["skipped_secret_like_files"] == [".env"]
 
     completed = generate_existing_code_adoption(target, "--complex-project-entry-gate")
@@ -186,7 +188,7 @@ def test_complex_fixture_scanner_evidence_and_explicit_gate_without_weak_doc(
     assert "Milestone-side blocking gate, not fixed heavy mode" in complex_gate_text
     assert "scanner output is evidence, not verdict" in complex_gate_text
     assert "entry_verdict: blocked" in complex_gate_text
-    assert "milestone_blocking_decision: block_derive_worktrack" in complex_gate_text
+    assert "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack" in complex_gate_text
     assert "needed: false" in complex_gate_text
     assert "recommendation_status: not_needed" in complex_gate_text
     assert "blocks_implementation_until_resolved: false" in complex_gate_text

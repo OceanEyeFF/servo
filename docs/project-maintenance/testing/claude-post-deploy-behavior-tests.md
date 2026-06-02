@@ -165,11 +165,18 @@ EOF
 3. 用 `--tools default` 保留 `/harness-skill` 解析；用 `--disallowedTools` 禁止文件读取、Bash 和写入工具。
 4. 要求 Claude 基于已给 scanner evidence 输出结构化 verdict，不要调用工具。
 
-2026-06-02 real dogfood 观察：
+2026-06-02 real dogfood 观察（证据摘要）：
 
+- Evidence refs: `.servo/worktrack/gate-evidence.md` and `.servo/worktrack/closeout-record.md` for `WT-20260602-claude-real-dogfood-gate-validation`; formal docs commit `d8a47ff6ea9b8ee67a462fe25c4a658221685592`.
+- Claude Code version: `2.1.119`.
+- Backend smoke: `claude --bare --no-session-persistence --max-budget-usd 0.03 --tools "" --permission-mode dontAsk --output-format json -p ...` returned `CLAUDE_REAL_BACKEND_OK`, cost `$0.00275`, with no permission denials.
+- Skill invocation: `/harness-skill` invocation required `--tools default` with file/execution tools disallowed; `--tools ""`, `--tools Skill`, and `--tools SlashCommand` were not sufficient for this probe.
+- Target fixtures: copied real repos under `$HOME/tmp/servo-claude-real-dogfood.U90uyS/targets/`, not source repos; `NeteaseCloudMusicFlac` represented low-risk evidence and `MuMuAINovel` represented complex-signal evidence.
+- Safety boundary: no source repo mutation, service start, docker/database/migration/deploy/network execution, destructive cleanup, release/package mutation, push, or final Milestone acceptance; complex repo `.env` / `.env.example` inputs were redacted before file-tool attempts.
 - 低风险 repo evidence-only run 正确输出 `fixed_heavy_mode=false`、`risk_triggered_gate=false`、`scanner_evidence_is_final_verdict=false`。
 - 复杂 repo 首轮 evidence-only run 正确要求 blocking gate / safety policy / reinforcement route，但误把 `fixed_heavy_mode` 标为 true。
 - 加入上述定义复核后，复杂 repo 输出 `fixed_heavy_mode=false`、`risk_triggered_gate=true`、`scanner_evidence_is_final_verdict=false`、`operator_safety_policy_required=true`、`reinforcement_milestone_recommendation=true`。
+- Residual risk: full file-tool complex repo dogfood exceeded the small budget cap and was not accepted as verdict evidence; evidence-only prompts were more controlled for gate semantics.
 
 结论：真实 Claude 行为测试必须显式定义 `fixed_heavy_mode` 和 `risk_triggered_gate`；否则术语可能被误判。
 

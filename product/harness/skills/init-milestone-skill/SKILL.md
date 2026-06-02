@@ -53,7 +53,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；低风险请求可用 `entry_verdict = not_applicable` 轻量跳过。
    - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
    - 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全的 gate 不得被解释为 clear；必须按 unresolved gate blocking default 处理。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
-   - 若 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
+   - 若 `entry_verdict = blocked`，或 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
    - 若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`reinforcement_milestone_recommendation.recommendation_status = recommended|required|pending_operator_review` 或 `reinforcement_milestone_recommendation.blocks_implementation_until_resolved = true`，必须建议 reinforcement documentation / project-understanding Milestone，并不得 create/upsert/activate implementation-oriented milestone，也不得把弱文档推断升格为当前 milestone truth。
    - `reinforcement_milestone_recommendation` 必须是结构化 handoff，至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；缺失或 placeholder 的 recommendation 不能被当作 implementation clearance。
 5. 解析输入来源：
@@ -136,7 +136,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - 输入规格缺少 title 或 purpose 等关键字段且无法自动补全
 - 需要创建、upsert 或激活 milestone，但 `milestone_brief_confirmed != true`
 - 命中 pre-milestone intake 触发条件，但 `pre_milestone_intake_review` 缺失、未 ready 或未获 programmer confirmation
-- 命中 complex-project trigger，但 `complex_project_entry_gate` 缺失、字段不全，或 `milestone_blocking_decision` 阻止 create / upsert / activate
+- 命中 complex-project trigger，但 `complex_project_entry_gate` 缺失、字段不全、`entry_verdict = blocked`，或 `milestone_blocking_decision` 阻止 create / upsert / activate
 - 当前已有 active milestone 且 programmer 未明确指示替换
 - milestone-backlog 损坏、不可读或不可解析（同上位 milestone-status-skill 的停止条件）
 - 写入 `.servo/milestone/` 或 `.servo/repo/milestone-backlog.md` 失败
