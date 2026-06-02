@@ -138,6 +138,34 @@ def test_scanner_does_not_count_nested_compose_keys_as_services(tmp_path: Path) 
     assert signal_by_id(result, "compose_services")["observed_value"] == 2
 
 
+def test_scanner_counts_service_names_that_match_compose_field_names(
+    tmp_path: Path,
+) -> None:
+    write_file(
+        tmp_path / "docker-compose.yml",
+        textwrap.dedent(
+            """\
+            services:
+              image:
+                image: busybox
+              build:
+                image: busybox
+              x-shared:
+                image: busybox
+              api:
+                image: busybox
+            """
+        ),
+    )
+
+    result = scan_repo(tmp_path)
+
+    detail = result["observations"]["compose_details"]["docker-compose.yml"]
+    assert detail["services"] == ["api", "build", "image"]
+    assert detail["service_count"] == 3
+    assert signal_by_id(result, "compose_services")["observed_value"] == 3
+
+
 def test_scanner_skips_symlink_files_without_reading_targets(tmp_path: Path) -> None:
     secret_target = tmp_path / "outside-secret.txt"
     secret_target.write_text("TODO should not be counted through symlink\n", encoding="utf-8")

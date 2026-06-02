@@ -236,7 +236,7 @@ def scan_compose_file(path: Path) -> dict[str, object]:
                 if indent != service_indent:
                     continue
                 name = match.group(1)
-                if name not in {"build", "image", "ports", "volumes", "env_file", "environment"}:
+                if not name.startswith("x-"):
                     services.add(name)
     keys = {
         "build": len(re.findall(r"(?m)^\s*build\s*:", text)),
