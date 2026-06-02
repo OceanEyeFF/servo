@@ -405,6 +405,32 @@ function defaultInstallerLogDir(targetRepoRoot) {
   return join(targetRepoRoot || process.cwd(), ".logs", "servo-installer");
 }
 
+function ensureTargetLogGitignore(targetRepoRoot, logDir) {
+  if (!targetRepoRoot || !logDir) {
+    return false;
+  }
+  const defaultLogDir = resolve(defaultInstallerLogDir(targetRepoRoot));
+  if (resolve(logDir) !== defaultLogDir) {
+    return false;
+  }
+  const gitignorePath = join(targetRepoRoot, ".gitignore");
+  const entry = ".logs/";
+  let existing = "";
+  if (existsSync(gitignorePath)) {
+    existing = readFileSync(gitignorePath, "utf8");
+  }
+  const alreadyPresent = existing
+    .split(/\r?\n/)
+    .some((line) => line.trim() === entry);
+  if (alreadyPresent) {
+    return false;
+  }
+  const prefix = existing.trimEnd();
+  const updated = `${prefix}${prefix ? "\n" : ""}${entry}\n`;
+  writeFileSync(gitignorePath, updated, "utf8");
+  return true;
+}
+
 function timestampForFileName(date = new Date()) {
   return date.toISOString().replace(/[:.]/g, "-");
 }
@@ -5317,6 +5343,7 @@ async function runTui(logDir) {
   const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
   const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
   const effectiveLogDir = logDir || defaultInstallerLogDir(targetRepo);
+  ensureTargetLogGitignore(targetRepo, effectiveLogDir);
   const logger = createRunLogger({
     logDir: effectiveLogDir,
     args: ["tui"],
@@ -5472,6 +5499,8 @@ module.exports = {
   describeExistingTargetPath,
   diagnosticSummary,
   downloadGithubArchive,
+  defaultInstallerLogDir,
+  ensureTargetLogGitignore,
   exactSensitiveTargetRepoRoots,
   expectedTargetDirs,
   applyUpdateContext,

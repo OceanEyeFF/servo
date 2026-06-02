@@ -66,6 +66,8 @@ RepoScope.Observe
 
 只有 `intake_review_verdict = ready_for_worktrack_init` 且 `ready_for_worktrack_init = true` 时，才允许进入 `WorktrackScope.Init`。`refresh_required` 回到 RepoScope 观察/刷新；`adjust_worktracks` 回到 milestone/worktrack backlog 调整或 programmer 审批；`blocked` 停止并暴露继续阻塞项。
 
+当请求命中 complex-project trigger 时，还必须先消费 `complex_project_entry_gate`。这是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。gate handoff 必须携带 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`。`milestone_blocking_decision` 中存在 `block_create`、`block_upsert`、`block_activate` 或 `block_derive_worktrack` 时，监督器不得绑定对应 initializer。弱文档命中且理解不足时，默认路由到 reinforcement documentation / project-understanding milestone。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该阻断。
+
 ## Continuous Execution
 
 默认语义是连续推进，而不是每完成一个 skill round 就自动 handback。
@@ -80,6 +82,7 @@ RepoScope.Observe
 
 - 需要 programmer 批准的 goal change、scope expansion、destructive action 或 authority boundary
 - goal-driven milestone 激活前的结构化 brief 需要 programmer 确认
+- complex-project entry gate 对 create / upsert / activate / derive-worktrack 给出 Milestone-side blocker
 - `worktrack_intake_review` 缺失、过时、字段不全，或 `intake_review_verdict` 为 `refresh_required` / `adjust_worktracks` / `blocked`
 - 必需 artifact / evidence 缺失、过时或互相冲突
 - `Gate` 给出 `soft-fail`、`hard-fail` 或 `blocked`

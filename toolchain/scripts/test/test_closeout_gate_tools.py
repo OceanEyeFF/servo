@@ -643,6 +643,7 @@ def test_run_scope_gate_allows_foundations_governance_docs(monkeypatch, tmp_path
     assert "README.md" in command
     assert "AGENTS.md" in command
     assert "CONTRIBUTING.md" in command
+    assert ".gitignore" in command
     assert "docs/README.md" in command
     assert "docs/book.md" in command
     assert ".codex/" in command

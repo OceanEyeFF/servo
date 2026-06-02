@@ -466,6 +466,36 @@ INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
     "状态矛盾",
     "不得把薄弱的 milestone brief 伪装成已确认",
 ]
+COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+]
+COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS = [
+    "complex_project_entry_gate",
+    "scanner_evidence_ref",
+    "complexity_signals",
+    "operator_safety_policy",
+    "dialog_review_questions",
+    "milestone_blocking_decision",
+    "reinforcement_milestone_recommendation",
+    "Milestone-side blocking gate",
+    "not fixed heavy mode",
+    "scanner output is evidence",
+    "normal",
+    "autoreview",
+    "yolo",
+]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
@@ -1385,6 +1415,23 @@ def check_init_milestone_intake_handoff_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} init-milestone intake handoff sources")
 
 
+def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing complex-project entry gate source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complex-project entry gate missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} complex-project entry gate sources")
+
+
 def check_weak_doc_temporary_understanding_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -1928,6 +1975,7 @@ def main() -> int:
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
+    check_complex_project_entry_gate_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)

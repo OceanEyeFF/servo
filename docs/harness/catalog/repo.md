@@ -27,6 +27,7 @@ last_verified: 2026-05-08
 - Repo structure
 - Harness Control State 初始化模板
 - Weak-doc Temporary Understanding 模板（仅弱文档 adoption / onboarding）
+- Complex Project Entry Gate（仅复杂项目、弱文档或高风险 Milestone 进入前）
 
 canonical executable source：
 
@@ -63,6 +64,15 @@ preferred handoff fields：
 - `not_goal_truth`
 - `not Goal Charter truth`
 - `--weak-doc-onboarding`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+
+Complex-project adoption handoff is a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain user-owned policy choices and do not bypass `milestone_blocking_decision`.
 
 ### 1. pre-milestone-intake-skill
 
@@ -77,6 +87,7 @@ preferred handoff fields：
 - `Repo Snapshot / Status`
 - `Harness Control State`
 - live Milestone Backlog
+- `complex_project_entry_gate`（当命中 complex-project trigger 时）
 
 canonical executable source：
 
@@ -116,6 +127,15 @@ preferred handoff fields：
 - `programmer_confirmed`
 - `ready_for_init_milestone`
 - `handoff_to_init_milestone`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+
+These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices.
 
 ### 2. repo-status-skill
 
@@ -154,6 +174,7 @@ preferred handoff fields：
 - `Repo Snapshot / Status`
 - `Harness Control State`
 - `Goal Change Request`
+- `Complex Project Entry Gate`
 
 canonical executable source：
 
@@ -179,6 +200,9 @@ preferred decision fields：
 - `overview_trigger_reason`
 - `candidate_worktracks`
 - `top_candidate`
+- `complex_project_entry_gate`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
 
 ### 4. repo-append-request-skill
 

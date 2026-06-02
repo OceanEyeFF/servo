@@ -64,9 +64,55 @@ programmer_decisions_required:
 ```yaml
 risk_flags:
   - id: ""
-    kind: "scope_creep | release_boundary | migration | compatibility | security | data | weak_docs | multi_repo | governance_gap | other"
+    kind: "scope_creep | release_boundary | migration | compatibility | security | data | weak_docs | multi_repo | governance_gap | complex_project | other"
     severity: "low | medium | high"
     description: ""
+```
+
+## Complex Project Entry Gate
+
+Use this section when complex-project, weak-doc, multi-system, migration, deploy, security, data, destructive, or authority-sensitive signals affect Milestone entry. This is a Milestone-side blocking gate, not fixed heavy mode. Scanner output is evidence, not verdict. Canonical guard term: scanner output is evidence.
+
+```yaml
+complex_project_entry_gate:
+  gate_id: ""
+  target_repo: ""
+  target_milestone_id: ""
+  trigger_source: "pre-milestone-intake"
+  entry_verdict: "clear | needs_reinforcement_milestone | blocked | not_applicable"
+  scanner_evidence_ref: null
+  complexity_signals:
+    - signal: ""
+      threshold: ""
+      observed_value: ""
+      confidence: ""
+      rationale: ""
+  operator_safety_policy:
+    docker_compose_permission: "unknown | allowed | blocked | requires_approval"
+    database_migration_permission: "unknown | allowed | blocked | requires_approval"
+    deploy_network_permission: "unknown | allowed | blocked | requires_approval"
+    destructive_cleanup_permission: "unknown | allowed | blocked | requires_approval"
+    secrets_policy: "unknown"
+    protected_paths: []
+    protected_branches: []
+    allowed_high_risk_command_modes:
+      - "normal"
+      - "autoreview"
+      - "yolo"
+  dialog_review_questions:
+    - id: "CG1"
+      question: ""
+      why_it_matters: ""
+      recommended_answer: ""
+      tradeoff: ""
+      blocks_ready: true
+  milestone_blocking_decision:
+    - "block_create | block_upsert | block_activate | block_derive_worktrack | allow_create | allow_upsert | allow_activate | allow_derive_worktrack"
+  reinforcement_milestone_recommendation:
+    needed: false
+    suggested_title: ""
+    reason: ""
+  evidence_refs: []
 ```
 
 ## Open Questions

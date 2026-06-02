@@ -175,6 +175,8 @@ def run_scope_gate(repo_root: Path, python: str) -> dict:
             "--allowed-prefix",
             "CONTRIBUTING.md",
             "--allowed-prefix",
+            ".gitignore",
+            "--allowed-prefix",
             ".codex/",
             "--allowed-prefix",
             ".github/",

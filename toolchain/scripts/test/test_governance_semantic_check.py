@@ -17,6 +17,7 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
+    check_complex_project_entry_gate_contract,
     check_debug_evidence_contract,
     check_decision_traceability_contract,
     check_docs_list_closeout_cache_roots,
@@ -1113,6 +1114,88 @@ def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semant
     assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
 
 
+def test_check_complex_project_entry_gate_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "Milestone-side blocking gate",
+            "scanner output is evidence",
+            "normal",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("dialog_review_questions" in item for item in report.failures)
+    assert any("reinforcement_milestone_recommendation" in item for item in report.failures)
+    assert any("not fixed heavy mode" in item for item in report.failures)
+
+
 def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
     tmp_path: Path,
 ) -> None:
@@ -1364,6 +1447,7 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
                 "`.claude/`",
                 "`.autoworkflow/`",
                 "`.spec-workflow/`",
+                "`.logs/`",
                 "`**/__pycache__/`",
                 "`.pytest_cache/`",
                 "`*.pyc`",

@@ -16,6 +16,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 它的主要输入是 programmer 或 harness 提供的 milestone 规格：
 
 - 上游 `pre-milestone-intake-skill` 产出的 `pre_milestone_intake_review`（当需求模糊、高风险、跨 repo、大型无文档、release/publish/migration 或 Harness 合同变更时必需）
+- 上游或 runtime artifact 提供的 `complex_project_entry_gate`（当复杂项目、弱文档、高风险操作或跨系统 milestone 进入前需要 Milestone-side blocking gate 时必需）
 - Programmer 直接提供的 milestone 规格（title、purpose、worktrack_list、priority、activation_rules、completion_threshold_pct 等）
 - Harness 从 Goal Charter 和 repo snapshot 推理出的 milestone 建议（需经本技能验证后写入）
 - 当前 live milestone-backlog（`.servo/repo/milestone-backlog.md`）用于唯一性检查和 pipeline 上下文；milestone-history（`.servo/repo/milestone-history.md`）用于依赖解析和历史冲突检查
@@ -45,22 +46,30 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - `intake_status == "skipped"` 只能表示 programmer 显式接受跳过 intake 的风险；必须同时记录 `intake_skipped = true`、`skip_reason`、`accepted_risk` 和 programmer confirmation。skipped 不等同 ready；本技能不自动 create / upsert / activate，必须 handback 给 programmer 或 RepoScope.Decide 暴露 approval 状态，除非本轮输入同时携带明确的“跳过 intake 后仍允许初始化”的 programmer 授权。
    - `intake_status == "questions_required"` 或 `intake_status == "blocked"` 时，必须返回 blocked 并建议回到 `pre-milestone-intake-skill`；不得创建、upsert 或激活 milestone。
    - intake review 缺失、字段不全、状态矛盾（例如 skipped 同时 ready）、或未 ready 时，返回 blocked，建议先调用 `pre-milestone-intake-skill`，不得把薄弱的 milestone brief 伪装成已确认。
-4. 解析输入来源：
+4. 检查 `complex_project_entry_gate`：
+   - 当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，必须存在 `complex_project_entry_gate`。
+   - gate 必须包含 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation`。
+   - scanner output is evidence, not verdict；不得把 scanner 阈值直接当成 ready 结论。
+   - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；低风险请求可用 `entry_verdict = not_applicable` 轻量跳过。
+   - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
+   - 若 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
+   - 若 `entry_verdict = needs_reinforcement_milestone`，必须建议 reinforcement documentation / project-understanding milestone，并不得把弱文档推断升格为当前 milestone truth。
+5. 解析输入来源：
    - 若来自 programmer：直接使用提供的 milestone 规格
    - 若来自 harness 推理：验证规格完整性（至少包含 title、purpose），缺失关键字段时标记为规格不完整并停止
    - 若两者同时存在：programmer 规格优先，harness 推理作为补充建议
-5. 确定 milestone_id：
+6. 确定 milestone_id：
    - 若输入提供了 milestone_id：检查是否与已有 milestone 冲突
    - 若未提供：自动生成，格式 `MS-YYYYMMDD-NNN`（如 `MS-20260510-001`）
    - 若 milestone_id 已存在：进入 upsert 模式（latest-override）
-6. 验证依赖合法性：
+7. 验证依赖合法性：
    - 若 `depends_on_milestones` 非空，逐一检查是否存在于 live milestone-backlog 或 milestone-history 中
    - 引用的 milestone 不存在时标记为 `unknown_dependency` 并停止
    - 检查是否存在循环依赖（遍历 depends_on 链）
-7. 确定 priority：
+8. 确定 priority：
    - 输入提供的 priority 直接使用
    - 未提供时自动分配：取当前 pipeline 中最大 priority + 1
-8. 确定 `milestone_kind`：
+9. 确定 `milestone_kind`：
    - 若输入来自 programmer 且提供了 `milestone_kind`：直接使用
    - 若输入来自 programmer 但未提供 `milestone_kind`：默认 `goal-driven`
    - 若输入来自 harness（work-collection 路径）：`milestone_kind = "work-collection"`
@@ -71,15 +80,15 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
      - `acceptance_criteria`：空（不适用）
      - `priority`：最低（取当前 pipeline 最大 priority + 1，确保不阻塞 goal-driven milestone）
      - `created_by`：`harness`
-9. 规范化完成判定字段：
+10. 规范化完成判定字段：
    - goal-driven milestone：若输入未提供 `completion_threshold_pct`，默认写入 `100`
    - work-collection milestone：`completion_threshold_pct` 记为 `100` 但不参与完成判定；验收仍下沉到 worktrack gate
    - 若本轮修改了 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct`，标记 `milestone_reevaluation_required = true`
-10. 输出结构化 `milestone brief` 并等待 programmer 确认：
+11. 输出结构化 `milestone brief` 并等待 programmer 确认：
    - brief 至少包含：`milestone_id`、`title`、`purpose`、`milestone_kind`、`worktrack_list`、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`priority`、`depends_on_milestones`、`activation_intent`、`scope_boundary_note`
    - 若本轮将 create / upsert / activate 任一 milestone，必须在 `milestone_brief_confirmed == true` 前停止，不得提前写入或激活
    - 若调用方已携带明确 programmer 确认记录，可直接继续；否则返回 brief 并等待确认
-11. 追加 worktrack 时的信号覆盖判定（仅当向已有 goal-driven milestone 追加 worktrack 时执行）：
+12. 追加 worktrack 时的信号覆盖判定（仅当向已有 goal-driven milestone 追加 worktrack 时执行）：
    a. 读取已有 milestone 的 `completion_signals` 和 `acceptance_criteria`
    b. 对每个新 worktrack，AI 辅助判定其验收是否被已有 signals 覆盖
    c. 输出 `coverage_verdict` ∈ {`fully_covered`, `partially_covered`, `not_covered`}
@@ -94,26 +103,26 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
       - 仅追加 worktrack 且 programmer 已确认其归属当前 milestone，同时 `coverage_verdict == fully_covered` 且未修改 `completion_signals` / `acceptance_criteria` / `completion_threshold_pct` 时，`milestone_reevaluation_required = false`；该 worktrack 直接进入当前 milestone 的独立执行序列
       - 若 append 导致上述任一字段修改，必须重新评估 milestone；不得沿用旧的 milestone 完成结论
       - `not_covered` 不得通过“先追加再观察”静默扩大范围，应直接建议其他 milestone 路径
-12. 确定激活状态：
+13. 确定激活状态：
    - work-collection milestone 创建后直接激活（`status = "active"`）
    - goal-driven：若当前无 active milestone 且 `depends_on_milestones` 全部满足（所有前置为 `completed` 或 `superseded`）：设置为 `active`
    - 若 `activation_rules` 非空且条件满足：设置为 `active`
    - 否则：设置为 `planned`
    - 任一 milestone 的 `active` 判定都要求 `milestone_brief_confirmed == true`
    - 同一时刻仅允许一个 `active`：若设置当前 milestone 为 active 且已有 active milestone，先处理旧 active 的过渡（保持原状，标记冲突由 harness-skill 处理）
-13. 创建或更新 milestone artifact：
+14. 创建或更新 milestone artifact：
    - 写入 `.servo/milestone/{milestone_id}.md`
    - 使用 milestone 模板字段结构（milestone_id、title、purpose、status、worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、aggregated_evidence、release_version_consideration、developer_decision_boundary、depends_on_milestones、priority、activation_rules、created_by、updated、milestone_kind）
    - upsert 时保留已有字段，仅更新变化字段
-14. 写入或更新 live milestone-backlog：
+15. 写入或更新 live milestone-backlog：
    - 按 milestone_id upsert 到 `.servo/repo/milestone-backlog.md`
    - 若 backlog 文件不存在则创建
    - 条目包含：milestone_id、title、purpose、status、priority、depends_on_milestones、worktrack_list、created_by、created_at、updated、updated_by、activation_rules、milestone_kind
-15. 更新 control-state（若激活状态变化）：
+16. 更新 control-state（若激活状态变化）：
    - 若新 milestone 被设为 active：更新 `active_milestone` 和 `milestone_status`
    - 若仅新增 planned milestone：不改变 `active_milestone`，仅更新 `milestone_pipeline_summary`
-16. 产出一份结构化的 Milestone 初始化结果。
-17. 如果没有命中正式停止条件，允许监督器直接进入下一个合法判定。
+17. 产出一份结构化的 Milestone 初始化结果。
+18. 如果没有命中正式停止条件，允许监督器直接进入下一个合法判定。
 
 ## 正式停止条件
 
@@ -125,6 +134,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - 输入规格缺少 title 或 purpose 等关键字段且无法自动补全
 - 需要创建、upsert 或激活 milestone，但 `milestone_brief_confirmed != true`
 - 命中 pre-milestone intake 触发条件，但 `pre_milestone_intake_review` 缺失、未 ready 或未获 programmer confirmation
+- 命中 complex-project trigger，但 `complex_project_entry_gate` 缺失、字段不全，或 `milestone_blocking_decision` 阻止 create / upsert / activate
 - 当前已有 active milestone 且 programmer 未明确指示替换
 - milestone-backlog 损坏、不可读或不可解析（同上位 milestone-status-skill 的停止条件）
 - 写入 `.servo/milestone/` 或 `.servo/repo/milestone-backlog.md` 失败
@@ -144,6 +154,9 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - append worktrack 只有在 programmer 确认其归属当前 milestone，且 `coverage_verdict` 不为 `not_covered` 时才可继续；否则必须建议其他 milestone 路径，避免静默 scope creep
 - 在 create / upsert / activate 之前必须先输出结构化 `milestone brief` 并等待 programmer 确认；brief 不是可选摘要，而是激活前约束边界
 - 高风险或模糊 milestone 在 create / upsert / activate 前必须先通过 `pre-milestone-intake-skill` 的 `pre_milestone_intake_review`；薄确认不得替代 intake review
+- 复杂项目、弱文档或高风险 milestone 在 create / upsert / activate 前必须先通过 `complex_project_entry_gate`；该 gate 是 Milestone-side blocking gate, not fixed heavy mode。
+- scanner output is evidence, not verdict；`scanner_evidence_ref` 与 `complexity_signals` 只能作为判定依据，不得替代 programmer confirmation 或 safety policy。
+- `operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation` 缺失时，必须 blocked。
 - `init-milestone-skill` 只消费并验证 `pre_milestone_intake_review`；不得在本技能中生成 intake 问题、补写未确认事实或把 `inferred_assumptions` 升格为 programmer-confirmed truth。
 - `intake_status = ready`、`intake_status = skipped`、`intake_status = questions_required`、`intake_status = blocked` 与 intake missing 必须有不同的 operator-facing 路由；把 skipped/questions_required/blocked/missing 归并为 ready 的行为必须返回 blocked。
 - 本技能不创建 worktrack、不触发 worktrack 初始化、不修改 version/release 状态
@@ -184,6 +197,13 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - `pre_milestone_intake_review`：object / N/A
 - `pre_milestone_intake_required`：boolean
 - `pre_milestone_intake_status`：ready / questions_required / blocked / skipped / N/A
+- `complex_project_entry_gate`：object / N/A
+- `scanner_evidence_ref`：string / N/A
+- `complexity_signals`：array / N/A
+- `operator_safety_policy`：object / N/A
+- `dialog_review_questions`：array / N/A
+- `milestone_blocking_decision`：array / N/A
+- `reinforcement_milestone_recommendation`：object / N/A
 - `signals_coverage_reviewed`：boolean — 信号覆盖判定是否已完成 programmer 确认（仅追加 worktrack 时适用）
 - `coverage_verdict`：fully_covered / partially_covered / not_covered / N/A（仅追加 worktrack 时适用）
 - `milestone_reevaluation_required`：boolean

@@ -60,6 +60,11 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - `temporary-understanding.md` 必须显式区分 `lightweight` 与 `full` 两种理解模式：`lightweight` 是低 token、快速定向、只支撑窄小 safe first slice；`full` 是更深的只读发现，token 和时间成本更高，必要时应建议单独 discovery milestone 或 worktrack
    - `temporary-understanding.md` / `temporary_understanding` 必须包含 `observed_facts`、`inferred_purpose`、`operational_purpose`、`known_risks`、`unknowns`、`confirmation_questions`、`programmer_decisions_required`、`promotion_plan`、`truth_boundary`、`token_budget_note` 和 mode selection
    - `temporary-understanding.md` 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence 的 `inferred_purpose`、owner boundary、maintenance rule 和 acceptance rule 不得写入 `goal-charter.md`、docs truth layer 或 repo snapshot
+   - 当 weak-doc、large repo、多服务、迁移、部署、数据、安全、破坏性操作或 authority boundary 信号影响后续 Milestone 入口时，生成或引用 `complex_project_entry_gate`
+   - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；小型低风险初始化可记录 `entry_verdict = not_applicable`
+   - gate 必须记录 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation`
+   - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker
+   - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写
    - 后续 `control-state.md` 只能把 discovery / temporary understanding 作为 linked evidence / note，不能把其中字段提升为控制指令
@@ -158,6 +163,8 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - Existing Code Project Adoption 中，`discovery-input.md` 只能保存只读事实输入和候选信号；唯一合法行为是经用户确认后才将 discovery 信号纳入 `goal-charter.md`。
 - Weak-doc adoption / onboarding 中，`temporary-understanding.md` 只能保存 temporary-inferred runtime evidence；唯一合法行为是经 programmer confirmation 或 verified evidence 后才将其中信号提升到 `goal-charter.md`、`repo/snapshot-status.md` 或 docs truth layer。
 - Weak-doc adoption / onboarding 必须记录 `lightweight` / `full` mode selection 与 token-cost tradeoff；当 full discovery 明显超出当前预算时，必须 handback 或建议新增 discovery milestone / worktrack，而不是把薄弱理解伪装成已确认 goal truth。
+- Weak-doc adoption / onboarding 命中 complex-project trigger 时，必须记录 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`；弱文档命中且安全理解不足时，建议 reinforcement documentation / project-understanding Milestone。
+- `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。
 - 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-contract-primary`，使 worktrack 级 `runtime_dispatch_mode` 在默认 scaffold 中可生效；只有操作者显式改为 `global-override` 时，control-state 才压过 worktrack 合同。`auto` 是保守默认值，表示按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时在无安全分派壳层、权限边界阻断或 `dispatch package unsafe` 时显式记录 `runtime fallback`。
 - **不依赖外部 scaffold 脚本**；所有模板来自本技能自带的 `assets/` 目录，遵循 Codex Skills 标准。
