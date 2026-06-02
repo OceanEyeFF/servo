@@ -496,6 +496,27 @@ COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS = [
     "autoreview",
     "yolo",
 ]
+COMPLEX_PROJECT_ENTRY_GATE_CONSUMER_SAFE_DEFAULT_TERMS = [
+    "unresolved gate blocking default",
+    "missing",
+    "blank",
+    "placeholder",
+    "pending",
+    "incomplete",
+    "not_applicable",
+]
+COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS = [
+    "blocked",
+    "block_",
+    "阻断",
+    "不得绑定",
+    "不得解释为",
+    "must not be treated as clear",
+    "must not be interpreted as clear",
+]
+COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = (
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+)
 COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
     "toolchain/scripts/test/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
@@ -1501,7 +1522,50 @@ def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticR
                 report.add_failure(
                     f"complex-project entry gate missing required term {term!r}: {relative_path}"
                 )
+        for term in COMPLEX_PROJECT_ENTRY_GATE_CONSUMER_SAFE_DEFAULT_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "complex-project entry gate missing unresolved-gate default term "
+                    f"{term!r}: {relative_path}"
+                )
+        if "unresolved gate blocking default" in text and not any(
+            term in text for term in COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS
+        ):
+            report.add_failure(
+                "complex-project entry gate unresolved default must map to blocking semantics: "
+                f"{relative_path}"
+            )
+        if relative_path == COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH:
+            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
     report.add_info(f"checked {checked} complex-project entry gate sources")
+
+
+def _check_pre_intake_complex_gate_template_safe_defaults(
+    relative_path: str, text: str, report: SemanticReport
+) -> None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if "allowed_high_risk_command_modes:" not in line:
+            continue
+        value = line.split("allowed_high_risk_command_modes:", 1)[1]
+        if any(mode in value for mode in ("normal", "autoreview", "yolo")):
+            report.add_failure(
+                "pre-milestone complex gate template must not pre-authorize "
+                f"high-risk command modes inline: {relative_path}:{index + 1}"
+            )
+        base_indent = len(line) - len(line.lstrip(" "))
+        for child in lines[index + 1 :]:
+            if not child.strip():
+                continue
+            child_indent = len(child) - len(child.lstrip(" "))
+            if child_indent <= base_indent:
+                break
+            if any(mode in child for mode in ("normal", "autoreview", "yolo")):
+                report.add_failure(
+                    "pre-milestone complex gate template must not pre-authorize "
+                    f"high-risk command mode list item: {relative_path}:{index + 1}"
+                )
+                break
 
 
 def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticReport) -> None:
@@ -1610,6 +1674,7 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
                         "repo-init complex gate template must not pre-authorize "
                         f"high-risk command mode line {line.strip()!r}: {relative_path}"
                     )
+            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
 
     for relative_path in REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS:
         path = repo_root / relative_path

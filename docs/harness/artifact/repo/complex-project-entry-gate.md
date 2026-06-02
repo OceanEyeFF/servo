@@ -121,7 +121,7 @@ The scanner output is a valid `scanner_evidence_ref` source when captured as run
 
 For implementation-oriented goal-driven milestones, `needs_reinforcement_milestone` and `blocked` must block activation and Worktrack derivation unless the programmer explicitly accepts a narrower safe slice whose safety boundary is documented.
 
-An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack`. A consumer must not treat missing, blank, placeholder, or pending verdict fields as clear.
+An unresolved generated gate defaults to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack`. This is the unresolved gate blocking default. A consumer must not treat missing, blank, placeholder, pending, or incomplete gate fields as clear or `not_applicable`.
 
 ## Weak-Doc Routing
 

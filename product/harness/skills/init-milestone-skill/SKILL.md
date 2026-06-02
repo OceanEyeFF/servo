@@ -52,6 +52,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - scanner output is evidence, not verdict；不得把 scanner 阈值直接当成 ready 结论。
    - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；低风险请求可用 `entry_verdict = not_applicable` 轻量跳过。
    - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
+   - 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全的 gate 不得被解释为 clear；必须按 unresolved gate blocking default 处理。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
    - 若 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
    - 若 `entry_verdict = needs_reinforcement_milestone`，必须建议 reinforcement documentation / project-understanding milestone，并不得把弱文档推断升格为当前 milestone truth。
 5. 解析输入来源：
@@ -157,6 +158,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - 复杂项目、弱文档或高风险 milestone 在 create / upsert / activate 前必须先通过 `complex_project_entry_gate`；该 gate 是 Milestone-side blocking gate, not fixed heavy mode。
 - scanner output is evidence, not verdict；`scanner_evidence_ref` 与 `complexity_signals` 只能作为判定依据，不得替代 programmer confirmation 或 safety policy。
 - `operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation` 缺失时，必须 blocked。
+- 空白、placeholder、pending 或 incomplete `complex_project_entry_gate` 与 missing gate 等价，必须 blocked；消费者不得把 unresolved gate 当成 `clear` 或 `not_applicable`。
 - `init-milestone-skill` 只消费并验证 `pre_milestone_intake_review`；不得在本技能中生成 intake 问题、补写未确认事实或把 `inferred_assumptions` 升格为 programmer-confirmed truth。
 - `intake_status = ready`、`intake_status = skipped`、`intake_status = questions_required`、`intake_status = blocked` 与 intake missing 必须有不同的 operator-facing 路由；把 skipped/questions_required/blocked/missing 归并为 ready 的行为必须返回 blocked。
 - 本技能不创建 worktrack、不触发 worktrack 初始化、不修改 version/release 状态

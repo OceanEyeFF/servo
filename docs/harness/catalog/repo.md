@@ -135,7 +135,7 @@ preferred handoff fields：
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
 
-These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices.
+These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
 
 ### 2. repo-status-skill
 
@@ -203,6 +203,7 @@ preferred decision fields：
 - `complex_project_entry_gate`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+- unresolved gate blocking default
 
 ### 4. repo-append-request-skill
 

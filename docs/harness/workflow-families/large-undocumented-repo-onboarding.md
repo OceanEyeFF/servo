@@ -83,6 +83,8 @@ Do not hide uncertainty by rewriting it as confident project intent. The tempora
 
 Weak-doc onboarding can trigger [Complex Project Entry Gate](../artifact/repo/complex-project-entry-gate.md). The gate is a Milestone-side blocking gate, not fixed heavy mode. If the requested Milestone is implementation-oriented and repo purpose, core directories, verification authority, service workflow boundary, or high-risk operation policy is still weak, Servo should block Milestone activation or Worktrack derivation instead of guessing.
 
+unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete `complex_project_entry_gate` fields must not be treated as `clear` or `not_applicable`; they keep create / upsert / activate / derive-worktrack blocked until programmer confirmation or verified evidence exists.
+
 `complex_project_entry_gate` must preserve:
 
 - `scanner_evidence_ref`: scanner output is evidence, not verdict;

@@ -66,6 +66,8 @@ last_verified: 2026-05-27
 
 `complex_project_entry_gate` 至少要把 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation` 暴露给 downstream skill。scanner output is evidence, not verdict；scanner 阈值和信号只作为 LLM / reviewer 判定依据，不把启发式输出写成 truth。
 
+unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`；必须保持 milestone create / upsert / activate / derive-worktrack 阻断，直到 programmer confirmation 或 verified evidence 存在。
+
 当 `entry_verdict = needs_reinforcement_milestone` 或 `blocked` 时，implementation-oriented milestone 不得继续 activate 或 derive Worktrack。弱文档命中时，默认建议新增 reinforcement documentation / project-understanding milestone，而不是把未确认理解写入当前 milestone truth。
 
 Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackScope / user safety policy，不替代 Milestone-side blocker。

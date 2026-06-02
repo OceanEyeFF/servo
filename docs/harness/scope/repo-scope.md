@@ -72,7 +72,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 **关键约束**：
 - `ChangeGoal` 不由常规 Decide 选择；目标变更由外部 `GoalChangeRequest` 触发
 - Milestone brief 必须经 programmer 确认后才能激活 goal-driven milestone
-- 命中 complex-project trigger 时，`complex_project_entry_gate.milestone_blocking_decision` 必须允许 create / activate / derive-worktrack；scanner output is evidence, not verdict，不能单独清空阻断。gate handoff 必须暴露 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`；canonical guard term: not fixed heavy mode；Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代 Milestone-side blocker
+- 命中 complex-project trigger 时，`complex_project_entry_gate.milestone_blocking_decision` 必须允许 create / activate / derive-worktrack；scanner output is evidence, not verdict，不能单独清空阻断。gate handoff 必须暴露 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`；缺失、空白、placeholder、pending 或 incomplete gate 按 unresolved gate blocking default 处理；canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable；不能解释为 clear 或 `not_applicable`；canonical guard term: not fixed heavy mode；Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代 Milestone-side blocker
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
 - 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 
@@ -84,7 +84,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 1. `repo-whats-next-skill` 输出建议进入 WorktrackScope
 2. 存在活跃 milestone 且有待初始化的 worktrack
 3. `worktrack_intake_review.intake_review_verdict` 为 `ready_for_worktrack_init`
-4. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 未要求 `block_derive_worktrack`
+4. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 明确允许 derive-worktrack；缺失、空白、placeholder、pending、incomplete 或 `block_derive_worktrack` 均阻断进入 WorktrackScope
 5. 当前无阻塞条件（审批、证据缺失、运行时缺口）
 
 进入前审查：

@@ -67,6 +67,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker
    - 生成的 `operator_safety_policy` 默认只能写 `pending_programmer_confirmation`，不得默认授权 `normal`、`autoreview` 或 `yolo`
    - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_derive_worktrack`
+   - unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`
    - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写

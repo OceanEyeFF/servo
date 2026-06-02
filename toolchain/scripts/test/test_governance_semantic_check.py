@@ -1134,6 +1134,14 @@ def test_check_complex_project_entry_gate_contract_accepts_required_terms(
             "normal",
             "autoreview",
             "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
         ]
     )
     for relative_path in (
@@ -1196,6 +1204,226 @@ def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
     assert any("dialog_review_questions" in item for item in report.failures)
     assert any("reinforcement_milestone_recommendation" in item for item in report.failures)
     assert any("not fixed heavy mode" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_unresolved_default_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("unresolved-gate default term" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_unresolved_without_blocking(
+    tmp_path: Path,
+) -> None:
+    unsafe_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, unsafe_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must map to blocking semantics" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_pre_intake_mode_defaults(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            "allowed_high_risk_command_modes:",
+            '      - "normal"',
+            '      - "autoreview"',
+            '      - "yolo"',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        unsafe_template,
+    )
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_pre_intake_inline_mode_default(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            'allowed_high_risk_command_modes: ["normal", "autoreview", "yolo"]',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        unsafe_template,
+    )
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must not pre-authorize" in item for item in report.failures)
 
 
 def test_check_complexity_signal_scanner_contract_accepts_required_terms(
@@ -1602,6 +1830,71 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
     check_repo_init_complex_gate_contract(tmp_path, report)
 
     assert any("missing safe default" in item for item in report.failures)
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
+def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+            "trigger_conditions: pending_observed_signal_review",
+            "Record only observed signals in trigger_conditions",
+            "allowed_high_risk_command_modes: pending_programmer_confirmation",
+            "entry_verdict: blocked",
+            "milestone_blocking_decision: block_derive_worktrack",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            'allowed_high_risk_command_modes: ["normal", "autoreview", "yolo"]',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        unsafe_template,
+    )
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        ],
+        "required_payload_files": [
+            "assets/repo/complex-project-entry-gate.md",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
     assert any("must not pre-authorize" in item for item in report.failures)
 
 

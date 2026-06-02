@@ -73,6 +73,8 @@ risk_flags:
 
 Use this section when complex-project, weak-doc, multi-system, migration, deploy, security, data, destructive, or authority-sensitive signals affect Milestone entry. This is a Milestone-side blocking gate, not fixed heavy mode. Scanner output is evidence, not verdict. Canonical guard term: scanner output is evidence.
 
+Candidate high-risk command mode values are `normal`, `autoreview`, and `yolo`, but they are programmer-owned answers and not generated defaults.
+
 ```yaml
 complex_project_entry_gate:
   gate_id: ""
@@ -95,10 +97,7 @@ complex_project_entry_gate:
     secrets_policy: "unknown"
     protected_paths: []
     protected_branches: []
-    allowed_high_risk_command_modes:
-      - "normal"
-      - "autoreview"
-      - "yolo"
+    allowed_high_risk_command_modes: "pending_programmer_confirmation"
   dialog_review_questions:
     - id: "CG1"
       question: ""
@@ -114,6 +113,8 @@ complex_project_entry_gate:
     reason: ""
   evidence_refs: []
 ```
+
+unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, or incomplete `complex_project_entry_gate` fields must not be treated as clear or `not_applicable`. Consumers should default unresolved gate handoff to `entry_verdict: blocked` and `milestone_blocking_decision: block_derive_worktrack` or the matching blocked create/upsert/activate action until programmer confirmation or verified evidence exists.
 
 ## Open Questions
 

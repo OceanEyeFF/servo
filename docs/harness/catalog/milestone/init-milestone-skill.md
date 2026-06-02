@@ -134,7 +134,7 @@ canonical executable source：
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
 
-`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，必须返回 blocked，不得写入或激活 implementation-oriented milestone。`entry_verdict = needs_reinforcement_milestone` 时，默认 recommendation 是创建 reinforcement documentation / project-understanding milestone，而不是把弱文档推断升格为 milestone truth。
+`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，必须返回 blocked，不得写入或激活 implementation-oriented milestone。缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全的 gate 必须按 unresolved gate blocking default 处理，不得解释为 `clear` 或 `not_applicable`。Canonical terms: missing, blank, placeholder, pending, incomplete。`entry_verdict = needs_reinforcement_milestone` 时，默认 recommendation 是创建 reinforcement documentation / project-understanding milestone，而不是把弱文档推断升格为 milestone truth。
 
 ## 激活与稳定性约定
 
