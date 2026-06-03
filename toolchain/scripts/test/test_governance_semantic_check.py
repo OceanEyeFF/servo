@@ -77,6 +77,83 @@ WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS = [
 ]
 
 
+NON_PASS_MILESTONE_REVIEW_STATUSES = (
+    "questions_required",
+    "blocked",
+    "skipped",
+    "missing",
+    "stale",
+    "invalidated",
+)
+
+
+def _review_gate_ready(payload: dict[str, object]) -> bool:
+    """Test helper that mirrors the documented Milestone Review Gate predicate."""
+    return (
+        payload.get("latest_review_status") == "effective_pass"
+        and isinstance(payload.get("milestone_review_count"), int)
+        and int(payload["milestone_review_count"]) >= 1
+        and payload.get("effective_review_pass") is True
+        and bool(payload.get("latest_review_checkpoint"))
+        and not payload.get("review_invalidated_by")
+    )
+
+
+def test_milestone_review_gate_behavior_only_effective_pass_is_ready() -> None:
+    ready_payload = {
+        "latest_review_status": "effective_pass",
+        "milestone_review_count": 1,
+        "effective_review_pass": True,
+        "latest_review_checkpoint": "sha256:review",
+        "review_invalidated_by": [],
+    }
+
+    assert _review_gate_ready(ready_payload) is True
+
+    for status in NON_PASS_MILESTONE_REVIEW_STATUSES:
+        payload = {**ready_payload, "latest_review_status": status}
+        assert _review_gate_ready(payload) is False
+
+
+def test_milestone_review_gate_behavior_blocks_field_incomplete_states() -> None:
+    base_payload = {
+        "latest_review_status": "effective_pass",
+        "milestone_review_count": 1,
+        "effective_review_pass": True,
+        "latest_review_checkpoint": "sha256:review",
+        "review_invalidated_by": [],
+    }
+
+    field_overrides = (
+        {"milestone_review_count": 0},
+        {"milestone_review_count": None},
+        {"effective_review_pass": False},
+        {"latest_review_checkpoint": None},
+        {"latest_review_checkpoint": ""},
+        {"review_invalidated_by": ["worktrack_list_changed"]},
+    )
+
+    for override in field_overrides:
+        payload = {**base_payload, **override}
+        assert _review_gate_ready(payload) is False
+
+
+def test_conservative_backfill_behavior_defaults_do_not_enable_review_gate() -> None:
+    backfilled_payload = {
+        "latest_review_status": "missing",
+        "milestone_review_count": 0,
+        "effective_review_pass": False,
+        "latest_review_checkpoint": "N/A",
+        "review_invalidated_by": ["milestone_review_gate_not_ready"],
+        "milestone_review_gate_ready": False,
+    }
+
+    assert _review_gate_ready(backfilled_payload) is False
+    assert backfilled_payload["milestone_review_count"] == 0
+    assert backfilled_payload["effective_review_pass"] is False
+    assert backfilled_payload["milestone_review_gate_ready"] is False
+
+
 def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
     write_doc(
         tmp_path / "product/README.md",
