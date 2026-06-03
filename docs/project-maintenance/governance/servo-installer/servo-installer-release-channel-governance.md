@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-06-01
+updated: 2026-06-03
 owner: servo-kernel
-last_verified: 2026-06-01
+last_verified: 2026-06-03
 ---
 # servo-installer Release Channel Governance
 
@@ -28,15 +28,15 @@ last_verified: 2026-06-01
 
 ## 当前 source release tuple
 
-2026-06-01，当前 source release tuple 与已发布 `next` channel RC 一致：
+2026-06-03，当前 source release tuple 已准备为下一轮 `next` channel RC candidate；registry published fact 仍以"当前 registry 事实"为准，直到 `v0.6.0-rc.1` GitHub Release 和 publish workflow 完成：
 
-- root `package.json` version：`0.6.0-rc.0`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.0-rc.0`
-- approval lock：`approvedVersion=0.6.0-rc.0`、`approvedGitTag=v0.6.0-rc.0`、`approvedChannel=next`
-- release scope：发布 v0.6.0-rc.0 RC 测试版本，包含已验收 Harness 更新：pre-milestone intake 模板、init-milestone handoff hardening、weak-doc temporary understanding template、acceptance writeback consistency check 与 runtime artifact consistency simulation。
-- publish status：GitHub Release `v0.6.0-rc.0` 已发布为 prerelease；publish workflow `26733468086` 成功；npm `servo-installer@0.6.0-rc.0` 已发布；`next` dist-tag 指向 `0.6.0-rc.0`；`latest` 保持 `0.5.8`。
+- root `package.json` version：`0.6.0-rc.1`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.0-rc.1`
+- approval lock：`approvedVersion=0.6.0-rc.1`、`approvedGitTag=v0.6.0-rc.1`、`approvedChannel=next`
+- release scope：发布 v0.6.0-rc.1 RC 测试版本，包含 `MS-20260601-002` 已验收的复杂项目入口门禁、复杂度 scanner 分发、弱文档强化 Milestone 路由、真实 Claude dogfood 运行约束，以及 CodeReview 修复后的安全/打包语义。
+- publish status：candidate only；`v0.6.0-rc.1` 尚未创建 GitHub Release，npm `servo-installer@0.6.0-rc.1` 尚未发布，`next` 仍指向已发布的 `0.6.0-rc.0`，`latest` 保持 `0.5.8`。
 
-注意：`0.6.0-rc.0` 是 prerelease RC；试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
+注意：`0.6.0-rc.1` 是 prerelease RC candidate；发布后试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
