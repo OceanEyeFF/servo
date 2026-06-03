@@ -11,6 +11,14 @@ last_verified: 2026-06-03
 
 Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 与 `Autonomy Ledger`。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
 
+## Conservative Runtime Backfill
+
+`.servo` runtime artifacts may be older than the current artifact contract. Missing additive fields must be handled with conservative runtime backfill: apply forward-only defaults of `false`, `unknown`, `missing`, `blocked`, `not ready`, `N/A`, or empty blockers as appropriate, and record the gap as runtime evidence. Backfill must preserve existing observed facts, must not infer programmer confirmation, must not grant permissions, must not increment counters, and must not turn a missing gate into `ready` or `allowed`.
+
+Conservative runtime backfill is not a broad migration. It may populate the current routing view or the current worktrack artifact with additive default fields, but it must not rewrite historical `.servo` truth or expand authority. Any field that controls approval, dispatch, review pass, effective pass, autonomy, destructive permission, or Worktrack Init/Dispatch defaults to blocked/not ready until verified evidence or programmer confirmation exists.
+
+Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
+
 ## Linked Formal Documents
 
 Harness Control State 可保存标准 artifact 路径指针（`repo_snapshot`、`repo_analysis`、`worktrack_contract`、`plan_task_queue`、`gate_evidence`、`milestone`）供 supervisor 快速定位正式对象。这些只是路径指针，不含业务真相。若某 artifact 缺失或过期，Control State 不得自行补写业务内容，应通过对应 `Scope` 的 `Observe`/`Decide`/`Init`/`Verify` 路由刷新正式对象。
@@ -41,6 +49,8 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 - `active_milestone_review_blockers`: array，默认包含缺失或失效原因
 
 只有当 `active_milestone_review_gate_status = effective_pass`、`active_milestone_review_count >= 1`、`active_milestone_review_checkpoint` 非空且 Milestone artifact 中 `effective_review_pass = true` 时，Control State 才能允许进入 Worktrack Init/Dispatch。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段缺失都必须按 blocked 解释。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 改变时，control-state 的 routing state 必须降级为 `invalidated` 或 `stale`，等待新的 `pre_milestone_intake_review` checkpoint。
+
+For missing additive Milestone Review Gate fields, conservative runtime backfill is: `active_milestone_review_gate_status = missing`, `active_milestone_review_count = 0`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, `milestone_review_gate_ready = false`, `active_milestone_review_required = true` for goal-driven milestones, and `active_milestone_review_blockers` containing `milestone_review_gate_not_ready`. These defaults must not increment `milestone_review_count`, must not set `effective_pass`, and must block Worktrack Init/Dispatch.
 
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 

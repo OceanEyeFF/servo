@@ -532,6 +532,27 @@ MILESTONE_REVIEW_ROUTE_GUARD_REQUIRED_TERMS = [
     "invalidated",
     "Worktrack Init/Dispatch",
 ]
+CONSERVATIVE_BACKFILL_CONTRACT_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "docs/harness/artifact/control/milestone.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/milestone-status-skill/SKILL.md",
+]
+CONSERVATIVE_BACKFILL_REQUIRED_TERMS = [
+    "conservative runtime backfill",
+    "forward-only",
+    "false",
+    "unknown",
+    "missing",
+    "blocked",
+    "not ready",
+    "must not grant permissions",
+    "must not infer programmer confirmation",
+    "must not increment counters",
+    "must not enable Worktrack Init/Dispatch",
+]
 COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
     "docs/harness/artifact/control/milestone.md",
@@ -1659,6 +1680,23 @@ def check_milestone_review_route_guard_contract(repo_root: Path, report: Semanti
     report.add_info(f"checked {checked} milestone review route guard sources")
 
 
+def check_conservative_backfill_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in CONSERVATIVE_BACKFILL_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing conservative backfill source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in CONSERVATIVE_BACKFILL_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"conservative backfill contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} conservative backfill contract sources")
+
+
 def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS:
@@ -2395,6 +2433,7 @@ def main() -> int:
     check_init_milestone_intake_handoff_contract(repo_root, report)
     check_milestone_review_gate_contract(repo_root, report)
     check_milestone_review_route_guard_contract(repo_root, report)
+    check_conservative_backfill_contract(repo_root, report)
     check_complex_project_entry_gate_contract(repo_root, report)
     check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)

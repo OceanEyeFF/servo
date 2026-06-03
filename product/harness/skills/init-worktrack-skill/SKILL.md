@@ -37,6 +37,7 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
    - 必须包含 `milestone_review_gate_ready`、`latest_review_status`、`milestone_review_count`、`latest_review_checkpoint`、`effective_review_pass` 和 `review_invalidated_by`
    - 只有 `milestone_review_gate_ready == true`、`latest_review_status == "effective_pass"`、`milestone_review_count >= 1`、`effective_review_pass == true` 且 `latest_review_checkpoint` 非空时，才允许 milestone-derived worktrack 继续初始化
    - 若 review 状态为 `skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全，返回被阻塞初始化结果，暴露 `milestone_review_gate_not_ready`，不得进入 Worktrack Init/Dispatch
+   - 若上游 `.servo` runtime artifact 缺少 additive review/backfill 字段，使用 conservative runtime backfill：缺失字段按 `false`、`unknown`、`missing`、`blocked`、`not ready`、`N/A` 解释；该 backfill forward-only 且不得扩大权限、不得推断 programmer confirmation、不得增加 `milestone_review_count`、不得设置 `effective_review_pass = true` 或 `milestone_review_gate_ready = true`，不得创建 worktrack branch。
    - 只有 `intake_review_verdict == "ready_for_worktrack_init"` 且 `ready_for_worktrack_init == true` 时，才允许继续创建分支和写入 Worktrack Contract
    - 若 verdict 为 `refresh_required`，返回被阻塞初始化结果并建议回到 `RepoScope.Observe` / `RepoScope.Refresh`，不得创建 worktrack branch
    - 若 verdict 为 `adjust_worktracks`，返回被阻塞初始化结果并建议回到 `RepoScope.Decide` / milestone backlog 调整；需要新增、移除、重排 worktrack 时不得在 Init 中静默改写范围
@@ -83,6 +84,7 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - 若传入 `target_milestone_id`，必须验证其存在于 live milestone-backlog 且为 `active`；引用不存在、仅存在于 milestone-history 或非 active 的 milestone 必须返回 blocked。
 - milestone 绑定信息（`milestone_id`、`derived_from_milestone`）必须写入 Worktrack Contract，供 `repo-refresh-skill` 在 closeout 时写入 worktrack-backlog。
 - milestone 派生 worktrack 必须有上游 `worktrack_intake_review`，且 `intake_review_verdict = ready_for_worktrack_init`、`ready_for_worktrack_init = true`。还必须有 Milestone Review Gate route guard：`milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 无阻断项。缺失或非 ready 的 intake review / review gate 必须返回 blocked，不得创建分支、不得播种队列、不得进入 Worktrack Init/Dispatch、不得把执行直接交给当前载体。
+- Conservative runtime backfill 只能填补 additive runtime 字段的保守默认值：`false`、`unknown`、`missing`、`blocked`、`not ready`、`N/A`。它必须 preserve existing observed facts，must not grant permissions，must not infer programmer confirmation，must not increment counters，must not set effective pass, and must not enable Worktrack Init/Dispatch。
 
 ## 预期输出
 

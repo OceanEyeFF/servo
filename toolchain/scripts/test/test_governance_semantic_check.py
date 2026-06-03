@@ -17,6 +17,7 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
+    check_conservative_backfill_contract,
     check_complex_project_entry_gate_contract,
     check_complexity_signal_scanner_contract,
     check_debug_evidence_contract,
@@ -1318,6 +1319,72 @@ def test_check_milestone_review_route_guard_contract_flags_missing_block_term(
     assert any("milestone_review_gate_not_ready" in item for item in report.failures)
     assert any("questions_required" in item for item in report.failures)
     assert any("skipped" in item for item in report.failures)
+
+
+def test_check_conservative_backfill_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "conservative runtime backfill",
+            "forward-only",
+            "false",
+            "unknown",
+            "missing",
+            "blocked",
+            "not ready",
+            "must not grant permissions",
+            "must not infer programmer confirmation",
+            "must not increment counters",
+            "must not enable Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/artifact/control/milestone.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_conservative_backfill_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_conservative_backfill_contract_flags_permission_expansion_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "conservative runtime backfill",
+            "forward-only",
+            "false",
+            "unknown",
+            "missing",
+            "blocked",
+            "not ready",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/artifact/control/milestone.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_conservative_backfill_contract(tmp_path, report)
+
+    assert any("must not grant permissions" in item for item in report.failures)
+    assert any("must not infer programmer confirmation" in item for item in report.failures)
+    assert any("must not enable Worktrack Init/Dispatch" in item for item in report.failures)
 
 
 def test_check_complex_project_entry_gate_contract_accepts_required_terms(

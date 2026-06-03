@@ -86,6 +86,10 @@ Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackSc
 - `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化时，必须写入 `review_invalidated_by`，并把 `latest_review_status` 视为 `invalidated`，直到新的 pre-milestone-intake-skill review 产生 fresh checkpoint。
 - `milestone_review_gate_handoff` 是 `pre_milestone_intake_review` 到 Milestone artifact 的结构化交接对象；review checkpoint 应引用该 handoff 的稳定摘要或输入指纹；缺失 checkpoint 时不得进入 Worktrack Init/Dispatch。
 
+Conservative runtime backfill applies when older `.servo/milestone/*.md` artifacts lack additive `milestone_review_gate` fields. Missing additive fields must default to `missing`, `false`, `unknown`, `0`, `N/A`, `blocked`, or `not ready`: `milestone_review_count = 0`, `latest_review_status = missing`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, and `review_invalidated_by` treated as blocking until verified. Backfill must be forward-only, preserve existing observed facts, avoid broad historical rewrites, and must not infer programmer confirmation, grant permissions, increment review counters, or create an `effective_pass`.
+
+Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
+
 该 gate 只阻断 milestone 进入 Worktrack 工作，不自动改变 milestone purpose、验收标准或 final acceptance 结论。
 
 ## 生命周期
