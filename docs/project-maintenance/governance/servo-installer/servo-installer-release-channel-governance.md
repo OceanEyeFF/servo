@@ -15,28 +15,31 @@ last_verified: 2026-06-03
 
 ## 当前 registry 事实
 
-2026-06-01 已核对 npm registry：
+2026-06-03 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.5.8`；`next` -> `0.6.0-rc.0`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`
+- npm registry 真实状态：`latest` -> `0.5.8`；`next` -> `0.6.0-rc.1`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`、`0.6.0-rc.1`
 - GitHub Release `v0.5.8` 已发布，target commit `ad363e818adc5da01049f1808db9376830c05d09`；npm `servo-installer@0.5.8` 的 `gitHead` 同为 `ad363e818adc5da01049f1808db9376830c05d09`
 - publish workflow run `26509952967` completed successfully for `v0.5.8`
 - npm `servo-installer@0.5.8` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.8.tgz`
 - GitHub Release `v0.6.0-rc.0` 已发布为 prerelease，target commit `be5df6ec2a4d5fa9eed8503a6bd3ef1b43a3ceef`；npm `servo-installer@0.6.0-rc.0` 的 `gitHead` 同为 `be5df6ec2a4d5fa9eed8503a6bd3ef1b43a3ceef`
 - publish workflow run `26733468086` completed successfully for `v0.6.0-rc.0`
 - npm `servo-installer@0.6.0-rc.0` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.6.0-rc.0.tgz`
+- GitHub Release `v0.6.0-rc.1` 已发布为 prerelease，target commit `8259ee4da572cdf92b2da345a7c53c0ed5de99c9`；npm `servo-installer@0.6.0-rc.1` 的 `gitHead` 同为 `8259ee4da572cdf92b2da345a7c53c0ed5de99c9`
+- publish workflow run `26871159528` completed successfully for `v0.6.0-rc.1`
+- npm `servo-installer@0.6.0-rc.1` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.6.0-rc.1.tgz`
 
 ## 当前 source release tuple
 
-2026-06-03，当前 source release tuple 已准备为下一轮 `next` channel RC candidate；registry published fact 仍以"当前 registry 事实"为准，直到 `v0.6.0-rc.1` GitHub Release 和 publish workflow 完成：
+2026-06-03，当前 source release tuple 与已发布 `next` channel RC 一致：
 
 - root `package.json` version：`0.6.0-rc.1`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.0-rc.1`
 - approval lock：`approvedVersion=0.6.0-rc.1`、`approvedGitTag=v0.6.0-rc.1`、`approvedChannel=next`
 - release scope：发布 v0.6.0-rc.1 RC 测试版本，包含 `MS-20260601-002` 已验收的复杂项目入口门禁、复杂度 scanner 分发、弱文档强化 Milestone 路由、真实 Claude dogfood 运行约束，以及 CodeReview 修复后的安全/打包语义。
-- publish status：candidate only；`v0.6.0-rc.1` 尚未创建 GitHub Release，npm `servo-installer@0.6.0-rc.1` 尚未发布，`next` 仍指向已发布的 `0.6.0-rc.0`，`latest` 保持 `0.5.8`。
+- publish status：GitHub Release `v0.6.0-rc.1` 已发布为 prerelease；publish workflow `26871159528` 成功；npm `servo-installer@0.6.0-rc.1` 已发布；`next` dist-tag 指向 `0.6.0-rc.1`；`latest` 保持 `0.5.8`。
 
-注意：`0.6.0-rc.1` 是 prerelease RC candidate；发布后试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
+注意：`0.6.0-rc.1` 是 prerelease RC；试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
