@@ -11,6 +11,8 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 
 本技能运行在 `init-milestone-skill` 之前。它接收 programmer 的自然语言需求、已有 repo truth、当前控制状态和最小代码仓库上下文，先把需求整理为可确认的 milestone brief 草案，再识别模糊点、风险点、范围扩张点和需要 programmer 决策的地方。它的输出是结构化 `pre_milestone_intake_review`，供 `init-milestone-skill` 消费；当目标 milestone 已创建或准备激活时，该 review 同时作为 Milestone Review Gate 的输入。
 
+Continuous intake mode is allowed and expected when one assistant turn is not enough to resolve the entry review. In that mode the skill returns `intake_status = questions_required`, persists `continuation_state`, asks exactly one `next_required_question`, and waits for the programmer answer before producing the next review checkpoint. A questions-required checkpoint is not a pass; it is a continuation handoff.
+
 本技能不创建 milestone，不写入 `.servo/milestone/`，不更新 milestone-backlog，不创建 worktrack，不修改代码，不替 programmer 确认业务目标。
 
 当需要稳定输出格式时，使用 `templates/pre-milestone-intake-review.template.md`。模板是 before-start question contract 的执行载体，必须保留事实、推断、未知项、问题、推荐答案、取舍、范围边界、验收信号、确认状态和跳过风险记录的分区。
@@ -46,7 +48,7 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
    - `programmer_decisions_required`：必须由 programmer 决策的事项。
 4. 生成 `request_summary` 和 `suggested_milestone_brief` 草案，至少包含 title、purpose、scope、non_goals、candidate worktracks、completion signals、acceptance criteria、risk flags。
 5. 执行 grill gate：
-   - 优先提出 3 到 5 个最高杠杆问题；
+   - 默认优先提出 3 到 5 个最高杠杆问题；若进入 continuous intake mode，则本轮只提出一个最高杠杆 `next_required_question`；
    - 每个问题必须说明为什么要问，并写入 `why_it_matters`；
    - 每个问题必须给出 recommended answer；
    - 每个 recommended answer 必须说明取舍影响；
@@ -59,8 +61,10 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
    - 若 high-risk trigger 命中，必须存在 `open_questions` 的明确回答或 `intake_skipped = true` 的风险接受记录；
    - 若 `complex_project_entry_gate.entry_verdict` 为 `needs_reinforcement_milestone` 或 `blocked`，`ready_for_init_milestone = false`，并通过结构化 `reinforcement_milestone_recommendation` 建议 reinforcement documentation / project-understanding Milestone；
    - 若剩余未知项不影响安全初始化，可记录 residual risk 并设置 ready；
+   - 若存在阻断性未知项但一次性追问会制造噪声，设置 `intake_status = questions_required`、`ready_for_init_milestone = false`、`continuation_state.continuation_required = true`，并只输出一个 `next_required_question`；
+   - 若 programmer 明确接受剩余未知项作为 residual risk，必须在 `residual_risk_accepted` 和 `accepted_residual_risk` 中记录；只有这些风险不改变 scope、non-goals、acceptance 或 risk boundary 时才可进入 `effective_pass`；
    - 若 programmer 已确认必要问题，设置 `programmer_confirmed = true`。
-7. 输出结构化 `pre_milestone_intake_review`。若该 review 要作为 Milestone Review Gate 的 pass，必须写出 `milestone_review_gate_handoff`，并区分 `effective_pass`、`questions_required`、`blocked`、`skipped`、`missing`、`stale` 与 `invalidated`。
+7. 输出结构化 `pre_milestone_intake_review`。若该 review 要作为 Milestone Review Gate 的 pass，必须写出 `milestone_review_gate_handoff`，并区分 `effective_pass`、`questions_required`、`blocked`、`skipped`、`missing`、`stale` 与 `invalidated`。continuous intake mode 可以跨多个 assistant turns；每一轮必须写入 `answered_questions`、`unresolved_questions`、`continuation_reason`、`next_required_question` 和 `continuation_state`。
 8. 停止并交给 `init-milestone-skill` 或返回 programmer；本技能不得自行写入/激活 milestone。
 
 ## 硬约束
@@ -70,12 +74,14 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - 不得创建、更新或激活 milestone。
 - 不得创建 worktrack 或执行实现。
 - 不得把 inferred assumptions 写成 programmer-confirmed truth。
-- 不得一次性提出大量低价值问题；问题应限于本轮 highest leverage。
+- 不得一次性提出大量低价值问题；问题应限于本轮 highest leverage。continuous intake mode 下必须 one-question-at-a-time：`open_questions` 只能包含一个 blocking question，且必须同步填充 `next_required_question`。
 - 每个 open question 必须携带 recommended answer 和 tradeoff。
+- `questions_required` 必须携带 `continuation_state`、`continuation_reason`、`answered_questions`、`unresolved_questions`、`next_required_question` 和 `next_question_blocks_ready = true`；缺少这些字段不得交给下游消费。
 - 当 high-risk trigger 命中且缺少 programmer confirmation 时，必须设置 `ready_for_init_milestone = false`。
 - 若用户明确要求跳过 intake，应记录 `intake_skipped = true`、`skip_reason` 和 `accepted_risk`，不得假装已经完成 grill gate。
 - `intake_status = ready` 只能在 `programmer_confirmed = true` 且 `ready_for_init_milestone = true` 时使用；跳过 intake 时只能使用 `intake_status = skipped`，不得同时标记为 ready。
 - Milestone Review Gate 的有效 pass 只能来自 `intake_status = ready`、`programmer_confirmed = true`、`ready_for_init_milestone = true`、`intake_skipped = false` 且 `milestone_review_gate_handoff.review_status = effective_pass`。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全不得作为 review pass。
+- `questions_required`、`blocked`、`skipped`、`missing`、`stale`、`invalidated`、`residual_risk_unaccepted` 或 field-incomplete continuation state 不得增加 `milestone_review_count`。
 - 若 review 发现 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 发生变化，必须在 `review_invalidated_by` 中记录，并把 `review_status` 设置为 `invalidated` 或要求 fresh checkpoint。
 - `observed_facts`、`inferred_assumptions`、`unknowns` 和 `programmer_decisions_required` 必须分开写；未经 programmer 确认的推断不得进入长期 truth 或 milestone artifact 的确认字段。
 - 命中 complex-project trigger 时，必须输出 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`。
@@ -119,6 +125,12 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `programmer_decisions_required`
 - `risk_flags`
 - `open_questions`
+- `answered_questions`
+- `unresolved_questions`
+- `continuation_state`
+- `continuation_reason`
+- `next_required_question`
+- `next_question_blocks_ready`
 - `recommended_answers`
 - `scope_boundary`
 - `non_goals`
@@ -130,6 +142,8 @@ description: 当需要在创建、更新或激活 Milestone 前对用户需求�
 - `intake_skipped`
 - `skip_reason`
 - `accepted_risk`
+- `residual_risk_accepted`
+- `accepted_residual_risk`
 - `handoff_to_init_milestone`
 - `template_contract_ref`
 - `complex_project_entry_gate`

@@ -12,6 +12,8 @@ confirmation_required: true
 intake_skipped: false
 skip_reason: null
 accepted_risk: []
+residual_risk_accepted: false
+accepted_residual_risk: []
 template_contract_ref: "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
 ```
 
@@ -129,7 +131,7 @@ Use `recommendation_status: not_needed` only when `needed: false` and `blocks_im
 
 ## Open Questions
 
-Ask only the highest-leverage questions needed before initialization. Each question must include why it matters, a recommended answer, and the tradeoff if the recommendation is wrong.
+Ask only the highest-leverage questions needed before initialization. In continuous intake mode, ask exactly one blocking question in this section and mirror it in `next_required_question`. Each question must include why it matters, a recommended answer, and the tradeoff if the recommendation is wrong.
 
 ```yaml
 open_questions:
@@ -140,6 +142,37 @@ open_questions:
     tradeoff: ""
     blocks_ready: true
 ```
+
+## Continuous Intake State
+
+Use this section when `intake_status: questions_required`. A questions-required checkpoint is a continuation handoff, not a pass. Continue one-question-at-a-time until the review reaches `effective_pass`, `blocked`, `skipped`, or residual risk is explicitly accepted without changing scope, non-goals, acceptance, or risk boundary.
+
+```yaml
+continuation_state:
+  continuation_required: true
+  continuation_round: 1
+  continuation_reason: ""
+  answered_questions:
+    - id: ""
+      answer_summary: ""
+      answered_at: null
+      source: "programmer | repo_evidence"
+  unresolved_questions:
+    - id: "Q1"
+      question: ""
+      blocks_ready: true
+  next_required_question:
+    id: "Q1"
+    question: ""
+    why_it_matters: ""
+    recommended_answer: ""
+    tradeoff: ""
+  next_question_blocks_ready: true
+  residual_risk_accepted: false
+  accepted_residual_risk: []
+```
+
+If `questions_required`, `open_questions` must contain exactly one blocking question and `milestone_review_gate_handoff.review_status` must be `questions_required` with `effective_review_pass: false` and `milestone_review_count_increment: 0`.
 
 ## Recommended Answers
 
@@ -203,6 +236,8 @@ confirmation_state:
   programmer_confirmed: false
   confirmed_answers: []
   residual_risk: []
+  residual_risk_accepted: false
+  accepted_residual_risk: []
 ```
 
 ## Skip Record
@@ -253,6 +288,7 @@ milestone_review_gate_handoff:
     - "programmer_confirmed = true"
     - "ready_for_init_milestone = true"
     - "intake_skipped = false"
+    - "questions_required must continue one-question-at-a-time before pass"
 ```
 
 Only `review_status: effective_pass` with `effective_review_pass: true`, a non-empty `latest_review_checkpoint`, `programmer_confirmed: true`, `ready_for_init_milestone: true`, and `intake_skipped: false` may increment `milestone_review_count`. All other statuses must block Worktrack Init/Dispatch until a fresh pre-milestone-intake review exists.

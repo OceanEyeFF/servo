@@ -88,6 +88,12 @@ canonical executable source：
 - `programmer_decisions_required`
 - `risk_flags`
 - `open_questions`
+- `answered_questions`
+- `unresolved_questions`
+- `continuation_state`
+- `continuation_reason`
+- `next_required_question`
+- `next_question_blocks_ready`
 - `why_it_matters`
 - `recommended_answer`
 - `tradeoff`
@@ -103,6 +109,8 @@ canonical executable source：
 - `intake_skipped`
 - `skip_reason`
 - `accepted_risk`
+- `residual_risk_accepted`
+- `accepted_residual_risk`
 - `handoff_to_init_milestone`
 - `template_contract_ref`
 - `milestone_review_gate_handoff`
@@ -123,7 +131,7 @@ canonical executable source：
 
 - `ready`: 只有 `ready_for_init_milestone = true`、`programmer_confirmed = true` 且 `intake_skipped = false` 时才允许 create/upsert/activate。
 - `skipped`: 只能表示 programmer 显式接受跳过风险；必须记录 `skip_reason` 和 `accepted_risk`，不得伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。
-- `questions_required`: 必须返回 blocked 并路由回 `pre-milestone-intake-skill`。
+- `questions_required`: 必须返回 blocked，保留 `continuation_state` 和 `next_required_question`，并路由回 `pre-milestone-intake-skill` 继续 one-question-at-a-time；不得当成 approval。
 - `blocked`: 必须返回 blocked 并暴露阻断原因。
 - missing / 字段不全 / 状态矛盾：必须返回 blocked，不得把薄弱的 milestone brief 伪装成已确认。
 
