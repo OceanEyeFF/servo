@@ -175,6 +175,8 @@ def run_scope_gate(repo_root: Path, python: str) -> dict:
             "--allowed-prefix",
             "CONTRIBUTING.md",
             "--allowed-prefix",
+            ".gitignore",
+            "--allowed-prefix",
             ".codex/",
             "--allowed-prefix",
             ".github/",
@@ -1192,6 +1194,14 @@ def run_test_gate_subchecks(repo_root: Path, python: str, version_metadata_check
         (
             "governance_semantic_tests",
             run_command([python, "-m", "pytest", "toolchain/scripts/test/test_governance_semantic_check.py"], cwd=repo_root),
+        ),
+        (
+            "complexity_signal_scanner_tests",
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/test_complexity_signal_scanner.py"], cwd=repo_root),
+        ),
+        (
+            "set_harness_goal_e2e_fixture_tests",
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/test_set_harness_goal_e2e_fixture.py"], cwd=repo_root),
         ),
         (
             "agents_adapter_contract_tests",

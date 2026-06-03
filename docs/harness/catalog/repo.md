@@ -27,6 +27,7 @@ last_verified: 2026-05-08
 - Repo structure
 - Harness Control State 初始化模板
 - Weak-doc Temporary Understanding 模板（仅弱文档 adoption / onboarding）
+- Complex Project Entry Gate（仅复杂项目、弱文档或高风险 Milestone 进入前）
 
 canonical executable source：
 
@@ -63,6 +64,20 @@ preferred handoff fields：
 - `not_goal_truth`
 - `not Goal Charter truth`
 - `--weak-doc-onboarding`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+- `needed`
+- `recommendation_status`
+- `recommendation_type`
+- `temporary_understanding_ref`
+- `blocks_implementation_until_resolved`
+
+Complex-project adoption handoff is a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain user-owned policy choices and do not bypass `milestone_blocking_decision`. Weak-doc reinforcement routing uses structured `reinforcement_milestone_recommendation`; `needed = true` or `blocks_implementation_until_resolved = true` routes to reinforcement documentation / project-understanding Milestone before implementation.
 
 ### 1. pre-milestone-intake-skill
 
@@ -77,6 +92,7 @@ preferred handoff fields：
 - `Repo Snapshot / Status`
 - `Harness Control State`
 - live Milestone Backlog
+- `complex_project_entry_gate`（当命中 complex-project trigger 时）
 
 canonical executable source：
 
@@ -116,6 +132,17 @@ preferred handoff fields：
 - `programmer_confirmed`
 - `ready_for_init_milestone`
 - `handoff_to_init_milestone`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+
+These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
+
+When weak docs are the blocker, `reinforcement_milestone_recommendation` must be structured with `needed`, `recommendation_status`, `recommendation_type`, `suggested_title` or `suggested_purpose`, `reason` or `recommendation_reason`, `temporary_understanding_ref`, `evidence_refs`, `confirmation_required`, and `blocks_implementation_until_resolved`. `recommendation_status` values include `not_needed`, `recommended`, `required`, and `pending_operator_review`. `needed = true` or `blocks_implementation_until_resolved = true` blocks implementation-oriented Worktrack derivation; `needed = false` alone must not block a low-risk clear / `not_applicable` gate.
 
 ### 2. repo-status-skill
 
@@ -154,6 +181,7 @@ preferred handoff fields：
 - `Repo Snapshot / Status`
 - `Harness Control State`
 - `Goal Change Request`
+- `Complex Project Entry Gate`
 
 canonical executable source：
 
@@ -179,6 +207,11 @@ preferred decision fields：
 - `overview_trigger_reason`
 - `candidate_worktracks`
 - `top_candidate`
+- `complex_project_entry_gate`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+- unresolved gate blocking default
+- `blocks_implementation_until_resolved`
 
 ### 4. repo-append-request-skill
 

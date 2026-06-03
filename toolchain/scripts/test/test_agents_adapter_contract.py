@@ -217,6 +217,23 @@ class AgentsAdapterContractTest(unittest.TestCase):
             canonical_paths,
         )
         self.assertIn("assets/repo/temporary-understanding.md", required_payload_files)
+        self.assertIn(
+            "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            canonical_paths,
+        )
+        self.assertIn("scripts/complexity_signal_scanner.py", required_payload_files)
+
+        claude_payload = load_json(
+            CLAUDE_ADAPTER_SKILLS_DIR / "set-harness-goal-skill" / "payload.json"
+        )
+        self.assertIn(
+            "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            claude_payload["canonical_paths"],
+        )
+        self.assertIn(
+            "scripts/complexity_signal_scanner.py",
+            claude_payload["required_payload_files"],
+        )
 
     def test_repo_whats_next_payload_includes_overview_fallback_reference(self) -> None:
         payload = load_json(

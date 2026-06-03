@@ -110,9 +110,15 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
          - 若存在：`suggested_milestone_action = "activate"`，输出 `suggested_milestone_id`
       e. `suggested_next_scope = "RepoScope"`，绑定 `init-milestone-skill`
       f. 若本轮建议 `create` / `activate` / `append_worktracks`，必须同时输出结构化 `milestone_brief`，并将 `需要审批 = true`、`审批理由 = "milestone brief 待 programmer 确认"`
+      f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定 `init-milestone-skill` 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement documentation / project-understanding Milestone brief，且不能把 implementation-oriented create / activate / append_worktracks 投影为可绑定路由。若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把 create / activate / append_worktracks 建议投影成可绑定的 `init-milestone-skill` 路由。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
       g. **禁止在此分支建议"进入工作追踪"**（work-collection 路径是合法例外：work-collection milestone 激活后可直接进入 WorktrackScope）
       h. 输出 `milestone_kind` 字段，供下游 skill 分派
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `not_achieved`（未完成）：
+      - 若 active milestone 或当前候选 worktrack 命中 complex-project trigger，先消费 `complex_project_entry_gate`
+      - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict
+      - 若 `milestone_blocking_decision` 包含 `block_derive_worktrack`，推荐 `保持并观察`，在继续阻塞项中写明 `operator_safety_policy`、`dialog_review_questions` 或 `reinforcement_milestone_recommendation` 缺口，不得进入 WorktrackScope.Init
+      - 若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，推荐 reinforcement documentation / project-understanding Milestone，不得把当前候选派生为 implementation-oriented Worktrack；temporary understanding 只能作为 runtime evidence, not Goal Charter truth
+      - 若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把候选 worktrack 派生为 ready。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
       - 先从活跃 Milestone 的 `worktrack_list` 中选取下一个待执行的 worktrack，并对照 worktrack-backlog 过滤已完成/已阻塞/已推迟的 worktrack
       - 将选中的 current worktrack 组织为一个独立执行单元：它拥有自己的 branch、contract、plan-task-queue、verify、closeout 和 repo-refresh 追踪，然后再回到 milestone 上下文继续推进
       - 若 `worktrack_list` 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
@@ -218,6 +224,12 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - `overview fallback` 只能生成未来 worktrack 候选建议，不能直接创建或执行 worktrack。
 - **Milestone-First**：无 active milestone 时，"进入工作追踪" 路由必须 blocked，必须优先建议创建或激活 milestone。work-collection milestone 路径是合法例外：无内聚任务可由 harness 自动创建 work-collection milestone 后进入 WorktrackScope。
 - `Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代 worktrack gate；`milestone_gate_verdict != "pass"` 时不得自动继续派生新 worktrack 来“补过”集成失败。
+- `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；在 create / upsert / activate / derive-worktrack 前必须尊重 `milestone_blocking_decision`。
+- 缺失、空白、placeholder、pending 或 incomplete `complex_project_entry_gate` 不得被解释为 `clear` 或 `not_applicable`；必须阻断 derive-worktrack 并返回 `保持并观察` 或 reinforcement documentation / project-understanding Milestone 建议。
+- scanner output is evidence, not verdict；`scanner_evidence_ref` 和 `complexity_signals` 只能作为判定依据，不能替代 programmer confirmation、`operator_safety_policy` 或 `dialog_review_questions`。
+- Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
+- 弱文档命中且当前理解不足时，优先推荐 reinforcement documentation / project-understanding Milestone，并通过 `reinforcement_milestone_recommendation` 暴露。
+- `reinforcement_milestone_recommendation` 必须保留 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生，`needed = false` 且 `recommendation_status = not_needed` 不应阻断低风险 `clear` / `not_applicable` gate。
 - milestone closeout（`milestone_acceptance_verdict == achieved`）需 programmer 审批（`需要审批 = true`），不得自动推进。
 - 建议 `create` / `activate` / `append_worktracks` 时必须附带结构化 `milestone brief`；在 programmer 确认前不得把该建议伪装成已获准的自动路由。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
@@ -297,6 +309,13 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - `target_milestone_id`
 - `pipeline_advancement_hint`
 - `worktrack_intake_review`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
 - `repo_fundamentals`
 - `snapshot_freshness`
 - `milestone_purpose_alignment`

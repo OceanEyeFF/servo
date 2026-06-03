@@ -326,6 +326,109 @@ const TEMPLATE_SPECS = {
       Handoff: ["recommended_next_route", "handoff_summary", "required_context_for_next_step"],
     },
   }),
+  "repo-complex-project-entry-gate": templateSpec({
+    templateId: "repo-complex-project-entry-gate",
+    sourceRelpath: "assets/repo/complex-project-entry-gate.md",
+    outputRelpath: "repo/complex-project-entry-gate.md",
+    artifactType: "complex-project-entry-gate",
+    title: "Complex Project Entry Gate",
+    instanceNote:
+      "这是 `.servo/repo/complex-project-entry-gate.md` 的运行样例，用于 repo init / existing-code-adoption 期间记录 complex_project_entry_gate。它是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。",
+    requiredSections: [
+      "Metadata",
+      "Trigger Signals",
+      "Project Understanding",
+      "Operator Safety Policy",
+      "Dialog Review Questions",
+      "Boundary Before Confirmation",
+      "Verdict",
+      "Handoff",
+    ],
+    requiredKeyedFieldsBySection: {
+      Metadata: [
+        "repo",
+        "owner",
+        "updated",
+        "adoption_mode",
+        "gate_id",
+        "complex_project_entry_gate",
+        "target_repo",
+        "target_milestone_id",
+        "trigger_source",
+        "generated_by",
+        "gate_truth_status",
+      ],
+      "Trigger Signals": [
+        "trigger_conditions",
+        "scanner_evidence_ref",
+        "scanner_command",
+        "scanner_output_role",
+        "complexity_signals",
+        "thresholds",
+        "confidence",
+      ],
+      "Project Understanding": [
+        "project_understanding",
+        "service_workflow_boundary",
+        "core_directories",
+        "generated_or_low_trust_paths",
+        "verification_authority",
+        "unknowns",
+      ],
+      "Operator Safety Policy": ["operator_safety_policy"],
+      "Dialog Review Questions": ["dialog_review_questions"],
+      "Boundary Before Confirmation": [
+        "allowed_before_confirmation",
+        "forbidden_before_confirmation",
+        "not_fixed_heavy_mode",
+      ],
+      Verdict: [
+        "entry_verdict",
+        "milestone_blocking_decision",
+        "reinforcement_milestone_recommendation",
+        "evidence_refs",
+      ],
+      Handoff: [
+        "recommended_next_route",
+        "handoff_to_init_milestone",
+        "handoff_summary",
+      ],
+    },
+    requiredNestedKeyedFieldsBySection: {
+      "Trigger Signals": [
+        "scanner_command_alternatives",
+      ],
+      "Operator Safety Policy": [
+        "docker_compose_permission",
+        "database_migration_permission",
+        "deploy_network_permission",
+        "destructive_cleanup_permission",
+        "secrets_policy",
+        "protected_paths",
+        "protected_branches",
+        "allowed_high_risk_command_modes",
+      ],
+      "Dialog Review Questions": [
+        "id",
+        "question",
+        "why_it_matters",
+        "recommended_answer",
+        "tradeoff",
+        "blocks_ready",
+      ],
+      Verdict: [
+        "needed",
+        "recommendation_status",
+        "recommendation_type",
+        "suggested_title",
+        "suggested_purpose",
+        "recommendation_reason",
+        "temporary_understanding_ref",
+        "confirmation_required",
+        "blocks_implementation_until_resolved",
+      ],
+    },
+  }),
   "worktrack-contract": templateSpec({
     templateId: "worktrack-contract",
     sourceRelpath: "assets/worktrack/contract.md",
@@ -543,6 +646,7 @@ const LINKED_PATH_FIELDS = {
   repo_snapshot: "repo-snapshot-status",
   repo_analysis: "repo-analysis",
   temporary_understanding: "repo-temporary-understanding",
+  complex_project_entry_gate: "repo-complex-project-entry-gate",
   worktrack_contract: "worktrack-contract",
   plan_task_queue: "worktrack-plan-task-queue",
   gate_evidence: "worktrack-gate-evidence",
@@ -584,6 +688,7 @@ function usage() {
     "  node deploy_servo.js validate",
     "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --owner servo-kernel",
     "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --adoption-mode existing-code-adoption --weak-doc-onboarding",
+    "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --adoption-mode existing-code-adoption --complex-project-entry-gate",
     "  node deploy_servo.js generate --deploy-path \"$DEPLOY_PATH\" --install-claude-skill",
     "  node deploy_servo.js install-claude-skill --deploy-path \"$DEPLOY_PATH\"",
   ].join("\n");
@@ -619,6 +724,7 @@ function parseArgs(argv) {
     noStaticAssets: false,
     adoptionMode: "new-goal-initialization",
     weakDocOnboarding: false,
+    complexProjectEntryGate: false,
     repo: undefined,
     owner: undefined,
     updated: todayLocalIsoDate(),
@@ -648,6 +754,7 @@ function parseArgs(argv) {
     else if (token === "--no-static-assets") args.noStaticAssets = true;
     else if (token === "--adoption-mode") args.adoptionMode = nextValue();
     else if (token === "--weak-doc-onboarding") args.weakDocOnboarding = true;
+    else if (token === "--complex-project-entry-gate") args.complexProjectEntryGate = true;
     else if (token === "--repo") args.repo = nextValue();
     else if (token === "--owner") args.owner = nextValue();
     else if (token === "--updated") args.updated = nextValue();
@@ -671,6 +778,9 @@ function parseArgs(argv) {
   }
   if (args.weakDocOnboarding && args.adoptionMode !== "existing-code-adoption") {
     throw new DeployAwError("--weak-doc-onboarding requires --adoption-mode existing-code-adoption");
+  }
+  if (args.complexProjectEntryGate && args.adoptionMode !== "existing-code-adoption") {
+    throw new DeployAwError("--complex-project-entry-gate requires --adoption-mode existing-code-adoption");
   }
   return args;
 }
@@ -709,6 +819,16 @@ function resolveSelectedSpecs(args) {
   ) {
     const insertAt = templateIds.indexOf("repo-analysis");
     templateIds.splice(insertAt >= 0 ? insertAt : templateIds.length, 0, "repo-temporary-understanding");
+  }
+  if (
+    args.mode === "generate" &&
+    args.adoptionMode === "existing-code-adoption" &&
+    (args.weakDocOnboarding || args.complexProjectEntryGate) &&
+    !args.template.length &&
+    !templateIds.includes("repo-complex-project-entry-gate")
+  ) {
+    const insertAt = templateIds.indexOf("repo-analysis");
+    templateIds.splice(insertAt >= 0 ? insertAt : templateIds.length, 0, "repo-complex-project-entry-gate");
   }
 
   const seen = new Set();
@@ -898,16 +1018,60 @@ function validateStaticAssetSource(spec) {
 }
 
 function resolveKeyedValue(key, selectedTemplateIds, args) {
+  const weakDocReinforcementNeeded = Boolean(args.weakDocOnboarding);
   const directValues = {
     repo: args.repo,
     owner: args.owner || placeholder("owner"),
     updated: args.updated,
     adoption_mode: args.adoptionMode,
+    gate_id: "complex_project_entry_gate",
+    complex_project_entry_gate: "complex_project_entry_gate",
+    target_repo: args.deployPath || placeholder("target_repo"),
+    target_milestone_id: placeholder("target_milestone_id"),
+    trigger_source: "repo-init",
+    trigger_conditions: "pending_observed_signal_review",
     understanding_mode: placeholder("lightweight_or_full"),
     token_budget_note: "lightweight is low-token and quick; full is deeper and may require a separate discovery milestone or worktrack",
     source_scope: placeholder("source_scope"),
     generated_by: "set-harness-goal-skill",
     truth_status: "temporary-inferred",
+    gate_truth_status: "runtime-evidence",
+    scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json | PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_output_role: "scanner output is evidence, not verdict",
+    docker_compose_permission: "pending_programmer_confirmation",
+    database_migration_permission: "pending_programmer_confirmation",
+    deploy_network_permission: "pending_programmer_confirmation",
+    destructive_cleanup_permission: "pending_programmer_confirmation",
+    secrets_policy: "pending_programmer_confirmation",
+    protected_paths: "pending_programmer_confirmation",
+    protected_branches: "pending_programmer_confirmation",
+    allowed_high_risk_command_modes: "pending_programmer_confirmation",
+    allowed_before_confirmation: "read_only_discovery_and_scanner_evidence_collection",
+    forbidden_before_confirmation: "milestone_activation_worktrack_derivation_high_risk_commands_deploy_database_destructive_or_secret_operations",
+    not_fixed_heavy_mode: "true",
+    entry_verdict: "blocked",
+    milestone_blocking_decision: "block_create, block_upsert, block_activate, block_derive_worktrack",
+    reinforcement_milestone_recommendation: "structured_reinforcement_milestone_recommendation",
+    needed: weakDocReinforcementNeeded ? "true" : "false",
+    recommendation_status: weakDocReinforcementNeeded
+      ? "pending_operator_review"
+      : "not_needed",
+    recommendation_type: weakDocReinforcementNeeded ? "project_understanding" : "N/A",
+    suggested_title: weakDocReinforcementNeeded
+      ? "Reinforcement Documentation / Project Understanding"
+      : "N/A",
+    suggested_purpose: weakDocReinforcementNeeded
+      ? "Confirm repo purpose, core directories, verification authority, service boundaries, and safety policy before implementation-oriented Worktrack derivation."
+      : "N/A",
+    recommendation_reason: weakDocReinforcementNeeded
+      ? "weak-doc or insufficient-understanding signals require programmer confirmation or verified evidence before implementation."
+      : "explicit complex-project gate requested; reinforcement milestone is not required unless weak-doc or insufficient-understanding evidence is observed.",
+    temporary_understanding_ref: selectedTemplateIds.has("repo-temporary-understanding")
+      ? "temporary-understanding.md"
+      : "N/A",
+    confirmation_required: weakDocReinforcementNeeded ? "true" : "false",
+    blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false",
     promotion_allowed: "false",
     repository_path: args.deployPath || placeholder("repository_path"),
     baseline_branch: args.baselineBranch || placeholder("baseline_branch"),

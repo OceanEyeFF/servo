@@ -1,9 +1,9 @@
 ---
 title: "Review / Verify 治理入口"
 status: active
-updated: 2026-05-20
+updated: 2026-06-02
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-02
 ---
 # Review / Verify 治理入口
 
@@ -35,6 +35,7 @@ last_verified: 2026-05-20
 - package/release/version/VCS baseline 事实变更需调用 `doc-catch-up-worker-skill` 做 version fact sync；pre-publish 只同步 source version facts 与 VCS tracking facts，post-publish registry verification 后才能同步 published version facts；canonical skill source baseline 由 repo snapshot 的 `source_baselines.product_harness_skills` 和 control-state Baseline Traceability 承接，长期 docs 不手写分散 git hash
 - docs/harness/、product/harness/skills/ 或 adapters 变更需保持合同层与 executable layer 分工
 - branch/PR/baseline 规则变更需从 `origin/HEAD` 或 Worktrack Contract 的 `baseline_branch` 取值，不写死默认分支名
+- 新功能若改变 Harness 控制流、canonical skill 行为、adapter/deploy 行为、CLI/operator runbook 或用户实际操作路径，必须把真实 Claude Code dogfood 作为验证策略的一层；mock、fixture、generator smoke 和单元测试只能证明回归面，不能单独替代真实 backend 行为观察。若本轮不跑 Claude dogfood，closeout 必须写明不适用理由或延期 Worktrack。
 - 单人维护模式下 release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作；`reviewDecision` 为空不是失败，draft、required check failure、pending/skipped required check 或 release-readiness 证据缺失才是阻断信号
 - release PR 正文只能声明实际运行且有本地输出或 CI run/job URL 支撑的验证结果；被 CI 跳过、尚未运行或只计划运行的检查必须标成 pending/not-run，不能写成 passed
 - 退役/删除文档域需同步入口页、旧路径引用和治理检查
@@ -55,9 +56,26 @@ last_verified: 2026-05-20
 - closeout/gate/backfill 变更：`closeout_acceptance_gate.py --json` + 对应最小 pytest；closeout 按 `scope_gate -> spec_gate -> static_gate -> cache_gate -> test_gate -> smoke_gate` 收口；`cache_gate` 扫描 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存；`scope_gate` 允许 root `README.md` 与 `product/.servo_template/`；`test_gate` 运行 closeout/folder/path/semantic/adapter 回归 + deploy package Node unit tests + npm packlist + publish dry-run + tarball smoke
 - deploy mapping/payload contract 变更：`test_agents_adapter_contract.py`；改 gate 链路再补 `closeout_acceptance_gate.py --json`
 - adapter/deploy 变更：`test_agents_adapter_contract.py` + npm test + smoke + 双端 `npm pack --dry-run --json` + publish dry-run + tarball 全命令 smoke（diagnose/update/install/verify）+ 隔离 target repo full smoke
-- Harness runtime 观察或 operator-facing runbook 变更：先跑对应 deploy/adapter 最小验证，再按 [Codex Post-Deploy Behavior Tests](../testing/codex-post-deploy-behavior-tests.md) 做真实观察（不用 mock smoke 替代）
+- Harness runtime 观察或 operator-facing runbook 变更：先跑对应 deploy/adapter 最小验证，再按 [Codex Post-Deploy Behavior Tests](../testing/codex-post-deploy-behavior-tests.md) 和 [Claude Post-Deploy Behavior Tests](../testing/claude-post-deploy-behavior-tests.md) 做真实观察；Claude dogfood 是新功能影响实际使用路径时的默认真实 backend 验证层，不用 mock smoke 替代
 
-### 3.1 修复完整性
+### 3.1 真实 Claude Dogfood 准入
+
+默认需要真实 Claude dogfood 的变更：
+
+- 新增或改变 Harness / skill / gate / dispatch / closeout / worktrack 行为。
+- 改 `servo-installer`、adapter payload、Claude skill 分发、CLI 使用方式或 operator-facing runbook。
+- 改 scanner、门禁、弱文档路由、安全策略等会影响用户开工决策的逻辑。
+- 用户明确质疑 mock/fixture 覆盖不足，或要求真实 Claude 测试。
+
+可显式说明不适用的变更：
+
+- 纯 typo、链接、frontmatter 日期、历史事实补录，且不改变操作流程。
+- 只改内部测试实现，不改变用户可见行为或 backend payload。
+- 当前环境没有可用 Claude 认证；这种情况必须记录阻塞证据，并把真实 dogfood 作为后续 Worktrack 或 residual risk。
+
+Claude dogfood 证据至少记录：Claude Code 版本、真实 backend smoke、是否验证 `/skill-name` invocation、目标 repo/fixture 来源、隔离路径、安全边界、prompt 摘要、预算 cap、输出结论、失败/复核轮次和残余风险。
+
+### 3.2 修复完整性
 
 bugfix/review 响应/回归修复需覆盖根因或相邻执行链状态，检查相邻 phase/state/recovery path、operator-facing 视图与 CLI 返回码一致性；补回归测试，不破坏已有 healthy/dirty/malformed path；未声明支持的 nested target layout 标成 contract expansion topic 而非 patch bug。
 
@@ -77,6 +95,7 @@ docs restructuring closeout 必须记录 reader-coherence evidence，至少说�
 
 - [AGENTS.md](../../../AGENTS.md)
 - [路径与文档治理检查运行说明](./path-governance-checks.md)
+- [Claude Post-Deploy Behavior Tests](../testing/claude-post-deploy-behavior-tests.md)
 - [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
 - [Skill Deployment 维护流](../../servo-installer/runbooks/skill-deployment-maintenance.md)
 - [Branch / PR 治理规则](./branch-pr-governance.md)

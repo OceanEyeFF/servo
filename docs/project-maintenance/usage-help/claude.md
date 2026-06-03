@@ -1,9 +1,9 @@
 ---
 title: "Claude Repo-local Usage Help"
 status: active
-updated: 2026-05-08
+updated: 2026-06-02
 owner: servo-kernel
-last_verified: 2026-05-08
+last_verified: 2026-06-02
 ---
 # Claude Repo-local Usage Help
 
@@ -29,9 +29,29 @@ Claude backend 的 deploy 入口为 `servo-installer --backend claude`（Node-on
 
 `claude` backend 准入完整 Harness skill set，target dirs 使用 `.claude/skills/<skill-name>/`；完整步骤见 [Claude Post-Deploy Behavior Tests](../testing/claude-post-deploy-behavior-tests.md)。
 
+Claude Code `2.1.119` 的非交互观察要点：
+
+- 从目标 repo 当前目录运行 `claude -p`；不要依赖旧 runbook 的 `--cwd`。
+- `--tools ""` 只适合 backend smoke，不适合验证 `/skill-name` invocation。
+- 验证 `/harness-skill` 时保留 `--tools default`，再用 `--disallowedTools` 禁止 `Read/Grep/Glob/LS/Bash/Edit/Write/MultiEdit/NotebookEdit` 等不希望发生的动作。
+- `--bare` 认证依赖显式 API key 或 settings helper，不依赖 OAuth/keychain。
+
 ## 三、最小 trial smoke verify
 
 显式调用 `.claude/skills/` 下的一个 skill entry 做最小读取确认，输出结构符合固定契约。这是 backend runtime 可读性确认，不替代 source/target 对齐检查。
+
+```bash
+(
+  cd "$TARGET_REPO"
+  claude --bare --no-session-persistence --max-budget-usd 0.08 \
+    --tools default \
+    --disallowedTools "Read,Grep,Glob,LS,Bash,Edit,Write,MultiEdit,NotebookEdit" \
+    --permission-mode dontAsk --output-format json \
+    -p '/harness-skill
+
+Skill resolution probe. Do not call tools. Return compact JSON only with keys skill_invoked, harness_role, not_direct_executor.'
+)
+```
 
 ## 四、和其他 backend 的区别
 

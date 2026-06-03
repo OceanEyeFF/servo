@@ -212,6 +212,7 @@ REQUIRED_GITIGNORE_ENTRIES = [
     ".claude/",
     ".autoworkflow/",
     ".spec-workflow/",
+    ".logs/",
     "**/__pycache__/",
     ".pytest_cache/",
     "*.pyc",

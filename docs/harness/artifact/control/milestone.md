@@ -60,6 +60,18 @@ last_verified: 2026-05-27
 | pipeline 优先级 | 按 priority 字段 | 始终最低，不阻塞 goal-driven milestone |
 | 生命周期 | 完整四态（planned → active → completed → superseded） | 同四态，但 completed 后自动 superseded |
 
+## Entry Gate
+
+对于复杂项目、弱文档、高风险操作或跨系统 milestone，goal-driven milestone 在 create / upsert / activate 或派生首个 Worktrack 前，必须先消费 [Complex Project Entry Gate](../repo/complex-project-entry-gate.md)。该 gate 是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。低风险小请求可记录 `entry_verdict = not_applicable` 后轻量跳过。
+
+`complex_project_entry_gate` 至少要把 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation` 暴露给 downstream skill。scanner output is evidence, not verdict；scanner 阈值和信号只作为 LLM / reviewer 判定依据，不把启发式输出写成 truth。
+
+unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`；必须保持 milestone create / upsert / activate / derive-worktrack 阻断，直到 programmer confirmation 或 verified evidence 存在。
+
+当 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`blocks_implementation_until_resolved = true` 或 `blocked` 时，implementation-oriented milestone 不得继续 activate 或 derive Worktrack。弱文档命中时，默认建议新增 reinforcement documentation / project-understanding milestone，而不是把未确认理解写入当前 milestone truth。`reinforcement_milestone_recommendation` 至少携带 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`。
+
+Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackScope / user safety policy，不替代 Milestone-side blocker。
+
 ## 生命周期
 
 Milestone 在其生命周期中经历四个状态：
@@ -87,6 +99,7 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 - `priority` 同值时按 `updated` 时间排序
 - `activation_rules` 非空时，harness 可在满足描述的条件后自动激活；空值表示需 programmer 显式审批
 - goal-driven milestone 在 `planned` → `active` 前，harness 必须先输出结构化激活 brief 并等待 programmer 确认；work-collection milestone 可继续按既有自动激活语义推进
+- 对命中 complex-project trigger 的 goal-driven milestone，激活 brief 之前还必须先清空 `complex_project_entry_gate.milestone_blocking_decision` 中的阻断项
 
 完整 Pipeline 编排规则（upsert 语义、tie-breaker、激活顺序）以 [milestone-backlog.md](../repo/milestone-backlog.md#Pipeline 语义) 为权威源。
 

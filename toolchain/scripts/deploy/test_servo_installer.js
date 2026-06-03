@@ -724,6 +724,22 @@ test("servo-installer --log-dir writes sanitized run log without env dump", () =
   }
 });
 
+test("default installer log dir ensures target .gitignore ignores .logs", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-log-ignore-"));
+  try {
+    const defaultLogDir = installer.defaultInstallerLogDir(root);
+
+    assert.equal(installer.ensureTargetLogGitignore(root, defaultLogDir), true);
+    assert.match(readFileSync(join(root, ".gitignore"), "utf8"), /^\.logs\/$/m);
+    assert.equal(installer.ensureTargetLogGitignore(root, defaultLogDir), false);
+
+    const explicitLogDir = join(root, "custom-logs");
+    assert.equal(installer.ensureTargetLogGitignore(root, explicitLogDir), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("path safety policy is loaded from the shared deploy JSON", () => {
   const policy = installer.pathSafetyPolicy();
 

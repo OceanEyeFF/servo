@@ -60,6 +60,16 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - `temporary-understanding.md` 必须显式区分 `lightweight` 与 `full` 两种理解模式：`lightweight` 是低 token、快速定向、只支撑窄小 safe first slice；`full` 是更深的只读发现，token 和时间成本更高，必要时应建议单独 discovery milestone 或 worktrack
    - `temporary-understanding.md` / `temporary_understanding` 必须包含 `observed_facts`、`inferred_purpose`、`operational_purpose`、`known_risks`、`unknowns`、`confirmation_questions`、`programmer_decisions_required`、`promotion_plan`、`truth_boundary`、`token_budget_note` 和 mode selection
    - `temporary-understanding.md` 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence 的 `inferred_purpose`、owner boundary、maintenance rule 和 acceptance rule 不得写入 `goal-charter.md`、docs truth layer 或 repo snapshot
+   - 当 weak-doc、large repo、多服务、迁移、部署、数据、安全、破坏性操作或 authority boundary 信号影响后续 Milestone 入口时，生成或引用 `complex_project_entry_gate`
+   - repo-init trigger 条件包括 weak docs、large repo、多服务、多 package manager、compose / docker / CI / deploy signal、migration / data risk、secret-like path、破坏性操作或 ownership / authority boundary 不清；这些信号应进入 `.servo/repo/complex-project-entry-gate.md` 或结构化 handoff，而不是直接进入 Goal Charter truth
+   - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；小型低风险初始化可记录 `entry_verdict = not_applicable`
+   - gate 必须记录 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和结构化 `reinforcement_milestone_recommendation`
+   - Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker
+   - 生成的 `operator_safety_policy` 默认只能写 `pending_programmer_confirmation`，不得默认授权 `normal`、`autoreview` 或 `yolo`
+   - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_create, block_upsert, block_activate, block_derive_worktrack`
+   - unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`
+   - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
+   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；Agents backend 路径为 `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`，Claude backend 路径为 `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写
    - 后续 `control-state.md` 只能把 discovery / temporary understanding 作为 linked evidence / note，不能把其中字段提升为控制指令
@@ -105,6 +115,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
      ├── goal-charter.md            ← 基于 assets/goal-charter.md 模板填充
      ├── repo/
      │   ├── discovery-input.md     ← existing-code-adoption 模式下基于 assets/repo/discovery-input.md 模板填充
+     │   ├── complex-project-entry-gate.md ← complex-project trigger 或 weak-doc onboarding 场景下基于 assets/repo/complex-project-entry-gate.md 模板填充
      │   ├── temporary-understanding.md ← weak-doc adoption / onboarding 场景下基于 assets/repo/temporary-understanding.md 模板填充
      │   ├── analysis.md            ← 基于 assets/repo/analysis.md 模板填充
      │   └── snapshot-status.md     ← 基于 assets/repo/snapshot-status.md 模板填充
@@ -158,6 +169,10 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - Existing Code Project Adoption 中，`discovery-input.md` 只能保存只读事实输入和候选信号；唯一合法行为是经用户确认后才将 discovery 信号纳入 `goal-charter.md`。
 - Weak-doc adoption / onboarding 中，`temporary-understanding.md` 只能保存 temporary-inferred runtime evidence；唯一合法行为是经 programmer confirmation 或 verified evidence 后才将其中信号提升到 `goal-charter.md`、`repo/snapshot-status.md` 或 docs truth layer。
 - Weak-doc adoption / onboarding 必须记录 `lightweight` / `full` mode selection 与 token-cost tradeoff；当 full discovery 明显超出当前预算时，必须 handback 或建议新增 discovery milestone / worktrack，而不是把薄弱理解伪装成已确认 goal truth。
+- Weak-doc adoption / onboarding 命中 complex-project trigger 时，必须记录 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`；弱文档命中且安全理解不足时，建议 reinforcement documentation / project-understanding Milestone。
+- 结构化 `reinforcement_milestone_recommendation` 至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`。`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`。`needed = true` 或 `blocks_implementation_until_resolved = true` 时默认保持 `entry_verdict: blocked` / `needs_reinforcement_milestone` 和 `milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack`。
+- `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。
+- `complex_project_entry_gate` 的生成样例不得预授权高风险命令模式；未确认样例默认阻断 Worktrack derivation，直到 programmer confirmation 或 reinforcement evidence 写入。
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。
 - 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-contract-primary`，使 worktrack 级 `runtime_dispatch_mode` 在默认 scaffold 中可生效；只有操作者显式改为 `global-override` 时，control-state 才压过 worktrack 合同。`auto` 是保守默认值，表示按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时在无安全分派壳层、权限边界阻断或 `dispatch package unsafe` 时显式记录 `runtime fallback`。
 - **不依赖外部 scaffold 脚本**；所有模板来自本技能自带的 `assets/` 目录，遵循 Codex Skills 标准。
@@ -212,6 +227,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 | `assets/goal-charter.md` | 目标章程模板骨架 | `.servo/goal-charter.md`（填充后写入） |
 | `assets/repo/discovery-input.md` | Existing Code Project Adoption 只读事实输入模板骨架 | `.servo/repo/discovery-input.md`（仅 adoption 模式填充后写入） |
 | `assets/repo/temporary-understanding.md` | 弱文档 adoption / onboarding 临时理解模板骨架，承接 lightweight / full mode、token-cost tradeoff、truth boundary 与 promotion plan | `.servo/repo/temporary-understanding.md`（weak-doc adoption / onboarding 场景填充后写入） |
+| `assets/repo/complex-project-entry-gate.md` | Repo init / Existing Code Project Adoption 的 complex-project trigger 模板骨架，承接 `complex_project_entry_gate`、scanner evidence、operator safety policy、dialog review 和 blocking decision | `.servo/repo/complex-project-entry-gate.md`（`--complex-project-entry-gate` 或 `--weak-doc-onboarding` 场景填充后写入） |
 | `assets/repo/analysis.md` | RepoScope 阶段性分析与优先级判断模板骨架 | `.servo/repo/analysis.md`（填充后写入） |
 | `assets/repo/snapshot-status.md` | 仓库快照模板骨架 | `.servo/repo/snapshot-status.md`（填充后写入） |
 | `assets/template/README.md` | 模板目录说明 | `.servo/template/README.md`（直接复制） |
@@ -230,6 +246,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
 node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
 node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --weak-doc-onboarding
+node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --complex-project-entry-gate
 node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
 node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
 node scripts/deploy_servo.js generate --help

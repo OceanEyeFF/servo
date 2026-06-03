@@ -405,6 +405,32 @@ function defaultInstallerLogDir(targetRepoRoot) {
   return join(targetRepoRoot || process.cwd(), ".logs", "servo-installer");
 }
 
+function ensureTargetLogGitignore(targetRepoRoot, logDir) {
+  if (!targetRepoRoot || !logDir) {
+    return false;
+  }
+  const defaultLogDir = resolve(defaultInstallerLogDir(targetRepoRoot));
+  if (resolve(logDir) !== defaultLogDir) {
+    return false;
+  }
+  const gitignorePath = join(targetRepoRoot, ".gitignore");
+  const entry = ".logs/";
+  let existing = "";
+  if (existsSync(gitignorePath)) {
+    existing = readFileSync(gitignorePath, "utf8");
+  }
+  const alreadyPresent = existing
+    .split(/\r?\n/)
+    .some((line) => line.trim() === entry);
+  if (alreadyPresent) {
+    return false;
+  }
+  const prefix = existing.trimEnd();
+  const updated = `${prefix}${prefix ? "\n" : ""}${entry}\n`;
+  writeFileSync(gitignorePath, updated, "utf8");
+  return true;
+}
+
 function timestampForFileName(date = new Date()) {
   return date.toISOString().replace(/[:.]/g, "-");
 }
@@ -757,6 +783,10 @@ function resolveTargetRepoRoot(sourceRoot, sourceRootFromEnv) {
     return validateTargetRepoRoot(sourceRoot, sourceRoot);
   }
   return validateTargetRepoRoot(process.cwd(), sourceRoot);
+}
+
+function resolveTuiTargetRepoRoot() {
+  return resolveTargetRepoRoot(resolveSourceRoot(), Boolean(process.env.SERVO_HARNESS_REPO_ROOT));
 }
 
 function targetRootForBackend(backend, targetRepoRoot, options = {}) {
@@ -4859,6 +4889,7 @@ async function guidedRuntimeMigration(rl, state) {
   state.currentStep = "runtime migration";
   refreshTui(state);
   console.log(`\n${SYM_ARROW} Migrating .aw runtime state into .servo.`);
+  ensureTargetLogGitignore(state.targetRepo, state.logDir);
   const status = await runNodeOwned(buildTuiMigrationArgs(state, true));
   if (status !== 0) {
     console.log(`${SYM_FAIL} Runtime migration failed.`);
@@ -4999,6 +5030,7 @@ async function guidedInstall(rl, state) {
   state.currentStep = "4/6 install";
   refreshTui(state);
   console.log(`\n${SYM_ARROW} Installing ${colorCyan(state.backend)}...`);
+  ensureTargetLogGitignore(state.targetRepo, state.logDir);
   const status = await runNodeOwned(["install", "--backend", state.backend]);
   if (status !== 0) {
     console.log(`${SYM_FAIL} Install failed for ${state.backend}.`);
@@ -5226,6 +5258,7 @@ async function runGuidedUpdateFlow(rl, state) {
     state.currentStep = "update:install";
     refreshTui(state);
     console.log(`\n${SYM_ARROW} Step 4: Applying update.`);
+    ensureTargetLogGitignore(state.targetRepo, state.logDir);
     await runNodeOwned(["update", "--backend", backend, "--yes"]);
     state.currentStep = "update:verify";
     refreshTui(state);
@@ -5315,7 +5348,7 @@ async function runTui(logDir) {
   }
 
   const version = tryReadPackageVersionAt(join(__dirname, "..", "..", "..", "..", "package.json")) || "unknown";
-  const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
+  const targetRepo = resolveTuiTargetRepoRoot();
   const effectiveLogDir = logDir || defaultInstallerLogDir(targetRepo);
   const logger = createRunLogger({
     logDir: effectiveLogDir,
@@ -5329,6 +5362,7 @@ async function runTui(logDir) {
 
     // Bundle default per TUI contract
     tuiState = initTuiState(bundleBackend, version, packageSource, targetRepo);
+    tuiState.logDir = effectiveLogDir;
 
     try {
       process.stdout.write(CSI_CLEAR_SCREEN);
@@ -5407,8 +5441,7 @@ async function main() {
   // this distribution entrypoint must not fall back to Python.
   if (args.length === 0) {
     if (process.stdin.isTTY && process.stdout.isTTY) {
-      const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
-      return runTui(parsedLogging.logDir || defaultInstallerLogDir(targetRepo));
+      return runTui(parsedLogging.logDir);
     }
     printHelp();
     return 0;
@@ -5425,8 +5458,7 @@ async function main() {
   }
 
   if (args[0] === "tui") {
-    const targetRepo = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
-    return runTui(parsedLogging.logDir || defaultInstallerLogDir(targetRepo));
+    return runTui(parsedLogging.logDir);
   }
 
   const targetRepoRoot = process.env.SERVO_HARNESS_TARGET_REPO_ROOT || process.cwd();
@@ -5472,6 +5504,8 @@ module.exports = {
   describeExistingTargetPath,
   diagnosticSummary,
   downloadGithubArchive,
+  defaultInstallerLogDir,
+  ensureTargetLogGitignore,
   exactSensitiveTargetRepoRoots,
   expectedTargetDirs,
   applyUpdateContext,

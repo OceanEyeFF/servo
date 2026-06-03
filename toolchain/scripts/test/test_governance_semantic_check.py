@@ -17,6 +17,8 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
+    check_complex_project_entry_gate_contract,
+    check_complexity_signal_scanner_contract,
     check_debug_evidence_contract,
     check_decision_traceability_contract,
     check_docs_list_closeout_cache_roots,
@@ -30,6 +32,7 @@ from governance_semantic_check import (
     check_pre_milestone_intake_template_contract,
     check_pull_request_template_release_evidence,
     check_repo_python_commands_are_bytecode_free,
+    check_repo_init_complex_gate_contract,
     check_repo_whats_next_overview_fallback_contract,
     check_retired_entrypoint_references,
     check_review_evidence_four_lane_contract,
@@ -49,6 +52,26 @@ from runtime_artifact_consistency_simulation import SCENARIOS, run_scenario
 def write_doc(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS = [
+    "reinforcement documentation",
+    "project-understanding",
+    "needed",
+    "recommendation_status",
+    "recommended",
+    "required",
+    "pending_operator_review",
+    "not_needed",
+    "recommendation_type",
+    "suggested_title",
+    "suggested_purpose",
+    "recommendation_reason",
+    "temporary_understanding_ref",
+    "evidence_refs",
+    "confirmation_required",
+    "blocks_implementation_until_resolved",
+]
 
 
 def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
@@ -1113,6 +1136,456 @@ def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semant
     assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
 
 
+def test_check_complex_project_entry_gate_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "Milestone-side blocking gate",
+            "scanner output is evidence",
+            "normal",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("dialog_review_questions" in item for item in report.failures)
+    assert any("reinforcement_milestone_recommendation" in item for item in report.failures)
+    assert any("not fixed heavy mode" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_unresolved_default_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("unresolved-gate default term" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_reinforcement_routing_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("weak-doc reinforcement routing term" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_unresolved_without_blocking(
+    tmp_path: Path,
+) -> None:
+    unsafe_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, unsafe_text)
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must map to blocking semantics" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_pre_intake_mode_defaults(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            "allowed_high_risk_command_modes:",
+            '      - "normal"',
+            '      - "autoreview"',
+            '      - "yolo"',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        unsafe_template,
+    )
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
+def test_check_complex_project_entry_gate_contract_flags_pre_intake_inline_mode_default(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "normal",
+            "autoreview",
+            "yolo",
+            "unresolved gate blocking default",
+            "missing",
+            "blank",
+            "placeholder",
+            "pending",
+            "incomplete",
+            "not_applicable",
+            "blocked",
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+        "docs/harness/catalog/repo.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/init-milestone-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            'allowed_high_risk_command_modes: ["normal", "autoreview", "yolo"]',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        unsafe_template,
+    )
+
+    report = SemanticReport()
+    check_complex_project_entry_gate_contract(tmp_path, report)
+
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
+def test_check_complexity_signal_scanner_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complexity_signal_scanner.py",
+            "scanner output is evidence",
+            "thresholds",
+            "complexity_signals",
+            "compose",
+            "service",
+            "package",
+            "CI",
+            "deploy",
+            "migration",
+            "debt",
+            "code",
+            "no_network",
+            "no_service_start",
+            "file_content_read_mode",
+            "secret_like_path_content_read",
+            "file_contents_emitted",
+            "secret_safety_note",
+            "skipped_symlink_files",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+        "toolchain/scripts/test/test_complexity_signal_scanner.py",
+        "toolchain/scripts/test/README.md",
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+    write_doc(
+        tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
+        "CANONICAL_SCANNER = 'product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py'\n",
+    )
+
+    report = SemanticReport()
+    check_complexity_signal_scanner_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_complexity_signal_scanner_contract_flags_missing_safety_terms(
+    tmp_path: Path,
+) -> None:
+    required_without_safety = "\n".join(
+        [
+            "complexity_signal_scanner.py",
+            "scanner output is evidence",
+            "thresholds",
+            "complexity_signals",
+            "compose",
+            "service",
+            "package",
+            "CI",
+            "deploy",
+            "migration",
+            "debt",
+            "code",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+        "toolchain/scripts/test/test_complexity_signal_scanner.py",
+        "toolchain/scripts/test/README.md",
+        "docs/harness/artifact/repo/complex-project-entry-gate.md",
+        "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    ):
+        write_doc(tmp_path / relative_path, required_without_safety)
+    write_doc(
+        tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
+        "CANONICAL_SCANNER = 'product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py'\n",
+    )
+
+    report = SemanticReport()
+    check_complexity_signal_scanner_contract(tmp_path, report)
+
+    assert any("no_network" in item for item in report.failures)
+    assert any("no_service_start" in item for item in report.failures)
+    assert any("secret_like_path_content_read" in item for item in report.failures)
+
+
 def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_and_payloads(
     tmp_path: Path,
 ) -> None:
@@ -1272,6 +1745,343 @@ def test_check_weak_doc_temporary_understanding_contract_flags_truth_boundary_ga
     assert any("not Goal Charter truth" in item for item in report.failures)
 
 
+def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloads(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+            "scripts/complexity_signal_scanner.py",
+            ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            "trigger_conditions: pending_observed_signal_review",
+            "Record only observed signals in trigger_conditions",
+            "allowed_high_risk_command_modes: pending_programmer_confirmation",
+            "entry_verdict: blocked",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
+            "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
+            "needed: false",
+            "recommendation_status: not_needed",
+            "recommendation_type: N/A",
+            "blocks_implementation_until_resolved: false",
+            "args.weakDocOnboarding",
+            'needed: weakDocReinforcementNeeded ? "true" : "false"',
+            "recommendation_status: weakDocReinforcementNeeded",
+            '? "pending_operator_review"',
+            ': "not_needed"',
+            'blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false"',
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        ],
+        "required_payload_files": [
+            "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_repo_init_complex_gate_contract_flags_payload_gap(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": ["product/harness/skills/set-harness-goal-skill/SKILL.md"],
+        "required_payload_files": ["SKILL.md"],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
+    assert any("missing canonical template path" in item for item in report.failures)
+    assert any("missing required template file" in item for item in report.failures)
+
+
+def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+            "trigger_conditions: pending_observed_signal_review",
+            "Record only observed signals in trigger_conditions",
+            "allowed_high_risk_command_modes: pending_programmer_confirmation",
+            "entry_verdict: blocked",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        ],
+        "required_payload_files": [
+            "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
+    assert any("weak-doc reinforcement routing term" in item for item in report.failures)
+
+
+def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+        ]
+    )
+    safe_text = "\n".join(
+        [
+            required_text,
+            "trigger_conditions: pending_observed_signal_review",
+            "Record only observed signals in trigger_conditions",
+            "allowed_high_risk_command_modes: pending_programmer_confirmation",
+            "entry_verdict: blocked",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
+            "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
+            "needed: false",
+            "recommendation_status: not_needed",
+            "recommendation_type: N/A",
+            "blocks_implementation_until_resolved: false",
+            "args.weakDocOnboarding",
+            'needed: weakDocReinforcementNeeded ? "true" : "false"',
+            "recommendation_status: weakDocReinforcementNeeded",
+            '? "pending_operator_review"',
+            ': "not_needed"',
+            'blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false"',
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, safe_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            "trigger_conditions:",
+            "    - normal",
+            "    - autoreview",
+            "    - yolo",
+            "entry_verdict:",
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        unsafe_template,
+    )
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        ],
+        "required_payload_files": [
+            "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
+    assert any("missing safe default" in item for item in report.failures)
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
+def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "complex-project-entry-gate.md",
+            "complex_project_entry_gate",
+            "scanner_evidence_ref",
+            "complexity_signals",
+            "operator_safety_policy",
+            "dialog_review_questions",
+            "milestone_blocking_decision",
+            "reinforcement_milestone_recommendation",
+            "repo-init",
+            "Milestone-side blocking gate",
+            "not fixed heavy mode",
+            "scanner output is evidence",
+            "weak-doc",
+            "trigger_conditions: pending_observed_signal_review",
+            "Record only observed signals in trigger_conditions",
+            "allowed_high_risk_command_modes: pending_programmer_confirmation",
+            "entry_verdict: blocked",
+            "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
+            "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
+            "needed: false",
+            "recommendation_status: not_needed",
+            "recommendation_type: N/A",
+            "blocks_implementation_until_resolved: false",
+            "args.weakDocOnboarding",
+            'needed: weakDocReinforcementNeeded ? "true" : "false"',
+            "recommendation_status: weakDocReinforcementNeeded",
+            '? "pending_operator_review"',
+            ': "not_needed"',
+            'blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false"',
+            *WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS,
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/assets/README.md",
+        "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    unsafe_template = "\n".join(
+        [
+            required_text,
+            'allowed_high_risk_command_modes: ["normal", "autoreview", "yolo"]',
+        ]
+    )
+    write_doc(
+        tmp_path
+        / "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        unsafe_template,
+    )
+
+    payload = {
+        "canonical_paths": [
+            "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+        ],
+        "required_payload_files": [
+            "assets/repo/complex-project-entry-gate.md",
+            "scripts/complexity_signal_scanner.py",
+        ],
+    }
+    for relative_path in (
+        "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    ):
+        write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
+
+    report = SemanticReport()
+    check_repo_init_complex_gate_contract(tmp_path, report)
+
+    assert any("must not pre-authorize" in item for item in report.failures)
+
+
 def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:
     source_script = Path(__file__).resolve().parent / "governance_semantic_check.py"
     write_doc(tmp_path / "governance_semantic_check.py", source_script.read_text(encoding="utf-8"))
@@ -1364,6 +2174,7 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
                 "`.claude/`",
                 "`.autoworkflow/`",
                 "`.spec-workflow/`",
+                "`.logs/`",
                 "`**/__pycache__/`",
                 "`.pytest_cache/`",
                 "`*.pyc`",

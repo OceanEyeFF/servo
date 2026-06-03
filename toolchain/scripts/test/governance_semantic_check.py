@@ -466,6 +466,121 @@ INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
     "状态矛盾",
     "不得把薄弱的 milestone brief 伪装成已确认",
 ]
+COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+]
+COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS = [
+    "complex_project_entry_gate",
+    "scanner_evidence_ref",
+    "complexity_signals",
+    "operator_safety_policy",
+    "dialog_review_questions",
+    "milestone_blocking_decision",
+    "reinforcement_milestone_recommendation",
+    "Milestone-side blocking gate",
+    "not fixed heavy mode",
+    "scanner output is evidence",
+    "normal",
+    "autoreview",
+    "yolo",
+]
+COMPLEX_PROJECT_ENTRY_GATE_CONSUMER_SAFE_DEFAULT_TERMS = [
+    "unresolved gate blocking default",
+    "missing",
+    "blank",
+    "placeholder",
+    "pending",
+    "incomplete",
+    "not_applicable",
+]
+WEAK_DOC_REINFORCEMENT_ROUTING_CONTRACT_PATHS = [
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+    "docs/harness/catalog/repo.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+]
+WEAK_DOC_REINFORCEMENT_ROUTING_TERMS = [
+    "reinforcement documentation",
+    "project-understanding",
+    "needed",
+    "recommendation_status",
+    "recommended",
+    "required",
+    "pending_operator_review",
+    "not_needed",
+    "recommendation_type",
+    "suggested_title",
+    "suggested_purpose",
+    "recommendation_reason",
+    "temporary_understanding_ref",
+    "evidence_refs",
+    "confirmation_required",
+    "blocks_implementation_until_resolved",
+]
+COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS = [
+    "blocked",
+    "block_",
+    "阻断",
+    "不得绑定",
+    "不得解释为",
+    "must not be treated as clear",
+    "must not be interpreted as clear",
+]
+COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = (
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+)
+COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    "toolchain/scripts/test/test_complexity_signal_scanner.py",
+    "toolchain/scripts/test/README.md",
+    "docs/harness/artifact/repo/complex-project-entry-gate.md",
+    "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
+]
+COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH = "toolchain/scripts/test/complexity_signal_scanner.py"
+COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
+    "complexity_signal_scanner.py",
+    "scanner output is evidence",
+    "thresholds",
+    "complexity_signals",
+    "compose",
+    "service",
+    "package",
+    "CI",
+    "deploy",
+    "migration",
+    "debt",
+    "code",
+]
+COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    "toolchain/scripts/test/test_complexity_signal_scanner.py",
+]
+COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
+    "no_network",
+    "no_service_start",
+    "file_content_read_mode",
+    "secret_like_path_content_read",
+    "file_contents_emitted",
+    "secret_safety_note",
+    "skipped_symlink_files",
+]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
     "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
@@ -501,6 +616,65 @@ WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = (
     "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
 )
 WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
+REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS = [
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/assets/README.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
+    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+]
+REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
+    "complex-project-entry-gate.md",
+    "complex_project_entry_gate",
+    "scanner_evidence_ref",
+    "complexity_signals",
+    "operator_safety_policy",
+    "dialog_review_questions",
+    "milestone_blocking_decision",
+    "reinforcement_milestone_recommendation",
+    "repo-init",
+    "Milestone-side blocking gate",
+    "not fixed heavy mode",
+    "scanner output is evidence",
+    "weak-doc",
+    "scripts/complexity_signal_scanner.py",
+    ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+]
+REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
+    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+]
+REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = (
+    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
+)
+REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE = "assets/repo/complex-project-entry-gate.md"
+REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE = "scripts/complexity_signal_scanner.py"
+REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
+    "trigger_conditions: pending_observed_signal_review",
+    "Record only observed signals in trigger_conditions",
+    "allowed_high_risk_command_modes: pending_programmer_confirmation",
+    "entry_verdict: blocked",
+    "milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack",
+    "reinforcement_milestone_recommendation: structured_reinforcement_milestone_recommendation",
+    "needed: false",
+    "recommendation_status: not_needed",
+    "recommendation_type: N/A",
+    "blocks_implementation_until_resolved: false",
+]
+REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS = [
+    "args.weakDocOnboarding",
+    "needed: weakDocReinforcementNeeded ? \"true\" : \"false\"",
+    "recommendation_status: weakDocReinforcementNeeded",
+    "? \"pending_operator_review\"",
+    ": \"not_needed\"",
+    "blocks_implementation_until_resolved: weakDocReinforcementNeeded ? \"true\" : \"false\"",
+]
+REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES = [
+    "    - normal",
+    "    - autoreview",
+    "    - yolo",
+]
 APPEND_REQUEST_REQUIRED_TERMS = [
     "approval_required",
     "continuation_ready",
@@ -1385,6 +1559,112 @@ def check_init_milestone_intake_handoff_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} init-milestone intake handoff sources")
 
 
+def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing complex-project entry gate source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complex-project entry gate missing required term {term!r}: {relative_path}"
+                )
+        for term in COMPLEX_PROJECT_ENTRY_GATE_CONSUMER_SAFE_DEFAULT_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "complex-project entry gate missing unresolved-gate default term "
+                    f"{term!r}: {relative_path}"
+                )
+        if "unresolved gate blocking default" in text and not any(
+            term in text for term in COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS
+        ):
+            report.add_failure(
+                "complex-project entry gate unresolved default must map to blocking semantics: "
+                f"{relative_path}"
+            )
+        if relative_path in WEAK_DOC_REINFORCEMENT_ROUTING_CONTRACT_PATHS:
+            for term in WEAK_DOC_REINFORCEMENT_ROUTING_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "complex-project entry gate missing weak-doc reinforcement routing term "
+                        f"{term!r}: {relative_path}"
+                    )
+        if relative_path == COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH:
+            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
+    report.add_info(f"checked {checked} complex-project entry gate sources")
+
+
+def _check_pre_intake_complex_gate_template_safe_defaults(
+    relative_path: str, text: str, report: SemanticReport
+) -> None:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if "allowed_high_risk_command_modes:" not in line:
+            continue
+        value = line.split("allowed_high_risk_command_modes:", 1)[1]
+        if any(mode in value for mode in ("normal", "autoreview", "yolo")):
+            report.add_failure(
+                "pre-milestone complex gate template must not pre-authorize "
+                f"high-risk command modes inline: {relative_path}:{index + 1}"
+            )
+        base_indent = len(line) - len(line.lstrip(" "))
+        for child in lines[index + 1 :]:
+            if not child.strip():
+                continue
+            child_indent = len(child) - len(child.lstrip(" "))
+            if child_indent <= base_indent:
+                break
+            if any(mode in child for mode in ("normal", "autoreview", "yolo")):
+                report.add_failure(
+                    "pre-milestone complex gate template must not pre-authorize "
+                    f"high-risk command mode list item: {relative_path}:{index + 1}"
+                )
+                break
+
+
+def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    wrapper_path = repo_root / COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH
+    if not wrapper_path.exists():
+        report.add_failure(
+            f"missing complexity signal scanner wrapper: {COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH}"
+        )
+    else:
+        wrapper_text = wrapper_path.read_text(encoding="utf-8")
+        if "CANONICAL_SCANNER" not in wrapper_text or "set-harness-goal-skill" not in wrapper_text:
+            report.add_failure(
+                "complexity signal scanner wrapper must delegate to canonical distributable scanner: "
+                f"{COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH}"
+            )
+    for relative_path in COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing complexity signal scanner source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complexity signal scanner missing required term {term!r}: {relative_path}"
+                )
+    for relative_path in COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"complexity signal scanner safety missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} complexity signal scanner sources")
+
+
 def check_weak_doc_temporary_understanding_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -1434,6 +1714,91 @@ def check_weak_doc_temporary_understanding_contract(
                 f"{relative_path}"
             )
     report.add_info(f"checked {checked} weak-doc temporary understanding contract sources")
+
+
+def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing repo-init complex gate source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"repo-init complex gate missing required term {term!r}: {relative_path}"
+                )
+
+        if relative_path == REPO_INIT_COMPLEX_GATE_CANONICAL_PATH:
+            for term in REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        f"repo-init complex gate template missing safe default {term!r}: "
+                        f"{relative_path}"
+                    )
+            for term in WEAK_DOC_REINFORCEMENT_ROUTING_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "repo-init complex gate template missing weak-doc reinforcement routing term "
+                        f"{term!r}: {relative_path}"
+                    )
+            for line in REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES:
+                if line in text:
+                    report.add_failure(
+                        "repo-init complex gate template must not pre-authorize "
+                        f"high-risk command mode line {line.strip()!r}: {relative_path}"
+                    )
+            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
+        if relative_path.endswith("scripts/deploy_servo.js"):
+            for term in REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS:
+                if term not in text:
+                    report.add_failure(
+                        "repo-init complex gate generator missing weak-doc override term "
+                        f"{term!r}: {relative_path}"
+                    )
+
+    for relative_path in REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing repo-init complex gate payload source: {relative_path}")
+            continue
+        checked += 1
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(
+                f"repo-init complex gate payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
+            continue
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        if (
+            not isinstance(canonical_paths, list)
+            or REPO_INIT_COMPLEX_GATE_CANONICAL_PATH not in canonical_paths
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing canonical template path: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing required template file: "
+                f"{relative_path}"
+            )
+        if (
+            not isinstance(required_payload_files, list)
+            or REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE not in required_payload_files
+        ):
+            report.add_failure(
+                "repo-init complex gate payload missing required scanner file: "
+                f"{relative_path}"
+            )
+    report.add_info(f"checked {checked} repo-init complex gate contract sources")
 
 
 def _field_name_in_text(field: str, text: str) -> bool:
@@ -1928,7 +2293,10 @@ def main() -> int:
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
+    check_complex_project_entry_gate_contract(repo_root, report)
+    check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
+    check_repo_init_complex_gate_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)

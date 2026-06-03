@@ -64,10 +64,68 @@ programmer_decisions_required:
 ```yaml
 risk_flags:
   - id: ""
-    kind: "scope_creep | release_boundary | migration | compatibility | security | data | weak_docs | multi_repo | governance_gap | other"
+    kind: "scope_creep | release_boundary | migration | compatibility | security | data | weak_docs | multi_repo | governance_gap | complex_project | other"
     severity: "low | medium | high"
     description: ""
 ```
+
+## Complex Project Entry Gate
+
+Use this section when complex-project, weak-doc, multi-system, migration, deploy, security, data, destructive, or authority-sensitive signals affect Milestone entry. This is a Milestone-side blocking gate, not fixed heavy mode. Scanner output is evidence, not verdict. Canonical guard term: scanner output is evidence.
+
+Candidate high-risk command mode values are `normal`, `autoreview`, and `yolo`, but they are programmer-owned answers and not generated defaults.
+
+```yaml
+complex_project_entry_gate:
+  gate_id: ""
+  target_repo: ""
+  target_milestone_id: ""
+  trigger_source: "pre-milestone-intake"
+  entry_verdict: "clear | needs_reinforcement_milestone | blocked | not_applicable"
+  scanner_evidence_ref: null
+  complexity_signals:
+    - signal: ""
+      threshold: ""
+      observed_value: ""
+      confidence: ""
+      rationale: ""
+  operator_safety_policy:
+    docker_compose_permission: "unknown | allowed | blocked | requires_approval"
+    database_migration_permission: "unknown | allowed | blocked | requires_approval"
+    deploy_network_permission: "unknown | allowed | blocked | requires_approval"
+    destructive_cleanup_permission: "unknown | allowed | blocked | requires_approval"
+    secrets_policy: "unknown"
+    protected_paths: []
+    protected_branches: []
+    allowed_high_risk_command_modes: "pending_programmer_confirmation"
+  dialog_review_questions:
+    - id: "CG1"
+      question: ""
+      why_it_matters: ""
+      recommended_answer: ""
+      tradeoff: ""
+      blocks_ready: true
+  milestone_blocking_decision:
+    - "block_create | block_upsert | block_activate | block_derive_worktrack | allow_create | allow_upsert | allow_activate | allow_derive_worktrack"
+  reinforcement_milestone_recommendation:
+    needed: false
+    recommendation_status: "not_needed | recommended | required | pending_operator_review"
+    recommendation_type: "reinforcement_documentation | project_understanding | N/A"
+    suggested_title: ""
+    suggested_purpose: ""
+    recommendation_reason: ""
+    temporary_understanding_ref: null
+    evidence_refs: []
+    confirmation_required: false
+    blocks_implementation_until_resolved: false
+  evidence_refs: []
+```
+
+unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, or incomplete `complex_project_entry_gate` fields must not be treated as clear or `not_applicable`. Consumers should default unresolved gate handoff to `entry_verdict: blocked` and `milestone_blocking_decision: block_create, block_upsert, block_activate, block_derive_worktrack` until programmer confirmation or verified evidence exists.
+
+When weak docs or insufficient project understanding are the blocking factor, set `entry_verdict: needs_reinforcement_milestone`, keep implementation-oriented Worktrack derivation blocked, and populate `reinforcement_milestone_recommendation` as a structured handoff for a reinforcement documentation / project-understanding Milestone. The recommendation may reference `.servo/repo/temporary-understanding.md`, but temporary understanding remains runtime evidence only and not Goal Charter truth until programmer confirmation or verified evidence exists.
+
+Use `recommendation_status: not_needed` only when `needed: false` and `blocks_implementation_until_resolved: false`; use `recommended`, `required`, or `pending_operator_review` for blocking or unresolved weak-doc routes.
 
 ## Open Questions
 

@@ -79,6 +79,28 @@ It should include:
 
 Do not hide uncertainty by rewriting it as confident project intent. The temporary understanding is runtime evidence, not Goal Charter truth.
 
+## Complex Project Entry Gate
+
+Weak-doc onboarding can trigger [Complex Project Entry Gate](../artifact/repo/complex-project-entry-gate.md). The gate is a Milestone-side blocking gate, not fixed heavy mode. If the requested Milestone is implementation-oriented and repo purpose, core directories, verification authority, service workflow boundary, or high-risk operation policy is still weak, Servo should block Milestone activation or Worktrack derivation instead of guessing.
+
+unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete `complex_project_entry_gate` fields must not be treated as `clear` or `not_applicable`; they keep create / upsert / activate / derive-worktrack blocked until programmer confirmation or verified evidence exists.
+
+`complex_project_entry_gate` must preserve:
+
+- `scanner_evidence_ref`: scanner output is evidence, not verdict;
+- `complexity_signals`: thresholds, confidence, and rationale used for LLM judgment;
+- `operator_safety_policy`: programmer-owned required safety fields;
+- `dialog_review_questions`: highest-leverage questions and recommended answers;
+- `milestone_blocking_decision`: whether create / upsert / activate / derive-worktrack is allowed;
+- `reinforcement_milestone_recommendation`: structured reinforcement documentation / project-understanding Milestone recommendation when evidence is weak.
+- Worktrack execution modes `normal`, `autoreview`, and `yolo`: user-owned policy choices that do not bypass the gate.
+
+The distributable read-only scanner is installed with `set-harness-goal-skill` at `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py` or `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps a local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`. Its JSON should expose scanner thresholds and observations for compose files, service hints, package managers, CI/deploy workflow hints, migration/data hints, debt proxy markers, and code size. The scanner must not access network, start services, execute docker/database/deploy actions, perform destructive writes, or emit file contents. It skips secret-like paths, but still performs bounded reads of non-secret-like text/code files for aggregate signals.
+
+When weak docs are the blocking factor, the preferred route is a reinforcement documentation / project-understanding Milestone. Temporary understanding may support that recommendation, but it must not be promoted into long-lived truth before programmer confirmation or verified evidence.
+
+The recommendation must be structured enough for downstream routing: `needed`, `recommendation_status`, `recommendation_type`, `suggested_title` or `suggested_purpose`, `reason` or `recommendation_reason`, `temporary_understanding_ref`, `evidence_refs`, `confirmation_required`, and `blocks_implementation_until_resolved`. `recommendation_status` should distinguish `not_needed`, `recommended`, `required`, and `pending_operator_review`. `needed = true` or `blocks_implementation_until_resolved = true` blocks implementation-oriented Worktrack derivation. `needed = false` does not block a low-risk `clear` / `not_applicable` gate by itself.
+
 ## Discovery Modes
 
 Use a `lightweight` mode when the repo only needs low-token orientation for a narrow safe first slice. This mode should record coverage limits and keep assumptions visible.
@@ -145,9 +167,11 @@ Current policy is docs-first.
 
 Current skill policy implications:
 
-- `set-harness-goal-skill`: should emit `.servo/repo/temporary-understanding.md` from `assets/repo/temporary-understanding.md` when documentation is weak, instead of pretending to know long-lived purpose.
+- `set-harness-goal-skill`: should emit `.servo/repo/temporary-understanding.md` from `assets/repo/temporary-understanding.md` when documentation is weak, and may emit or reference `complex_project_entry_gate` when weak-doc or complex-project signals affect safe Milestone entry.
 - `repo-status-skill`: should flag weak-doc initialization risk and stale or missing purpose evidence.
-- `repo-whats-next-skill`: should prefer discovery or intake clarification before implementation when unknowns affect scope.
+- `pre-milestone-intake-skill`: should ask `dialog_review_questions`, capture `operator_safety_policy`, and return `milestone_blocking_decision` before initialization.
+- `init-milestone-skill`: should consume `complex_project_entry_gate` and block implementation Milestone activation when the gate says `needs_reinforcement_milestone` or `blocked`.
+- `repo-whats-next-skill`: should prefer discovery, reinforcement documentation / project-understanding Milestone, or intake clarification before implementation when unknowns affect scope.
 - `init-worktrack-skill`: should record unconfirmed assumptions as risks or blockers, not as accepted scope.
 
 Mandatory enforcement requires explicit artifact fields rather than overloading free-form notes.

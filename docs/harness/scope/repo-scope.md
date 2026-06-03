@@ -28,6 +28,7 @@ RepoScope 维护以下慢变量：
 | Milestone Pipeline | `.servo/repo/milestone-backlog.md` | 所有 milestone 的聚合管线，含 planned/active/completed/superseded 状态 |
 | Control State | `.servo/control-state.md` | 控制面配置与位置信息（Scope/Function/Route），不承载业务真相 |
 | Worktrack Backlog | `.servo/repo/worktrack-backlog.md` | 所有 worktrack 的执行记录与状态追踪 |
+| Complex Project Entry Gate | `.servo/repo/complex-project-entry-gate.md` 或结构化 `complex_project_entry_gate` handoff | 复杂项目、弱文档或高风险 Milestone 进入前的 Milestone-side blocking gate |
 
 正式对象字段定义见 [../artifact/README.md](../artifact/README.md)。
 
@@ -71,6 +72,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 **关键约束**：
 - `ChangeGoal` 不由常规 Decide 选择；目标变更由外部 `GoalChangeRequest` 触发
 - Milestone brief 必须经 programmer 确认后才能激活 goal-driven milestone
+- 命中 complex-project trigger 时，`complex_project_entry_gate.milestone_blocking_decision` 必须允许 create / activate / derive-worktrack；scanner output is evidence, not verdict，不能单独清空阻断。gate handoff 必须暴露 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`；缺失、空白、placeholder、pending 或 incomplete gate 按 unresolved gate blocking default 处理；canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable；不能解释为 clear 或 `not_applicable`；弱文档 recommendation 的 `needed = true` 或 `blocks_implementation_until_resolved = true` 必须优先路由到 reinforcement documentation / project-understanding Milestone；canonical guard term: not fixed heavy mode；Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代 Milestone-side blocker
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
 - 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 
@@ -82,7 +84,8 @@ RepoScope.Decide 基于观测结果做出以下判定：
 1. `repo-whats-next-skill` 输出建议进入 WorktrackScope
 2. 存在活跃 milestone 且有待初始化的 worktrack
 3. `worktrack_intake_review.intake_review_verdict` 为 `ready_for_worktrack_init`
-4. 当前无阻塞条件（审批、证据缺失、运行时缺口）
+4. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 明确允许 derive-worktrack；缺失、空白、placeholder、pending、incomplete 或 `block_derive_worktrack` 均阻断进入 WorktrackScope
+5. 当前无阻塞条件（审批、证据缺失、运行时缺口）
 
 进入前审查：
 - `repo_fundamentals`：确认当前 milestone、目标/非目标、baseline、已闭环 worktrack 与禁止项仍一致

@@ -48,6 +48,7 @@ canonical executable source：
 | Milestone backlog | `.servo/repo/milestone-backlog.md` | 唯一性检查 + pipeline 上下文 |
 | Control state | `.servo/control-state.md` | active_milestone 状态 |
 | Pre-milestone intake review | `pre-milestone-intake-skill` 输出 | 高风险或模糊 milestone create/upsert/activate 前的 ready/skipped/blocked 交接证据 |
+| Complex Project Entry Gate | `.servo/repo/complex-project-entry-gate.md` 或 `complex_project_entry_gate` handoff | 复杂项目、弱文档或高风险 milestone create/upsert/activate 前的 Milestone-side blocking gate |
 
 ## 输出
 
@@ -103,6 +104,13 @@ canonical executable source：
 - `accepted_risk`
 - `handoff_to_init_milestone`
 - `template_contract_ref`
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
 
 状态语义：
 
@@ -111,6 +119,22 @@ canonical executable source：
 - `questions_required`: 必须返回 blocked 并路由回 `pre-milestone-intake-skill`。
 - `blocked`: 必须返回 blocked 并暴露阻断原因。
 - missing / 字段不全 / 状态矛盾：必须返回 blocked，不得把薄弱的 milestone brief 伪装成已确认。
+
+## Complex Project Entry Gate Handoff
+
+当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，`init-milestone-skill` 必须消费 `complex_project_entry_gate`。该 gate 是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该 gate。
+
+必需 handoff 字段：
+
+- `complex_project_entry_gate`
+- `scanner_evidence_ref`
+- `complexity_signals`
+- `operator_safety_policy`
+- `dialog_review_questions`
+- `milestone_blocking_decision`
+- `reinforcement_milestone_recommendation`
+
+`entry_verdict = blocked` 或 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，必须返回 blocked，不得写入或激活 implementation-oriented milestone。缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全的 gate 必须按 unresolved gate blocking default 处理，不得解释为 `clear` 或 `not_applicable`。Canonical terms: missing, blank, placeholder, pending, incomplete。`entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true` 或 `blocks_implementation_until_resolved = true` 时，默认 recommendation 是创建 reinforcement documentation / project-understanding milestone，而不是把弱文档推断升格为 milestone truth。结构化 recommendation 至少携带 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`。
 
 ## 激活与稳定性约定
 

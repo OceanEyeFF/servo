@@ -643,6 +643,7 @@ def test_run_scope_gate_allows_foundations_governance_docs(monkeypatch, tmp_path
     assert "README.md" in command
     assert "AGENTS.md" in command
     assert "CONTRIBUTING.md" in command
+    assert ".gitignore" in command
     assert "docs/README.md" in command
     assert "docs/book.md" in command
     assert ".codex/" in command
@@ -792,12 +793,14 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
         item["name"] == "root_npm_exec_tarball_verify_bundle"
         for item in root_tarball_smoke["subchecks"]
     )
-    assert [item["name"] for item in result["subchecks"][:11]] == [
+    assert [item["name"] for item in result["subchecks"][:13]] == [
         "root_package_version_metadata",
         "gate_tool_tests",
         "folder_logic_tests",
         "path_governance_tests",
         "governance_semantic_tests",
+        "complexity_signal_scanner_tests",
+        "set_harness_goal_e2e_fixture_tests",
         "agents_adapter_contract_tests",
         "servo_installer_cli_tests",
         "servo_installer_tui_tests",
@@ -808,6 +811,8 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
     assert any(command[-1] == "toolchain/scripts/test/test_folder_logic_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_path_governance_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_governance_semantic_check.py" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/test_complexity_signal_scanner.py" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/test_set_harness_goal_e2e_fixture.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_agents_adapter_contract.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_cli" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_tui" for command in commands)
