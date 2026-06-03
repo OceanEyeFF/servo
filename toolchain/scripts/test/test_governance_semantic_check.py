@@ -28,6 +28,7 @@ from governance_semantic_check import (
     check_manual_runbook_agents_skill_count,
     check_init_milestone_intake_handoff_contract,
     check_milestone_review_gate_contract,
+    check_milestone_review_route_guard_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -1215,6 +1216,81 @@ def test_check_milestone_review_gate_contract_flags_missing_non_pass_states(
     assert any("questions_required" in item for item in report.failures)
     assert any("skipped" in item for item in report.failures)
     assert any("stale" in item for item in report.failures)
+
+
+def test_check_milestone_review_route_guard_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "route guard",
+            "milestone_review_gate_ready",
+            "milestone_review_gate_not_ready",
+            "latest_review_status",
+            "milestone_review_count",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "questions_required",
+            "blocked",
+            "skipped",
+            "missing",
+            "stale",
+            "invalidated",
+            "Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_milestone_review_route_guard_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_milestone_review_route_guard_contract_flags_missing_block_term(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "route guard",
+            "milestone_review_gate_ready",
+            "latest_review_status",
+            "milestone_review_count",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_milestone_review_route_guard_contract(tmp_path, report)
+
+    assert any("milestone_review_gate_not_ready" in item for item in report.failures)
+    assert any("questions_required" in item for item in report.failures)
+    assert any("skipped" in item for item in report.failures)
 
 
 def test_check_complex_project_entry_gate_contract_accepts_required_terms(

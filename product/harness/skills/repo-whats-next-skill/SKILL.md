@@ -119,6 +119,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
       - 若 `milestone_blocking_decision` 包含 `block_derive_worktrack`，推荐 `保持并观察`，在继续阻塞项中写明 `operator_safety_policy`、`dialog_review_questions` 或 `reinforcement_milestone_recommendation` 缺口，不得进入 WorktrackScope.Init
       - 若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，推荐 reinforcement documentation / project-understanding Milestone，不得把当前候选派生为 implementation-oriented Worktrack；temporary understanding 只能作为 runtime evidence, not Goal Charter truth
       - 若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把候选 worktrack 派生为 ready。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
+      - 检查 Milestone Review Gate route guard：goal-driven active milestone 必须有 `milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 无阻断项。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须设置 `intake_review_verdict = blocked`，在继续阻塞项中写明 `milestone_review_gate_not_ready`，不得推荐 WorktrackScope.Init 或 Worktrack Init/Dispatch。
       - 先从活跃 Milestone 的 `worktrack_list` 中选取下一个待执行的 worktrack，并对照 worktrack-backlog 过滤已完成/已阻塞/已推迟的 worktrack
       - 将选中的 current worktrack 组织为一个独立执行单元：它拥有自己的 branch、contract、plan-task-queue、verify、closeout 和 repo-refresh 追踪，然后再回到 milestone 上下文继续推进
       - 若 `worktrack_list` 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
@@ -235,6 +236,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
 - 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `init-worktrack-skill` 绑定。
 - 从 active milestone 派生 worktrack 时必须携带 `worktrack_intake_review`，且只有 `intake_review_verdict = ready_for_worktrack_init` 与 `ready_for_worktrack_init = true` 才能进入 WorktrackScope.Init。缺失 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 或 `add_remove_worktrack_recommendations` 任一字段时，推荐 Init 的行为必须返回 blocked。
+- 从 active goal-driven milestone 派生 worktrack 时还必须满足 Milestone Review Gate route guard：`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 blocked，不得当成 ready。
 
 ## 预期输出
 

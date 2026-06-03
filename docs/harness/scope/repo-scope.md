@@ -75,6 +75,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - 命中 complex-project trigger 时，`complex_project_entry_gate.milestone_blocking_decision` 必须允许 create / activate / derive-worktrack；scanner output is evidence, not verdict，不能单独清空阻断。gate handoff 必须暴露 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`；缺失、空白、placeholder、pending 或 incomplete gate 按 unresolved gate blocking default 处理；canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable；不能解释为 clear 或 `not_applicable`；弱文档 recommendation 的 `needed = true` 或 `blocks_implementation_until_resolved = true` 必须优先路由到 reinforcement documentation / project-understanding Milestone；canonical guard term: not fixed heavy mode；Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代 Milestone-side blocker
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
 - 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
+- 从 active goal-driven milestone 派生 Worktrack 前，还必须满足 Milestone Review Gate route guard：`milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化；`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`
 
 ## RepoScope ↔ WorktrackScope 切换
 
@@ -85,6 +86,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 2. 存在活跃 milestone 且有待初始化的 worktrack
 3. `worktrack_intake_review.intake_review_verdict` 为 `ready_for_worktrack_init`
 4. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 明确允许 derive-worktrack；缺失、空白、placeholder、pending、incomplete 或 `block_derive_worktrack` 均阻断进入 WorktrackScope
+5. `Milestone Review Gate` 明确允许 derive-worktrack；缺失、`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated`、checkpoint 为空或 review count 为 0 均阻断进入 WorktrackScope
 5. 当前无阻塞条件（审批、证据缺失、运行时缺口）
 
 进入前审查：

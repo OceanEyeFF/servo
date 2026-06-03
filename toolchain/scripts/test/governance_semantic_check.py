@@ -496,6 +496,33 @@ MILESTONE_REVIEW_GATE_REQUIRED_TERMS = [
     "acceptance_criteria",
     "risk boundary",
 ]
+MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/scope/repo-scope.md",
+]
+MILESTONE_REVIEW_ROUTE_GUARD_REQUIRED_TERMS = [
+    "Milestone Review Gate",
+    "route guard",
+    "milestone_review_gate_ready",
+    "milestone_review_gate_not_ready",
+    "latest_review_status",
+    "milestone_review_count",
+    "latest_review_checkpoint",
+    "effective_review_pass",
+    "review_invalidated_by",
+    "effective_pass",
+    "questions_required",
+    "blocked",
+    "skipped",
+    "missing",
+    "stale",
+    "invalidated",
+    "Worktrack Init/Dispatch",
+]
 COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
     "docs/harness/artifact/control/milestone.md",
@@ -1606,6 +1633,23 @@ def check_milestone_review_gate_contract(repo_root: Path, report: SemanticReport
     report.add_info(f"checked {checked} milestone review gate contract sources")
 
 
+def check_milestone_review_route_guard_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing milestone review route guard source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_REVIEW_ROUTE_GUARD_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"milestone review route guard missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone review route guard sources")
+
+
 def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS:
@@ -2341,6 +2385,7 @@ def main() -> int:
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
     check_milestone_review_gate_contract(repo_root, report)
+    check_milestone_review_route_guard_contract(repo_root, report)
     check_complex_project_entry_gate_contract(repo_root, report)
     check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
