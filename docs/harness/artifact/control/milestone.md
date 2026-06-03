@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-05-27
+updated: 2026-06-03
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-03
 ---
 
 # Milestone Artifact
@@ -32,6 +32,7 @@ last_verified: 2026-05-27
 | progress_counter | object | 进度计数器（total / completed / blocked / deferred） |
 | environment_probe | object | [reserved] 预留字段，暂无操作语义 |
 | aggregated_evidence | array | 聚合的 evidence 引用 |
+| milestone_review_gate | object | Milestone 执行入口复核 Gate 的业务事实，包含 `milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`review_invalidated_by` 与 `effective_review_pass` |
 | composite_acceptance | object | goal-driven milestone 的复合验收证据引用与 verdict；字段合同见 [composite-milestone-acceptance.md](./composite-milestone-acceptance.md) |
 | release_version_consideration | string | 对 version/release 的提示（不接管 decision） |
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
@@ -72,6 +73,21 @@ unresolved gate blocking default: missing, blank, placeholder, pending, or incom
 
 Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackScope / user safety policy，不替代 Milestone-side blocker。
 
+## Milestone Review Gate
+
+`milestone_review_gate` 是 goal-driven milestone 在进入 Worktrack 初始化或执行前的执行入口复核记录。它解决的是“当前 milestone brief 是否已经经过至少一次有效的 pre-milestone intake 复核”，不替代 Complex Project Entry Gate、Milestone Gate 或 Final Acceptance。
+
+业务事实归属 Milestone artifact，控制路由状态归属 Control State：
+
+- Milestone artifact 持久保存 `milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`latest_reviewed_at`、`latest_review_ref`、`review_invalidated_by` 与 `effective_review_pass`。
+- Control State 只保存当前 active milestone 的 review gate routing state，例如 `active_milestone_review_gate_status`、`active_milestone_review_count`、`active_milestone_review_checkpoint`、`active_milestone_review_required` 和 `active_milestone_review_blockers`。
+- `milestone_review_count >= 1` 且 `latest_review_status = effective_pass` 且 `effective_review_pass = true` 才能视为有效 review pass。
+- `skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全都不是有效 review pass；不得把 skipped/questions_required/blocked intake 当成 pass。
+- `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化时，必须写入 `review_invalidated_by`，并把 `latest_review_status` 视为 `invalidated`，直到新的 pre-milestone-intake-skill review 产生 fresh checkpoint。
+- `milestone_review_gate_handoff` 是 `pre_milestone_intake_review` 到 Milestone artifact 的结构化交接对象；review checkpoint 应引用该 handoff 的稳定摘要或输入指纹；缺失 checkpoint 时不得进入 Worktrack Init/Dispatch。
+
+该 gate 只阻断 milestone 进入 Worktrack 工作，不自动改变 milestone purpose、验收标准或 final acceptance 结论。
+
 ## 生命周期
 
 Milestone 在其生命周期中经历四个状态：
@@ -100,6 +116,7 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 - `activation_rules` 非空时，harness 可在满足描述的条件后自动激活；空值表示需 programmer 显式审批
 - goal-driven milestone 在 `planned` → `active` 前，harness 必须先输出结构化激活 brief 并等待 programmer 确认；work-collection milestone 可继续按既有自动激活语义推进
 - 对命中 complex-project trigger 的 goal-driven milestone，激活 brief 之前还必须先清空 `complex_project_entry_gate.milestone_blocking_decision` 中的阻断项
+- goal-driven milestone 在派生首个 Worktrack 前，必须满足 Milestone Review Gate：至少一次 `effective_pass` 的 `pre_milestone_intake_review`，且 review checkpoint 未被 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化失效
 
 完整 Pipeline 编排规则（upsert 语义、tie-breaker、激活顺序）以 [milestone-backlog.md](../repo/milestone-backlog.md#Pipeline 语义) 为权威源。
 

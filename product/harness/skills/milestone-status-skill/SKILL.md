@@ -37,7 +37,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 1. 确认这是一轮 Milestone 状态分析轮次，不是工作追踪分派、下一步决策或直接执行。
 2. 识别当前活跃 Milestone：从 Harness 控制状态或 repo snapshot 中获取当前 active milestone_id。
-3. 读取 Milestone artifact（`.servo/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
+3. 读取 Milestone artifact（`.servo/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones、milestone_review_gate 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
+3a. 检查 Milestone Review Gate：goal-driven milestone 在进入 Worktrack Init/Dispatch 前必须存在至少一次有效复核。该复核来自 `pre_milestone_intake_review` 的 `milestone_review_gate_handoff`。只有 `milestone_review_count >= 1`、`latest_review_status = effective_pass`、`effective_review_pass = true` 且 `latest_review_checkpoint` 非空时才算通过。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 `proceed_blockers`，不得当成 review pass。若 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化导致 `review_invalidated_by` 非空，必须要求 fresh `pre_milestone_intake_review`。
 4. 读取 worktrack backlog（`.servo/repo/worktrack-backlog.md`）：若文件不存在（首个 worktrack 尚未 closeout），视为空 backlog（completed/blocked/deferred 均为 0），`total` 仍取自 Milestone artifact 的 `worktrack_list` 长度，继续正常分析，不触发停止条件。若文件存在但无法按 Worktrack Backlog 合同解析为包含 `worktrack_id` 与 `status` 的条目，或出现无法归一化的状态值、损坏 frontmatter / markdown 结构、同一条目缺少必需字段等 present-but-damaged / unparseable 情况，必须命中正式停止条件，不得把损坏 backlog 当成空 backlog，也不得用部分解析结果继续计算。若文件存在且可解析，按以下规则处理：backlog 存储的状态值为 `done / deferred / blocked / resolved`，读取时须做归一化映射：`done → completed`、`resolved → completed`、`blocked → blocked`、`deferred → deferred`。映射后按 `worktrack_id` 去重（保留最新条目），以 `completed / blocked / deferred` 三类参与 progress 计算。
 5. 读取 gate evidence：先读取 Milestone artifact 的 `aggregated_evidence` 引用列表（包含各 worktrack 的 evidence 路径、可选的 milestone gate evidence 路径和 composite acceptance report 路径），逐条读取；若 `aggregated_evidence` 为空，回退读取 `.servo/worktrack/gate-evidence.md` 获取最近关闭 worktrack 的 evidence 记录。聚合所有 evidence 后参与 `Milestone Gate` 和 `purpose_achieved` 判定。
 6. 读取 repo snapshot（`.servo/repo/snapshot-status.md`），获取当前 repo 基准状态和治理信号。
@@ -89,6 +90,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - Worktrack backlog 文件存在但损坏、不可读或不可按合同解析；包括无法提取 `worktrack_id` / `status`、状态值不在 `done / deferred / blocked / resolved`、frontmatter / markdown 结构损坏，或只能得到部分可信条目的情况
 - Worktrack backlog 与 Milestone 声明的 worktrack_list 之间存在不可自动解决的矛盾
 - 前置 Milestone 依赖未完成，且无法自动判定是否应阻塞当前 Milestone
+- Milestone Review Gate 缺失、`milestone_review_count < 1`、`latest_review_status` 不是 `effective_pass`、`latest_review_checkpoint` 为空，或 intake 状态为 `skipped` / `questions_required` / `blocked` / `missing` / `stale` / `invalidated`
+- `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化使 Milestone Review Gate checkpoint 失效
 - `Milestone Gate` 所需的 black-box / white-box / anti-cheat / composite acceptance lane 证据缺失、过期或互相冲突，导致无法做出可信集成判定
 - `Milestone Gate` 命中 `soft-fail` / `hard-fail` / `blocked` 或反作弊告警，且当前轮无合法自动恢复路径
 - 双重验收检查中 `purpose_achieved` 的判断需要 developer 主观裁定，且无足够的自动判定依据
@@ -151,6 +154,10 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `completion_threshold_pct`：integer，默认 `100`
 - `verification_model_used`：dual / single
 - `milestone_status`：planned / active / completed / superseded
+- `milestone_review_gate_status`：effective_pass / questions_required / blocked / skipped / missing / stale / invalidated
+- `milestone_review_count`：integer
+- `latest_review_checkpoint`：string
+- `effective_review_pass`：boolean
 - `progress`：
   - `total`：声明的 worktrack 总数
   - `completed`：已完成或等效处理的 worktrack 数

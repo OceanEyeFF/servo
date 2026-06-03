@@ -1,9 +1,9 @@
 ---
 title: "Harness Control State"
 status: active
-updated: 2026-05-25
+updated: 2026-06-03
 owner: servo-kernel
-last_verified: 2026-05-25
+last_verified: 2026-06-03
 ---
 # Harness Control State
 
@@ -26,6 +26,21 @@ Milestone 是 `RepoScope` 下的聚合对象，control-state 应在 Linked Forma
 `active_milestone` 缺失但 `milestone_pipeline_path` 存在且 pipeline 非空时，表示 pipeline 中有 planned milestone 但尚未激活。设置后 Milestone 进度由 `milestone-status-skill` 独立分析，Pipeline 推进由 `harness-skill` 在收到 `milestone_acceptance_verdict` 后执行，不替代 `RepoScope.Decide` 的决策权。
 
 Milestone final acceptance 写回后，Control State 必须与 `.servo/repo/milestone-backlog.md` 和 `.servo/repo/milestone-history.md` 保持一致：`active_milestone` 只能指向 live backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active 计数必须等于 live backlog 实际条目，completed/superseded 计数必须等于 milestone history 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
+
+## Milestone Review Gate Routing State
+
+Active Milestone 的执行入口复核路由状态也保存在 Control State，但只作为 routing metadata，不保存业务 truth。字段默认值必须保守，不得扩大权限。业务事实来自 Milestone artifact 的 `milestone_review_gate` 和 pre-intake 输出的 `milestone_review_gate_handoff`；Control State 只镜像 routing 所需字段：
+
+- `active_milestone_review_gate_status`: `missing`（默认）/`effective_pass`/`questions_required`/`blocked`/`skipped`/`stale`/`invalidated`
+- `active_milestone_review_count`: integer，默认 `0`
+- `active_milestone_review_checkpoint`: string or `N/A`
+- `latest_review_status`: active milestone 最近一次 review 状态的镜像
+- `latest_review_checkpoint`: active milestone 最近一次 review checkpoint 的镜像
+- `review_invalidated_by`: active milestone review gate 的失效原因镜像
+- `active_milestone_review_required`: boolean，goal-driven 默认 `true`
+- `active_milestone_review_blockers`: array，默认包含缺失或失效原因
+
+只有当 `active_milestone_review_gate_status = effective_pass`、`active_milestone_review_count >= 1`、`active_milestone_review_checkpoint` 非空且 Milestone artifact 中 `effective_review_pass = true` 时，Control State 才能允许进入 Worktrack Init/Dispatch。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段缺失都必须按 blocked 解释。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 改变时，control-state 的 routing state 必须降级为 `invalidated` 或 `stale`，等待新的 `pre_milestone_intake_review` checkpoint。
 
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 

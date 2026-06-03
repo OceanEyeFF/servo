@@ -132,6 +132,12 @@ preferred handoff fields：
 - `programmer_confirmed`
 - `ready_for_init_milestone`
 - `handoff_to_init_milestone`
+- `milestone_review_gate_handoff`
+- `milestone_review_count`
+- `latest_review_status`
+- `latest_review_checkpoint`
+- `effective_review_pass`
+- `review_invalidated_by`
 - `complex_project_entry_gate`
 - `scanner_evidence_ref`
 - `complexity_signals`
@@ -139,6 +145,8 @@ preferred handoff fields：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+
+Milestone Review Gate handoff records whether pre-milestone intake produced an `effective_pass` before Worktrack Init/Dispatch. It must carry `milestone_review_gate`, `milestone_review_gate_handoff`, `milestone_review_count`, `latest_review_status`, `latest_review_checkpoint`, `effective_review_pass`, and `review_invalidated_by`. Non-pass states `questions_required`, `blocked`, `skipped`, `missing`, `stale`, and `invalidated` are not pass states. Changing `worktrack_list`, `completion_signals`, `acceptance_criteria`, scope/non-goals, or risk boundary invalidates the checkpoint and requires a fresh review.
 
 These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
 

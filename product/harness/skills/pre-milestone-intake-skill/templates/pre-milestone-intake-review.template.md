@@ -228,3 +228,31 @@ handoff_to_init_milestone:
     - "ready_for_init_milestone = true"
   blocked_by: []
 ```
+
+## Milestone Review Gate Handoff
+
+Use this section when the intake review is intended to satisfy the Milestone execution-entry review gate. A skipped, questions-required, blocked, missing, stale, invalidated, or incomplete intake is not a review pass.
+Changing `worktrack_list`, `completion_signals`, `acceptance_criteria`, scope/non-goals, or risk boundary invalidates the previous review checkpoint.
+
+```yaml
+milestone_review_gate_handoff:
+  target_milestone_id: ""
+  review_status: "effective_pass | questions_required | blocked | skipped | missing | stale | invalidated"
+  milestone_review_count_increment: 0
+  latest_review_status: "missing"
+  latest_review_checkpoint: null
+  latest_review_ref: null
+  effective_review_pass: false
+  review_invalidated_by:
+    worktrack_list_changed: false
+    completion_signals_changed: false
+    acceptance_criteria_changed: false
+    scope_or_non_goals_changed: false
+    risk_boundary_changed: false
+  blockers:
+    - "programmer_confirmed = true"
+    - "ready_for_init_milestone = true"
+    - "intake_skipped = false"
+```
+
+Only `review_status: effective_pass` with `effective_review_pass: true`, a non-empty `latest_review_checkpoint`, `programmer_confirmed: true`, `ready_for_init_milestone: true`, and `intake_skipped: false` may increment `milestone_review_count`. All other statuses must block Worktrack Init/Dispatch until a fresh pre-milestone-intake review exists.

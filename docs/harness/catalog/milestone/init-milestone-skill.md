@@ -49,6 +49,7 @@ canonical executable source：
 | Control state | `.servo/control-state.md` | active_milestone 状态 |
 | Pre-milestone intake review | `pre-milestone-intake-skill` 输出 | 高风险或模糊 milestone create/upsert/activate 前的 ready/skipped/blocked 交接证据 |
 | Complex Project Entry Gate | `.servo/repo/complex-project-entry-gate.md` 或 `complex_project_entry_gate` handoff | 复杂项目、弱文档或高风险 milestone create/upsert/activate 前的 Milestone-side blocking gate |
+| Milestone Review Gate handoff | `pre-milestone-intake-skill` 输出 | 记录是否形成 `effective_pass` 的执行入口复核；非 pass 状态不得进入 Worktrack 初始化 |
 
 ## 输出
 
@@ -104,6 +105,12 @@ canonical executable source：
 - `accepted_risk`
 - `handoff_to_init_milestone`
 - `template_contract_ref`
+- `milestone_review_gate_handoff`
+- `milestone_review_count`
+- `latest_review_status`
+- `latest_review_checkpoint`
+- `effective_review_pass`
+- `review_invalidated_by`
 - `complex_project_entry_gate`
 - `scanner_evidence_ref`
 - `complexity_signals`
@@ -119,6 +126,8 @@ canonical executable source：
 - `questions_required`: 必须返回 blocked 并路由回 `pre-milestone-intake-skill`。
 - `blocked`: 必须返回 blocked 并暴露阻断原因。
 - missing / 字段不全 / 状态矛盾：必须返回 blocked，不得把薄弱的 milestone brief 伪装成已确认。
+
+Milestone Review Gate handoff 只能在 `intake_status = ready`、`programmer_confirmed = true`、`ready_for_init_milestone = true`、`intake_skipped = false` 且 `review_status = effective_pass` 时增加 `milestone_review_count`。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或缺少 `latest_review_checkpoint` 都不得当成 pass，必须保持 Worktrack Init/Dispatch blocked。若 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 改变，必须写入 `review_invalidated_by` 并要求 fresh checkpoint。
 
 ## Complex Project Entry Gate Handoff
 
