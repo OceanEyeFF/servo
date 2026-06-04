@@ -17,6 +17,8 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 它实现一轮限定范围的 `代码仓库范围.决策`，采用 **Milestone-First** 推理策略：先在 Milestone 层级锚定（是否需要创建/激活/关闭 milestone），再下沉到 Worktrack 层级派生执行单元。它的工作是选出一个代码仓库动作，然后把这个决策投影成显式的继续路由、审批状态与阻塞项集合，让 `Harness` 无需重新解释文字就能消费。
 
+当本轮是 pre-milestone 讨论、任务点归纳或“还有什么可推进”查询时，本技能可以输出 candidate milestone recommendation。该 recommendation 是 RepoScope.Decide 的建议，不是已获批准的 milestone，也不是 Worktrack task queue。推荐必须先列 `observed_facts`、`inferred_assumptions`、`unknowns`，再给出 `primary_contradiction` 与 `main_aspect_now`；candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer confirmation requirement。通常只给 1 到 3 个候选；证据不足时应输出调研问题或保持观察，而不是创建 Milestone。
+
 当已有新鲜的 `代码仓库状态摘要`，或者 `Harness` 明确希望先拿到稳定观察包时，这个技能可以消费该摘要。但在没有现成 `代码仓库状态技能` 输出时，它仍必须能直接基于代码仓库真相运行。
 
 它的主要判断依据是代码仓库级真相：
@@ -110,6 +112,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
          - 若存在：`suggested_milestone_action = "activate"`，输出 `suggested_milestone_id`
       e. `suggested_next_scope = "RepoScope"`，绑定 `init-milestone-skill`
       f. 若本轮建议 `create` / `activate` / `append_worktracks`，必须同时输出结构化 `milestone_brief`，并将 `需要审批 = true`、`审批理由 = "milestone brief 待 programmer 确认"`
+      f1. 当输出 candidate milestone recommendation 时，必须显式标记 `candidate_only = true`，并区分 `observed_facts` / `inferred_assumptions` / `unknowns`。candidate brief 不得写入 live milestone-backlog，不得增加 progress counter，不得把 candidate worktracks 写入 `.servo/worktrack/*`。只有 programmer confirmation 后，才可把该 brief 交给 `init-milestone-skill`。
       f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定 `init-milestone-skill` 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement documentation / project-understanding Milestone brief，且不能把 implementation-oriented create / activate / append_worktracks 投影为可绑定路由。若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把 create / activate / append_worktracks 建议投影成可绑定的 `init-milestone-skill` 路由。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
       g. **禁止在此分支建议"进入工作追踪"**（work-collection 路径是合法例外：work-collection milestone 激活后可直接进入 WorktrackScope）
       h. 输出 `milestone_kind` 字段，供下游 skill 分派
@@ -234,6 +237,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - `reinforcement_milestone_recommendation` 必须保留 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生，`needed = false` 且 `recommendation_status = not_needed` 不应阻断低风险 `clear` / `not_applicable` gate。
 - milestone closeout（`milestone_acceptance_verdict == achieved`）需 programmer 审批（`需要审批 = true`），不得自动推进。
 - 建议 `create` / `activate` / `append_worktracks` 时必须附带结构化 `milestone brief`；在 programmer 确认前不得把该建议伪装成已获准的自动路由。
+- Candidate milestone recommendation 必须是 fact-first / field-research：先 `observed_facts`，再 `inferred_assumptions`，再 `unknowns`，再 `primary_contradiction` 与 `main_aspect_now`。候选 brief 是 recommendation，不是 live backlog truth；不得自动 create / activate / append。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
 - 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `init-worktrack-skill` 绑定。
 - 从 active milestone 派生 worktrack 时必须携带 `worktrack_intake_review`，且只有 `intake_review_verdict = ready_for_worktrack_init` 与 `ready_for_worktrack_init = true` 才能进入 WorktrackScope.Init。缺失 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 或 `add_remove_worktrack_recommendations` 任一字段时，推荐 Init 的行为必须返回 blocked。

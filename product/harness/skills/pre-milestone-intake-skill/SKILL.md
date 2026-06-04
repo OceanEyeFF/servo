@@ -46,7 +46,9 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
    - `inferred_assumptions`：模型推断但未确认的假设；
    - `unknowns`：影响 scope、risk 或 acceptance 的未知项；
    - `programmer_decisions_required`：必须由 programmer 决策的事项。
+   能从 repo truth、current control state、milestone-backlog、worktrack-backlog、recent evidence 或明确用户输入中查到的事实，必须先作为 observed facts 收集；不得把这些可发现事实全部转嫁为 programmer 问题。
 4. 生成 `request_summary` 和 `suggested_milestone_brief` 草案，至少包含 title、purpose、scope、non_goals、candidate worktracks、completion signals、acceptance criteria、risk flags。
+   若输出多个 candidate milestone brief，必须先说明 `primary_contradiction`、`main_aspect_now` 和每个候选的 evidence / unknowns / programmer confirmation requirement；通常收敛到 1 到 3 个候选。
 5. 执行 grill gate：
    - 默认优先提出 3 到 5 个最高杠杆问题；若进入 continuous intake mode，则本轮只提出一个最高杠杆 `next_required_question`；
    - 每个问题必须说明为什么要问，并写入 `why_it_matters`；
@@ -84,6 +86,7 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 - `questions_required`、`blocked`、`skipped`、`missing`、`stale`、`invalidated`、`residual_risk_unaccepted` 或 field-incomplete continuation state 不得增加 `milestone_review_count`。
 - 若 review 发现 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 发生变化，必须在 `review_invalidated_by` 中记录，并把 `review_status` 设置为 `invalidated` 或要求 fresh checkpoint。
 - `observed_facts`、`inferred_assumptions`、`unknowns` 和 `programmer_decisions_required` 必须分开写；未经 programmer 确认的推断不得进入长期 truth 或 milestone artifact 的确认字段。
+- Candidate milestone brief 必须保持 recommendation / draft 身份。它可以帮助 programmer 决策，但在 programmer confirmation 和 `init-milestone-skill` 写入前，不得成为 live milestone truth、planned milestone、active milestone 或 Worktrack task queue。
 - 命中 complex-project trigger 时，必须输出 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与 `reinforcement_milestone_recommendation`。
 - 当 weak-doc 或 insufficient project understanding 是阻断因素时，`reinforcement_milestone_recommendation` 必须至少携带 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`recommendation_status` 可为 `not_needed`、`recommended`、`required` 或 `pending_operator_review`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时不得派生 implementation-oriented Worktrack，`needed = false` 才能允许低风险 `clear` / `not_applicable` gate 继续。
 - unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, pending, or incomplete `complex_project_entry_gate` 不得被视为 clear 或 `not_applicable`；默认阻断 create/upsert/activate/derive-worktrack，直到 programmer confirmation 或 verified evidence 存在。
