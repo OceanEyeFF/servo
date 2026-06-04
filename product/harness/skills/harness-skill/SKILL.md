@@ -56,6 +56,8 @@ Harness 的运行基于一条完整的控制回路：
 
 **执行载体选择**：当实现、审查或验证任务进入执行平面时，Harness 必须按 Dispatch Decision Policy 选择真实 `SubAgent`、专用 skill、通用执行载体、human executor 或明确的 current-carrier。`auto` 不表示"能委派就委派"；它表示根据任务耦合度、共享状态需求、并行价值、风险、权限边界和上下文预算选择载体。当前载体执行不是隐式失败，但必须显式记录 `carrier_decision`、`decision_inputs` 和回退原因。
 
+**单入口分流**：`harness-skill` 是唯一闭环 supervisor。Operator-facing profile / mode 只能作为 `route hint`：根据 `user_input`、`repo_state`、`milestone_state`、`worktrack_state`、`risk_signals` 与 `approval_signals` 判断应进入 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive 等 workflow path。Profile 不创建第二 controller、不创建第三 Scope、不拥有独立 Gate、不写长期 truth、不绕过 Worktrack Contract，也不得把 candidate milestone / candidate worktrack 解释成已批准执行范围。最终仍由 Harness 控制回路选择 Scope、Function、Skill / execution carrier，收集 Evidence，并执行 Gate。
+
 ---
 
 ## 三、系统组件
@@ -346,6 +348,7 @@ Gate 应汇总**正交校验面**的裁决：
    - 缺失字段按 `docs/harness/artifact/control/control-state.md` 的默认值解释，并在状态估计中记录 `config_hydration_gaps`；缺失不能静默扩大权限或自动性。
    - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 `docs/harness/artifact/control/control-state.md` 与初始化模板。
    - `.servo/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
+   - 入口分流必须在 hydration 之后发生；缺少 artifact 或审批信号时，profile 只能降级为 observation / handback / blocked，不得扩大权限。
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
    - 从 `.servo/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（Harness 管理的目标分支）
