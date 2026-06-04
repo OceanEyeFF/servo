@@ -1,9 +1,9 @@
 ---
 title: "RepoScope 管理文档"
 status: active
-updated: 2026-05-20
+updated: 2026-06-04
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-04
 ---
 # RepoScope 管理文档
 
@@ -76,6 +76,22 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
 - 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 - 从 active goal-driven milestone 派生 Worktrack 前，还必须满足 Milestone Review Gate route guard：`milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化；`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`
+
+### Candidate Milestone Recommendation
+
+当 operator 只要求“还有什么可推进”“先列任务点”“讨论后再设置 Milestone”或类似 pre-milestone 输入时，RepoScope.Decide 可以输出 candidate milestone recommendation，但该 recommendation 不是 milestone 创建、激活或 append 授权。
+
+候选 Milestone 推荐必须使用 fact-first / field-research 约束：
+
+- 先列 `observed_facts`：active/planned/completed milestone、latest closed worktrack、已验证 evidence、用户最新输入、repo baseline 与已知风险。
+- 再列 `inferred_assumptions`：从事实推出但尚未验证的判断。
+- 再列 `unknowns`：需要进一步调研或 programmer 确认的问题。
+- 明确 `primary_contradiction`：当前最限制 repo 演进的主要矛盾，例如入口体验、执行自治、治理债、文档 truth 滞后、release 风险或范围不清。
+- 明确 `main_aspect_now`：为什么当前推荐方向比其他方向更能改变系统状态。
+- 每个 candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer decision boundary。
+- 候选数量应收敛，通常为 1 到 3 个；数量过多说明 RepoScope.Decide 应回到调研/问题收集，而不是创建 milestone。
+
+所有 candidate milestone brief 在 programmer 明确确认前都只能停留在建议层。`init-milestone-skill` 才能创建或激活 Milestone；`repo-whats-next-skill` / RepoScope.Decide 不得把候选建议写成 live backlog truth，不得把候选 Worktrack 写入 `.servo/worktrack/*`，也不得越过 Milestone Review Gate、Complex Project Entry Gate 或 Worktrack Intake Review。
 
 ## RepoScope ↔ WorktrackScope 切换
 
