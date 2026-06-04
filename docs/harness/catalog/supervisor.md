@@ -15,6 +15,8 @@ last_verified: 2026-05-07
 
 职责：启动时先从既有 `.servo/control-state.md` hydration 控制配置与上次交接边界，然后判断当前在 RepoScope 还是 WorktrackScope，按合法状态转移连续推进直到 stop condition；优先消费下游 rounds 返回的结构化 route/continuation/approval 字段而非 prose；汇总已完成的 rounds、证据、状态和下一步建议；只在 authority boundary 或其他 formal stop condition 停下。只有 control state 显式授予 post_contract_autonomy: delegated-minimal 时才允许 contract-boundary 后自动开启同 goal 的最小 follow-up worktrack。连续无状态增量的 handback rounds 应优先返回 stable-handback 而非无限重跑；stable-handback 成立后保持在 awaiting-handoff 直到检测到明确 unlock signal。长期权限、自动性或分派策略变更必须写回 control-state 配置段；一次性审批只进入本轮 evidence / handoff。
 
+入口 profile 只是 route hint：`harness-skill` 仍是唯一闭环 supervisor。profile 可以影响 workflow path、停顿点和审批提示，但不创建第二 controller，不拥有独立 Gate，不写长期 truth，不绕过 Worktrack Contract，也不把 candidate milestone / candidate worktrack 解释成已批准范围。
+
 canonical executable source：
 
 - [../../../product/harness/skills/harness-skill/SKILL.md](../../../product/harness/skills/harness-skill/SKILL.md)

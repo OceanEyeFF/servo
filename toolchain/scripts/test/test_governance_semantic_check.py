@@ -25,11 +25,14 @@ from governance_semantic_check import (
     check_docs_list_closeout_cache_roots,
     check_dispatch_context_contract,
     check_foundations_authority_shadows,
+    check_harness_entry_profile_route_hint_contract,
     check_orphan_docs,
     check_manual_runbook_agents_skill_count,
     check_init_milestone_intake_handoff_contract,
+    check_milestone_recommendation_fact_first_contract,
     check_milestone_review_gate_contract,
     check_milestone_review_route_guard_contract,
+    check_milestone_worktrack_planning_separation_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -547,6 +550,120 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_pa
 
     report = SemanticReport()
     check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_harness_entry_profile_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/foundations/runtime-control-loop.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "docs/harness/catalog/supervisor.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_harness_entry_profile_route_hint_contract_flags_missing_guard(
+    tmp_path: Path,
+) -> None:
+    _write_harness_entry_profile_sources(
+        tmp_path,
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不拥有独立\nGate\n",
+    )
+
+    report = SemanticReport()
+    check_harness_entry_profile_route_hint_contract(tmp_path, report)
+
+    assert any("不创建第二" in item for item in report.failures)
+
+
+def test_check_harness_entry_profile_route_hint_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_harness_entry_profile_sources(
+        tmp_path,
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不创建第二\n不拥有独立\nGate\n",
+    )
+
+    report = SemanticReport()
+    check_harness_entry_profile_route_hint_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_milestone_recommendation_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/scope/repo-scope.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_milestone_recommendation_fact_first_contract_flags_missing_fact_layer(
+    tmp_path: Path,
+) -> None:
+    _write_milestone_recommendation_sources(
+        tmp_path,
+        "observed_facts\ninferred_assumptions\nprimary_contradiction\nmain_aspect_now\n"
+        "candidate milestone\nprogrammer confirmation\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_recommendation_fact_first_contract(tmp_path, report)
+
+    assert any("unknowns" in item for item in report.failures)
+
+
+def test_check_milestone_recommendation_fact_first_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_milestone_recommendation_sources(
+        tmp_path,
+        "observed_facts\ninferred_assumptions\nunknowns\nprimary_contradiction\n"
+        "main_aspect_now\ncandidate milestone\nprogrammer confirmation\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_recommendation_fact_first_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_planning_separation_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/worktrack/plan-task-queue.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_milestone_worktrack_planning_separation_contract_flags_queue_confusion(
+    tmp_path: Path,
+) -> None:
+    _write_planning_separation_sources(
+        tmp_path,
+        "Milestone\nWorktrack\ncandidate\ntask window\n不得\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_worktrack_planning_separation_contract(tmp_path, report)
+
+    assert any("Plan / Task Queue" in item for item in report.failures)
+
+
+def test_check_milestone_worktrack_planning_separation_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_planning_separation_sources(
+        tmp_path,
+        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n不得\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_worktrack_planning_separation_contract(tmp_path, report)
 
     assert report.failures == []
 
