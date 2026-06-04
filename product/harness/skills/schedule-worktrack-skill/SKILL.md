@@ -19,7 +19,7 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 
 这个技能应让规划始终可追溯到当前验收标准，但它不负责收集验证证据，也不负责判断这些标准是否已经满足。
 
-`Plan / Task Queue` 是当前 Worktrack 的局部任务窗口。它可以包含多个连续小任务，但每轮调度只能选出一个 `selected_next_action` 和一份 bounded dispatch handoff packet。任务窗口不得被解释为 Repo backlog、Milestone backlog、candidate milestone list 或全局待办；新增/移除/重排 Worktrack 必须回到 RepoScope.Decide / programmer approval。
+`Plan / Task Queue` 是当前 Worktrack 的局部任务窗口 / task window。它可以包含多个连续小任务，但每轮调度只能选出一个 `selected_next_action` 和一份 bounded dispatch handoff packet。任务窗口不得被解释为 Repo backlog、Milestone backlog、candidate milestone list 或全局待办；新增/移除/重排 Worktrack 必须回到 RepoScope.Decide / programmer approval。
 
 ## 何时使用
 

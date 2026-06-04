@@ -83,7 +83,7 @@ Milestone Review Gate route guard 是从 active goal-driven milestone 派生 Wor
 - `risk_signals`: 是否涉及 release/publish/tag、破坏性操作、长期 truth 写回、跨目录治理、权限升级或高不确定调研。
 - `approval_signals`: programmer 是否明确批准目标变更、milestone 创建/激活、worktrack 初始化、连续推进、委派或外部副作用。
 
-这些信号只能选择 workflow path 和 stop/approval semantics；最终仍由 Harness 正常控制链选择 Scope、Function、Skill 或 execution carrier。Profile / operator-facing mode 只是 route hint，例如 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive。它不拥有独立 gate，不写长期 truth，不绕过 Worktrack Contract，不把 candidate milestone 或 candidate worktrack 解释成已批准执行范围。
+这些信号只能选择 workflow path 和 stop/approval semantics；最终仍由 Harness 正常控制链选择 Scope、Function、Skill 或 execution carrier。profile / operator-facing mode 只是 route hint，例如 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive。它不创建第二 controller，不拥有独立 gate，不写长期 truth，不绕过 Worktrack Contract，不把 candidate milestone 或 candidate worktrack 解释成已批准执行范围。
 
 当 route hint 与正式 artifact 或审批边界冲突时，以正式 artifact、Gate evidence、Control State authority 和 programmer approval 为准；route hint 必须降级为 handback 或 blocked observation。
 

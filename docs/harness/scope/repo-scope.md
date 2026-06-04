@@ -88,7 +88,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - 再列 `unknowns`：需要进一步调研或 programmer 确认的问题。
 - 明确 `primary_contradiction`：当前最限制 repo 演进的主要矛盾，例如入口体验、执行自治、治理债、文档 truth 滞后、release 风险或范围不清。
 - 明确 `main_aspect_now`：为什么当前推荐方向比其他方向更能改变系统状态。
-- 每个 candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer decision boundary。
+- 每个 candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险、programmer decision boundary 和 programmer confirmation requirement。
 - 候选数量应收敛，通常为 1 到 3 个；数量过多说明 RepoScope.Decide 应回到调研/问题收集，而不是创建 milestone。
 
 所有 candidate milestone brief 在 programmer 明确确认前都只能停留在建议层。`init-milestone-skill` 才能创建或激活 Milestone；`repo-whats-next-skill` / RepoScope.Decide 不得把候选建议写成 live backlog truth，不得把候选 Worktrack 写入 `.servo/worktrack/*`，也不得越过 Milestone Review Gate、Complex Project Entry Gate 或 Worktrack Intake Review。

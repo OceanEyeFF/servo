@@ -277,6 +277,48 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
     "permission blocked",
     "dispatch package unsafe",
 ]
+HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS = [
+    "docs/harness/foundations/runtime-control-loop.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "docs/harness/catalog/supervisor.md",
+]
+HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS = [
+    "route hint",
+    "profile",
+    "harness-skill",
+    "唯一闭环 supervisor",
+    "不创建第二",
+    "不拥有独立",
+    "Gate",
+]
+MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS = [
+    "docs/harness/scope/repo-scope.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+]
+MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS = [
+    "observed_facts",
+    "inferred_assumptions",
+    "unknowns",
+    "primary_contradiction",
+    "main_aspect_now",
+    "candidate milestone",
+    "programmer confirmation",
+]
+MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS = [
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/worktrack/plan-task-queue.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+]
+MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
+    "Milestone",
+    "Worktrack",
+    "Plan / Task Queue",
+    "candidate",
+    "task window",
+    "不得",
+]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
@@ -1442,6 +1484,68 @@ def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticRep
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
+def check_harness_entry_profile_route_hint_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing harness entry profile route-hint source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"harness entry profile route-hint contract missing term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} harness entry profile route-hint sources")
+
+
+def check_milestone_recommendation_fact_first_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing milestone recommendation fact-first source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"milestone recommendation fact-first contract missing term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone recommendation fact-first sources")
+
+
+def check_milestone_worktrack_planning_separation_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing milestone/worktrack planning separation source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "milestone/worktrack planning separation contract missing term "
+                    f"{term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone/worktrack planning separation sources")
+
+
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
@@ -2423,6 +2527,9 @@ def main() -> int:
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
+    check_harness_entry_profile_route_hint_contract(repo_root, report)
+    check_milestone_recommendation_fact_first_contract(repo_root, report)
+    check_milestone_worktrack_planning_separation_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)
