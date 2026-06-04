@@ -568,7 +568,10 @@ def test_check_harness_entry_profile_route_hint_contract_flags_missing_guard(
 ) -> None:
     _write_harness_entry_profile_sources(
         tmp_path,
-        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不拥有独立\nGate\n",
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不拥有独立\nGate\n"
+        "operator mode matrix\ntrigger signals\nstatus-and-next\n"
+        "pre-milestone discussion\nmilestone-open discussion\nworktrack execution\n"
+        "verify-and-close\nrelease-sensitive\nstop/approval semantics\nnot approved scope\n",
     )
 
     report = SemanticReport()
@@ -582,7 +585,10 @@ def test_check_harness_entry_profile_route_hint_contract_accepts_terms(
 ) -> None:
     _write_harness_entry_profile_sources(
         tmp_path,
-        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不创建第二\n不拥有独立\nGate\n",
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不创建第二\n不拥有独立\nGate\n"
+        "operator mode matrix\ntrigger signals\nstatus-and-next\n"
+        "pre-milestone discussion\nmilestone-open discussion\nworktrack execution\n"
+        "verify-and-close\nrelease-sensitive\nstop/approval semantics\nnot approved scope\n",
     )
 
     report = SemanticReport()

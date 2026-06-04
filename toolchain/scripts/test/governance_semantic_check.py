@@ -290,6 +290,16 @@ HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS = [
     "不创建第二",
     "不拥有独立",
     "Gate",
+    "operator mode matrix",
+    "trigger signals",
+    "status-and-next",
+    "pre-milestone discussion",
+    "milestone-open discussion",
+    "worktrack execution",
+    "verify-and-close",
+    "release-sensitive",
+    "stop/approval semantics",
+    "not approved scope",
 ]
 MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS = [
     "docs/harness/scope/repo-scope.md",

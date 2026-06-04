@@ -87,6 +87,21 @@ Milestone Review Gate route guard 是从 active goal-driven milestone 派生 Wor
 
 当 route hint 与正式 artifact 或审批边界冲突时，以正式 artifact、Gate evidence、Control State authority 和 programmer approval 为准；route hint 必须降级为 handback 或 blocked observation。
 
+### Operator Mode Matrix
+
+operator mode matrix 是单入口面对 operator 的触发语义表，不是新的状态机。每个 mode 都从已 hydration 的 control state 和 trigger signals 中选择，然后投影回正常 Scope / Function 控制回路。
+
+| operator-facing mode | Typical trigger signals | Normal route estimate | Stop / approval semantics |
+| --- | --- | --- | --- |
+| `status-and-next` | 询问当前 active、blocked 或下一步 | `RepoScope.Observe` 或 `RepoScope.Decide` | 只读，除非当前 artifact 已授权继续 |
+| `pre-milestone discussion` | 创建或激活 milestone 前讨论候选方向 | `RepoScope.Decide` + candidate milestone brief | candidate-only；live milestone 写入/激活前需要 programmer confirmation |
+| `milestone-open discussion` | 指名或打开已批准 milestone，并讨论 worktrack 结构 | `RepoScope.Decide` 到 Worktrack Intake Review | 可推荐 candidate worktracks；WorktrackScope.Init 仍需要批准与有效 review gate |
+| `worktrack execution` | 在 active approved worktrack 或预算下继续/开始工作 | `WorktrackScope.Observe` / `Decide` / `Dispatch` | 可在合法 task window 内连续推进，直到命中 formal stop condition |
+| `verify-and-close` | 要求验证、review、gate、close、merge、refresh 或总结完成工作 | `WorktrackScope.Verify` / `Judge` / `Close` 后 `RepoScope.Refresh` | 不得把缺失证据解释为 pass；soft/hard fail 或 blocked evidence 必须停止 |
+| `release-sensitive` | 提到 release、publish、version、tag、dist-tag、package、registry 或 deploy side effects | 显式审批边界下的 release-sensitive route | 外部副作用前需要明确 release/publish/tag approval 和新鲜事实 |
+
+该矩阵必须保留 not approved scope 边界：candidate milestone、candidate worktrack、suggested task、profile 和 operator-facing mode 在经批准 route 转换为正式 artifact 前都只是建议。多种 trigger signals 同时命中时，按更严格 authority boundary 选择：release-sensitive 优先于 verify-and-close，verify-and-close 优先于 worktrack execution，milestone-open discussion 优先于 pre-milestone discussion；缺失证据时 blocked / handback 优先于任何 mutating route。
+
 ## Continuous Execution
 
 默认语义是连续推进，而不是每完成一个 skill round 就自动 handback。
