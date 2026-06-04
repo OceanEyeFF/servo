@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Control Loop
 status: active
-updated: 2026-05-20
+updated: 2026-06-04
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-04
 ---
 
 # Harness Runtime Control Loop
@@ -69,6 +69,23 @@ RepoScope.Observe
 Milestone Review Gate route guard 是从 active goal-driven milestone 派生 Worktrack 的硬前置。`worktrack_intake_review` 必须携带 `milestone_review_gate_ready`、`latest_review_status`、`milestone_review_count`、`latest_review_checkpoint`、`effective_review_pass` 与 `review_invalidated_by`。只有 `latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空且无失效项时，才允许进入 `WorktrackScope.Init`。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`。
 
 当请求命中 complex-project trigger 时，还必须先消费 `complex_project_entry_gate`。这是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。gate handoff 必须携带 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`。`milestone_blocking_decision` 中存在 `block_create`、`block_upsert`、`block_activate` 或 `block_derive_worktrack` 时，监督器不得绑定对应 initializer。unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`。弱文档命中且理解不足时，默认路由到 reinforcement documentation / project-understanding milestone；`needed = true` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该阻断。
+
+## Single-Entry Routing
+
+`harness-skill` 是唯一闭环 supervisor。Operator 可以从同一个入口提出“查看状态”“讨论候选方向”“打开 Milestone”“继续当前 Worktrack”“验证收口”或“准备 release”等不同意图；入口不得因此拆出第二个 controller、第三个 Scope 或新的并行状态机。
+
+启动后，supervisor 先 hydration 当前 `.servo/control-state.md`，再读取最小必要的 repo、milestone、worktrack 和 risk signals，形成 route estimate：
+
+- `user_input`: operator 当前意图、是否包含创建/激活/继续/验证/release 等信号。
+- `repo_state`: `.servo` 是否存在、baseline 是否新鲜、handback 是否锁定、分支守卫是否通过。
+- `milestone_state`: 是否有 active milestone、是否已达到 final acceptance handback、是否存在 planned candidates。
+- `worktrack_state`: 是否有 active worktrack、queue 是否可继续、gate/closeout 是否待处理。
+- `risk_signals`: 是否涉及 release/publish/tag、破坏性操作、长期 truth 写回、跨目录治理、权限升级或高不确定调研。
+- `approval_signals`: programmer 是否明确批准目标变更、milestone 创建/激活、worktrack 初始化、连续推进、委派或外部副作用。
+
+这些信号只能选择 workflow path 和 stop/approval semantics；最终仍由 Harness 正常控制链选择 Scope、Function、Skill 或 execution carrier。Profile / operator-facing mode 只是 route hint，例如 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive。它不拥有独立 gate，不写长期 truth，不绕过 Worktrack Contract，不把 candidate milestone 或 candidate worktrack 解释成已批准执行范围。
+
+当 route hint 与正式 artifact 或审批边界冲突时，以正式 artifact、Gate evidence、Control State authority 和 programmer approval 为准；route hint 必须降级为 handback 或 blocked observation。
 
 ## Continuous Execution
 

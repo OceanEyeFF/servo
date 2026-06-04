@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-03
+updated: 2026-06-04
 owner: servo-kernel
-last_verified: 2026-06-03
+last_verified: 2026-06-04
 ---
 
 # Milestone Artifact
@@ -217,6 +217,20 @@ work-collection milestone 完成判定仅需满足：
 - goal-driven milestone 以逐 worktrack 聚合方式推进：每个 current worktrack 建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪，然后将结果汇入 milestone 聚合状态。
 - Worktrack closeout 后，Milestone progress counter 更新。
 - 不替代 `WorktrackContract` 或 `PlanTaskQueue`。
+
+## Candidate Recommendation Boundary
+
+Milestone artifact 保存已经创建、激活或完成的 milestone truth；候选 Milestone recommendation 不是该 artifact 的 live truth，除非已经经过 programmer confirmation 并由 `init-milestone-skill` 写入。
+
+RepoScope 可以在 pre-milestone 场景输出 candidate milestone brief，但该 brief 必须与 live artifact 区分：
+
+- `candidate` 表示方向建议，不等于 `planned`、`active` 或 `completed`。
+- candidate brief 必须携带 `observed_facts`、`inferred_assumptions`、`unknowns`、`primary_contradiction`、`main_aspect_now`、acceptance signals、risk boundary 和 programmer confirmation requirement。
+- candidate brief 不得增加 `progress_counter`，不得占用 `worktrack_list`，不得触发 pipeline advancement。
+- candidate brief 中列出的 candidate worktracks 不是 Worktrack `Plan / Task Queue`，也不是 `.servo/worktrack/*` 的执行队列。
+- programmer 确认后，candidate brief 才能进入 milestone create / upsert / activate 路径；仍必须满足 Milestone Review Gate、Complex Project Entry Gate 和对应 init skill 的字段约束。
+
+Milestone 是方向、目的、验收信号和聚合进度对象；Worktrack 是独立执行单元；Plan / Task Queue 是单个 Worktrack 内的任务窗口。三者不得互相替代。
 
 ## 与 RepoScope 的关系
 
