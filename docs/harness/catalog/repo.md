@@ -83,6 +83,8 @@ Complex-project adoption handoff is a Milestone-side blocking gate, not fixed he
 
 职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
 
+Continuous intake mode may span multiple assistant turns. When the review cannot safely pass in one turn, the skill returns `questions_required`, records `continuation_state`, asks exactly one `next_required_question`, and waits for programmer input. This one-question-at-a-time checkpoint is a continuation handoff, not a Milestone Review Gate pass.
+
 下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
 
 主要依赖：
@@ -115,6 +117,12 @@ preferred handoff fields：
 - `programmer_decisions_required`
 - `risk_flags`
 - `open_questions`
+- `answered_questions`
+- `unresolved_questions`
+- `continuation_state`
+- `continuation_reason`
+- `next_required_question`
+- `next_question_blocks_ready`
 - `why_it_matters`
 - `recommended_answers`
 - `recommended_answer`
@@ -129,9 +137,17 @@ preferred handoff fields：
 - `intake_skipped`
 - `skip_reason`
 - `accepted_risk`
+- `residual_risk_accepted`
+- `accepted_residual_risk`
 - `programmer_confirmed`
 - `ready_for_init_milestone`
 - `handoff_to_init_milestone`
+- `milestone_review_gate_handoff`
+- `milestone_review_count`
+- `latest_review_status`
+- `latest_review_checkpoint`
+- `effective_review_pass`
+- `review_invalidated_by`
 - `complex_project_entry_gate`
 - `scanner_evidence_ref`
 - `complexity_signals`
@@ -139,6 +155,8 @@ preferred handoff fields：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+
+Milestone Review Gate handoff records whether pre-milestone intake produced an `effective_pass` before Worktrack Init/Dispatch. It must carry `milestone_review_gate`, `milestone_review_gate_handoff`, `milestone_review_count`, `latest_review_status`, `latest_review_checkpoint`, `effective_review_pass`, and `review_invalidated_by`. Non-pass states `questions_required`, `blocked`, `skipped`, `missing`, `stale`, and `invalidated` are not pass states. A questions-required review must continue one-question-at-a-time and must not increment `milestone_review_count`. Changing `worktrack_list`, `completion_signals`, `acceptance_criteria`, scope/non-goals, or risk boundary invalidates the checkpoint and requires a fresh review.
 
 These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
 

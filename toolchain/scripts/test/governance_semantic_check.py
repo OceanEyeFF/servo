@@ -277,6 +277,58 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
     "permission blocked",
     "dispatch package unsafe",
 ]
+HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS = [
+    "docs/harness/foundations/runtime-control-loop.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "docs/harness/catalog/supervisor.md",
+]
+HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS = [
+    "route hint",
+    "profile",
+    "harness-skill",
+    "唯一闭环 supervisor",
+    "不创建第二",
+    "不拥有独立",
+    "Gate",
+    "operator mode matrix",
+    "trigger signals",
+    "status-and-next",
+    "pre-milestone discussion",
+    "milestone-open discussion",
+    "worktrack execution",
+    "verify-and-close",
+    "release-sensitive",
+    "stop/approval semantics",
+    "not approved scope",
+]
+MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS = [
+    "docs/harness/scope/repo-scope.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+]
+MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS = [
+    "observed_facts",
+    "inferred_assumptions",
+    "unknowns",
+    "primary_contradiction",
+    "main_aspect_now",
+    "candidate milestone",
+    "programmer confirmation",
+]
+MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS = [
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/worktrack/plan-task-queue.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+]
+MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
+    "Milestone",
+    "Worktrack",
+    "Plan / Task Queue",
+    "candidate",
+    "task window",
+    "不得",
+]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
@@ -424,6 +476,13 @@ PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
     "programmer_decisions_required",
     "risk_flags",
     "open_questions",
+    "answered_questions",
+    "unresolved_questions",
+    "continuation_state",
+    "continuation_reason",
+    "next_required_question",
+    "next_question_blocks_ready",
+    "one-question-at-a-time",
     "why_it_matters",
     "recommended_answer",
     "tradeoff",
@@ -439,6 +498,8 @@ PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
     "intake_skipped",
     "skip_reason",
     "accepted_risk",
+    "residual_risk_accepted",
+    "accepted_residual_risk",
     "handoff_to_init_milestone",
     "template_contract_ref",
 ]
@@ -465,6 +526,84 @@ INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
     "不自动 create",
     "状态矛盾",
     "不得把薄弱的 milestone brief 伪装成已确认",
+]
+MILESTONE_REVIEW_GATE_CONTRACT_PATHS = [
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/milestone-status-skill/SKILL.md",
+    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "docs/harness/catalog/repo.md",
+]
+MILESTONE_REVIEW_GATE_REQUIRED_TERMS = [
+    "Milestone Review Gate",
+    "milestone_review_gate",
+    "milestone_review_gate_handoff",
+    "milestone_review_count",
+    "latest_review_status",
+    "latest_review_checkpoint",
+    "effective_review_pass",
+    "review_invalidated_by",
+    "effective_pass",
+    "questions_required",
+    "blocked",
+    "skipped",
+    "missing",
+    "stale",
+    "invalidated",
+    "worktrack_list",
+    "completion_signals",
+    "acceptance_criteria",
+    "risk boundary",
+]
+MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/scope/repo-scope.md",
+]
+MILESTONE_REVIEW_ROUTE_GUARD_REQUIRED_TERMS = [
+    "Milestone Review Gate",
+    "route guard",
+    "milestone_review_gate_ready",
+    "milestone_review_gate_not_ready",
+    "latest_review_status",
+    "milestone_review_count",
+    "latest_review_checkpoint",
+    "effective_review_pass",
+    "review_invalidated_by",
+    "effective_pass",
+    "questions_required",
+    "blocked",
+    "skipped",
+    "missing",
+    "stale",
+    "invalidated",
+    "Worktrack Init/Dispatch",
+]
+CONSERVATIVE_BACKFILL_CONTRACT_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "docs/harness/artifact/control/milestone.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/repo-whats-next-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/milestone-status-skill/SKILL.md",
+]
+CONSERVATIVE_BACKFILL_REQUIRED_TERMS = [
+    "conservative runtime backfill",
+    "forward-only",
+    "false",
+    "unknown",
+    "missing",
+    "blocked",
+    "not ready",
+    "must not grant permissions",
+    "must not infer programmer confirmation",
+    "must not increment counters",
+    "must not enable Worktrack Init/Dispatch",
 ]
 COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
@@ -1355,6 +1494,68 @@ def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticRep
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
+def check_harness_entry_profile_route_hint_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing harness entry profile route-hint source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"harness entry profile route-hint contract missing term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} harness entry profile route-hint sources")
+
+
+def check_milestone_recommendation_fact_first_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing milestone recommendation fact-first source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"milestone recommendation fact-first contract missing term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone recommendation fact-first sources")
+
+
+def check_milestone_worktrack_planning_separation_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing milestone/worktrack planning separation source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "milestone/worktrack planning separation contract missing term "
+                    f"{term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone/worktrack planning separation sources")
+
+
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
@@ -1557,6 +1758,57 @@ def check_init_milestone_intake_handoff_contract(repo_root: Path, report: Semant
                     f"init-milestone intake handoff missing required term {term!r}: {relative_path}"
                 )
     report.add_info(f"checked {checked} init-milestone intake handoff sources")
+
+
+def check_milestone_review_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in MILESTONE_REVIEW_GATE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing milestone review gate source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_REVIEW_GATE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"milestone review gate contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone review gate contract sources")
+
+
+def check_milestone_review_route_guard_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing milestone review route guard source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in MILESTONE_REVIEW_ROUTE_GUARD_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"milestone review route guard missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} milestone review route guard sources")
+
+
+def check_conservative_backfill_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in CONSERVATIVE_BACKFILL_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing conservative backfill source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in CONSERVATIVE_BACKFILL_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"conservative backfill contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} conservative backfill contract sources")
 
 
 def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
@@ -2285,6 +2537,9 @@ def main() -> int:
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
+    check_harness_entry_profile_route_hint_contract(repo_root, report)
+    check_milestone_recommendation_fact_first_contract(repo_root, report)
+    check_milestone_worktrack_planning_separation_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)
@@ -2293,6 +2548,9 @@ def main() -> int:
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
     check_init_milestone_intake_handoff_contract(repo_root, report)
+    check_milestone_review_gate_contract(repo_root, report)
+    check_milestone_review_route_guard_contract(repo_root, report)
+    check_conservative_backfill_contract(repo_root, report)
     check_complex_project_entry_gate_contract(repo_root, report)
     check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)

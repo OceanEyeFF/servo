@@ -34,6 +34,14 @@
 - add_remove_worktrack_recommendations: N/A
 - intake_review_verdict: N/A
 - ready_for_worktrack_init: N/A
+- milestone_review_gate_ready: N/A
+- latest_review_status: N/A
+- milestone_review_count: N/A
+- latest_review_checkpoint: N/A
+- effective_review_pass: N/A
+- review_invalidated_by: N/A
+
+Milestone Review Gate route guard: `effective_pass` with review count >= 1 and a non-empty checkpoint is required before Worktrack Init/Dispatch. `questions_required`, `blocked`, `skipped`, `missing`, `stale`, `invalidated`, or `milestone_review_gate_not_ready` block initialization.
 
 ## Node Type
 

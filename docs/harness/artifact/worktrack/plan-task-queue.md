@@ -1,13 +1,17 @@
 ---
 title: "Plan / Task Queue"
 status: active
-updated: 2026-04-20
+updated: 2026-06-04
 owner: servo-kernel
-last_verified: 2026-04-20
+last_verified: 2026-06-04
 ---
 # Plan / Task Queue
 
 将 `WorktrackContract` 展开为可执行子任务序列。
+
+Plan / Task Queue 是单个 Worktrack 内的局部任务窗口 / task window，不是 Repo backlog、Milestone backlog、candidate milestone 列表或候选 Milestone 列表。它只能展开当前已批准的 `WorktrackContract`，不得创建 milestone、追加 worktrack、改变 milestone purpose，或把 RepoScope.Decide 的候选建议解释成执行队列。
+
+在同一 Worktrack Contract 范围内，queue 可以规划多个连续小任务，并按依赖、验收映射和 dispatch handoff 连续推进。连续推进不等于一次 dispatch 执行整个 queue：`schedule-worktrack-skill` 每轮只能选择一个当前下一步动作，并生成 bounded dispatch handoff packet；`dispatch-skills` 只消费该 packet，不反向改写 queue。
 
 最少应包含：
 
@@ -138,6 +142,19 @@ acceptance:
 | AC-SL-001 | IMPL-004 | pending |
 
 覆盖矩阵应在 `scheduling` 状态时生成，在 `verifying` 状态时逐项验证。
+
+## Worktrack Task Window
+
+任务窗口用于把一个 bounded Worktrack 分解成可连续推进的小任务：
+
+- window 的边界等于当前 `WorktrackContract` 的目标、范围、非目标、验收标准和验证要求。
+- window 可以包含多个 pending task，但同一调度轮只选一个 `selected_next_action`。
+- task 之间通过 `depends_on`、`blocks`、`acceptance` 和 queue status 形成局部执行顺序。
+- 当前 task 完成后，若没有 gate fail、scope drift、approval boundary、runtime gap 或 evidence conflict，WorktrackScope 可以继续调度 window 内的下一 task。
+- window 内任务不得修改 RepoScope 目标、Milestone Pipeline 或 Worktrack list；需要新增/移除/重排 Worktrack 时，必须回到 RepoScope.Decide / programmer approval。
+- queue 完成只表示当前 Worktrack 的任务窗口完成；仍需 Verify、Judge、Close 和 RepoScope.Refresh 后，结果才可汇入 Milestone progress。
+
+该语义与 Milestone 方向选择分离：Milestone 选择“下一段 repo 演进方向”，Plan / Task Queue 只安排“当前 Worktrack 合同内接下来做什么”。
 
 ### 验收标准引用约定
 

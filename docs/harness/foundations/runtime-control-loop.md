@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Control Loop
 status: active
-updated: 2026-05-20
+updated: 2026-06-04
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-04
 ---
 
 # Harness Runtime Control Loop
@@ -66,7 +66,41 @@ RepoScope.Observe
 
 只有 `intake_review_verdict = ready_for_worktrack_init` 且 `ready_for_worktrack_init = true` 时，才允许进入 `WorktrackScope.Init`。`refresh_required` 回到 RepoScope 观察/刷新；`adjust_worktracks` 回到 milestone/worktrack backlog 调整或 programmer 审批；`blocked` 停止并暴露继续阻塞项。
 
+Milestone Review Gate route guard 是从 active goal-driven milestone 派生 Worktrack 的硬前置。`worktrack_intake_review` 必须携带 `milestone_review_gate_ready`、`latest_review_status`、`milestone_review_count`、`latest_review_checkpoint`、`effective_review_pass` 与 `review_invalidated_by`。只有 `latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空且无失效项时，才允许进入 `WorktrackScope.Init`。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`。
+
 当请求命中 complex-project trigger 时，还必须先消费 `complex_project_entry_gate`。这是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。gate handoff 必须携带 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`。`milestone_blocking_decision` 中存在 `block_create`、`block_upsert`、`block_activate` 或 `block_derive_worktrack` 时，监督器不得绑定对应 initializer。unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`。弱文档命中且理解不足时，默认路由到 reinforcement documentation / project-understanding milestone；`needed = true` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该阻断。
+
+## Single-Entry Routing
+
+`harness-skill` 是唯一闭环 supervisor。Operator 可以从同一个入口提出“查看状态”“讨论候选方向”“打开 Milestone”“继续当前 Worktrack”“验证收口”或“准备 release”等不同意图；入口不得因此拆出第二个 controller、第三个 Scope 或新的并行状态机。
+
+启动后，supervisor 先 hydration 当前 `.servo/control-state.md`，再读取最小必要的 repo、milestone、worktrack 和 risk signals，形成 route estimate：
+
+- `user_input`: operator 当前意图、是否包含创建/激活/继续/验证/release 等信号。
+- `repo_state`: `.servo` 是否存在、baseline 是否新鲜、handback 是否锁定、分支守卫是否通过。
+- `milestone_state`: 是否有 active milestone、是否已达到 final acceptance handback、是否存在 planned candidates。
+- `worktrack_state`: 是否有 active worktrack、queue 是否可继续、gate/closeout 是否待处理。
+- `risk_signals`: 是否涉及 release/publish/tag、破坏性操作、长期 truth 写回、跨目录治理、权限升级或高不确定调研。
+- `approval_signals`: programmer 是否明确批准目标变更、milestone 创建/激活、worktrack 初始化、连续推进、委派或外部副作用。
+
+这些信号只能选择 workflow path 和 stop/approval semantics；最终仍由 Harness 正常控制链选择 Scope、Function、Skill 或 execution carrier。profile / operator-facing mode 只是 route hint，例如 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive。它不创建第二 controller，不拥有独立 gate，不写长期 truth，不绕过 Worktrack Contract，不把 candidate milestone 或 candidate worktrack 解释成已批准执行范围。
+
+当 route hint 与正式 artifact 或审批边界冲突时，以正式 artifact、Gate evidence、Control State authority 和 programmer approval 为准；route hint 必须降级为 handback 或 blocked observation。
+
+### Operator Mode Matrix
+
+operator mode matrix 是单入口面对 operator 的触发语义表，不是新的状态机。每个 mode 都从已 hydration 的 control state 和 trigger signals 中选择，然后投影回正常 Scope / Function 控制回路。
+
+| operator-facing mode | Typical trigger signals | Normal route estimate | Stop / approval semantics |
+| --- | --- | --- | --- |
+| `status-and-next` | 询问当前 active、blocked 或下一步 | `RepoScope.Observe` 或 `RepoScope.Decide` | 只读，除非当前 artifact 已授权继续 |
+| `pre-milestone discussion` | 创建或激活 milestone 前讨论候选方向 | `RepoScope.Decide` + candidate milestone brief | candidate-only；live milestone 写入/激活前需要 programmer confirmation |
+| `milestone-open discussion` | 指名或打开已批准 milestone，并讨论 worktrack 结构 | `RepoScope.Decide` 到 Worktrack Intake Review | 可推荐 candidate worktracks；WorktrackScope.Init 仍需要批准与有效 review gate |
+| `worktrack execution` | 在 active approved worktrack 或预算下继续/开始工作 | `WorktrackScope.Observe` / `Decide` / `Dispatch` | 可在合法 task window 内连续推进，直到命中 formal stop condition |
+| `verify-and-close` | 要求验证、review、gate、close、merge、refresh 或总结完成工作 | `WorktrackScope.Verify` / `Judge` / `Close` 后 `RepoScope.Refresh` | 不得把缺失证据解释为 pass；soft/hard fail 或 blocked evidence 必须停止 |
+| `release-sensitive` | 提到 release、publish、version、tag、dist-tag、package、registry 或 deploy side effects | 显式审批边界下的 release-sensitive route | 外部副作用前需要明确 release/publish/tag approval 和新鲜事实 |
+
+该矩阵必须保留 not approved scope 边界：candidate milestone、candidate worktrack、suggested task、profile 和 operator-facing mode 在经批准 route 转换为正式 artifact 前都只是建议。多种 trigger signals 同时命中时，按更严格 authority boundary 选择：release-sensitive 优先于 verify-and-close，verify-and-close 优先于 worktrack execution，milestone-open discussion 优先于 pre-milestone discussion；缺失证据时 blocked / handback 优先于任何 mutating route。
 
 ## Continuous Execution
 

@@ -17,6 +17,7 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
+    check_conservative_backfill_contract,
     check_complex_project_entry_gate_contract,
     check_complexity_signal_scanner_contract,
     check_debug_evidence_contract,
@@ -24,9 +25,14 @@ from governance_semantic_check import (
     check_docs_list_closeout_cache_roots,
     check_dispatch_context_contract,
     check_foundations_authority_shadows,
+    check_harness_entry_profile_route_hint_contract,
     check_orphan_docs,
     check_manual_runbook_agents_skill_count,
     check_init_milestone_intake_handoff_contract,
+    check_milestone_recommendation_fact_first_contract,
+    check_milestone_review_gate_contract,
+    check_milestone_review_route_guard_contract,
+    check_milestone_worktrack_planning_separation_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -72,6 +78,83 @@ WEAK_DOC_REINFORCEMENT_ROUTING_TEST_TERMS = [
     "confirmation_required",
     "blocks_implementation_until_resolved",
 ]
+
+
+NON_PASS_MILESTONE_REVIEW_STATUSES = (
+    "questions_required",
+    "blocked",
+    "skipped",
+    "missing",
+    "stale",
+    "invalidated",
+)
+
+
+def _review_gate_ready(payload: dict[str, object]) -> bool:
+    """Test helper that mirrors the documented Milestone Review Gate predicate."""
+    return (
+        payload.get("latest_review_status") == "effective_pass"
+        and isinstance(payload.get("milestone_review_count"), int)
+        and int(payload["milestone_review_count"]) >= 1
+        and payload.get("effective_review_pass") is True
+        and bool(payload.get("latest_review_checkpoint"))
+        and not payload.get("review_invalidated_by")
+    )
+
+
+def test_milestone_review_gate_behavior_only_effective_pass_is_ready() -> None:
+    ready_payload = {
+        "latest_review_status": "effective_pass",
+        "milestone_review_count": 1,
+        "effective_review_pass": True,
+        "latest_review_checkpoint": "sha256:review",
+        "review_invalidated_by": [],
+    }
+
+    assert _review_gate_ready(ready_payload) is True
+
+    for status in NON_PASS_MILESTONE_REVIEW_STATUSES:
+        payload = {**ready_payload, "latest_review_status": status}
+        assert _review_gate_ready(payload) is False
+
+
+def test_milestone_review_gate_behavior_blocks_field_incomplete_states() -> None:
+    base_payload = {
+        "latest_review_status": "effective_pass",
+        "milestone_review_count": 1,
+        "effective_review_pass": True,
+        "latest_review_checkpoint": "sha256:review",
+        "review_invalidated_by": [],
+    }
+
+    field_overrides = (
+        {"milestone_review_count": 0},
+        {"milestone_review_count": None},
+        {"effective_review_pass": False},
+        {"latest_review_checkpoint": None},
+        {"latest_review_checkpoint": ""},
+        {"review_invalidated_by": ["worktrack_list_changed"]},
+    )
+
+    for override in field_overrides:
+        payload = {**base_payload, **override}
+        assert _review_gate_ready(payload) is False
+
+
+def test_conservative_backfill_behavior_defaults_do_not_enable_review_gate() -> None:
+    backfilled_payload = {
+        "latest_review_status": "missing",
+        "milestone_review_count": 0,
+        "effective_review_pass": False,
+        "latest_review_checkpoint": "N/A",
+        "review_invalidated_by": ["milestone_review_gate_not_ready"],
+        "milestone_review_gate_ready": False,
+    }
+
+    assert _review_gate_ready(backfilled_payload) is False
+    assert backfilled_payload["milestone_review_count"] == 0
+    assert backfilled_payload["effective_review_pass"] is False
+    assert backfilled_payload["milestone_review_gate_ready"] is False
 
 
 def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
@@ -467,6 +550,126 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_pa
 
     report = SemanticReport()
     check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_harness_entry_profile_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/foundations/runtime-control-loop.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "docs/harness/catalog/supervisor.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_harness_entry_profile_route_hint_contract_flags_missing_guard(
+    tmp_path: Path,
+) -> None:
+    _write_harness_entry_profile_sources(
+        tmp_path,
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不拥有独立\nGate\n"
+        "operator mode matrix\ntrigger signals\nstatus-and-next\n"
+        "pre-milestone discussion\nmilestone-open discussion\nworktrack execution\n"
+        "verify-and-close\nrelease-sensitive\nstop/approval semantics\nnot approved scope\n",
+    )
+
+    report = SemanticReport()
+    check_harness_entry_profile_route_hint_contract(tmp_path, report)
+
+    assert any("不创建第二" in item for item in report.failures)
+
+
+def test_check_harness_entry_profile_route_hint_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_harness_entry_profile_sources(
+        tmp_path,
+        "route hint\nprofile\nharness-skill\n唯一闭环 supervisor\n不创建第二\n不拥有独立\nGate\n"
+        "operator mode matrix\ntrigger signals\nstatus-and-next\n"
+        "pre-milestone discussion\nmilestone-open discussion\nworktrack execution\n"
+        "verify-and-close\nrelease-sensitive\nstop/approval semantics\nnot approved scope\n",
+    )
+
+    report = SemanticReport()
+    check_harness_entry_profile_route_hint_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_milestone_recommendation_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/scope/repo-scope.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_milestone_recommendation_fact_first_contract_flags_missing_fact_layer(
+    tmp_path: Path,
+) -> None:
+    _write_milestone_recommendation_sources(
+        tmp_path,
+        "observed_facts\ninferred_assumptions\nprimary_contradiction\nmain_aspect_now\n"
+        "candidate milestone\nprogrammer confirmation\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_recommendation_fact_first_contract(tmp_path, report)
+
+    assert any("unknowns" in item for item in report.failures)
+
+
+def test_check_milestone_recommendation_fact_first_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_milestone_recommendation_sources(
+        tmp_path,
+        "observed_facts\ninferred_assumptions\nunknowns\nprimary_contradiction\n"
+        "main_aspect_now\ncandidate milestone\nprogrammer confirmation\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_recommendation_fact_first_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_planning_separation_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/worktrack/plan-task-queue.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_milestone_worktrack_planning_separation_contract_flags_queue_confusion(
+    tmp_path: Path,
+) -> None:
+    _write_planning_separation_sources(
+        tmp_path,
+        "Milestone\nWorktrack\ncandidate\ntask window\n不得\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_worktrack_planning_separation_contract(tmp_path, report)
+
+    assert any("Plan / Task Queue" in item for item in report.failures)
+
+
+def test_check_milestone_worktrack_planning_separation_contract_accepts_terms(
+    tmp_path: Path,
+) -> None:
+    _write_planning_separation_sources(
+        tmp_path,
+        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n不得\n",
+    )
+
+    report = SemanticReport()
+    check_milestone_worktrack_planning_separation_contract(tmp_path, report)
 
     assert report.failures == []
 
@@ -931,6 +1134,13 @@ def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and
             "programmer_decisions_required",
             "risk_flags",
             "open_questions",
+            "answered_questions",
+            "unresolved_questions",
+            "continuation_state",
+            "continuation_reason",
+            "next_required_question",
+            "next_question_blocks_ready",
+            "one-question-at-a-time",
             "why_it_matters",
             "recommended_answer",
             "tradeoff",
@@ -946,6 +1156,8 @@ def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and
             "intake_skipped",
             "skip_reason",
             "accepted_risk",
+            "residual_risk_accepted",
+            "accepted_residual_risk",
             "handoff_to_init_milestone",
             "template_contract_ref",
         ]
@@ -990,6 +1202,13 @@ def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path
             "programmer_decisions_required",
             "risk_flags",
             "open_questions",
+            "answered_questions",
+            "unresolved_questions",
+            "continuation_state",
+            "continuation_reason",
+            "next_required_question",
+            "next_question_blocks_ready",
+            "one-question-at-a-time",
             "why_it_matters",
             "recommended_answer",
             "tradeoff",
@@ -1005,6 +1224,8 @@ def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path
             "intake_skipped",
             "skip_reason",
             "accepted_risk",
+            "residual_risk_accepted",
+            "accepted_residual_risk",
             "handoff_to_init_milestone",
             "template_contract_ref",
         ]
@@ -1043,6 +1264,13 @@ def test_check_init_milestone_intake_handoff_contract_accepts_required_terms(
             "programmer_decisions_required",
             "risk_flags",
             "open_questions",
+            "answered_questions",
+            "unresolved_questions",
+            "continuation_state",
+            "continuation_reason",
+            "next_required_question",
+            "next_question_blocks_ready",
+            "one-question-at-a-time",
             "why_it_matters",
             "recommended_answer",
             "tradeoff",
@@ -1058,6 +1286,8 @@ def test_check_init_milestone_intake_handoff_contract_accepts_required_terms(
             "intake_skipped",
             "skip_reason",
             "accepted_risk",
+            "residual_risk_accepted",
+            "accepted_residual_risk",
             "handoff_to_init_milestone",
             "template_contract_ref",
             "pre_milestone_intake_review",
@@ -1134,6 +1364,227 @@ def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semant
 
     assert any("questions_required" in item for item in report.failures)
     assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
+
+
+def test_check_milestone_review_gate_contract_accepts_required_terms(tmp_path: Path) -> None:
+    required_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "milestone_review_gate",
+            "milestone_review_gate_handoff",
+            "milestone_review_count",
+            "latest_review_status",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "questions_required",
+            "blocked",
+            "skipped",
+            "missing",
+            "stale",
+            "invalidated",
+            "worktrack_list",
+            "completion_signals",
+            "acceptance_criteria",
+            "risk boundary",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_milestone_review_gate_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_milestone_review_gate_contract_flags_missing_non_pass_states(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "milestone_review_gate",
+            "milestone_review_gate_handoff",
+            "milestone_review_count",
+            "latest_review_status",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "worktrack_list",
+            "completion_signals",
+            "acceptance_criteria",
+            "risk boundary",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+        "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+        "docs/harness/catalog/milestone/init-milestone-skill.md",
+        "docs/harness/catalog/repo.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_milestone_review_gate_contract(tmp_path, report)
+
+    assert any("questions_required" in item for item in report.failures)
+    assert any("skipped" in item for item in report.failures)
+    assert any("stale" in item for item in report.failures)
+
+
+def test_check_milestone_review_route_guard_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "route guard",
+            "milestone_review_gate_ready",
+            "milestone_review_gate_not_ready",
+            "latest_review_status",
+            "milestone_review_count",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "questions_required",
+            "blocked",
+            "skipped",
+            "missing",
+            "stale",
+            "invalidated",
+            "Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_milestone_review_route_guard_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_milestone_review_route_guard_contract_flags_missing_block_term(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "Milestone Review Gate",
+            "route guard",
+            "milestone_review_gate_ready",
+            "latest_review_status",
+            "milestone_review_count",
+            "latest_review_checkpoint",
+            "effective_review_pass",
+            "review_invalidated_by",
+            "effective_pass",
+            "Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_milestone_review_route_guard_contract(tmp_path, report)
+
+    assert any("milestone_review_gate_not_ready" in item for item in report.failures)
+    assert any("questions_required" in item for item in report.failures)
+    assert any("skipped" in item for item in report.failures)
+
+
+def test_check_conservative_backfill_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = "\n".join(
+        [
+            "conservative runtime backfill",
+            "forward-only",
+            "false",
+            "unknown",
+            "missing",
+            "blocked",
+            "not ready",
+            "must not grant permissions",
+            "must not infer programmer confirmation",
+            "must not increment counters",
+            "must not enable Worktrack Init/Dispatch",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/artifact/control/milestone.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_conservative_backfill_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_conservative_backfill_contract_flags_permission_expansion_gap(
+    tmp_path: Path,
+) -> None:
+    incomplete_text = "\n".join(
+        [
+            "conservative runtime backfill",
+            "forward-only",
+            "false",
+            "unknown",
+            "missing",
+            "blocked",
+            "not ready",
+        ]
+    )
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/artifact/control/milestone.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/repo-whats-next-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/milestone-status-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, incomplete_text)
+
+    report = SemanticReport()
+    check_conservative_backfill_contract(tmp_path, report)
+
+    assert any("must not grant permissions" in item for item in report.failures)
+    assert any("must not infer programmer confirmation" in item for item in report.failures)
+    assert any("must not enable Worktrack Init/Dispatch" in item for item in report.failures)
 
 
 def test_check_complex_project_entry_gate_contract_accepts_required_terms(
