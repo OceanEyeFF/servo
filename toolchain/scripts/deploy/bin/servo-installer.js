@@ -229,6 +229,7 @@ async function interactiveSelect(rl, options, prompt_) {
   const promptStr = prompt_ || "";
 
   while (true) {
+    const keypressPromise = _waitKey();
     refreshTui(tuiState);
     let menu = "\n";
     for (let i = 0; i < options.length; i++) {
@@ -241,7 +242,7 @@ async function interactiveSelect(rl, options, prompt_) {
     menu += `\n${colorDim(promptStr + "↑↓ navigate  Enter confirm  q back  b cycle backend")}`;
     process.stdout.write(menu);
 
-    const ev = await _waitKey();
+    const ev = await keypressPromise;
 
     if (ev.key && ev.key.name === "up") {
       selected = selected > 0 ? selected - 1 : options.length - 1;
