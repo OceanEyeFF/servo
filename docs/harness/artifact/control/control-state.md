@@ -52,6 +52,22 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 
 For missing additive Milestone Review Gate fields, conservative runtime backfill is: `active_milestone_review_gate_status = missing`, `active_milestone_review_count = 0`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, `milestone_review_gate_ready = false`, `active_milestone_review_required = true` for goal-driven milestones, and `active_milestone_review_blockers` containing `milestone_review_gate_not_ready`. These defaults must not increment `milestone_review_count`, must not set `effective_pass`, and must block Worktrack Init/Dispatch.
 
+## User-Defined Servo Controls
+
+初始化 Harness 控制面时，Servo 只应询问用户可定义且会影响后续审批边界的控制变量。默认问题集为：
+
+- `continuous_progression_permission`: 是否允许在已批准 milestone / worktrack 边界内连续推进。
+- `per_milestone_automatic_worktrack_budget`: 每个 Milestone 内允许自动连续开启或推进的 Worktrack 额度。
+- `default_servo_work_branch`: Servo 默认工作分支或工作分支命名策略。
+- `protected_branch_policy`: 不允许 Servo 直接修改、强推、删除或自动合并的受保护分支策略。
+- `branch_mutation_policy`: 分支创建、切换、合并、删除与远端推送的默认审批策略。
+
+这些字段属于 user-defined controls，应存放在 `User-Defined Servo Controls`、`Continuation Authority` 或等价控制配置段中；它们不是 repo 目标，也不替代 `WorktrackContract`。未回答时必须按保守默认解释：不扩大连续推进权限，不提高自动 Worktrack 额度，不放宽受保护分支规则。
+
+初始化不得向用户询问 Servo 可以自动维护的 runtime facts；模板中以 `auto_maintained_runtime_facts_not_asked` 列出这些禁止提问项，例如 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary`。这些事实由 Observe / Refresh / Dispatch / Close 等控制步骤写回，不能被用户偏好伪装成 truth。
+
+一次性执行授权只写入本轮 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新上述 user-defined controls。
+
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
 - `post_contract_autonomy`: `delegated-minimal`（默认）/`manual-only`（strict handback 诊断）

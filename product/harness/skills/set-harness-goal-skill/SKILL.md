@@ -87,6 +87,13 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 
 7. **生成 `control-state.md`**
    - 设置初始控制面状态：`repo_scope: active`、`worktrack_scope: closed`
+   - 询问并写入用户可定义 Servo 控制变量：
+     - `continuous_progression_permission`
+     - `per_milestone_automatic_worktrack_budget`
+     - `default_servo_work_branch`
+     - `protected_branch_policy`
+     - `branch_mutation_policy`
+   - 不询问 Servo 自动维护的 runtime facts，并在 `auto_maintained_runtime_facts_not_asked` 中保留禁止提问清单：`active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`milestone_pipeline_summary`
    - 设置合理的默认 `Continuation Authority`：
      - `post_contract_autonomy: delegated-minimal`
      - `autonomy_scope: current-goal-only`
@@ -174,6 +181,8 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。
 - `complex_project_entry_gate` 的生成样例不得预授权高风险命令模式；未确认样例默认阻断 Worktrack derivation，直到 programmer confirmation 或 reinforcement evidence 写入。
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。
+- 初始化问题必须只覆盖用户可定义 Servo 控制变量：continuous progression permission、per-Milestone automatic Worktrack budget、default Servo work branch、protected branch policy 和 branch mutation policy。不得把 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary` 作为用户问题；这些 runtime facts 由 Harness 控制回路自动维护。
+- 用户在初始化或单轮执行中授予的一次性权限只能写入 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新 `User-Defined Servo Controls` 或长期 `Continuation Authority` 字段。
 - 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-contract-primary`，使 worktrack 级 `runtime_dispatch_mode` 在默认 scaffold 中可生效；只有操作者显式改为 `global-override` 时，control-state 才压过 worktrack 合同。`auto` 是保守默认值，表示按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时在无安全分派壳层、权限边界阻断或 `dispatch package unsafe` 时显式记录 `runtime fallback`。
 - **不依赖外部 scaffold 脚本**；所有模板来自本技能自带的 `assets/` 目录，遵循 Codex Skills 标准。
 - 如果需要 repo-local operator 帮助脚本，唯一合法来源是本技能自带的 `scripts/deploy_servo.js`。

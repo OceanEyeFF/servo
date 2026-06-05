@@ -71,6 +71,14 @@ HANDBACK_GUARD_FIELDS = [
     "autonomy_budget_remaining",
     "autonomous_worktracks_opened",
 ]
+USER_DEFINED_SERVO_CONTROL_FIELDS = [
+    "continuous_progression_permission",
+    "per_milestone_automatic_worktrack_budget",
+    "default_servo_work_branch",
+    "protected_branch_policy",
+    "branch_mutation_policy",
+    "auto_maintained_runtime_facts_not_asked",
+]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════
@@ -391,13 +399,28 @@ def check_control_state_template_alignment(repo_root: Path) -> dict:
             f"{', '.join(sorted(template_hb_fields))}"
         )
 
+    missing_controls = [
+        f for f in USER_DEFINED_SERVO_CONTROL_FIELDS if f not in template_fields
+    ]
+    for f in missing_controls:
+        errors.append(
+            f"User-Defined Servo Controls field '{f}' defined in contract "
+            f"({CONTROL_STATE_CONTRACT_PATH}) not found in template "
+            f"({CONTROL_STATE_TEMPLATE_PATH})"
+        )
+    controls_present = len(USER_DEFINED_SERVO_CONTROL_FIELDS) - len(missing_controls)
+    infos.append(
+        f"checked {len(USER_DEFINED_SERVO_CONTROL_FIELDS)} User-Defined Servo Controls "
+        f"fields: {controls_present}/{len(USER_DEFINED_SERVO_CONTROL_FIELDS)} present in template"
+    )
+
     status = "pass" if not errors else "fail"
     return {
         "status": status,
         "summary": (
-            "all Handback Guard fields present in template"
+            "all Handback Guard and User-Defined Servo Controls fields present in template"
             if status == "pass"
-            else f"{len(missing)} Handback Guard field(s) missing from template"
+            else f"{len(missing) + len(missing_controls)} control-state field(s) missing from template"
         ),
         "errors": errors,
         "infos": infos,

@@ -54,6 +54,7 @@ const TEMPLATE_SPECS = {
       "Current Next Action",
       "Linked Formal Documents",
       "Approval Boundary",
+      "User-Defined Servo Controls",
       "Continuation Authority",
       "Handback Guard",
       "Baseline Traceability",
@@ -71,6 +72,18 @@ const TEMPLATE_SPECS = {
         "gate_evidence",
       ],
       "Approval Boundary": ["needs_programmer_approval", "reason"],
+      "User-Defined Servo Controls": [
+        "continuous_progression_permission",
+        "per_milestone_automatic_worktrack_budget",
+        "default_servo_work_branch",
+        "protected_branch_policy",
+        "branch_mutation_policy",
+        "auto_maintained_runtime_facts_not_asked",
+      ],
+      // Guard terms for auto-maintained runtime facts that initialization must not ask:
+      // runtime facts, active_milestone, active_worktrack, observed_git_hash,
+      // progress_counters, runtime_dispatch_profile, latest_observed_checkpoint,
+      // last_doc_catch_up_checkpoint, milestone_pipeline_summary.
       "Baseline Traceability": [
         "last_verified_checkpoint",
         "latest_observed_checkpoint",

@@ -46,6 +46,7 @@ from governance_semantic_check import (
     check_root_tool_shims_disable_bytecode,
     check_runtime_artifact_consistency,
     check_runtime_dispatch_profile_contract,
+    check_user_defined_servo_controls_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
     check_weak_doc_temporary_understanding_contract,
@@ -550,6 +551,72 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_pa
 
     report = SemanticReport()
     check_runtime_dispatch_profile_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_user_defined_servo_controls_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+        "product/.servo_template/control-state.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_user_defined_servo_controls_contract_flags_missing_term(
+    tmp_path: Path,
+) -> None:
+    _write_user_defined_servo_controls_sources(
+        tmp_path,
+        "continuous_progression_permission\n"
+        "per_milestone_automatic_worktrack_budget\n"
+        "default_servo_work_branch\n"
+        "protected_branch_policy\n"
+        "auto_maintained_runtime_facts_not_asked\n"
+        "runtime facts\n"
+        "active_milestone\n"
+        "active_worktrack\n"
+        "observed_git_hash\n"
+        "progress_counters\n"
+        "runtime_dispatch_profile\n"
+        "latest_observed_checkpoint\n"
+        "last_doc_catch_up_checkpoint\n"
+        "milestone_pipeline_summary\n",
+    )
+
+    report = SemanticReport()
+    check_user_defined_servo_controls_contract(tmp_path, report)
+
+    assert any("branch_mutation_policy" in item for item in report.failures)
+
+
+def test_check_user_defined_servo_controls_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
+    _write_user_defined_servo_controls_sources(
+        tmp_path,
+        "continuous_progression_permission\n"
+        "per_milestone_automatic_worktrack_budget\n"
+        "default_servo_work_branch\n"
+        "protected_branch_policy\n"
+        "branch_mutation_policy\n"
+        "auto_maintained_runtime_facts_not_asked\n"
+        "runtime facts\n"
+        "active_milestone\n"
+        "active_worktrack\n"
+        "observed_git_hash\n"
+        "progress_counters\n"
+        "runtime_dispatch_profile\n"
+        "latest_observed_checkpoint\n"
+        "last_doc_catch_up_checkpoint\n"
+        "milestone_pipeline_summary\n",
+    )
+
+    report = SemanticReport()
+    check_user_defined_servo_controls_contract(tmp_path, report)
 
     assert report.failures == []
 
