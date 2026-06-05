@@ -214,6 +214,10 @@ def test_plan_task_queue_template_alignment_pass(tmp_path: Path) -> None:
         / "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
         terms,
     )
+    write_doc(
+        tmp_path / "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+        terms,
+    )
 
     result = check_plan_task_queue_template_alignment(tmp_path)
 
@@ -240,6 +244,10 @@ def test_plan_task_queue_template_alignment_flags_missing_template_field(
         tmp_path
         / "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
         terms.replace("stop_condition\n", ""),
+    )
+    write_doc(
+        tmp_path / "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+        terms,
     )
 
     result = check_plan_task_queue_template_alignment(tmp_path)

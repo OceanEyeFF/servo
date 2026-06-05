@@ -44,6 +44,7 @@ PLAN_TASK_QUEUE_CONTRACT_PATH = "docs/harness/artifact/worktrack/plan-task-queue
 PLAN_TASK_QUEUE_TEMPLATE_PATHS = [
     "product/.servo_template/worktrack/plan-task-queue.md",
     "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+    "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
 ]
 
 # ── key fields for check 1 ──────────────────────────────────────────────────────

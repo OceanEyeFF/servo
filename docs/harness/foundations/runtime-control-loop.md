@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Control Loop
 status: active
-updated: 2026-06-04
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-04
+last_verified: 2026-06-05
 ---
 
 # Harness Runtime Control Loop
@@ -51,7 +51,7 @@ RepoScope.Observe
 -> RepoScope.Observe
 ```
 
-有 active milestone 时，每个 current worktrack 都走自己的完整闭环；milestone 通过这些独立闭环的累计结果形成聚合进度、Milestone Gate 输入和最终完成判定。
+有 active milestone 时，RepoScope.Decide / Milestone-level scheduler 每轮一次只选择一个 `selected_worktrack_id` / current worktrack。每个 current worktrack 都走自己的完整闭环；milestone 通过这些独立闭环的累计结果形成聚合进度、Milestone Gate 输入和最终完成判定。Worktrack-level scheduler 才能在当前 Worktrack 的 Plan / Task Queue task window 内规划多个 task；Milestone 的 `worktrack_list` 不得被当作 task window、dispatch queue 或批量执行列表。
 
 `Worktrack Intake Review` 是 RepoScope.Decide 输出的一部分，不是 WorktrackScope 内部执行步骤。从 active milestone 派生 current worktrack 前，必须形成 `worktrack_intake_review`，并覆盖：
 

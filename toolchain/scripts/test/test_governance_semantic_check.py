@@ -761,6 +761,9 @@ def test_check_milestone_recommendation_fact_first_contract_accepts_terms(
 def _write_planning_separation_sources(tmp_path: Path, text: str) -> None:
     for relative_path in (
         "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/repo/milestone-backlog.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/foundations/runtime-control-loop.md",
         "docs/harness/artifact/worktrack/plan-task-queue.md",
         "product/harness/skills/repo-whats-next-skill/SKILL.md",
         "product/harness/skills/schedule-worktrack-skill/SKILL.md",
@@ -773,7 +776,8 @@ def test_check_milestone_worktrack_planning_separation_contract_flags_queue_conf
 ) -> None:
     _write_planning_separation_sources(
         tmp_path,
-        "Milestone\nWorktrack\ncandidate\ntask window\n不得\n",
+        "Milestone\nWorktrack\ncandidate\ntask window\nselected_worktrack_id\n"
+        "current worktrack\nworktrack_list\n一次只\n不得\n",
     )
 
     report = SemanticReport()
@@ -787,7 +791,8 @@ def test_check_milestone_worktrack_planning_separation_contract_accepts_terms(
 ) -> None:
     _write_planning_separation_sources(
         tmp_path,
-        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n不得\n",
+        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n"
+        "selected_worktrack_id\ncurrent worktrack\nworktrack_list\n一次只\n不得\n",
     )
 
     report = SemanticReport()
@@ -802,6 +807,7 @@ def _write_worktrack_task_window_sources(tmp_path: Path, text: str) -> None:
         "product/harness/skills/schedule-worktrack-skill/SKILL.md",
         "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
         "product/.servo_template/worktrack/plan-task-queue.md",
+        "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
     ):
         write_doc(tmp_path / relative_path, text)
 
