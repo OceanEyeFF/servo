@@ -44,7 +44,7 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 
 1. 载入当前 `代码仓库目标/章程`、当前 `代码仓库快照/状态`、当前 `Harness 控制状态`，以及刚刚关闭的工作追踪的已验证 `关卡证据`。
 2. 为一轮限定范围的 `通用高能力模型` `SubAgent` 构建一份 `代码仓库刷新任务简报` 和一份 `代码仓库刷新信息包`。
-3. 从 close-worktrack 交接读取 `baseline_branch`、PR target、merge target 与 checkpoint 基准；这些值的唯一合法来源是原始 `Worktrack Contract.baseline_branch`；从当前分支名或写死默认分支名推断的行为必须返回 blocked。
+3. 从 close-worktrack 交接读取 `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`、PR target、merge target 与 checkpoint 基准；这些值的唯一合法来源是原始 `Worktrack Contract` 的 Branch Policy 字段。`baseline_branch` 表示 servo-managed final baseline；Milestone-derived worktrack 的直接 checkpoint/merge target 通常是 `closeout_target_ref` 指向的 Milestone branch。从当前分支名或写死默认分支名推断的行为必须返回 blocked。
 4. 根据 `代码仓库目标/章程`、当前 `代码仓库快照/状态` 和已验证收尾证据刷新代码仓库级评估。
 5. 将项目分开：
    - 已验证回写候选
@@ -98,6 +98,11 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 - `验证结果`
 - `基线验收状态`
   - `baseline_branch`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.baseline_branch`
+  - `branch_source_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.branch_source_ref`
+  - `worktrack_branch`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.worktrack_branch`
+  - `integration_target_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.integration_target_ref`
+  - `closeout_target_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.closeout_target_ref`
+  - `checkpoint_base_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.checkpoint_base_ref`
   - `pr_target`: 本轮 PR target
   - `merge_target`: 本轮 merge target
   - `incoming_checkpoint_ref`: 从 close-worktrack 交接接收的基线引用
@@ -138,6 +143,11 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 - `刷新触发条件`
 - `基准分支`
 - `baseline_branch`
+- `branch_source_ref`
+- `worktrack_branch`
+- `integration_target_ref`
+- `closeout_target_ref`
+- `checkpoint_base_ref`
 - `PR target`
 - `merge target`
 - `已关闭工作追踪`

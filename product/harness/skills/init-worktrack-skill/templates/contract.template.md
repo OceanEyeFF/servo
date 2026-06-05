@@ -14,6 +14,18 @@
 - 更新时间：N/A
 - milestone_id：N/A
 
+## Branch Policy
+
+> `baseline_branch` 是 servo-managed final baseline；Worktrack branch 来源和直接 closeout 目标必须用本节字段表达，不得由当前 checkout 推断。
+
+- baseline_branch: N/A
+- branch_source_ref: N/A
+- worktrack_branch: N/A
+- integration_target_ref: N/A
+- closeout_target_ref: N/A
+- final_baseline_branch: N/A
+- checkpoint_base_ref: N/A
+
 ## Milestone Binding
 
 > 若此 worktrack 属于活跃 Milestone，在此引用绑定。

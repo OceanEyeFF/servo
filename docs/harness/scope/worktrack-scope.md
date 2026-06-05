@@ -1,9 +1,9 @@
 ---
 title: "WorktrackScope 状态机"
 status: active
-updated: 2026-05-17
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-17
+last_verified: 2026-06-05
 ---
 # WorktrackScope 状态机
 
@@ -12,6 +12,10 @@ last_verified: 2026-05-17
 WorktrackScope 是 Harness 两层控制模型中的**快变量层**，负责单个 worktrack 从初始化到关闭的完整生命周期。两层 Scope 之间的闭环（RepoScope → WorktrackScope → RepoScope）见 [repo-scope.md](./repo-scope.md#reposcope--worktrackscope-切换)。
 
 闭环路径（单 worktrack 视角）：RepoScope 观测决定 → Worktrack Contract → 初始化 Worktrack 和 baseline → 调度执行 → 收集 verify evidence → gate verdict → PR/merge/cleanup → 回到 RepoScope 刷新快照。失败判定（任一条即为未闭环）：仅发 PR 未完成 closeout、closeout 结果未回写 repo 级状态、RepoScope 与 WorktrackScope 混为同一文档。
+
+WorktrackScope 的 mutating steps 必须受 Worktrack Contract Branch Policy 约束。milestone-derived Worktrack 从 `branch_source_ref` 指向的 active Milestone branch 创建，在 `worktrack_branch` 上实施，在 `closeout_target_ref` 指向的 Milestone branch 上 closeout；`baseline_branch` 只代表 Milestone final acceptance 后的最终目标。当前 checkout 与这些 contract ref 不匹配时，只读观察可继续记录 warning，会修改仓库状态的步骤必须进入 blocked/recover。
+
+Branch Environment Guard 在进入 WorktrackScope mutating step 前必须解析当前 `branch_context`：初始化 milestone-derived Worktrack 时应为 `milestone`，实施阶段应为 `worktrack`，closeout/refresh 阶段应匹配 contract-controlled closeout target。
 
 ## WorktrackScope 状态定义
 
@@ -78,6 +82,7 @@ WorktrackScope 下的合法状态共 11 个：
 | `hard-fail` verdict | judging 输出 hard-fail |
 | 一致性异常 | 状态数据与 repo 实际状态不一致 |
 | 合同违约 | Contract 声明约束被违反 |
+| branch policy mismatch | 当前 checkout、branch source、closeout target 或 checkpoint base 与 Worktrack Contract 不一致 |
 | 未处理异常 | 未被其他 handler 捕获的错误 |
 | 人工干预请求 | human 要求 abort 当前流程 |
 

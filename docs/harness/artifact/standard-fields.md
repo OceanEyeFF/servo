@@ -1,9 +1,9 @@
 ---
 title: "Standard Fields Vocabulary"
 status: active
-updated: "2026-05-16"
+updated: "2026-06-05"
 owner: "servo-kernel"
-last_verified: "2026-05-09"
+last_verified: "2026-06-05"
 ---
 
 # Standard Fields Vocabulary
@@ -73,6 +73,12 @@ last_verified: "2026-05-09"
 | `baseline_branch` | `string` | 基线分支 | `init-worktrack-skill`, `close-worktrack-skill` |
 | `baseline_form` | `string` | 基线形式 | `init-worktrack-skill` |
 | `merge_required` | `boolean` | 是否需要合并 | `init-worktrack-skill`, `close-worktrack-skill` |
+| `branch_source_ref` | `string` | Worktrack branch 创建来源 ref | `init-worktrack-skill`, `close-worktrack-skill` |
+| `worktrack_branch` | `string` | Worktrack 执行分支 | `init-worktrack-skill`, `worktrack-status-skill`, `close-worktrack-skill` |
+| `integration_target_ref` | `string` | Worktrack closeout 的集成目标 ref | `init-worktrack-skill`, `close-worktrack-skill`, `repo-refresh-skill` |
+| `closeout_target_ref` | `string` | closeout PR/merge/checkpoint 目标 ref | `close-worktrack-skill`, `repo-refresh-skill` |
+| `final_baseline_branch` | `string` | Milestone final acceptance 后的最终基线分支 | `init-worktrack-skill`, `close-worktrack-skill` |
+| `checkpoint_base_ref` | `string` | Worktrack closeout checkpoint 对比基准 ref | `init-worktrack-skill`, `close-worktrack-skill`, `repo-refresh-skill` |
 | `gate_criteria` | `string` | 关卡标准 | `init-worktrack-skill`, `schedule-worktrack-skill` |
 | `if_interrupted_strategy` | `string` | 中断处理策略 | `init-worktrack-skill`, `recover-worktrack-skill` |
 

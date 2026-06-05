@@ -43,12 +43,13 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 2. 载入本轮所需的最小 `工作追踪范围` 产物：`Worktrack Contract`、`Plan/Task Queue`、当前 evidence、branch 状态，以及当前问题所需的最小额外产物。
 3. 读取 `Worktrack Contract` 的当前状态，确认其完整性与时效性。
    - 读取 `Node Type` 与节点策略字段：`type`、`source_from_goal_charter`、`baseline_form`、`merge_required`、`gate_criteria`、`if_interrupted_strategy`
+   - 读取 Branch Policy 字段：`baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`
    - 如果节点策略缺失或无法追溯到 Goal Charter，在状态估计中标记 `node_type_status` 风险，而不是静默使用默认值
 4. 读取 `Plan/Task Queue` 的快照，评估队列与约定的对齐状态。
 5. 评估证据变化：对比当前 evidence 与上次调度时的证据状态，识别自上次调度以来的新增、变更或衰减。
 6. 评估阻塞项状态：检查当前阻塞项是否仍然有效、是否已解除、是否有新增阻塞。
 7. 评估验收标准覆盖度：检查当前已处理标准与剩余标准，识别规划层覆盖缺口。
-8. 评估 branch 与 baseline 的差异状态：检查分支漂移、冲突风险与合并就绪度。
+8. 评估实际 branch 与合同 Branch Policy 的差异状态：检查当前 checkout 是否匹配 `worktrack_branch`，分支父基准是否匹配 `branch_source_ref`，closeout/PR/merge/checkpoint 目标是否匹配 `closeout_target_ref` / `checkpoint_base_ref`，并记录相对 `baseline_branch` 的最终基线风险。
 9. 判断当前观察依据是否足以进入下一轮限定范围工作追踪判定，并显式记录该就绪状态。
 10. 向 `Harness` 返回一份固定格式的 `Worktrack 状态估计报告`。
 11. 如果没有命中正式停止条件，允许监督器直接进入下一个合法工作追踪级判定。
@@ -63,10 +64,11 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 | `contract_node_type` | 从 Worktrack Contract 读取的节点类型及其来源 |
 | `node_policy` | 当前工作追踪适用的 `baseline_form`、`merge_required`、`gate_criteria`、`if_interrupted_strategy` |
 | `node_type_status` | 节点策略是否完整、是否能追溯到 Goal Charter、是否需要初始化或恢复路径修补 |
+| `contract_branch_policy` | 从 Worktrack Contract 读取的 `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref` |
 | `evidence_delta` | 自上次调度以来的证据变化：新增 evidence、evidence 衰减、evidence 冲突，以及变化对工作追踪状态的影响 |
 | `blocker_status` | 阻塞项的当前状态：活动阻塞项列表、阻塞原因、阻塞持续时间、是否可解除、是否有新增阻塞 |
 | `acceptance_coverage_gap` | 验收覆盖缺口：已处理标准、剩余标准、规划层覆盖缺口、验收标准与任务队列的对齐偏差 |
-| `branch_drift_status` | 分支漂移状态：当前 branch 与 baseline 的差异度量、冲突风险、合并就绪度、是否需要 rebase |
+| `branch_drift_status` | 分支漂移状态：当前 branch 与 `worktrack_branch`、`branch_source_ref`、`closeout_target_ref`、`checkpoint_base_ref` 和 final `baseline_branch` 的差异度量、冲突风险、合并就绪度、是否需要 sync/recover |
 | `observation_confidence` | 状态估计置信度：高 / 中 / 低，以及置信度判定理由 |
 | `observation_ready_for_decide` | 是否足以支撑决策：当前状态估计是否足够完整、新鲜、一致，能够为 `Decide` 算子提供可靠输入 |
 | `recommended_next_function` | 基于状态估计建议的下一算子：如 `Decide`（`schedule`）、`Recover`、`Close`、`Verify` 等；注意这只是状态估计的附带推断，不是决策本身 |
@@ -117,6 +119,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 - `节点类型`
 - `节点策略`
 - `节点类型完整性`
+- `合同分支策略`
 - `队列快照`
 - `队列与约定对齐状态`
 - `证据变化`
@@ -126,6 +129,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 - `剩余验收标准`
 - `验收覆盖缺口`
 - `分支状态`
+- `分支来源与目标匹配状态`
 - `分支漂移度量`
 - `合并就绪度`
 - `过期或缺失输入`
