@@ -277,6 +277,32 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
     "permission blocked",
     "dispatch package unsafe",
 ]
+USER_DEFINED_SERVO_CONTROLS_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/.servo_template/control-state.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+]
+USER_DEFINED_SERVO_CONTROLS_REQUIRED_TERMS = [
+    "continuous_progression_permission",
+    "per_milestone_automatic_worktrack_budget",
+    "default_servo_work_branch",
+    "protected_branch_policy",
+    "branch_mutation_policy",
+]
+USER_DEFINED_SERVO_CONTROLS_GUARD_TERMS = [
+    "auto_maintained_runtime_facts_not_asked",
+    "runtime facts",
+    "active_milestone",
+    "active_worktrack",
+    "observed_git_hash",
+    "progress_counters",
+    "runtime_dispatch_profile",
+    "latest_observed_checkpoint",
+    "last_doc_catch_up_checkpoint",
+    "milestone_pipeline_summary",
+]
 HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS = [
     "docs/harness/foundations/runtime-control-loop.md",
     "product/harness/skills/harness-skill/SKILL.md",
@@ -1494,6 +1520,30 @@ def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticRep
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
+def check_user_defined_servo_controls_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in USER_DEFINED_SERVO_CONTROLS_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing user-defined Servo controls source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in USER_DEFINED_SERVO_CONTROLS_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"user-defined Servo controls contract missing required term {term!r}: "
+                    f"{relative_path}"
+                )
+        for term in USER_DEFINED_SERVO_CONTROLS_GUARD_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "user-defined Servo controls guard missing auto-maintained fact term "
+                    f"{term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} user-defined Servo controls contract sources")
+
+
 def check_harness_entry_profile_route_hint_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -2537,6 +2587,7 @@ def main() -> int:
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
+    check_user_defined_servo_controls_contract(repo_root, report)
     check_harness_entry_profile_route_hint_contract(repo_root, report)
     check_milestone_recommendation_fact_first_contract(repo_root, report)
     check_milestone_worktrack_planning_separation_contract(repo_root, report)
