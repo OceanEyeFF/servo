@@ -373,6 +373,9 @@ MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS = [
 ]
 MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS = [
     "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/repo/milestone-backlog.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/foundations/runtime-control-loop.md",
     "docs/harness/artifact/worktrack/plan-task-queue.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
     "product/harness/skills/schedule-worktrack-skill/SKILL.md",
@@ -383,6 +386,10 @@ MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
     "Plan / Task Queue",
     "candidate",
     "task window",
+    "selected_worktrack_id",
+    "current worktrack",
+    "worktrack_list",
+    "一次只",
     "不得",
 ]
 WORKTRACK_TASK_WINDOW_CONTRACT_PATHS = [
@@ -390,6 +397,7 @@ WORKTRACK_TASK_WINDOW_CONTRACT_PATHS = [
     "product/harness/skills/schedule-worktrack-skill/SKILL.md",
     "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
     "product/.servo_template/worktrack/plan-task-queue.md",
+    "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
 ]
 WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
     "task window",

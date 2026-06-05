@@ -78,6 +78,7 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 
 - 分派任务的唯一合法来源是当前 `计划/任务队列` 中已选出的当前下一步动作。在队列尚未选出动作时，根据代码仓库目标或初始化说明推导分派任务的行为必须被阻断。
 - `Plan / Task Queue` 只属于当前 Worktrack。把它当成 Repo/Milestone backlog、candidate milestone recommendation 或跨 Worktrack 自动执行列表的行为必须被阻断。
+- Worktrack-level scheduler 只能调度当前 Worktrack 的 task window；不得选择、追加、移除或重排 Milestone `worktrack_list`，也不得输出多个 current worktrack。Milestone-level scheduler 每轮一次只选一个 Worktrack，唯一 current worktrack 字段是 `selected_worktrack_id` / current worktrack。
 - 每个 task 必须保留 `task_id`、`status`、`priority`、`assigned`、`description`、`depends_on`、`acceptance`、`risk_level` 与 `stop_condition` 的可追踪语义；调度输出必须说明 `selected_next_action` 如何覆盖对应 `acceptance`，以及为何其 `risk_level` / `stop_condition` 允许或阻断连续推进。
 - 工作分派就绪的判定依据必须同时包含 `已选下一步动作` 和完整的分派交接包。仅凭 `已选下一步动作` 不能判定为分派就绪。
 - 当更窄的首个切片可以被安全调度时，唯一合法的首个切片是最小安全切片。吸收多个验收切片、多子系统变更或端到端实现加验证的行为必须被阻断，应拆分为更细粒度切片。

@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-04
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-04
+last_verified: 2026-06-05
 ---
 
 # Milestone Artifact
@@ -214,7 +214,10 @@ work-collection milestone 完成判定仅需满足：
 ## 与 Worktrack 的关系
 
 - Milestone 引用 Worktrack，不控制 Worktrack 内部状态转移。
-- goal-driven milestone 以逐 worktrack 聚合方式推进：每个 current worktrack 建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪，然后将结果汇入 milestone 聚合状态。
+- goal-driven milestone 以逐 worktrack 聚合方式推进：RepoScope.Decide 每轮只能从 `worktrack_list` 中选出一个 `selected_worktrack_id` / current worktrack。每个 current worktrack 建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪，然后将结果汇入 milestone 聚合状态。
+- `worktrack_list` 是 Milestone 级声明列表，不是执行队列；它可以记录多个 worktrack，但不得被解释成可一次 dispatch 的批量任务窗口。
+- Milestone-level scheduler 一次只选择一个 Worktrack；Worktrack-level scheduler 才能在该 Worktrack 的 Plan / Task Queue task window 内规划多个 task。
+- 新增、移除、重排或同时选择多个 worktrack 都是 Milestone / RepoScope 边界变更，必须回到 RepoScope.Decide，并在需要时触发 programmer approval。
 - Worktrack closeout 后，Milestone progress counter 更新。
 - 不替代 `WorktrackContract` 或 `PlanTaskQueue`。
 
