@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime State Hydration
 status: active
-updated: 2026-05-16
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-16
+last_verified: 2026-06-05
 ---
 
 # Harness Runtime State Hydration
@@ -67,9 +67,11 @@ git hash 一致只授权跳过重复 refresh 或重复 doc catch-up；首次验�
 
 1. control-state 是否存在并可读。
 2. handback guard 是否激活。
-3. 当前 checkout 与 `baseline_ref` / `latest_observed_checkpoint` 是否一致。
+3. 当前 checkout 的 `branch_context` 是否能由 `baseline_branch`、`active_milestone_branch` 或当前 Worktrack Contract 的 `worktrack_branch` 解析。
 4. active milestone / active worktrack 指针是否存在并指向有效 artifact。
 5. continuation authority 是否允许自动继续。
 6. 下一合法 Scope / Function 是否仍在批准边界内。
 
 任一项不可判定时，暴露阻塞项并停在安全的 Observe 或 handback 状态。
+
+`latest_observed_checkpoint` 仍是 repo-refresh 幂等性锚点，但它必须和 branch context 一起解释：Milestone-derived Worktrack 的最新 checkpoint 可以位于 Milestone integration branch，不能因为当前 checkout 不是 `baseline_branch` 就自动判定为非法；也不能因为 hash 一致就跳过 Branch Environment Guard。
