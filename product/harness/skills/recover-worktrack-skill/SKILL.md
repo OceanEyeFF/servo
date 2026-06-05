@@ -36,6 +36,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
    - `硬失败`
    - `阻塞`
    - `基准漂移`
+   - `branch_policy_mismatch`
 5. 评估合法的恢复选择：
    - `重试`
    - `回滚`
@@ -68,6 +69,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 - `工作追踪约定摘要`
 - `节点类型`
 - `节点策略`
+- `Branch Policy`: `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`
 - `计划队列状态`
 - `关卡证据摘要`
 - `失败信号`
@@ -106,7 +108,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
   - 必须保留哪些验收标准留在当前工作追踪，哪些会移出。
 - `刷新基准`
   - 当上游真相变化或漂移使当前分支比较失效时，可以请求代码仓库级基准刷新或重新初始化触发器。
-  - 如果 `baseline_form` 或 `merge_required` 与当前 checkpoint 状态不匹配，必须把该不匹配作为刷新或重新初始化理由。
+  - 如果 `branch_source_ref`、`worktrack_branch`、`closeout_target_ref`、`checkpoint_base_ref`、`baseline_form` 或 `merge_required` 与当前 checkpoint 状态不匹配，必须把该不匹配作为刷新或重新初始化理由。
   - 对 `代码仓库快照/状态`、`目标/章程` 或控制真相的唯一合法操作是读取消费。从本技能改写这些产物的行为必须被阻断。
   - 必须返回一份交接结果，明确告诉 `Harness` 接下来需要哪一轮面向代码仓库的流程。
 - `重新规划`
@@ -144,11 +146,13 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 - `已应用中断处理策略`
 - `节点类型`
 - `节点策略`
+- `合同分支策略`
 - `后备恢复模式`
 - `重试可行性`
 - `回滚目标或规则`
 - `拆分理由`
 - `基准刷新理由`
+- `branch_policy_mismatch`
 - `权限边界`
 - `即时安全动作`
 - `需要审批`
