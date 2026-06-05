@@ -385,6 +385,24 @@ MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
     "task window",
     "不得",
 ]
+WORKTRACK_TASK_WINDOW_CONTRACT_PATHS = [
+    "docs/harness/artifact/worktrack/plan-task-queue.md",
+    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+    "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+    "product/.servo_template/worktrack/plan-task-queue.md",
+]
+WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
+    "task window",
+    "task_window_id",
+    "window_boundary",
+    "selected_next_action",
+    "selected_next_action_id",
+    "dispatch_handoff_packet",
+    "depends_on",
+    "acceptance",
+    "risk_level",
+    "stop_condition",
+]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
@@ -1660,6 +1678,23 @@ def check_milestone_worktrack_planning_separation_contract(
     report.add_info(f"checked {checked} milestone/worktrack planning separation sources")
 
 
+def check_worktrack_task_window_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in WORKTRACK_TASK_WINDOW_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack task window source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_TASK_WINDOW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack task window contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} worktrack task window sources")
+
+
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
@@ -2646,6 +2681,7 @@ def main() -> int:
     check_harness_entry_profile_route_hint_contract(repo_root, report)
     check_milestone_recommendation_fact_first_contract(repo_root, report)
     check_milestone_worktrack_planning_separation_contract(repo_root, report)
+    check_worktrack_task_window_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)

@@ -18,14 +18,26 @@
 - 当前可执行任务：N/A
 - 阻塞任务：N/A
 - 队列是否覆盖验收：N/A
+- task window 状态：N/A
+- selected_next_action 是否唯一：N/A
 
 ### Supporting Detail
 
+- task_window_id：N/A
+- window_boundary：
+  - goal_ref：N/A
+  - scope_ref：N/A
+  - non_goal_ref：N/A
+  - acceptance_ref：N/A
+  - verification_ref：N/A
+- window_status：N/A
 - 任务编号：N/A
   - 标题：N/A
   - 状态：N/A
   - 依赖项：N/A
   - 验收关联：N/A
+  - risk_level：N/A
+  - stop_condition：N/A
   - 完成信号：N/A
 
 ## 执行顺序说明
@@ -64,24 +76,37 @@
 
 - 已选下一步动作：N/A
 - 选择理由：N/A
+- 已选动作风险等级：N/A
+- 已选动作停止条件：N/A
 
 ### Supporting Detail
 
 - 已选下一步动作编号：N/A
-- 已选下一步动作：N/A
+- selected_next_action_id：N/A
+- selected_next_action：N/A
 - 选择理由：N/A
+- selected_task_acceptance：N/A
+- selected_task_risk_level：N/A
+- selected_task_stop_condition：N/A
 
 ## 分派交接包
 
 ### Control Signal
 
 - 分派任务：N/A
+- dispatch handoff packet：N/A
 - 本轮目标：N/A
 - 完成信号：N/A
 - 返回调度条件：N/A
 
 ### Supporting Detail
 
+- dispatch_handoff_packet：
+  - task_id：N/A
+  - selected_next_action：N/A
+  - depends_on：N/A
+  - risk_level：N/A
+  - stop_condition：N/A
 - 任务：N/A
 - 本轮目标：N/A
 - 节点类型：N/A
@@ -90,6 +115,8 @@
 - 本轮约束：N/A
 - 本轮验收标准：N/A
 - 验证要求：N/A
+- shared_fact_pack：N/A
+- context_budget：N/A
 - runtime_dispatch_mode：N/A
 - 完成信号：N/A
 - 所需上下文：N/A

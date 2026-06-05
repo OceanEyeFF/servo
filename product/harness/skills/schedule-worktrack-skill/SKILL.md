@@ -21,6 +21,8 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 
 `Plan / Task Queue` 是当前 Worktrack 的局部任务窗口 / task window。它可以包含多个连续小任务，但每轮调度只能选出一个 `selected_next_action` 和一份 bounded dispatch handoff packet。任务窗口不得被解释为 Repo backlog、Milestone backlog、candidate milestone list 或全局待办；新增/移除/重排 Worktrack 必须回到 RepoScope.Decide / programmer approval。
 
+队列实例必须保留 `task_window_id`、`window_boundary`、`selected_next_action_id`、`selected_next_action` 和 `dispatch_handoff_packet`。这些字段共同表达“window 内可以有多个 task，但当前 round 只有一个可分派动作”的控制边界。
+
 ## 何时使用
 
 当当前问题不是"谁来执行这个任务"，而是"此刻正确的下一项限定范围工作项是什么"时，使用这个技能：
@@ -43,7 +45,7 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
    - 推迟或阻塞未就绪的项
    - 当这是当前队列状态首个面向执行的切片时，优先选择一个最小依赖解锁步骤或一个验收标准切片，而不是更大的包
    - 如果当前候选跨越多个验收切片、多个子系统，或多个执行阶段，就拆出最小安全首个切片，除非约定明确要求原子性处理
-   - 保留并维护任务字段语义：`task_id` 是稳定任务标识，`priority` 表示调度优先级，`depends_on` 表示硬依赖，`acceptance` 必须映射到当前 Worktrack Contract 的验收标准。
+   - 保留并维护任务字段语义：`task_id` 是稳定任务标识，`priority` 表示调度优先级，`depends_on` 表示硬依赖，`acceptance` 必须映射到当前 Worktrack Contract 的验收标准，`risk_level` 与 `stop_condition` 决定是否允许继续自动调度。
 4. 检查刷新后的队列是否仍能干净映射到当前验收标准；若存在规划层覆盖缺口，要明确暴露。
 5. 选出一个 `当前下一步动作`，或者带上阻塞原因返回 `没有安全的下一步动作`。
 6. 如果存在 `当前下一步动作`，就把它封装成一份限定范围 `分派交接包`，其中包含任务简报、信息包，以及本轮明确的返回调度条件。
@@ -76,7 +78,7 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 
 - 分派任务的唯一合法来源是当前 `计划/任务队列` 中已选出的当前下一步动作。在队列尚未选出动作时，根据代码仓库目标或初始化说明推导分派任务的行为必须被阻断。
 - `Plan / Task Queue` 只属于当前 Worktrack。把它当成 Repo/Milestone backlog、candidate milestone recommendation 或跨 Worktrack 自动执行列表的行为必须被阻断。
-- 每个 task 必须保留 `task_id`、`status`、`priority`、`assigned`、`description`、`depends_on` 与 `acceptance` 的可追踪语义；调度输出必须说明 `selected_next_action` 如何覆盖对应 `acceptance`。
+- 每个 task 必须保留 `task_id`、`status`、`priority`、`assigned`、`description`、`depends_on`、`acceptance`、`risk_level` 与 `stop_condition` 的可追踪语义；调度输出必须说明 `selected_next_action` 如何覆盖对应 `acceptance`，以及为何其 `risk_level` / `stop_condition` 允许或阻断连续推进。
 - 工作分派就绪的判定依据必须同时包含 `已选下一步动作` 和完整的分派交接包。仅凭 `已选下一步动作` 不能判定为分派就绪。
 - 当更窄的首个切片可以被安全调度时，唯一合法的首个切片是最小安全切片。吸收多个验收切片、多子系统变更或端到端实现加验证的行为必须被阻断，应拆分为更细粒度切片。
 - 仅当当前约定、依赖形状或显式原子性要求确实要求时，保留更宽首个切片才合法；否则必须拆分为更窄切片，并显式给出拆分理由。
@@ -121,6 +123,8 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 - `priority`
 - `depends_on`
 - `acceptance`
+- `risk_level`
+- `stop_condition`
 - `已选下一步动作`
 - `选择理由`
 - `切片边界理由`
@@ -128,6 +132,7 @@ description: 当 Harness 处于 WorktrackScope.scheduling，且需要一轮限�
 - `剩余前置条件`
 - `分派任务简报草稿`
 - `分派信息包草稿`
+- `dispatch handoff packet`
 - `节点类型`
 - `本轮适用判定标准`
 - `基线策略`

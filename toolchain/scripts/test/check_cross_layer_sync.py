@@ -9,6 +9,8 @@ Checks:
      ↔ node-type-registry (docs/harness/artifact/control/node-type-registry.md)
   3. control-state contract (docs/harness/artifact/control/control-state.md)
      ↔ set-harness-goal template (product/harness/skills/set-harness-goal-skill/assets/control-state.md)
+  4. plan-task-queue contract (docs/harness/artifact/worktrack/plan-task-queue.md)
+     ↔ runtime and schedule skill templates
 """
 
 from __future__ import annotations
@@ -38,6 +40,11 @@ CONTROL_STATE_CONTRACT_PATH = "docs/harness/artifact/control/control-state.md"
 CONTROL_STATE_TEMPLATE_PATH = (
     "product/harness/skills/set-harness-goal-skill/assets/control-state.md"
 )
+PLAN_TASK_QUEUE_CONTRACT_PATH = "docs/harness/artifact/worktrack/plan-task-queue.md"
+PLAN_TASK_QUEUE_TEMPLATE_PATHS = [
+    "product/.servo_template/worktrack/plan-task-queue.md",
+    "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+]
 
 # ── key fields for check 1 ──────────────────────────────────────────────────────
 # Fields under Node Type in the contract's "上游输入" section
@@ -78,6 +85,17 @@ USER_DEFINED_SERVO_CONTROL_FIELDS = [
     "protected_branch_policy",
     "branch_mutation_policy",
     "auto_maintained_runtime_facts_not_asked",
+]
+PLAN_TASK_QUEUE_WINDOW_FIELDS = [
+    "task_window_id",
+    "window_boundary",
+    "selected_next_action_id",
+    "selected_next_action",
+    "dispatch_handoff_packet",
+    "depends_on",
+    "acceptance",
+    "risk_level",
+    "stop_condition",
 ]
 
 
@@ -428,6 +446,59 @@ def check_control_state_template_alignment(repo_root: Path) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════
+# check 4: plan-task-queue contract ↔ runtime/schedule templates
+# ═══════════════════════════════════════════════════════════════════════════════════
+
+
+def check_plan_task_queue_template_alignment(repo_root: Path) -> dict:
+    """Check Plan / Task Queue task-window fields align with templates."""
+    errors: list[str] = []
+    infos: list[str] = []
+
+    contract_text = _read(repo_root, PLAN_TASK_QUEUE_CONTRACT_PATH)
+    if contract_text is None:
+        errors.append(f"missing contract file: {PLAN_TASK_QUEUE_CONTRACT_PATH}")
+    else:
+        for field in PLAN_TASK_QUEUE_WINDOW_FIELDS:
+            if field not in contract_text:
+                errors.append(
+                    f"Plan / Task Queue field '{field}' not found in contract "
+                    f"({PLAN_TASK_QUEUE_CONTRACT_PATH})"
+                )
+
+    for template_path in PLAN_TASK_QUEUE_TEMPLATE_PATHS:
+        template_text = _read(repo_root, template_path)
+        if template_text is None:
+            errors.append(f"missing template file: {template_path}")
+            continue
+        missing = [
+            field for field in PLAN_TASK_QUEUE_WINDOW_FIELDS if field not in template_text
+        ]
+        for field in missing:
+            errors.append(
+                f"Plan / Task Queue field '{field}' in contract "
+                f"({PLAN_TASK_QUEUE_CONTRACT_PATH}) not found in template ({template_path})"
+            )
+        infos.append(
+            f"checked {len(PLAN_TASK_QUEUE_WINDOW_FIELDS)} Plan / Task Queue fields in "
+            f"{template_path}: {len(PLAN_TASK_QUEUE_WINDOW_FIELDS) - len(missing)}/"
+            f"{len(PLAN_TASK_QUEUE_WINDOW_FIELDS)} present"
+        )
+
+    status = "pass" if not errors else "fail"
+    return {
+        "status": status,
+        "summary": (
+            "all Plan / Task Queue task-window fields present in templates"
+            if status == "pass"
+            else f"{len(errors)} plan-task-queue field alignment issue(s)"
+        ),
+        "errors": errors,
+        "infos": infos,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════
 # main
 # ═══════════════════════════════════════════════════════════════════════════════════
 
@@ -451,6 +522,7 @@ def main() -> int:
         "contract_template": check_contract_template_alignment(repo_root),
         "charter_registry": check_charter_registry_consistency(repo_root),
         "control_state_template": check_control_state_template_alignment(repo_root),
+        "plan_task_queue_template": check_plan_task_queue_template_alignment(repo_root),
     }
 
     all_pass = all(r["status"] == "pass" for r in results.values())
