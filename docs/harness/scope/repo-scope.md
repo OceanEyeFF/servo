@@ -42,7 +42,7 @@ RepoScope.Observe 通过以下传感器收集系统状态：
 |--------|---------|---------|
 | Git 基线 | `git rev-parse HEAD` | 当前 HEAD hash，与 `latest_observed_checkpoint` 对比 |
 | Milestone 状态 | `milestone-status-skill` | 活跃 milestone 的 progress、acceptance、gate、handback |
-| 分支状态 | git branch / log | 活跃分支数、年龄、与基线的偏离 |
+| 分支状态 | git branch / log | 当前 checkout 的 branch context、活跃分支数、年龄、与 baseline/Milestone/Worktrack 合同 ref 的偏离 |
 | 文档新鲜度 | `last_doc_catch_up_checkpoint` | 文档版本是否落后于代码基线 |
 | 治理检查 | governance checks | path_governance、folder_logic、semantic 等 |
 
@@ -77,6 +77,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - RepoScope.Decide / Milestone-level scheduler 每轮一次只选出一个 `selected_worktrack_id` / current worktrack；不得把 milestone 的 `worktrack_list` 批量投影为 Worktrack `Plan / Task Queue`、task window 或 dispatch queue
 - 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 - 从 active goal-driven milestone 派生 Worktrack 前，还必须满足 Milestone Review Gate route guard：`milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化；`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`
+- 从 active milestone 派生 Worktrack 前还必须满足 Branch Environment Guard：milestone-derived Worktrack 的 `WorktrackScope.Init` 必须在 active `milestone_branch` 上执行；非 milestone-derived Worktrack 才从 `baseline_branch` 开始。若当前 checkout 是 `unknown` 或不匹配 expected branch context，RepoScope.Decide 只能返回切换/恢复动作，不得初始化 Worktrack。
 
 ### Candidate Milestone Recommendation
 
@@ -115,6 +116,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - `worktrack_adjustment_recommendations`：说明保持、拆分、合并、改写、推迟或阻塞建议
 - `add_remove_worktrack_recommendations`：说明是否需要新增、移除或重排 worktrack；无变化时写 `none`
 - `intake_review_verdict`：只允许 `ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`
+- `branch_context`: 当前 checkout 必须匹配即将进入的 mutating Function。milestone-derived Worktrack 初始化要求 `milestone`；非 milestone-derived 初始化要求 `baseline`。
 
 进入动作：
 1. `init-worktrack-skill` 校验并写入 `worktrack_intake_review`
