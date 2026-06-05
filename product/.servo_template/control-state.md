@@ -19,7 +19,8 @@
 
 ## Baseline Branch
 
-- 
+- baseline_branch:
+- baseline_ref:
 
 ## Branch Environment Guard
 
