@@ -37,6 +37,9 @@ last_verified: 2026-06-05
 - `updated_by`: 最后修改者
 - `activation_rules`: 自动激活条件（optional，harness-inferred）
 - `milestone_kind`: `goal-driven` / `work-collection` — 默认 `goal-driven`
+- `milestone_branch`: optional；Milestone integration branch 的名称或摘要。live backlog 可保存短字段供 RepoScope.Decide 快速判断，完整 branch 事实归单个 Milestone artifact。
+- `continuation_state`: optional；`ready` / `waiting_external` / `paused_by_programmer` / `blocked`。该字段不替代 `status`，不参与 planned/active/completed/superseded 计数。
+- `pause_resume`: optional；暂停/等待/恢复的短摘要，如 `pause_reason`、`resume_condition`、`parallel_work_allowed`、`paused_baseline_ref`、`paused_branch_head`。
 
 ## Pipeline 语义
 
@@ -45,6 +48,8 @@ last_verified: 2026-06-05
 - `planned` milestone 按 `priority`（升序）排列激活顺序；同 priority 按 `created_at` 排列
 - `depends_on_milestones` 中的所有前置 milestone 必须能在 live backlog 或 milestone history 中解析；前置状态必须为 `completed` 或 `superseded` 后才能激活
 - `completed` 表示 milestone 已完成并移入 history；`superseded` 表示被更新的 milestone 替换（programmer override），保留在 history 但不再参与激活队列
+- 暂停/等待不是 live backlog 的 primary `status`。不得写入 `status: suspended`；使用 `continuation_state` 表达当前 Milestone 是否可继续派生 Worktrack。
+- 当 active milestone 因 `continuation_state: waiting_external` 或 `paused_by_programmer` 且 `parallel_work_allowed: true` 释放 active slot 时，Harness 必须保留该 milestone 的 `milestone_branch`、`paused_baseline_ref`、`paused_branch_head` 和 `resume_condition`，并把另一个 milestone 激活过程记录为显式 programmer-approved 或 policy-approved transition。
 - live backlog 应保持短而可操作，正常只保留真实待处理项（目标量级约 5-7 个）
 - `milestone_pipeline_summary` 是 aggregate summary：planned/active 来自 live backlog，completed/superseded 来自 milestone history
 - `worktrack_list` 只表达 Milestone 的声明范围和聚合进度。Milestone-level scheduler 一次只允许选择一个 `selected_worktrack_id` / current worktrack；不得把 `worktrack_list` 当成 Worktrack `Plan / Task Queue`、task window、dispatch queue 或 candidate milestone list。
@@ -66,3 +71,4 @@ last_verified: 2026-06-05
 - 仅当 `milestone_acceptance_verdict == achieved`（goal-driven 双重验收通过；work-collection 单重验收通过）时，`Harness-skill` 可将 `active` → `completed`
 - goal-driven milestone 经 programmer final acceptance 后，history 条目不得保留 `(planned)` 或 `(active)` worktrack marker；所有声明 worktrack 必须归一化为 `(done)`、`(deferred)`、`(blocked)` 或等价已决状态。
 - 每次 final acceptance writeback 后，control-state 的 `active_milestone`、`milestone_status` 与 `milestone_pipeline_summary` 必须与 live backlog 中的唯一 active 条目、history 中的 completed/superseded 条目和 aggregate planned/active/completed/superseded 计数一致。
+- Milestone branch 字段是 live routing metadata。完整 branch source、sync strategy、head ref 和 pause/resume evidence 应写在 `.servo/milestone/{milestone_id}.md`；backlog 只保存足以排序、激活和恢复的短摘要。

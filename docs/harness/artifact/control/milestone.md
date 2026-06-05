@@ -34,6 +34,10 @@ last_verified: 2026-06-05
 | aggregated_evidence | array | 聚合的 evidence 引用 |
 | milestone_review_gate | object | Milestone 执行入口复核 Gate 的业务事实，包含 `milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`review_invalidated_by` 与 `effective_review_pass` |
 | composite_acceptance | object | goal-driven milestone 的复合验收证据引用与 verdict；字段合同见 [composite-milestone-acceptance.md](./composite-milestone-acceptance.md) |
+| milestone_branch | string | Milestone integration branch 名称或 ref；用于聚合该 Milestone 下已通过 Worktrack closeout 的变更 |
+| branch_baseline | object | Milestone branch 创建/同步基线，至少包含 `baseline_branch`、`baseline_ref`、`milestone_branch_head`、`last_synced_baseline_ref` |
+| continuation_state | enum | `ready` / `waiting_external` / `paused_by_programmer` / `blocked`；表示当前 Milestone 是否可继续派生 Worktrack，不替代 `status` |
+| pause_resume | object | 暂停、外部等待与恢复元数据，包含 `pause_reason`、`external_dependency`、`resume_condition`、`parallel_work_allowed`、`paused_baseline_ref`、`paused_branch_head` |
 | release_version_consideration | string | 对 version/release 的提示（不接管 decision） |
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
 | depends_on_milestones | array | 前置 Milestone 列表 |
@@ -94,7 +98,7 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 
 ## 生命周期
 
-Milestone 在其生命周期中经历四个状态：
+Milestone 的 primary lifecycle status 仍只有四个状态：
 
 ```
 planned ──→ active ──→ completed
@@ -107,12 +111,71 @@ planned ──→ active ──→ completed
 - **completed**: 目的达成（goal-driven: `worktrack_list_finished == true`，且 `Milestone Gate == pass`，且 `purpose_achieved == true`；work-collection: `worktrack_list_finished == true`）。验收通过后由 `harness-skill` 执行状态转移。
 - **superseded**: 被更新的 milestone 替换（programmer override），保留历史但不参与激活队列。work-collection milestone 在 completed 后自动标记为 superseded。
 
+### Continuation State
+
+暂停、外部等待或人工暂停不是新的 lifecycle status，不得写成 `status: suspended`。这些语义由 `continuation_state` 和 `pause_resume` 表达：
+
+- `ready`: Milestone 当前可由 RepoScope.Decide 选择下一个 Worktrack。
+- `waiting_external`: Milestone 目标仍有效，但当前推进依赖外部输入或非 repo-local 事实，例如实验室标注结果、第三方审核或外部环境完成。若 `parallel_work_allowed: true`，Harness 可在记录暂停证据后释放 active slot 并激活其他 planned milestone；同一时刻仍只能有一个 primary `active` milestone。
+- `paused_by_programmer`: programmer 明确暂停当前 Milestone。恢复前必须消费 `resume_condition` 并刷新 baseline / branch head。
+- `blocked`: 当前 Milestone 存在阻断，不能继续派生 Worktrack；需要 Recover、调整 scope、追加 worktrack 或 programmer 决策。
+
+`continuation_state` 是 Milestone 当前可继续性的正交维度，不改变 `planned / active / completed / superseded` 计数，也不进入 milestone-history。消费者必须先看 primary `status`，再看 `continuation_state` 判断能否派生 Worktrack。
+
+### Milestone Branch
+
+Milestone branch 是该 Milestone 的 integration branch，不是第三 Scope，不替代 Worktrack branch，也不是随手开发分支。建议命名为 `ms/{milestone_id}-{slug}`，具体 slug 规范由初始化/分支策略实现定义。
+
+Milestone branch 的职责：
+
+- 从 servo-managed `baseline_branch` 创建。
+- 接收该 Milestone 下 Worktrack closeout 的 merge。
+- 在进入或恢复 Milestone 时，同步当前 baseline，默认通过 merge baseline into milestone branch 记录同步，而不是对已共享/已记录的 runtime branch 做 rebase 或 force-push。
+- 仅在 goal-driven Milestone final acceptance 后合回 servo-managed baseline branch。
+
+Worktrack 实现仍必须在独立 Worktrack branch 中完成。Milestone branch 只接收 Worktrack closeout merge 和 baseline sync merge；直接在 Milestone branch 上做实现改动必须由对应 Worktrack Contract 明确批准，否则视为范围漂移。
+
+典型字段：
+
+```yaml
+milestone_branch:
+  name: "ms/MS-YYYYMMDD-NNN-slug"
+  role: "integration"
+  source_baseline_branch: "develop"
+  source_baseline_ref: "develop@<hash>"
+  head_ref: "ms/...@<hash>"
+  last_synced_baseline_ref: "develop@<hash>"
+  sync_strategy: "merge-baseline-into-milestone-branch"
+  final_merge_target: "develop"
+```
+
+暂停/恢复字段：
+
+```yaml
+continuation_state: "waiting_external"
+pause_resume:
+  paused_at: "ISO-8601"
+  paused_by: "programmer|harness-skill"
+  pause_reason: "等待实验室完成数据标注"
+  external_dependency:
+    owner: "lab"
+    expected_input: "标注结果"
+    handoff_ref: "batch-or-report-ref"
+  resume_condition: "标注结果返回并通过完整性检查"
+  parallel_work_allowed: true
+  paused_baseline_ref: "develop@<hash>"
+  paused_branch_head: "ms/...@<hash>"
+```
+
+若 `parallel_work_allowed: true` 且 programmer 或 Milestone policy 允许切换，Harness 可将该 Milestone 从 active slot 中移出并激活另一个 ready planned Milestone；恢复时必须从 RepoScope.Observe 开始，比较 `paused_baseline_ref`、`paused_branch_head` 和当前 baseline，再决定 sync、recover 或重新初始化 continuation Worktrack。
+
 ## Pipeline 语义
 
 Milestone 作为 Pipeline 中的节点，遵循以下规则：
 
 - 多个 milestone 可同时处于 `planned` 状态，按 `priority`（升序）排列激活顺序
 - 同一时刻仅允许一个 `active` milestone
+- 等待/暂停的 Milestone 不通过新增 primary status 表达；live backlog 中仍只使用 `planned` / `active`，并用 `continuation_state` / `pause_resume` 暴露可继续性
 - `depends_on_milestones` 中的所有前置 milestone 必须为 `completed` 或 `superseded`，当前 milestone 才可激活
 - milestone 完成后（`active` → `completed`），pipeline 按优先级自动选择下一个满足条件的 `planned` milestone 激活
 - work-collection milestone（`milestone_kind == "work-collection"`）的 priority 始终视为最低，不阻塞 goal-driven milestone 的激活
@@ -219,6 +282,7 @@ work-collection milestone 完成判定仅需满足：
 - Milestone-level scheduler 一次只选择一个 Worktrack；Worktrack-level scheduler 才能在该 Worktrack 的 Plan / Task Queue task window 内规划多个 task。
 - 新增、移除、重排或同时选择多个 worktrack 都是 Milestone / RepoScope 边界变更，必须回到 RepoScope.Decide，并在需要时触发 programmer approval。
 - Worktrack closeout 后，Milestone progress counter 更新。
+- 在 Milestone branch 模型下，Worktrack closeout 的集成目标可以是当前 Milestone branch；Milestone final acceptance 后再由 Milestone closeout 路径合回 servo-managed baseline branch。具体 Worktrack branch source 和 closeout target 由 Worktrack Contract 承接。
 - 不替代 `WorktrackContract` 或 `PlanTaskQueue`。
 
 ## Candidate Recommendation Boundary
