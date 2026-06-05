@@ -1,9 +1,9 @@
 ---
 title: "Plan / Task Queue"
 status: active
-updated: 2026-06-04
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-04
+last_verified: 2026-06-05
 ---
 # Plan / Task Queue
 
@@ -37,6 +37,8 @@ Plan / Task Queue 是单个 Worktrack 内的局部任务窗口 / task window，�
 | `description` | string | 是 | 任务描述，一句话概括任务目标 |
 | `depends_on` | list[string] | 是（可空） | 前置任务的 `task_id` 列表，硬依赖（未完成前不能开始） |
 | `acceptance` | list[string] | 是 | 验收标准列表，每项需映射到 contract 中的验收标准编号 |
+| `risk_level` | enum | 是 | `low` / `medium` / `high`，用于判断是否允许连续推进或必须停止审批 |
+| `stop_condition` | list[string] | 是（可空） | 该 task 命中后必须返回调度、验证、恢复或 programmer handback 的条件 |
 | `estimated_effort` | enum | 否 | 工作量估算：`S`（<1h）/ `M`（1-4h）/ `L`（4h-1d）/ `XL`（>1d） |
 
 ### 状态流转
@@ -149,12 +151,27 @@ acceptance:
 
 - window 的边界等于当前 `WorktrackContract` 的目标、范围、非目标、验收标准和验证要求。
 - window 可以包含多个 pending task，但同一调度轮只选一个 `selected_next_action`。
-- task 之间通过 `depends_on`、`blocks`、`acceptance` 和 queue status 形成局部执行顺序。
+- task 之间通过 `depends_on`、`blocks`、`acceptance`、`risk_level`、`stop_condition` 和 queue status 形成局部执行顺序。
 - 当前 task 完成后，若没有 gate fail、scope drift、approval boundary、runtime gap 或 evidence conflict，WorktrackScope 可以继续调度 window 内的下一 task。
 - window 内任务不得修改 RepoScope 目标、Milestone Pipeline 或 Worktrack list；需要新增/移除/重排 Worktrack 时，必须回到 RepoScope.Decide / programmer approval。
 - queue 完成只表示当前 Worktrack 的任务窗口完成；仍需 Verify、Judge、Close 和 RepoScope.Refresh 后，结果才可汇入 Milestone progress。
 
-该语义与 Milestone 方向选择分离：Milestone 选择“下一段 repo 演进方向”，Plan / Task Queue 只安排“当前 Worktrack 合同内接下来做什么”。
+该语义与 Milestone 方向选择分离：Milestone / RepoScope 的 Milestone-level scheduler 每轮一次只选择一个 `selected_worktrack_id` / current worktrack；Milestone 的 `worktrack_list` 不是 Plan / Task Queue、不是 task window，也不是 dispatch queue。Plan / Task Queue 只安排“当前 Worktrack 合同内接下来做什么”。
+
+### Task Window Control Fields
+
+每个 Plan / Task Queue 实例必须显式保留以下 task window 控制字段，避免连续规划退化成不可追踪的批量执行：
+
+- `task_window_id`: 当前 Worktrack 内的局部窗口标识，通常等于 worktrack id。
+- `window_boundary`: 当前窗口的目标、范围、非目标、验收标准和验证要求引用。
+- `window_status`: `draft` / `ready` / `in_progress` / `blocked` / `completed` / `deferred`。
+- `selected_next_action_id`: 当前调度轮唯一选中的 task id；没有安全动作时为 `none`。
+- `selected_next_action`: 当前调度轮唯一可分派动作。
+- `dispatch_handoff_packet`: 当前调度轮交给 dispatch 的 bounded 信息包，必须来自 `selected_next_action`。
+- `risk_level`: 当前 task 的风险等级，用于判定是否允许连续推进。
+- `stop_condition`: 当前 task 或窗口命中后必须停止连续推进的条件。
+
+`dispatch_handoff_packet` 必须包含 `task_id`、`goal_for_this_round`、`node_type`、`gate_criteria_for_this_round`、`baseline_policy`、`acceptance_criteria_for_this_round`、`verification_requirements`、`risk_level`、`stop_condition`、`shared_fact_pack`、`context_budget` 和 `return_to_schedule_if`。即使 queue 内有多个 pending task，本轮 packet 也只能绑定一个 `selected_next_action_id`。
 
 ### 验收标准引用约定
 

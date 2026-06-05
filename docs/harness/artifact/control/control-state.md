@@ -52,6 +52,33 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 
 For missing additive Milestone Review Gate fields, conservative runtime backfill is: `active_milestone_review_gate_status = missing`, `active_milestone_review_count = 0`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, `milestone_review_gate_ready = false`, `active_milestone_review_required = true` for goal-driven milestones, and `active_milestone_review_blockers` containing `milestone_review_gate_not_ready`. These defaults must not increment `milestone_review_count`, must not set `effective_pass`, and must block Worktrack Init/Dispatch.
 
+## User-Defined Servo Controls
+
+初始化 Harness 控制面时，Servo 只应询问用户可定义且会影响后续审批边界的控制变量。默认问题集为：
+
+- `continuous_progression_permission`: 是否允许在已批准 milestone / worktrack 边界内连续推进。
+- `per_milestone_automatic_worktrack_budget`: 每个 Milestone 内允许自动连续开启或推进的 Worktrack 额度。
+- `default_servo_work_branch`: Servo 默认工作分支或工作分支命名策略。
+- `protected_branch_policy`: 不允许 Servo 直接修改、强推、删除或自动合并的受保护分支策略。
+- `branch_mutation_policy`: 分支创建、切换、合并、删除与远端推送的默认审批策略。
+
+这些字段属于 user-defined controls，应存放在 `User-Defined Servo Controls`、`Continuation Authority` 或等价控制配置段中；它们不是 repo 目标，也不替代 `WorktrackContract`。未回答时必须按保守默认解释：不扩大连续推进权限，不提高自动 Worktrack 额度，不放宽受保护分支规则。
+
+初始化不得向用户询问 Servo 可以自动维护的 runtime facts；模板中以 `auto_maintained_runtime_facts_not_asked` 列出这些禁止提问项，例如 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary`。这些事实由 Observe / Refresh / Dispatch / Close 等控制步骤写回，不能被用户偏好伪装成 truth。
+
+一次性执行授权只写入本轮 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新上述 user-defined controls。
+
+## Low-Risk Default-Flow Autonomy Policy
+
+当 `continuous_progression_permission` 与当前 Milestone / Worktrack 授权允许连续推进时，Harness 仍只能对低风险默认流程静默推进。该策略必须用结构化字段表达：
+
+- `allowed`: 已批准 milestone / worktrack 边界内的只读观察、artifact hydration、状态一致性检查、队列调度、非破坏性文档/模板/测试编辑、匹配范围的本地验证、已通过 Gate 后的 repo-refresh 写回，以及不会产生外部副作用的 scaffold validation。
+- `forbidden`: goal change、scope expansion、milestone final acceptance、release / publish / package version / tag / dist-tag 变更、GitHub Release 或 publish workflow、protected branch mutation、force push、大量文件删除、destructive cleanup、secret/security/privacy 处理、deploy/network/database migration、跨 repo 副作用、外部付费/配额消耗，以及任何用户标记为需通知的动作。
+- `stop_condition`: 证据缺失或冲突、branch mismatch、Gate soft-fail / hard-fail / blocked、context noise 或提示遗忘明显、需要 programmer 判断、权限边界不清、Worktrack Contract 外扩、protected branch policy 命中、destructive operation 命中、release-sensitive 信号命中、Milestone final acceptance 边界命中。
+- `evidence_required`: route decision、Worktrack Contract 与 scope boundary、selected task / dispatch packet、runtime dispatch profile（发生 dispatch 时）、validation / governance / policy evidence、Gate verdict、closeout record、repo-refresh checkpoint（基线变化时）。
+
+低风险静默推进不是默认扩大权限。任一 `forbidden` 或 `stop_condition` 命中时，Harness 必须 handback 或进入审批 / recover 路由；不得用 `allowed` 项覆盖更严格的 authority boundary。一次性连续执行额度只适用于当前批准周期，不能写成长期默认。
+
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
 - `post_contract_autonomy`: `delegated-minimal`（默认）/`manual-only`（strict handback 诊断）

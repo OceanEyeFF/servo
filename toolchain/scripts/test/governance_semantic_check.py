@@ -277,6 +277,62 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
     "permission blocked",
     "dispatch package unsafe",
 ]
+USER_DEFINED_SERVO_CONTROLS_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/.servo_template/control-state.md",
+    "product/harness/skills/set-harness-goal-skill/SKILL.md",
+    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+]
+USER_DEFINED_SERVO_CONTROLS_REQUIRED_TERMS = [
+    "continuous_progression_permission",
+    "per_milestone_automatic_worktrack_budget",
+    "default_servo_work_branch",
+    "protected_branch_policy",
+    "branch_mutation_policy",
+]
+USER_DEFINED_SERVO_CONTROLS_GUARD_TERMS = [
+    "auto_maintained_runtime_facts_not_asked",
+    "runtime facts",
+    "active_milestone",
+    "active_worktrack",
+    "observed_git_hash",
+    "progress_counters",
+    "runtime_dispatch_profile",
+    "latest_observed_checkpoint",
+    "last_doc_catch_up_checkpoint",
+    "milestone_pipeline_summary",
+]
+LOW_RISK_AUTONOMY_POLICY_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+]
+LOW_RISK_AUTONOMY_REQUIRED_TERMS = [
+    "Low-Risk Default-Flow Autonomy Policy",
+    "allowed",
+    "forbidden",
+    "stop_condition",
+    "evidence_required",
+    "route decision",
+    "Worktrack Contract",
+    "runtime dispatch profile",
+    "Gate verdict",
+    "repo-refresh checkpoint",
+]
+LOW_RISK_AUTONOMY_FORBIDDEN_BOUNDARY_TERMS = [
+    "goal change",
+    "scope expansion",
+    "milestone final acceptance",
+    "release / publish / package version / tag / dist-tag",
+    "protected branch mutation",
+    "force push",
+    "destructive cleanup",
+    "secret/security/privacy",
+    "deploy/network/database migration",
+    "跨 repo 副作用",
+    "外部付费/配额消耗",
+]
 HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS = [
     "docs/harness/foundations/runtime-control-loop.md",
     "product/harness/skills/harness-skill/SKILL.md",
@@ -317,6 +373,9 @@ MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS = [
 ]
 MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS = [
     "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/repo/milestone-backlog.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/foundations/runtime-control-loop.md",
     "docs/harness/artifact/worktrack/plan-task-queue.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
     "product/harness/skills/schedule-worktrack-skill/SKILL.md",
@@ -327,7 +386,30 @@ MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
     "Plan / Task Queue",
     "candidate",
     "task window",
+    "selected_worktrack_id",
+    "current worktrack",
+    "worktrack_list",
+    "一次只",
     "不得",
+]
+WORKTRACK_TASK_WINDOW_CONTRACT_PATHS = [
+    "docs/harness/artifact/worktrack/plan-task-queue.md",
+    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+    "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+    "product/.servo_template/worktrack/plan-task-queue.md",
+    "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+]
+WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
+    "task window",
+    "task_window_id",
+    "window_boundary",
+    "selected_next_action",
+    "selected_next_action_id",
+    "dispatch_handoff_packet",
+    "depends_on",
+    "acceptance",
+    "risk_level",
+    "stop_condition",
 ]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/review-evidence-skill/SKILL.md",
@@ -1494,6 +1576,54 @@ def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticRep
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
+def check_user_defined_servo_controls_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in USER_DEFINED_SERVO_CONTROLS_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing user-defined Servo controls source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in USER_DEFINED_SERVO_CONTROLS_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"user-defined Servo controls contract missing required term {term!r}: "
+                    f"{relative_path}"
+                )
+        for term in USER_DEFINED_SERVO_CONTROLS_GUARD_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "user-defined Servo controls guard missing auto-maintained fact term "
+                    f"{term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} user-defined Servo controls contract sources")
+
+
+def check_low_risk_autonomy_policy_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in LOW_RISK_AUTONOMY_POLICY_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing low-risk autonomy policy source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in LOW_RISK_AUTONOMY_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"low-risk autonomy policy missing required term {term!r}: "
+                    f"{relative_path}"
+                )
+        for term in LOW_RISK_AUTONOMY_FORBIDDEN_BOUNDARY_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"low-risk autonomy policy missing forbidden boundary {term!r}: "
+                    f"{relative_path}"
+                )
+    report.add_info(f"checked {checked} low-risk autonomy policy sources")
+
+
 def check_harness_entry_profile_route_hint_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -1554,6 +1684,23 @@ def check_milestone_worktrack_planning_separation_contract(
                     f"{term!r}: {relative_path}"
                 )
     report.add_info(f"checked {checked} milestone/worktrack planning separation sources")
+
+
+def check_worktrack_task_window_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in WORKTRACK_TASK_WINDOW_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing worktrack task window source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in WORKTRACK_TASK_WINDOW_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"worktrack task window contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} worktrack task window sources")
 
 
 def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
@@ -2537,9 +2684,12 @@ def main() -> int:
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
+    check_user_defined_servo_controls_contract(repo_root, report)
+    check_low_risk_autonomy_policy_contract(repo_root, report)
     check_harness_entry_profile_route_hint_contract(repo_root, report)
     check_milestone_recommendation_fact_first_contract(repo_root, report)
     check_milestone_worktrack_planning_separation_contract(repo_root, report)
+    check_worktrack_task_window_contract(repo_root, report)
     check_review_evidence_four_lane_contract(repo_root, report)
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)

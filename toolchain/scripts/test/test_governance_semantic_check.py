@@ -33,6 +33,7 @@ from governance_semantic_check import (
     check_milestone_review_gate_contract,
     check_milestone_review_route_guard_contract,
     check_milestone_worktrack_planning_separation_contract,
+    check_worktrack_task_window_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -46,6 +47,8 @@ from governance_semantic_check import (
     check_root_tool_shims_disable_bytecode,
     check_runtime_artifact_consistency,
     check_runtime_dispatch_profile_contract,
+    check_low_risk_autonomy_policy_contract,
+    check_user_defined_servo_controls_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
     check_weak_doc_temporary_understanding_contract,
@@ -554,6 +557,125 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_pa
     assert report.failures == []
 
 
+def _write_user_defined_servo_controls_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+        "product/.servo_template/control-state.md",
+        "product/harness/skills/set-harness-goal-skill/SKILL.md",
+        "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_user_defined_servo_controls_contract_flags_missing_term(
+    tmp_path: Path,
+) -> None:
+    _write_user_defined_servo_controls_sources(
+        tmp_path,
+        "continuous_progression_permission\n"
+        "per_milestone_automatic_worktrack_budget\n"
+        "default_servo_work_branch\n"
+        "protected_branch_policy\n"
+        "auto_maintained_runtime_facts_not_asked\n"
+        "runtime facts\n"
+        "active_milestone\n"
+        "active_worktrack\n"
+        "observed_git_hash\n"
+        "progress_counters\n"
+        "runtime_dispatch_profile\n"
+        "latest_observed_checkpoint\n"
+        "last_doc_catch_up_checkpoint\n"
+        "milestone_pipeline_summary\n",
+    )
+
+    report = SemanticReport()
+    check_user_defined_servo_controls_contract(tmp_path, report)
+
+    assert any("branch_mutation_policy" in item for item in report.failures)
+
+
+def test_check_user_defined_servo_controls_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
+    _write_user_defined_servo_controls_sources(
+        tmp_path,
+        "continuous_progression_permission\n"
+        "per_milestone_automatic_worktrack_budget\n"
+        "default_servo_work_branch\n"
+        "protected_branch_policy\n"
+        "branch_mutation_policy\n"
+        "auto_maintained_runtime_facts_not_asked\n"
+        "runtime facts\n"
+        "active_milestone\n"
+        "active_worktrack\n"
+        "observed_git_hash\n"
+        "progress_counters\n"
+        "runtime_dispatch_profile\n"
+        "latest_observed_checkpoint\n"
+        "last_doc_catch_up_checkpoint\n"
+        "milestone_pipeline_summary\n",
+    )
+
+    report = SemanticReport()
+    check_user_defined_servo_controls_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_low_risk_autonomy_policy_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_low_risk_autonomy_policy_contract_flags_missing_boundary(
+    tmp_path: Path,
+) -> None:
+    _write_low_risk_autonomy_policy_sources(
+        tmp_path,
+        "Low-Risk Default-Flow Autonomy Policy\n"
+        "allowed\nforbidden\nstop_condition\nevidence_required\n"
+        "route decision\nWorktrack Contract\nruntime dispatch profile\n"
+        "Gate verdict\nrepo-refresh checkpoint\n"
+        "goal change\nscope expansion\nmilestone final acceptance\n"
+        "release / publish / package version / tag / dist-tag\n"
+        "protected branch mutation\nforce push\ndestructive cleanup\n"
+        "secret/security/privacy\ndeploy/network/database migration\n"
+        "跨 repo 副作用\n",
+    )
+
+    report = SemanticReport()
+    check_low_risk_autonomy_policy_contract(tmp_path, report)
+
+    assert any("外部付费/配额消耗" in item for item in report.failures)
+
+
+def test_check_low_risk_autonomy_policy_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
+    _write_low_risk_autonomy_policy_sources(
+        tmp_path,
+        "Low-Risk Default-Flow Autonomy Policy\n"
+        "allowed\nforbidden\nstop_condition\nevidence_required\n"
+        "route decision\nWorktrack Contract\nruntime dispatch profile\n"
+        "Gate verdict\nrepo-refresh checkpoint\n"
+        "goal change\nscope expansion\nmilestone final acceptance\n"
+        "release / publish / package version / tag / dist-tag\n"
+        "protected branch mutation\nforce push\ndestructive cleanup\n"
+        "secret/security/privacy\ndeploy/network/database migration\n"
+        "跨 repo 副作用\n外部付费/配额消耗\n",
+    )
+
+    report = SemanticReport()
+    check_low_risk_autonomy_policy_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
 def _write_harness_entry_profile_sources(tmp_path: Path, text: str) -> None:
     for relative_path in (
         "docs/harness/foundations/runtime-control-loop.md",
@@ -639,6 +761,9 @@ def test_check_milestone_recommendation_fact_first_contract_accepts_terms(
 def _write_planning_separation_sources(tmp_path: Path, text: str) -> None:
     for relative_path in (
         "docs/harness/artifact/control/milestone.md",
+        "docs/harness/artifact/repo/milestone-backlog.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/foundations/runtime-control-loop.md",
         "docs/harness/artifact/worktrack/plan-task-queue.md",
         "product/harness/skills/repo-whats-next-skill/SKILL.md",
         "product/harness/skills/schedule-worktrack-skill/SKILL.md",
@@ -651,7 +776,8 @@ def test_check_milestone_worktrack_planning_separation_contract_flags_queue_conf
 ) -> None:
     _write_planning_separation_sources(
         tmp_path,
-        "Milestone\nWorktrack\ncandidate\ntask window\n不得\n",
+        "Milestone\nWorktrack\ncandidate\ntask window\nselected_worktrack_id\n"
+        "current worktrack\nworktrack_list\n一次只\n不得\n",
     )
 
     report = SemanticReport()
@@ -665,11 +791,53 @@ def test_check_milestone_worktrack_planning_separation_contract_accepts_terms(
 ) -> None:
     _write_planning_separation_sources(
         tmp_path,
-        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n不得\n",
+        "Milestone\nWorktrack\nPlan / Task Queue\ncandidate\ntask window\n"
+        "selected_worktrack_id\ncurrent worktrack\nworktrack_list\n一次只\n不得\n",
     )
 
     report = SemanticReport()
     check_milestone_worktrack_planning_separation_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_worktrack_task_window_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/worktrack/plan-task-queue.md",
+        "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+        "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+        "product/.servo_template/worktrack/plan-task-queue.md",
+        "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_worktrack_task_window_contract_flags_missing_stop_condition(
+    tmp_path: Path,
+) -> None:
+    _write_worktrack_task_window_sources(
+        tmp_path,
+        "task window\ntask_window_id\nwindow_boundary\nselected_next_action\n"
+        "selected_next_action_id\ndispatch_handoff_packet\ndepends_on\n"
+        "acceptance\nrisk_level\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_task_window_contract(tmp_path, report)
+
+    assert any("stop_condition" in item for item in report.failures)
+
+
+def test_check_worktrack_task_window_contract_accepts_terms(tmp_path: Path) -> None:
+    _write_worktrack_task_window_sources(
+        tmp_path,
+        "task window\ntask_window_id\nwindow_boundary\nselected_next_action\n"
+        "selected_next_action_id\ndispatch_handoff_packet\ndepends_on\n"
+        "acceptance\nrisk_level\nstop_condition\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_task_window_contract(tmp_path, report)
 
     assert report.failures == []
 

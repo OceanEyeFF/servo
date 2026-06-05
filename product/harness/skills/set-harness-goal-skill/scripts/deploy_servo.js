@@ -54,6 +54,7 @@ const TEMPLATE_SPECS = {
       "Current Next Action",
       "Linked Formal Documents",
       "Approval Boundary",
+      "User-Defined Servo Controls",
       "Continuation Authority",
       "Handback Guard",
       "Baseline Traceability",
@@ -71,6 +72,18 @@ const TEMPLATE_SPECS = {
         "gate_evidence",
       ],
       "Approval Boundary": ["needs_programmer_approval", "reason"],
+      "User-Defined Servo Controls": [
+        "continuous_progression_permission",
+        "per_milestone_automatic_worktrack_budget",
+        "default_servo_work_branch",
+        "protected_branch_policy",
+        "branch_mutation_policy",
+        "auto_maintained_runtime_facts_not_asked",
+      ],
+      // Guard terms for auto-maintained runtime facts that initialization must not ask:
+      // runtime facts, active_milestone, active_worktrack, observed_git_hash,
+      // progress_counters, runtime_dispatch_profile, latest_observed_checkpoint,
+      // last_doc_catch_up_checkpoint, milestone_pipeline_summary.
       "Baseline Traceability": [
         "last_verified_checkpoint",
         "latest_observed_checkpoint",
@@ -481,6 +494,7 @@ const TEMPLATE_SPECS = {
       "这是 `.servo/worktrack/plan-task-queue.md` 的运行样例，用来把 worktrack contract 展开成当前执行队列。",
     requiredSections: [
       "Metadata",
+      "Task Window",
       "Task List",
       "Execution Order Notes",
       "Dependencies",
@@ -492,13 +506,25 @@ const TEMPLATE_SPECS = {
     ],
     requiredKeyedFieldsBySection: {
       Metadata: ["worktrack_id", "updated", "current_phase", "contract_ref", "queue_status"],
+      "Task Window": [
+        "task_window_id",
+        "window_boundary",
+        "window_status",
+        "continuation_allowed",
+        "continuation_stop_reason",
+      ],
       "Current Next Action": [
         "selected_next_action_id",
         "selected_next_action",
         "selection_reason",
+        "selected_task_acceptance",
+        "selected_task_risk_level",
+        "selected_task_stop_condition",
       ],
       "Dispatch Handoff Packet": [
+        "dispatch_handoff_packet",
         "task",
+        "task_id",
         "goal_for_this_round",
         "node_type",
         "gate_criteria_for_this_round",
@@ -506,6 +532,11 @@ const TEMPLATE_SPECS = {
         "constraints_for_this_round",
         "acceptance_criteria_for_this_round",
         "verification_requirements",
+        "risk_level",
+        "stop_condition",
+        "runtime_dispatch_mode",
+        "shared_fact_pack",
+        "context_budget",
         "done_signal",
         "required_context",
         "return_to_schedule_if",

@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Control Loop
 status: active
-updated: 2026-06-04
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-04
+last_verified: 2026-06-05
 ---
 
 # Harness Runtime Control Loop
@@ -51,7 +51,7 @@ RepoScope.Observe
 -> RepoScope.Observe
 ```
 
-有 active milestone 时，每个 current worktrack 都走自己的完整闭环；milestone 通过这些独立闭环的累计结果形成聚合进度、Milestone Gate 输入和最终完成判定。
+有 active milestone 时，RepoScope.Decide / Milestone-level scheduler 每轮一次只选择一个 `selected_worktrack_id` / current worktrack。每个 current worktrack 都走自己的完整闭环；milestone 通过这些独立闭环的累计结果形成聚合进度、Milestone Gate 输入和最终完成判定。Worktrack-level scheduler 才能在当前 Worktrack 的 Plan / Task Queue task window 内规划多个 task；Milestone 的 `worktrack_list` 不得被当作 task window、dispatch queue 或批量执行列表。
 
 `Worktrack Intake Review` 是 RepoScope.Decide 输出的一部分，不是 WorktrackScope 内部执行步骤。从 active milestone 派生 current worktrack 前，必须形成 `worktrack_intake_review`，并覆盖：
 
@@ -109,6 +109,15 @@ operator mode matrix 是单入口面对 operator 的触发语义表，不是新�
 当 programmer 明确指示连续执行时，`Worktrack Close` 只是 repo refresh 或 milestone progress update 的状态刷新点，不默认触发 handback。连续推进仍受当前 `Worktrack Contract`、authority boundary、autonomy budget 和 stop conditions 约束。
 
 `autonomy_budget` 每开启一个 autonomous slice 消费 1 个单位。budget 耗尽后不得自动开启新 slice，必须 handback。
+
+低风险默认流程静默推进必须消费 Control State 的 `Low-Risk Default-Flow Autonomy Policy`，并保留同一组结构化字段：
+
+- `allowed`: 只读观察、artifact hydration、状态一致性检查、Worktrack 内队列调度、非破坏性 docs/template/test 编辑、匹配范围的本地验证、通过 Gate 后的 repo-refresh 写回，以及无外部副作用的 scaffold validation。
+- `forbidden`: goal change、scope expansion、milestone final acceptance、release / publish / package version / tag / dist-tag、GitHub Release、publish workflow、protected branch mutation、force push、大量文件删除、destructive cleanup、secret/security/privacy、deploy/network/database migration、跨 repo 副作用、外部付费/配额消耗。
+- `stop_condition`: evidence missing or conflicting、branch mismatch、Gate soft-fail / hard-fail / blocked、context noise / prompt forgetting、需要 programmer 判断、权限边界不清、Worktrack Contract 外扩、protected branch policy 命中、destructive operation 命中、release-sensitive 信号命中、Milestone final acceptance 边界命中。
+- `evidence_required`: route decision、Worktrack Contract / scope boundary、selected task / dispatch packet、runtime dispatch profile、validation / governance / policy evidence、Gate verdict、closeout record、repo-refresh checkpoint。
+
+如果某动作同时匹配 `allowed` 和 `forbidden` 或 `stop_condition`，更严格边界获胜。静默推进只能继续到下一合法控制步骤，不能把缺失 evidence、审批边界或 milestone final acceptance 解释为 pass。
 
 ## Stop Conditions
 

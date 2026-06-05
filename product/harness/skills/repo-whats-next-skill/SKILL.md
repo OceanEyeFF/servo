@@ -125,6 +125,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
       - 检查 Milestone Review Gate route guard：goal-driven active milestone 必须有 `milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 无阻断项。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须设置 `intake_review_verdict = blocked`，在继续阻塞项中写明 `milestone_review_gate_not_ready`，不得推荐 WorktrackScope.Init 或 Worktrack Init/Dispatch。
       - 若 `.servo` runtime artifact 缺少新添加字段，只能使用 conservative runtime backfill：缺失值按 `false`、`unknown`、`missing`、`blocked`、`not ready` 或 `N/A` 处理。Backfill 是 forward-only runtime evidence，不得推断 programmer confirmation、不得扩大权限、不得增加 `milestone_review_count`、不得把 `effective_review_pass` 或 `milestone_review_gate_ready` 设为 true；缺失 review/backfill 字段必须保持 `milestone_review_gate_not_ready`。
       - 先从活跃 Milestone 的 `worktrack_list` 中选取下一个待执行的 worktrack，并对照 worktrack-backlog 过滤已完成/已阻塞/已推迟的 worktrack
+      - RepoScope.Decide / Milestone-level scheduler 每轮一次只输出一个 `selected_worktrack_id` / current worktrack；不得把整个 `worktrack_list` 批量转成 Worktrack `Plan / Task Queue`、task window 或 dispatch queue
       - 将选中的 current worktrack 组织为一个独立执行单元：它拥有自己的 branch、contract、plan-task-queue、verify、closeout 和 repo-refresh 追踪，然后再回到 milestone 上下文继续推进
       - 若 `worktrack_list` 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
       - 若 `worktrack_list` 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `purpose_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
@@ -240,6 +241,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - Candidate milestone recommendation 必须是 fact-first / field-research：先 `observed_facts`，再 `inferred_assumptions`，再 `unknowns`，再 `primary_contradiction` 与 `main_aspect_now`。候选 brief 是 recommendation，不是 live backlog truth；不得自动 create / activate / append。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
 - 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `init-worktrack-skill` 绑定。
+- 从 active milestone 派生 worktrack 时必须携带唯一 `selected_worktrack_id` / current worktrack。一次 RepoScope.Decide 不得选择多个 worktrack；若需要新增、移除、重排或批量调整 worktrack，必须返回 RepoScope.Decide / append-worktrack 路由和必要的 programmer approval。
 - 从 active milestone 派生 worktrack 时必须携带 `worktrack_intake_review`，且只有 `intake_review_verdict = ready_for_worktrack_init` 与 `ready_for_worktrack_init = true` 才能进入 WorktrackScope.Init。缺失 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 或 `add_remove_worktrack_recommendations` 任一字段时，推荐 Init 的行为必须返回 blocked。
 - 从 active goal-driven milestone 派生 worktrack 时还必须满足 Milestone Review Gate route guard：`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 blocked，不得当成 ready。
 - 缺少 additive `.servo` 字段时必须执行 conservative runtime backfill：`false`、`unknown`、`missing`、`blocked`、`not ready`、`N/A`；forward-only；preserve existing observed facts；must not grant permissions；must not infer programmer confirmation；must not increment counters；must not enable Worktrack Init/Dispatch。
@@ -315,6 +317,8 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - `milestone_reevaluation_reason`
 - `derived_from_milestone`
 - `target_milestone_id`
+- `selected_worktrack_id`
+- `current_worktrack`
 - `pipeline_advancement_hint`
 - `worktrack_intake_review`
 - `complex_project_entry_gate`

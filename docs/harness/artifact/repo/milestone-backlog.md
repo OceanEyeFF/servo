@@ -1,9 +1,9 @@
 ---
 title: "Milestone Backlog"
 status: active
-updated: 2026-05-25
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-25
+last_verified: 2026-06-05
 ---
 
 # Milestone Backlog
@@ -30,6 +30,7 @@ last_verified: 2026-05-25
 - `priority`: 整数排序（数值越小优先级越高）
 - `depends_on_milestones`: 前置 Milestone ID 列表（激活前必须完成）
 - `worktrack_list`: 本 milestone 包含的 worktrack ID 列表
+- `selected_worktrack_id`: RepoScope.Decide 每轮从 active milestone 的 `worktrack_list` 中选出的唯一 current worktrack（运行时可在 handoff/control state 中表达；不是 live backlog 必填字段）
 - `created_by`: `programmer` / `harness`
 - `created_at`: 创建时间（ISO 8601）
 - `updated`: 最后更新时间（ISO 8601）
@@ -46,6 +47,8 @@ last_verified: 2026-05-25
 - `completed` 表示 milestone 已完成并移入 history；`superseded` 表示被更新的 milestone 替换（programmer override），保留在 history 但不再参与激活队列
 - live backlog 应保持短而可操作，正常只保留真实待处理项（目标量级约 5-7 个）
 - `milestone_pipeline_summary` 是 aggregate summary：planned/active 来自 live backlog，completed/superseded 来自 milestone history
+- `worktrack_list` 只表达 Milestone 的声明范围和聚合进度。Milestone-level scheduler 一次只允许选择一个 `selected_worktrack_id` / current worktrack；不得把 `worktrack_list` 当成 Worktrack `Plan / Task Queue`、task window、dispatch queue 或 candidate milestone list。
+- 若需要新增、移除、重排 worktrack，必须通过 RepoScope.Decide / append-worktrack 路由和必要的 programmer approval；不得在 WorktrackScope 或 Plan / Task Queue 中静默改写 Milestone backlog。
 
 ## 与正式 artifact 的关系
 

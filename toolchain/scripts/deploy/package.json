@@ -1,6 +1,6 @@
 {
   "name": "servo-installer",
-  "version": "0.6.1-rc.0",
+  "version": "0.6.1-rc.1",
   "description": "servo harness installer: install, verify, diagnose, and update CLI + TUI",
   "bin": {
     "servo-installer": "bin/servo-installer.js"
