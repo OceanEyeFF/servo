@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Closeout Refresh
 status: active
-updated: 2026-05-20
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-05
 ---
 
 # Harness Runtime Closeout Refresh
@@ -21,6 +21,7 @@ merge -> refresh repo snapshot -> update milestone progress -> cleanup -> return
 `closed` 进入条件：
 
 - PR 或等效 merge 完成
+- PR target、merge target 与 checkpoint target 均来自 Worktrack Contract 的 `closeout_target_ref` / `checkpoint_base_ref`，而不是当前 checkout 或默认分支名
 - repo snapshot / worktrack backlog 已刷新
 - milestone progress 已按 closeout 结果更新
 - 临时分支或 runtime handoff 已清理或明确保留理由
@@ -37,13 +38,14 @@ Closeout record 字段词汇由 [worktrack artifact entry](../artifact/worktrack
 Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量：
 
 - current branch / baseline facts
+- Worktrack Branch Policy facts: `branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`
 - latest closed worktrack
 - repo snapshot status
 - worktrack backlog entry
 - milestone progress counter
 - next legal route
 
-刷新完成后，Harness 记录当前 `git rev-parse HEAD` 到 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint`，作为下轮跳过重复 refresh 的幂等性锚点。
+刷新完成后，Harness 记录当前 `git rev-parse HEAD` 到 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint`，作为下轮跳过重复 refresh 的幂等性锚点。Milestone-derived Worktrack 的本轮 checkpoint 可以落在 Milestone integration branch；servo-managed baseline branch 只在 Milestone final acceptance 后更新。
 
 ## Milestone Progress
 
