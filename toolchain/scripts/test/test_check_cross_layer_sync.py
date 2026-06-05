@@ -9,6 +9,7 @@ from check_cross_layer_sync import (
     check_charter_registry_consistency,
     check_contract_template_alignment,
     check_control_state_template_alignment,
+    check_plan_task_queue_template_alignment,
 )
 
 
@@ -192,3 +193,56 @@ def test_control_state_template_alignment_missing_file(tmp_path: Path) -> None:
     result = check_control_state_template_alignment(tmp_path)
     assert result["status"] == "fail"
     assert any("missing" in e for e in result["errors"])
+
+
+def test_plan_task_queue_template_alignment_pass(tmp_path: Path) -> None:
+    terms = "\n".join([
+        "task_window_id",
+        "window_boundary",
+        "selected_next_action_id",
+        "selected_next_action",
+        "dispatch_handoff_packet",
+        "depends_on",
+        "acceptance",
+        "risk_level",
+        "stop_condition",
+    ]) + "\n"
+    write_doc(tmp_path / "docs/harness/artifact/worktrack/plan-task-queue.md", terms)
+    write_doc(tmp_path / "product/.servo_template/worktrack/plan-task-queue.md", terms)
+    write_doc(
+        tmp_path
+        / "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+        terms,
+    )
+
+    result = check_plan_task_queue_template_alignment(tmp_path)
+
+    assert result["status"] == "pass"
+
+
+def test_plan_task_queue_template_alignment_flags_missing_template_field(
+    tmp_path: Path,
+) -> None:
+    terms = "\n".join([
+        "task_window_id",
+        "window_boundary",
+        "selected_next_action_id",
+        "selected_next_action",
+        "dispatch_handoff_packet",
+        "depends_on",
+        "acceptance",
+        "risk_level",
+        "stop_condition",
+    ]) + "\n"
+    write_doc(tmp_path / "docs/harness/artifact/worktrack/plan-task-queue.md", terms)
+    write_doc(tmp_path / "product/.servo_template/worktrack/plan-task-queue.md", terms)
+    write_doc(
+        tmp_path
+        / "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+        terms.replace("stop_condition\n", ""),
+    )
+
+    result = check_plan_task_queue_template_alignment(tmp_path)
+
+    assert result["status"] == "fail"
+    assert any("stop_condition" in item for item in result["errors"])

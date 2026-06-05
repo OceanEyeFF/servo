@@ -33,6 +33,7 @@ from governance_semantic_check import (
     check_milestone_review_gate_contract,
     check_milestone_review_route_guard_contract,
     check_milestone_worktrack_planning_separation_contract,
+    check_worktrack_task_window_contract,
     check_outdated_placeholder_phrases,
     check_path_governance_docs_list_gitignore_entries,
     check_pre_milestone_intake_template_contract,
@@ -791,6 +792,46 @@ def test_check_milestone_worktrack_planning_separation_contract_accepts_terms(
 
     report = SemanticReport()
     check_milestone_worktrack_planning_separation_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_worktrack_task_window_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/worktrack/plan-task-queue.md",
+        "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+        "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+        "product/.servo_template/worktrack/plan-task-queue.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_worktrack_task_window_contract_flags_missing_stop_condition(
+    tmp_path: Path,
+) -> None:
+    _write_worktrack_task_window_sources(
+        tmp_path,
+        "task window\ntask_window_id\nwindow_boundary\nselected_next_action\n"
+        "selected_next_action_id\ndispatch_handoff_packet\ndepends_on\n"
+        "acceptance\nrisk_level\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_task_window_contract(tmp_path, report)
+
+    assert any("stop_condition" in item for item in report.failures)
+
+
+def test_check_worktrack_task_window_contract_accepts_terms(tmp_path: Path) -> None:
+    _write_worktrack_task_window_sources(
+        tmp_path,
+        "task window\ntask_window_id\nwindow_boundary\nselected_next_action\n"
+        "selected_next_action_id\ndispatch_handoff_packet\ndepends_on\n"
+        "acceptance\nrisk_level\nstop_condition\n",
+    )
+
+    report = SemanticReport()
+    check_worktrack_task_window_contract(tmp_path, report)
 
     assert report.failures == []
 
