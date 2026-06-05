@@ -15,6 +15,8 @@ WorktrackScope 是 Harness 两层控制模型中的**快变量层**，负责单�
 
 WorktrackScope 的 mutating steps 必须受 Worktrack Contract Branch Policy 约束。milestone-derived Worktrack 从 `branch_source_ref` 指向的 active Milestone branch 创建，在 `worktrack_branch` 上实施，在 `closeout_target_ref` 指向的 Milestone branch 上 closeout；`baseline_branch` 只代表 Milestone final acceptance 后的最终目标。当前 checkout 与这些 contract ref 不匹配时，只读观察可继续记录 warning，会修改仓库状态的步骤必须进入 blocked/recover。
 
+Branch Environment Guard 在进入 WorktrackScope mutating step 前必须解析当前 `branch_context`：初始化 milestone-derived Worktrack 时应为 `milestone`，实施阶段应为 `worktrack`，closeout/refresh 阶段应匹配 contract-controlled closeout target。
+
 ## WorktrackScope 状态定义
 
 WorktrackScope 下的合法状态共 11 个：

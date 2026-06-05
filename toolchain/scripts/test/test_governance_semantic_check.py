@@ -15,6 +15,7 @@ from governance_semantic_check import (
     check_adapter_wrappers_are_thin,
     check_artifact_skill_alignment,
     check_aw_residue_classification_contract,
+    check_branch_policy_contract,
     check_canonical_skill_packages_are_minimal,
     check_closeout_record_contract,
     check_conservative_backfill_contract,
@@ -977,6 +978,68 @@ def test_check_worktrack_intake_review_contract_accepts_complete_sources(tmp_pat
     check_worktrack_intake_review_contract(tmp_path, report)
 
     assert report.failures == []
+
+
+BRANCH_POLICY_COMPLETE_TEXT = (
+    "Branch Policy\nbaseline_branch\nbranch_source_ref\nworktrack_branch\n"
+    "integration_target_ref\ncloseout_target_ref\ncheckpoint_base_ref\n"
+    "Branch Environment Guard\nbranch_context\nbaseline\nmilestone\nworktrack\nunknown\n"
+    "active_milestone_branch\ncurrent_branch_context\nexpected_branch_context\n"
+    "branch_context_guard_status\nbranch_context_required_ref\n"
+)
+
+
+def _write_branch_policy_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/worktrack/contract.md",
+        "docs/harness/artifact/standard-fields.md",
+        "product/harness/skills/init-worktrack-skill/SKILL.md",
+        "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+        "product/harness/skills/close-worktrack-skill/SKILL.md",
+        "product/harness/skills/repo-refresh-skill/SKILL.md",
+        "product/harness/skills/worktrack-status-skill/SKILL.md",
+        "product/harness/skills/recover-worktrack-skill/SKILL.md",
+        "docs/harness/artifact/control/control-state.md",
+        "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+        "product/.servo_template/control-state.md",
+        "docs/harness/foundations/runtime-state-hydration.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "docs/harness/scope/repo-scope.md",
+        "docs/harness/scope/worktrack-scope.md",
+        "docs/harness/catalog/supervisor.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_branch_policy_contract_accepts_complete_sources(tmp_path: Path) -> None:
+    _write_branch_policy_sources(tmp_path, BRANCH_POLICY_COMPLETE_TEXT)
+
+    report = SemanticReport()
+    check_branch_policy_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_branch_policy_contract_flags_missing_field(tmp_path: Path) -> None:
+    _write_branch_policy_sources(tmp_path, BRANCH_POLICY_COMPLETE_TEXT.replace("checkpoint_base_ref\n", ""))
+
+    report = SemanticReport()
+    check_branch_policy_contract(tmp_path, report)
+
+    assert any("checkpoint_base_ref" in item for item in report.failures)
+
+
+def test_check_branch_policy_contract_flags_legacy_baseline_only_guard(tmp_path: Path) -> None:
+    _write_branch_policy_sources(
+        tmp_path,
+        BRANCH_POLICY_COMPLETE_TEXT + "必须在 `baseline_branch` 上执行\n",
+    )
+
+    report = SemanticReport()
+    check_branch_policy_contract(tmp_path, report)
+
+    assert any("baseline-only guard phrase" in item for item in report.failures)
 
 
 def test_check_adapter_wrappers_are_thin_ignores_absent_adapter_layer(tmp_path: Path) -> None:
@@ -2935,9 +2998,12 @@ def _write_runtime_artifacts(
     active_milestone: str = "MS-001",
     active_worktrack: str = "none",
     milestone_status: str = "active",
+    active_milestone_continuation_state: str = "ready",
     summary: str = "planned=0 / active=1 / completed=1 / superseded=0",
     backlog_entries: str | None = None,
     history_entries: str | None = None,
+    milestone_branch: str = "ms/MS-001-branch",
+    milestone_artifact_continuation_state: str = "ready",
     milestone_artifact_status: str = "active",
     milestone_artifact_completed: int = 0,
     milestone_artifact_total: int = 1,
@@ -2958,6 +3024,7 @@ def _write_runtime_artifacts(
                 f"- active_milestone: {active_milestone}",
                 f"- milestone_status: {milestone_status}",
                 f"- milestone_pipeline_summary: {summary}",
+                f"- active_milestone_continuation_state: {active_milestone_continuation_state}",
                 "",
             ]
         ),
@@ -2967,6 +3034,8 @@ def _write_runtime_artifacts(
             [
                 "- milestone_id: MS-001",
                 "  - status: active",
+                f"  - milestone_branch: {milestone_branch}",
+                "  - continuation_state: ready",
                 "  - worktrack_list:",
                 "    - WT-001 (planned)",
                 "",
@@ -3003,6 +3072,13 @@ def _write_runtime_artifacts(
                 "",
                 "## status",
                 f'status: "{milestone_artifact_status}"',
+                "",
+                "## milestone_branch",
+                "milestone_branch:",
+                f'  name: "{milestone_branch}"',
+                "",
+                "## continuation_state",
+                f'continuation_state: "{milestone_artifact_continuation_state}"',
                 "",
                 "## worktrack_list",
                 "worktrack_list:",
@@ -3180,6 +3256,20 @@ def test_check_runtime_artifact_consistency_flags_completed_artifact_still_live(
     assert any("active_milestone MS-001 points to completed/superseded" in item for item in report.failures)
 
 
+def test_check_runtime_artifact_consistency_flags_suspended_primary_status(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        milestone_artifact_status="suspended",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("invalid primary status 'suspended'" in item for item in report.failures)
+
+
 def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(
     tmp_path: Path,
 ) -> None:
@@ -3193,6 +3283,57 @@ def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_flags_paused_milestone_retaining_active_worktrack(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path,
+        active_worktrack="WT-001",
+        active_milestone_continuation_state="waiting_external",
+        milestone_artifact_continuation_state="waiting_external",
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any(
+        "continuation_state waiting_external retains active_worktrack WT-001" in item
+        for item in report.failures
+    )
+
+
+def test_check_runtime_artifact_consistency_flags_milestone_worktrack_wrong_closeout_target(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(tmp_path)
+    write_doc(
+        tmp_path / ".servo/worktrack/contract.md",
+        "\n".join(
+            [
+                "# Worktrack Contract",
+                "",
+                "- worktrack_id: WT-001",
+                "- milestone_id: MS-001",
+                "- derived_from_milestone: true",
+                "- baseline_branch: develop",
+                "- branch_source_ref: ms/MS-001-branch@abc123",
+                "- worktrack_branch: wt-001",
+                "- integration_target_ref: develop",
+                "- closeout_target_ref: develop",
+                "- checkpoint_base_ref: ms/MS-001-branch@abc123",
+                "- final_baseline_branch: develop",
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert any("integration_target_ref='develop' does not target milestone_branch" in item for item in report.failures)
+    assert any("closeout_target_ref='develop' does not target milestone_branch" in item for item in report.failures)
 
 
 def test_check_runtime_artifact_consistency_flags_active_worktrack_closed_expected_status(
@@ -3312,6 +3453,11 @@ def test_runtime_artifact_consistency_simulation_matches_expected_outcomes() -> 
     assert failures_by_id["consistent-active"] == []
     assert any("remains live as status 'active'" in item for item in failures_by_id["completed-artifact-still-live"])
     assert any("active_worktrack WT-001 points to closed worktrack" in item for item in failures_by_id["active-worktrack-closed"])
+    assert any("invalid primary status 'suspended'" in item for item in failures_by_id["suspended-primary-status"])
+    assert any(
+        "continuation_state waiting_external retains active_worktrack WT-001" in item
+        for item in failures_by_id["paused-retains-active-worktrack"]
+    )
     assert any("incomplete progress 0/1" in item for item in failures_by_id["completed-artifact-incomplete-progress"])
     assert failures_by_id["active-expected-status-completed"] == []
 
