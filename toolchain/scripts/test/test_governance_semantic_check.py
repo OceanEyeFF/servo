@@ -46,6 +46,7 @@ from governance_semantic_check import (
     check_root_tool_shims_disable_bytecode,
     check_runtime_artifact_consistency,
     check_runtime_dispatch_profile_contract,
+    check_low_risk_autonomy_policy_contract,
     check_user_defined_servo_controls_contract,
     check_required_handoffs,
     check_subagent_dispatch_default_contract,
@@ -617,6 +618,59 @@ def test_check_user_defined_servo_controls_contract_accepts_complete_sources(
 
     report = SemanticReport()
     check_user_defined_servo_controls_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
+def _write_low_risk_autonomy_policy_sources(tmp_path: Path, text: str) -> None:
+    for relative_path in (
+        "docs/harness/artifact/control/control-state.md",
+        "docs/harness/foundations/runtime-control-loop.md",
+        "product/harness/skills/harness-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, text)
+
+
+def test_check_low_risk_autonomy_policy_contract_flags_missing_boundary(
+    tmp_path: Path,
+) -> None:
+    _write_low_risk_autonomy_policy_sources(
+        tmp_path,
+        "Low-Risk Default-Flow Autonomy Policy\n"
+        "allowed\nforbidden\nstop_condition\nevidence_required\n"
+        "route decision\nWorktrack Contract\nruntime dispatch profile\n"
+        "Gate verdict\nrepo-refresh checkpoint\n"
+        "goal change\nscope expansion\nmilestone final acceptance\n"
+        "release / publish / package version / tag / dist-tag\n"
+        "protected branch mutation\nforce push\ndestructive cleanup\n"
+        "secret/security/privacy\ndeploy/network/database migration\n"
+        "跨 repo 副作用\n",
+    )
+
+    report = SemanticReport()
+    check_low_risk_autonomy_policy_contract(tmp_path, report)
+
+    assert any("外部付费/配额消耗" in item for item in report.failures)
+
+
+def test_check_low_risk_autonomy_policy_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
+    _write_low_risk_autonomy_policy_sources(
+        tmp_path,
+        "Low-Risk Default-Flow Autonomy Policy\n"
+        "allowed\nforbidden\nstop_condition\nevidence_required\n"
+        "route decision\nWorktrack Contract\nruntime dispatch profile\n"
+        "Gate verdict\nrepo-refresh checkpoint\n"
+        "goal change\nscope expansion\nmilestone final acceptance\n"
+        "release / publish / package version / tag / dist-tag\n"
+        "protected branch mutation\nforce push\ndestructive cleanup\n"
+        "secret/security/privacy\ndeploy/network/database migration\n"
+        "跨 repo 副作用\n外部付费/配额消耗\n",
+    )
+
+    report = SemanticReport()
+    check_low_risk_autonomy_policy_contract(tmp_path, report)
 
     assert report.failures == []
 
