@@ -303,6 +303,36 @@ USER_DEFINED_SERVO_CONTROLS_GUARD_TERMS = [
     "last_doc_catch_up_checkpoint",
     "milestone_pipeline_summary",
 ]
+LOW_RISK_AUTONOMY_POLICY_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+]
+LOW_RISK_AUTONOMY_REQUIRED_TERMS = [
+    "Low-Risk Default-Flow Autonomy Policy",
+    "allowed",
+    "forbidden",
+    "stop_condition",
+    "evidence_required",
+    "route decision",
+    "Worktrack Contract",
+    "runtime dispatch profile",
+    "Gate verdict",
+    "repo-refresh checkpoint",
+]
+LOW_RISK_AUTONOMY_FORBIDDEN_BOUNDARY_TERMS = [
+    "goal change",
+    "scope expansion",
+    "milestone final acceptance",
+    "release / publish / package version / tag / dist-tag",
+    "protected branch mutation",
+    "force push",
+    "destructive cleanup",
+    "secret/security/privacy",
+    "deploy/network/database migration",
+    "跨 repo 副作用",
+    "外部付费/配额消耗",
+]
 HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS = [
     "docs/harness/foundations/runtime-control-loop.md",
     "product/harness/skills/harness-skill/SKILL.md",
@@ -1544,6 +1574,30 @@ def check_user_defined_servo_controls_contract(repo_root: Path, report: Semantic
     report.add_info(f"checked {checked} user-defined Servo controls contract sources")
 
 
+def check_low_risk_autonomy_policy_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in LOW_RISK_AUTONOMY_POLICY_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing low-risk autonomy policy source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in LOW_RISK_AUTONOMY_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"low-risk autonomy policy missing required term {term!r}: "
+                    f"{relative_path}"
+                )
+        for term in LOW_RISK_AUTONOMY_FORBIDDEN_BOUNDARY_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"low-risk autonomy policy missing forbidden boundary {term!r}: "
+                    f"{relative_path}"
+                )
+    report.add_info(f"checked {checked} low-risk autonomy policy sources")
+
+
 def check_harness_entry_profile_route_hint_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -2588,6 +2642,7 @@ def main() -> int:
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
     check_user_defined_servo_controls_contract(repo_root, report)
+    check_low_risk_autonomy_policy_contract(repo_root, report)
     check_harness_entry_profile_route_hint_contract(repo_root, report)
     check_milestone_recommendation_fact_first_contract(repo_root, report)
     check_milestone_worktrack_planning_separation_contract(repo_root, report)

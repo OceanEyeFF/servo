@@ -448,6 +448,11 @@ Gate 应汇总**正交校验面**的裁决：
 3. 如果是 `失败/阻塞` → 进入 `Recover`
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
 5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
+   - 连续执行或低风险 Worktrack 自批必须同时满足 Control State 的 `Low-Risk Default-Flow Autonomy Policy`：`allowed` 命中、`forbidden` 未命中、`stop_condition` 未命中、`evidence_required` 已能满足或已安排。
+   - `allowed` 仅覆盖已批准 milestone / worktrack 边界内的只读观察、artifact hydration、状态一致性检查、Worktrack 内队列调度、非破坏性 docs/template/test 编辑、匹配范围本地验证、通过 Gate 后 repo-refresh 写回、无外部副作用 scaffold validation。
+   - `forbidden` 包括 goal change、scope expansion、milestone final acceptance、release / publish / package version / tag / dist-tag、GitHub Release、publish workflow、protected branch mutation、force push、大量文件删除、destructive cleanup、secret/security/privacy、deploy/network/database migration、跨 repo 副作用、外部付费/配额消耗。
+   - `stop_condition` 包括 evidence missing or conflicting、branch mismatch、Gate soft-fail / hard-fail / blocked、context noise / prompt forgetting、需要 programmer 判断、权限边界不清、Worktrack Contract 外扩、protected branch policy 命中、destructive operation 命中、release-sensitive 信号命中、Milestone final acceptance 边界命中。
+   - `evidence_required` 至少包括 route decision、Worktrack Contract / scope boundary、selected task / dispatch packet、runtime dispatch profile、validation / governance / policy evidence、Gate verdict、closeout record、repo-refresh checkpoint。任一 forbidden 或 stop_condition 命中时，不得静默推进，必须 handback、审批或 recover。
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
    - **Final Acceptance 事务边界**：
      - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。

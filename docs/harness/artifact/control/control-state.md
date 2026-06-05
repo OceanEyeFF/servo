@@ -68,6 +68,17 @@ For missing additive Milestone Review Gate fields, conservative runtime backfill
 
 一次性执行授权只写入本轮 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新上述 user-defined controls。
 
+## Low-Risk Default-Flow Autonomy Policy
+
+当 `continuous_progression_permission` 与当前 Milestone / Worktrack 授权允许连续推进时，Harness 仍只能对低风险默认流程静默推进。该策略必须用结构化字段表达：
+
+- `allowed`: 已批准 milestone / worktrack 边界内的只读观察、artifact hydration、状态一致性检查、队列调度、非破坏性文档/模板/测试编辑、匹配范围的本地验证、已通过 Gate 后的 repo-refresh 写回，以及不会产生外部副作用的 scaffold validation。
+- `forbidden`: goal change、scope expansion、milestone final acceptance、release / publish / package version / tag / dist-tag 变更、GitHub Release 或 publish workflow、protected branch mutation、force push、大量文件删除、destructive cleanup、secret/security/privacy 处理、deploy/network/database migration、跨 repo 副作用、外部付费/配额消耗，以及任何用户标记为需通知的动作。
+- `stop_condition`: 证据缺失或冲突、branch mismatch、Gate soft-fail / hard-fail / blocked、context noise 或提示遗忘明显、需要 programmer 判断、权限边界不清、Worktrack Contract 外扩、protected branch policy 命中、destructive operation 命中、release-sensitive 信号命中、Milestone final acceptance 边界命中。
+- `evidence_required`: route decision、Worktrack Contract 与 scope boundary、selected task / dispatch packet、runtime dispatch profile（发生 dispatch 时）、validation / governance / policy evidence、Gate verdict、closeout record、repo-refresh checkpoint（基线变化时）。
+
+低风险静默推进不是默认扩大权限。任一 `forbidden` 或 `stop_condition` 命中时，Harness 必须 handback 或进入审批 / recover 路由；不得用 `allowed` 项覆盖更严格的 authority boundary。一次性连续执行额度只适用于当前批准周期，不能写成长期默认。
+
 若支持 contract-boundary 后自主续跑，还需最小 Continuation Authority 策略位：
 
 - `post_contract_autonomy`: `delegated-minimal`（默认）/`manual-only`（strict handback 诊断）
