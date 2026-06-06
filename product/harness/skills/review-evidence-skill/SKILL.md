@@ -13,12 +13,14 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 
 这个技能会使用专用 `通用高能力模型` `子代理` 执行一轮限定范围审查证据，打包本轮最小审查上下文，收集代码审查与结构风险信号，并返回一个供后续关卡综合使用的标准化审查维度封套。
 
-本技能按 `review_profile` 选择审查 lanes，而不是所有变更固定四路。`review_profile` 的权威定义见 `docs/harness/artifact/worktrack/gate-evidence.md`：
+本技能按 `review_profile` 选择审查 lanes，而不是所有变更固定四路。运行时 profile 规则随本技能分发如下：
 
 - `light`：`static-semantic-review`
 - `standard`：`static-semantic-review` + `test-review`
 - `risky`：`static-semantic-review` + `test-review` + `project-security-review`
 - `deep`：四路完整覆盖
+
+默认选择：docs-only 小修用 `light`；普通 canonical skill/docs/test 修改用 `standard`；dispatch、authority、path governance、adapter/deploy 安全边界用 `risky`；control-state、gate、installer/publish、destructive action 用 `deep`。Source-side authoring trace: `docs/harness/artifact/worktrack/gate-evidence.md`。
 
 四个可用审查 SubAgent lanes 为：
 
@@ -166,7 +168,7 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 - 必须先确定 `review_profile`，再选择 review lanes；不得对低风险小改默认强制四路 review。
 - 当 `review_profile: deep` 且运行时支持真实 SubAgent 委派、权限边界允许时，必须并行分派四个 review SubAgent；降级成单个泛化 review 的行为必须显式暴露为 `runtime fallback`。

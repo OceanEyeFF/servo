@@ -68,9 +68,9 @@ Milestone Review Gate route guard: `effective_pass` with review count >= 1 and a
 
 ## Execution Policy
 
-> Execution Policy canonical semantics are not repeated here. Use `execution_policy_contract_ref` as the authority reference.
+> Execution Policy canonical semantics are not repeated here. Runtime defaults are embedded below so installed skill packages do not need source-repo docs. Source-side authoring trace: docs/harness/artifact/worktrack/contract.md#execution-policy.
 
-- execution_policy_contract_ref: docs/harness/artifact/worktrack/contract.md#execution-policy
+- execution_policy_contract_ref: bundled-runtime-semantics
 - runtime_dispatch_mode: auto
 - dispatch_mode_source: worktrack-contract
 - allowed_values: auto / delegated / current-carrier
