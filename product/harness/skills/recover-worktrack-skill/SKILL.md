@@ -118,7 +118,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 - 仅当恢复决策已完成、审批已通过时，沿恢复路径继续执行才合法。仅因重试看起来可行而继续沿失败路径执行的行为必须被阻断。
 - `回滚`、`拆分工作追踪` 或 `刷新基准` 的唯一合法处理方式是作为需要程序员审批的显式恢复决策。将其作为隐藏实现细节的行为禁止发生。

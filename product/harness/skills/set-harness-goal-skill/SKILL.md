@@ -137,9 +137,9 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
      ```
    - `assets/` 目录遵循 Codex Skills 标准，存放本技能所需的模板、资源和参考文档
    - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
-   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`
+   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/set-harness-goal-skill/`
    - 也可以单独运行 `node scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
-   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `servo-set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
+   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
    - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为已完成并 no-op
    - 复制时只复制模板骨架；内容字段（如 Project Vision、autonomy 参数等）由第 3~5 步的分析结果填充
    - 不覆盖已存在的文件；如果 `.servo/` 中已有同名文件，保留现有文件并报告冲突
@@ -163,7 +163,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 
@@ -245,7 +245,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 | `assets/worktrack/contract.md` | 工作追踪契约模板骨架 | `.servo/worktrack/contract.md`（直接复制） |
 | `assets/worktrack/gate-evidence.md` | 关卡证据模板骨架 | `.servo/worktrack/gate-evidence.md`（直接复制） |
 | `assets/worktrack/plan-task-queue.md` | 计划任务队列模板骨架 | `.servo/worktrack/plan-task-queue.md`（直接复制） |
-| `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选安装本技能到 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/` |
+| `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选安装本技能到 `<deploy-path>/.claude/skills/set-harness-goal-skill/` |
 
 这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_servo.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 `.claude/skills` root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.servo` 模板源码根的行为必须返回 blocked。
 
