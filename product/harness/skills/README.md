@@ -2,6 +2,30 @@
 
 `product/harness/skills/` 目录存放 `Harness` 调度器的标准可执行源文件。
 
+## Distributed Skill Product Shape
+
+`product/harness/skills/` is the canonical source root for distributed Harness skill packages. Each immediate child skill directory is a distribution unit: after adapter deploy copies it into `.agents/skills/` or `.claude/skills/`, the installed package must remain operator-readable and executable without this source repository.
+
+The source root may link to `docs/harness/` for authoring ownership, doctrine, catalog traceability, and long-form design history. Distributed runtime semantics are stricter: if a skill needs a contract, checklist, template, script, or short reference while it is being executed in a target repository, that material must be in the same skill package and included by the adapter payload.
+
+Allowed runtime package surface:
+
+- `SKILL.md`: the primary executable instruction and runtime contract for the skill.
+- `templates/`: files the skill copies, renders, or asks the operator to use.
+- `references/`: short runtime references that are bundled with the skill package.
+- `scripts/`: skill-private helper scripts. Shared deploy, testing, and governance logic stays in `toolchain/`.
+- `assets/`: skill-private static assets.
+
+Distributed skill packages must not require any of the following to execute their runtime semantics:
+
+- `docs/harness/`, `docs/project-maintenance/`, or any other source-repository docs path in the target repo.
+- `.agents/`, `.claude/`, `.servo/`, `.nav/`, `.autoworkflow/`, or `.spec-workflow/` paths outside the current package, except as explicitly named deploy targets or runtime artifacts the skill is instructed to create or inspect.
+- Parent-directory escapes such as `../` for runtime-authority files.
+- Package-external symlinks.
+- Repo-external absolute paths, local machine paths, or unpublished contracts.
+
+Trace links to docs are acceptable only as source-side ownership or authoring references. They are not runtime authority for installed packages. When a docs contract becomes necessary at runtime, copy the minimal stable contract into `SKILL.md` or into a bundled file under the same skill package, then ensure adapter payload descriptors include that file.
+
 当前阶段：
 
 - 已落地的顶层入口是 [harness-skill/](./harness-skill/)：顶层监督入口
