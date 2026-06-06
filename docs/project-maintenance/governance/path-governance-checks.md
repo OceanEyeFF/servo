@@ -33,7 +33,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 6. `docs/harness/README.md` 及子入口存在，继续链接 foundations/scope/artifact/Skills/workflow-families
 7. `docs/` 正文保留 frontmatter；`project-maintenance/` 与 `harness/` status 匹配语义；无 `status:suspended` 误用
 8. `.gitignore` 忽略 `.servo/`、`.agents/`、`.claude/`、legacy / compatibility state `.autoworkflow/`、`.spec-workflow/`、installer run logs `.logs/`、`**/__pycache__/`、`.pytest_cache/`、`*.pyc`、`*.pyo`
-9. `governance_semantic_check.py` — 关键承接关系存在（toolchain-layering -> scripts、docs/harness -> 子入口、product/harness -> docs/harness、artifact/worktrack -> contract/queue/gate），并拦截未分类 `.aw` / `aw-*` / `aw.marker` residue，例如 canonical source 中的实体 `aw.marker`、adapter payload marker identity 漂移、以及不在 `legacy_target_dirs` / `legacy_skill_ids` 的 legacy `aw-*` 值
+9. `governance_semantic_check.py` — 关键承接关系存在（toolchain-layering -> scripts、docs/harness -> 子入口、product/harness -> docs/harness、artifact/worktrack -> contract/queue/gate），并拦截未分类 `.aw` / `aw-*` / `aw.marker` residue，例如 canonical source 中的实体 `aw.marker`、adapter payload marker identity 漂移、以及不在 `legacy_target_dirs` / `legacy_skill_ids` 的 legacy `aw-*` 值；同时检查 `product/harness/skills/*` distributed skill package 不含包内 symlink、adapter `canonical_paths` 完整覆盖包内 runtime source、`required_payload_files` 与实际分发文件一致，且包内运行时文本不把 source-repo `docs/harness/` 或 `toolchain/scripts/test/` 当执行 authority / fallback
 10. foundations 无同名前缀 shadow 文件；关键入口无已退役 placeholder 回流；根兼容入口不引用已退役 adjacent-systems
 11. `product/harness/` 及子目录保持最小 executable root 骨架
 12. `docs/harness/workflow-families/` 把 `docs/` 作 ontology 上游，不从 `product/harness/` 反向定义

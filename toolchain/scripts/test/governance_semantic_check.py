@@ -1015,6 +1015,28 @@ AW_RESIDUE_CLASSIFICATION_CONTRACT = (
 ADAPTER_PAYLOAD_GLOB = "product/harness/adapters/*/skills/*/payload.json"
 CANONICAL_SOURCE_MARKER_GLOB = "product/harness/skills/**/aw.marker"
 ADAPTER_SOURCE_MARKER_GLOB = "product/harness/adapters/**/aw.marker"
+CANONICAL_DISTRIBUTED_SKILLS_DIR = Path("product/harness/skills")
+PAYLOAD_GENERATED_FILES = {"aw.marker", "payload.json"}
+PAYLOAD_SOURCE_EXCLUDED_NAMES = {
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    "aw.marker",
+    "payload.json",
+}
+PAYLOAD_SOURCE_EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS = [
+    re.compile(r"遵循\s*\[docs/harness/"),
+    re.compile(r"execution_policy_contract_ref:\s*docs/harness/"),
+    re.compile(r"以\s*`?docs/harness/[^`\\s]*`?\s*为准"),
+    re.compile(r"最终内容应与\s*`?docs/harness/"),
+    re.compile(r"toolchain/scripts/test/complexity_signal_scanner\\.py"),
+    re.compile(r"DEFAULT_CLAUDE_SKILL_NAME\s*=\s*\"servo-set-harness-goal-skill\""),
+]
+SOURCE_TRACE_MARKERS = [
+    "Source-side authoring trace",
+    "Source-side authoring traces",
+]
 AW_RESIDUE_CONTRACT_REQUIRED_TERMS = [
     "compatibility-allowed",
     "runtime-migration-contract",
@@ -1460,6 +1482,176 @@ def check_aw_residue_classification_contract(repo_root: Path, report: SemanticRe
 
     report.add_info(
         f"checked {checked} .aw residue classification entries and {len(payload_paths)} adapter payloads"
+    )
+
+
+def canonical_payload_source_paths(canonical_dir: Path, repo_root: Path) -> set[str]:
+    paths: set[str] = set()
+    for path in canonical_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(part in PAYLOAD_SOURCE_EXCLUDED_NAMES for part in path.parts):
+            continue
+        if path.suffix in PAYLOAD_SOURCE_EXCLUDED_SUFFIXES:
+            continue
+        paths.add(to_relative_posix(path, repo_root))
+    return paths
+
+
+def line_has_source_trace(line: str) -> bool:
+    return any(marker in line for marker in SOURCE_TRACE_MARKERS)
+
+
+def check_distributed_skill_packages_are_self_contained(repo_root: Path, report: SemanticReport) -> None:
+    skills_root = repo_root / CANONICAL_DISTRIBUTED_SKILLS_DIR
+    if not skills_root.is_dir():
+        report.add_failure(
+            f"missing distributed skill source root: {CANONICAL_DISTRIBUTED_SKILLS_DIR.as_posix()}"
+        )
+        return
+
+    checked_skills = 0
+    checked_payloads = 0
+    for package_dir in sorted(path for path in skills_root.iterdir() if path.is_dir()):
+        checked_skills += 1
+        relative_package_dir = to_relative_posix(package_dir, repo_root)
+
+        skill_entry = package_dir / "SKILL.md"
+        if not skill_entry.is_file():
+            report.add_failure(f"distributed skill package missing SKILL.md: {relative_package_dir}")
+
+        for path in sorted(package_dir.rglob("*")):
+            if path.is_symlink():
+                report.add_failure(
+                    "distributed skill package must not contain symlinked runtime files: "
+                    f"{to_relative_posix(path, repo_root)}"
+                )
+                continue
+            if not path.is_file():
+                continue
+
+            relative_path = to_relative_posix(path, repo_root)
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                if line_has_source_trace(line):
+                    continue
+                for pattern in PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS:
+                    if pattern.search(line):
+                        report.add_failure(
+                            "distributed skill package contains package-external runtime dependency "
+                            f"{relative_path}:{line_number}"
+                        )
+
+    payload_paths = sorted(repo_root.glob(ADAPTER_PAYLOAD_GLOB))
+    for payload_path in payload_paths:
+        checked_payloads += 1
+        relative_payload_path = to_relative_posix(payload_path, repo_root)
+        try:
+            payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(f"adapter payload JSON is invalid: {relative_payload_path}:{exc.lineno}")
+            continue
+
+        canonical_dir_value = payload.get("canonical_dir")
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        target_dir = payload.get("target_dir")
+
+        if not isinstance(canonical_dir_value, str):
+            report.add_failure(f"adapter payload missing string canonical_dir: {relative_payload_path}")
+            continue
+        canonical_dir = repo_root / canonical_dir_value
+        if not canonical_dir.is_dir():
+            report.add_failure(
+                f"adapter payload canonical_dir is missing: {relative_payload_path}:{canonical_dir_value}"
+            )
+            continue
+        try:
+            canonical_dir.relative_to(skills_root)
+        except ValueError:
+            report.add_failure(
+                f"adapter payload canonical_dir escapes distributed skill root: {relative_payload_path}"
+            )
+
+        if not isinstance(canonical_paths, list) or not all(isinstance(path, str) for path in canonical_paths):
+            report.add_failure(f"adapter payload missing string canonical_paths list: {relative_payload_path}")
+            continue
+        if not isinstance(required_payload_files, list) or not all(
+            isinstance(path, str) for path in required_payload_files
+        ):
+            report.add_failure(
+                f"adapter payload missing string required_payload_files list: {relative_payload_path}"
+            )
+            continue
+        if not isinstance(target_dir, str) or "/" in target_dir or target_dir in {"", ".", ".."}:
+            report.add_failure(f"adapter payload target_dir must be one package directory name: {relative_payload_path}")
+
+        canonical_set = set(canonical_paths)
+        for canonical_path in canonical_set:
+            path = Path(canonical_path)
+            if path.is_absolute() or ".." in path.parts:
+                report.add_failure(
+                    f"adapter payload canonical_path escapes package source: {relative_payload_path}:{canonical_path}"
+                )
+                continue
+            full_path = repo_root / path
+            if not full_path.exists():
+                report.add_failure(
+                    f"adapter payload canonical_path missing source file: {relative_payload_path}:{canonical_path}"
+                )
+                continue
+            try:
+                full_path.relative_to(canonical_dir)
+            except ValueError:
+                report.add_failure(
+                    f"adapter payload canonical_path is outside canonical_dir: {relative_payload_path}:{canonical_path}"
+                )
+
+        expected_paths = canonical_payload_source_paths(canonical_dir, repo_root)
+        missing_paths = sorted(expected_paths - canonical_set)
+        stale_paths = sorted(canonical_set - expected_paths)
+        for missing_path in missing_paths:
+            report.add_failure(
+                f"adapter payload missing canonical source file: {relative_payload_path}:{missing_path}"
+            )
+        for stale_path in stale_paths:
+            report.add_failure(
+                "adapter payload lists stale or generated file as canonical source: "
+                f"{relative_payload_path}:{stale_path}"
+            )
+
+        expected_required_files: set[str] = set()
+        for canonical_path in canonical_set:
+            try:
+                expected_required_files.add(
+                    to_relative_posix(repo_root / canonical_path, canonical_dir)
+                )
+            except ValueError:
+                continue
+        for generated_file in PAYLOAD_GENERATED_FILES:
+            expected_required_files.add(generated_file)
+
+        required_set = set(required_payload_files)
+        missing_required_files = sorted(expected_required_files - required_set)
+        stale_required_files = sorted(required_set - expected_required_files)
+        for required_file in missing_required_files:
+            report.add_failure(
+                f"adapter payload required_payload_files missing distributed file "
+                f"{required_file!r}: {relative_payload_path}"
+            )
+        for required_file in stale_required_files:
+            report.add_failure(
+                f"adapter payload required_payload_files lists file not copied from canonical source "
+                f"{required_file!r}: {relative_payload_path}"
+            )
+
+    report.add_info(
+        f"checked {checked_skills} distributed skill packages and {checked_payloads} adapter payloads "
+        "for self-containment"
     )
 
 
@@ -2923,6 +3115,7 @@ def main() -> int:
     check_root_tool_shims_disable_bytecode(repo_root, report)
     check_agents_route_slimming_contract(repo_root, report)
     check_aw_residue_classification_contract(repo_root, report)
+    check_distributed_skill_packages_are_self_contained(repo_root, report)
     check_path_governance_docs_list_gitignore_entries(repo_root, report)
     check_review_verify_docs_list_closeout_steps(repo_root, report)
     check_docs_list_closeout_cache_roots(repo_root, report)
