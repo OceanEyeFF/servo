@@ -22,7 +22,7 @@
 - repo-init 命中 complex-project trigger 时，可以通过 `--complex-project-entry-gate` 额外生成 [repo/complex-project-entry-gate.md](./repo/complex-project-entry-gate.md)；`--weak-doc-onboarding` 会自动生成该 gate。它记录 `complex_project_entry_gate`、`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和结构化 `reinforcement_milestone_recommendation`；它是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。生成样例默认 `pending_programmer_confirmation`、`block_create, block_upsert, block_activate, block_derive_worktrack`、`needed = true`、`blocks_implementation_until_resolved = true`，不会预授权 `normal`、`autoreview` 或 `yolo`。scanner 随 skill payload 分发为 `scripts/complexity_signal_scanner.py`；安装后路径为 `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py` 或 `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`
 - 建议通过 [../scripts/deploy_servo.js](../scripts/deploy_servo.js) 生成 `.servo/` 样例，而不是手工复制这些文件
 - 用法固定为把目标 repo / worktree 根作为 `--deploy-path` 传入；脚本会在 `<deploy-path>/.servo/` 下生成文件
-- 如果目标 repo 也要给 Claude Code 暴露本技能，可在 `generate` 时追加 `--install-claude-skill`，或单独运行 `install-claude-skill` 子命令；目标路径是 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`
+- 如果目标 repo 也要给 Claude Code 暴露本技能，可在 `generate` 时追加 `--install-claude-skill`，或单独运行 `install-claude-skill` 子命令；目标路径是 `<deploy-path>/.claude/skills/set-harness-goal-skill/`
 - Claude install 允许 root 层 symlink / mount，但拒绝目标 skill 目录本身或其内部已有 symlink；完整边界见 `SKILL.md` 与 Claude usage help
 - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为 already installed 并 no-op
 - 需要完整参数说明时，直接运行 `node scripts/deploy_servo.js generate --help`
@@ -30,7 +30,7 @@
 - goal 修正文档不进入 `.servo/` 路径，只作为 Codex 对话回答流模板存在
 - 不要把 doctrine、运行协议或 backend wrapper 写到这里
 - 不要把这些资产误当成 `docs/` 真相层
-- 运行协议与 artifact 定义以上游 `docs/harness/` 为准
+- 运行协议与 artifact 定义的 source-side authoring truth 位于上游 `docs/harness/`；本技能执行时只依赖随包分发的 `SKILL.md`、`assets/` 和 `scripts/`
 
 示例：
 

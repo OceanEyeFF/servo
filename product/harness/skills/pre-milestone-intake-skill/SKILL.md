@@ -71,7 +71,7 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 - 不得创建、更新或激活 milestone。
 - 不得创建 worktrack 或执行实现。
@@ -165,4 +165,4 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 
 ## 资源
 
-使用当前需求、`.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md`、`.servo/repo/milestone-backlog.md`，以及本轮核实所需的最小 repo context。对大型无文档 repo，应参考 [docs/harness/workflow-families/large-undocumented-repo-onboarding.md]；对多 repo 项目，应参考 [docs/harness/workflow-families/multi-repo-project-workflow.md]。
+使用当前需求、`.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md`、`.servo/repo/milestone-backlog.md`，以及本轮核实所需的最小 repo context。对大型无文档 repo，运行时按 weak-doc / large-repo intake 规则处理：先收集只读事实，区分 observed facts 与 inferred assumptions，必要时建议 discovery / reinforcement milestone，不把未确认推断写入长期 truth。对多 repo 项目，运行时必须分别记录每个 repo 的目标、状态、边界、验证路径与是否允许 mutation；不得把一个 repo 的发现自动推广到另一个 repo。Source-side authoring traces: `docs/harness/workflow-families/large-undocumented-repo-onboarding.md`, `docs/harness/workflow-families/multi-repo-project-workflow.md`。
