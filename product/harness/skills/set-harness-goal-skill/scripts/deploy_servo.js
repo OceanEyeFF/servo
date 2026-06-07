@@ -9,7 +9,7 @@ const SKILL_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
-const DEFAULT_CLAUDE_SKILL_NAME = "set-harness-goal-skill";
+const DEFAULT_CLAUDE_SKILL_NAME = "servo-set-harness-goal-skill";
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
   ".git",
   "__pycache__",
@@ -1068,7 +1068,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     truth_status: "temporary-inferred",
     gate_truth_status: "runtime-evidence",
     scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
-    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
     scanner_output_role: "scanner output is evidence, not verdict",
     docker_compose_permission: "pending_programmer_confirmation",
     database_migration_permission: "pending_programmer_confirmation",

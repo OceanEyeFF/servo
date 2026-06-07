@@ -90,7 +90,7 @@ The canonical local scanner command is:
 PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 ```
 
-Claude backend installs the same scanner at `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
+Claude backend installs the same scanner at `.claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
 
 The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, and no destructive writes. The scanner skips secret-like paths and does not emit file contents, but it does bounded reads of non-secret-like text/code files for aggregate signals.
 

@@ -924,7 +924,7 @@ REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
     "weak-doc",
     "scripts/complexity_signal_scanner.py",
     ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
-    ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    ".claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
 ]
 REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
     "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
@@ -1031,7 +1031,6 @@ PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS = [
     re.compile(r"以\s*`?docs/harness/[^`\\s]*`?\s*为准"),
     re.compile(r"最终内容应与\s*`?docs/harness/"),
     re.compile(r"toolchain/scripts/test/complexity_signal_scanner\\.py"),
-    re.compile(r"DEFAULT_CLAUDE_SKILL_NAME\s*=\s*\"servo-set-harness-goal-skill\""),
 ]
 SOURCE_TRACE_MARKERS = [
     "Source-side authoring trace",

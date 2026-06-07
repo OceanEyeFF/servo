@@ -2447,7 +2447,7 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
             "weak-doc",
             "scripts/complexity_signal_scanner.py",
             ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
-            ".claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+            ".claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
             "trigger_conditions: pending_observed_signal_review",
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
