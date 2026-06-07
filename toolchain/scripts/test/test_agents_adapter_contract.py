@@ -42,6 +42,9 @@ AGENTS_TARGET_DIR_OVERRIDES = {
     "harness-skill": "servo-harness-skill",
     "set-harness-goal-skill": "servo-set-harness-goal-skill",
 }
+CLAUDE_TARGET_DIR_OVERRIDES = {
+    "set-harness-goal-skill": "servo-set-harness-goal-skill",
+}
 AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     "harness-skill": ["harness-skill"],
     "repo-change-goal-skill": [
@@ -52,7 +55,7 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
     "harness-skill": ["servo-harness-skill"],
-    "set-harness-goal-skill": ["aw-set-harness-goal-skill", "servo-set-harness-goal-skill"],
+    "set-harness-goal-skill": ["aw-set-harness-goal-skill", "set-harness-goal-skill"],
 }
 
 
@@ -154,7 +157,10 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["skill_id"], skill_id)
             self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
             self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
-            self.assertEqual(payload["target_dir"], skill_id)
+            self.assertEqual(
+                payload["target_dir"],
+                CLAUDE_TARGET_DIR_OVERRIDES.get(skill_id, skill_id),
+            )
             self.assertEqual(
                 payload["legacy_target_dirs"],
                 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES.get(skill_id, [f"aw-{skill_id}"]),

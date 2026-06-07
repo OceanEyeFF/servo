@@ -45,11 +45,15 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
    - 初始化成功时，必须把 `worktrack_intake_review` 的摘要写入 `Worktrack Contract`
 4. 为这个 `工作追踪` 创建限定范围分支。
 5. 如果该分支无法安全创建，返回一个被阻塞的初始化结果，而不是静默复用另一条分支。
-6. 记录这个 `工作追踪` 用来比较的基准引用，并把 `baseline_branch` 写入 `Worktrack Contract`：
+6. 记录这个 `工作追踪` 用来比较的基准引用，并把 Branch Policy 写入 `Worktrack Contract`：
    - 优先从当前已批准输入读取明确的 `baseline_branch`
    - 否则从 `origin/HEAD` 动态解析 baseline branch（执行 `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`）
    - baseline branch 的唯一合法来源是 `origin/HEAD` 动态解析，技能必须通过解析获取，写死默认分支名的行为禁止发生
    - 若 baseline branch 无法确认，初始化必须阻断，而不是猜测 PR target 或 merge target
+   - 若 worktrack 来自 active milestone 且 milestone artifact 声明 `milestone_branch`，`branch_source_ref` 和 `integration_target_ref` 默认取 active Milestone branch head；`final_baseline_branch` 仍为 `baseline_branch`
+   - 若 worktrack 来自 active milestone 但 `milestone_branch` 尚不存在，必须按已批准的 Milestone branch policy 创建或同步 Milestone branch，或返回 blocked；不得从另一个 Milestone branch、当前 checkout 或 stale branch 猜测来源
+   - 非 milestone-derived worktrack 默认 `branch_source_ref = baseline_branch@HEAD`、`integration_target_ref = baseline_branch`、`closeout_target_ref = baseline_branch`
+   - `branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref` 必须写入 Worktrack Contract，供 observe / close / refresh / gate 消费
 7. 构建或刷新一份 `工作追踪约定`；有需要时，让草稿与 `templates/contract.template.md` 对齐。
    - **从 Goal Charter 的 Engineering Node Map 中确定本 worktrack 的节点类型**
    - **根据节点类型填充 contract 中的类型化字段**：baseline_branch、baseline_form、merge_required、gate_criteria、if_interrupted_strategy
@@ -68,7 +72,7 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 
@@ -78,7 +82,8 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - 本技能唯一合法的分派相关输出是面向调度阶段的种子输出。创建新的权威分派包的行为必须返回 blocked——该职责属于 `dispatch-skills`。
 - 本技能的输出只能包含调度交接包。`执行者交接包` 的行为禁止替代调度交接包出现在本技能的输出中。
 - 当代码仓库状态含糊不清时，唯一合法行为是返回一个被阻塞的初始化结果。猜测分支、基准或范围的行为必须被阻断。
-- baseline branch 的唯一合法来源是 `Worktrack Contract.baseline_branch`。当前分支名不能作为 baseline branch 的来源。PR target、merge target 与后续 checkpoint 判定必须来自 `Worktrack Contract.baseline_branch`。
+- baseline branch 的唯一合法来源是 `Worktrack Contract.baseline_branch`。当前分支名不能作为 baseline branch 的来源。
+- Worktrack branch 来源与直接 closeout 目标的唯一合法来源是 `Worktrack Contract.branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref` 与 `checkpoint_base_ref`。PR target、merge target 与后续 checkpoint 判定必须来自这些 contract 字段；不得从当前分支名或写死默认分支名推断。
 - 仅当预期下一状态与所需审批已显式暴露后，`Harness 控制状态` 的变更才合法；否则必须保持当前控制状态不变并暴露阻断原因。
 - 仅当宿主运行时真的能发起分派时，声称回退式 `子代理` 已就绪才合法；否则必须显式暴露运行时缺口或权限阻塞。
 - 若传入 `target_milestone_id`，必须验证其存在于 live milestone-backlog 且为 `active`；引用不存在、仅存在于 milestone-history 或非 active 的 milestone 必须返回 blocked。
@@ -108,6 +113,12 @@ description: 当 Harness 处于 WorktrackScope.initializing，且需要一轮限
 - `分支名称或规则`
 - `基准分支`
 - `baseline_branch`
+- `branch_source_ref`
+- `worktrack_branch`
+- `integration_target_ref`
+- `closeout_target_ref`
+- `final_baseline_branch`
+- `checkpoint_base_ref`
 - `基准引用`
 - `基准理由`
 - `PR target 来源`

@@ -103,7 +103,7 @@ const TEMPLATE_SPECS = {
     artifactType: "goal-charter",
     title: "Repo Goal / Charter",
     instanceNote:
-      "这是 `.servo/goal-charter.md` 的运行样例，用来记录当前 repo 的长期目标和方向。最终内容应与 `docs/harness/artifact/repo/goal-charter.md` 的定义一致。",
+      "这是 `.servo/goal-charter.md` 的运行样例，用来记录当前 repo 的长期目标和方向。Source-side authoring trace: docs/harness/artifact/repo/goal-charter.md。",
     requiredSections: [
       "Metadata",
       "Project Vision",
@@ -135,7 +135,7 @@ const TEMPLATE_SPECS = {
     artifactType: "repo-snapshot-status",
     title: "Repo Snapshot / Status",
     instanceNote:
-      "这是 `.servo/repo/snapshot-status.md` 的运行样例，用来记录当前 repo 的慢变量观测面。最终内容应与 `docs/harness/artifact/repo/snapshot-status.md` 的定义一致。",
+      "这是 `.servo/repo/snapshot-status.md` 的运行样例，用来记录当前 repo 的慢变量观测面。Source-side authoring trace: docs/harness/artifact/repo/snapshot-status.md。",
     requiredSections: [
       "Metadata",
       "Mainline Status",
@@ -449,7 +449,7 @@ const TEMPLATE_SPECS = {
     artifactType: "worktrack-contract",
     title: "Worktrack Contract",
     instanceNote:
-      "这是 `.servo/worktrack/contract.md` 的运行样例，用来填写单个 worktrack 的局部状态转移合同。最终内容应与 `docs/harness/artifact/worktrack/contract.md` 的定义一致。",
+      "这是 `.servo/worktrack/contract.md` 的运行样例，用来填写单个 worktrack 的局部状态转移合同。Source-side authoring trace: docs/harness/artifact/worktrack/contract.md。",
     requiredSections: [
       "Metadata",
       "Node Type",
@@ -1068,7 +1068,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     truth_status: "temporary-inferred",
     gate_truth_status: "runtime-evidence",
     scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
-    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json | PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
     scanner_output_role: "scanner output is evidence, not verdict",
     docker_compose_permission: "pending_programmer_confirmation",
     database_migration_permission: "pending_programmer_confirmation",

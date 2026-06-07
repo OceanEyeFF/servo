@@ -1,9 +1,9 @@
 ---
 title: "Worktrack Contract"
 status: active
-updated: 2026-05-20
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-05
 ---
 # Worktrack Contract
 
@@ -22,6 +22,14 @@ last_verified: 2026-05-20
   - `merge_required`
   - `gate_criteria`
   - `if_interrupted_strategy`
+- `Branch Policy`
+  - `baseline_branch`
+  - `branch_source_ref`
+  - `worktrack_branch`
+  - `integration_target_ref`
+  - `closeout_target_ref`
+  - `final_baseline_branch`
+  - `checkpoint_base_ref`
 - `Execution Policy`
   - `runtime_dispatch_mode`
   - `dispatch_mode_source`
@@ -46,6 +54,35 @@ last_verified: 2026-05-20
 - 约束条件
 - 验证要求
 - 回滚条件
+
+## Branch Policy
+
+`baseline_branch` 仍是 servo-managed baseline / final checkpoint 的根基准，不得从当前 checkout 或写死默认分支名推断。Milestone branch 模型引入后，Worktrack Contract 还必须显式区分“从哪里开分支”和“收尾合到哪里”：
+
+- `baseline_branch`: servo-managed baseline branch。用于最终 Milestone acceptance、baseline freshness、protected branch policy 和 repo-level checkpoint 比较。
+- `branch_source_ref`: 创建本 Worktrack branch 的来源 ref。普通非 Milestone worktrack 通常等于 `baseline_branch@HEAD`；Milestone-derived worktrack 通常等于 active Milestone branch head。
+- `worktrack_branch`: 本 Worktrack 的执行分支。
+- `integration_target_ref`: 本 Worktrack closeout 的直接集成目标。Milestone-derived worktrack 默认是 active Milestone branch；非 Milestone worktrack 可为 `baseline_branch`。
+- `closeout_target_ref`: close-worktrack-skill 实际用于 PR/merge/checkpoint 的目标 ref。默认等于 `integration_target_ref`。
+- `final_baseline_branch`: Milestone final acceptance 后的最终主线目标；通常等于 `baseline_branch`。
+- `checkpoint_base_ref`: closeout/refreshed checkpoint 与哪一个 ref 比较；Worktrack closeout 默认比较 `closeout_target_ref`，Repo/Milestone final acceptance 再比较 `baseline_branch`。
+
+典型 Milestone-derived worktrack：
+
+```yaml
+branch_policy:
+  baseline_branch: "develop"
+  branch_source_ref: "ms/MS-20260605-004-branch-model@<hash>"
+  worktrack_branch: "wt-20260605-worktrack-branch-source-contract"
+  integration_target_ref: "ms/MS-20260605-004-branch-model"
+  closeout_target_ref: "ms/MS-20260605-004-branch-model"
+  final_baseline_branch: "develop"
+  checkpoint_base_ref: "ms/MS-20260605-004-branch-model@<hash>"
+```
+
+若 active Milestone 尚未创建 `milestone_branch`，`init-worktrack-skill` 必须按当前批准的 Milestone branch policy 创建或同步它，或返回 blocked；不得静默从另一个 Milestone branch、随机当前分支或 stale branch 创建 Worktrack。
+
+`branch_source_ref`、`integration_target_ref` 与 `closeout_target_ref` 都是 contract-controlled 字段。调度、分派、验证、closeout 和 repo-refresh 只能消费这些字段，不得从当前分支名反推。若实际分支来源、PR target、merge target 或 checkpoint target 与合同不一致，必须标记 `checkpoint_policy_match: no` 并进入审批或 Recover。
 
 ## Execution Policy
 

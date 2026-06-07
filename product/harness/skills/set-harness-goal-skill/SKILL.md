@@ -69,7 +69,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_create, block_upsert, block_activate, block_derive_worktrack`
    - unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`
    - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
-   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；Agents backend 路径为 `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`，Claude backend 路径为 `.claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py`
+   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；Agents backend 路径为 `.agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`，Claude backend 路径为 `.claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写
    - 后续 `control-state.md` 只能把 discovery / temporary understanding 作为 linked evidence / note，不能把其中字段提升为控制指令
@@ -139,7 +139,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
    - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/servo-set-harness-goal-skill/`
    - 也可以单独运行 `node scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
-   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `servo-set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
+   - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `set-harness-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
    - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为已完成并 no-op
    - 复制时只复制模板骨架；内容字段（如 Project Vision、autonomy 参数等）由第 3~5 步的分析结果填充
    - 不覆盖已存在的文件；如果 `.servo/` 中已有同名文件，保留现有文件并报告冲突
@@ -163,7 +163,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 

@@ -19,7 +19,18 @@
 
 ## Baseline Branch
 
-- 
+- baseline_branch:
+- baseline_ref:
+
+## Branch Environment Guard
+
+- current_branch_context: unknown
+- expected_branch_context: unknown
+- branch_context_guard_status: blocked
+- branch_context_required_ref:
+- active_milestone_branch:
+- active_milestone_branch_sync_state: unknown
+- worktrack_branch:
 
 ## Current Next Action
 

@@ -341,7 +341,7 @@ def test_installed_skills_can_initialize_servo_when_target_has_no_servo(
         target_repo
         / ".claude"
         / "skills"
-        / "set-harness-goal-skill"
+        / "servo-set-harness-goal-skill"
         / "scripts"
         / "deploy_servo.js"
     )

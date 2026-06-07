@@ -1,9 +1,9 @@
 ---
 title: "Harness Skill Catalog / WorktrackScope"
 status: active
-updated: 2026-05-16
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-08
+last_verified: 2026-06-05
 ---
 # WorktrackScope Skill Catalog
 
@@ -16,6 +16,8 @@ last_verified: 2026-05-08
 `WorktrackScope` skills 负责局部状态转移闭环，消费 contract/plan/evidence/control state，可派发下游 `SubAgent` 但不伪装成”控制平面+执行平面一体”。schedule-worktrack-skill 是 `selected_next_action` 与 dispatch handoff packet 的唯一 authority；dispatch-skills 只消费 scheduling packet 不反向改写 queue。generic-worker-skill 是无专用 skill 时的通用执行载体；doc-catch-up-worker-skill 是 Harness 入口观察和 closeout 前推荐使用的文档基线追平载体，release / publish / version / VCS tracking 事实变化后也必须承担 version fact sync。freshly seeded 或 autonomous continuation 的首个 execution-facing round，初始 slice 必须先收紧到最小可验证子片段。`runtime_dispatch_mode` 读取顺序：默认 worktrack-contract-primary 下 contract 的 `runtime_dispatch_mode` 优先；仅 global-override 时 control-state 覆盖；contract 未声明时使用 control-state 默认值。control-state 的 `subagent_dispatch_mode` 与 `subagent_dispatch_mode_override_scope` 只提供 repo 级默认和覆盖边界。`runtime_dispatch_mode` 支持 `auto`/`delegated`/`current-carrier`，默认 `auto`；无法委派需记录 runtime fallback 和 dispatch package unsafe 等边界事实。
 
 Worktrack Contract 的 `node_type` 字段合法值来自 [Node Type Registry](../artifact/control/node-type-registry.md)，Contract 中的 `baseline_form`、`merge_required`、`gate_criteria`、`if_interrupted_strategy` 从 Registry 继承默认值并可在 Contract 中显式覆盖；gate-skill 根据 `node_type` 查找对应 `gate_criteria` 确定需要收集的证据面。
+
+Worktrack Contract 还拥有 Branch Policy 字段：`baseline_branch` 表示 servo-managed final baseline；`branch_source_ref` 表示 Worktrack branch 从哪里创建；`integration_target_ref` / `closeout_target_ref` 表示 closeout 直接合入哪里。Milestone-derived Worktrack 默认从 active Milestone branch 创建并合回该 Milestone branch，Milestone final acceptance 后再由 Milestone closeout 合回 baseline branch。下游 init/close/refresh skills 不得从当前 checkout 或默认分支名推断这些目标。
 
 ## Catalog
 
