@@ -23,7 +23,7 @@
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/gate-evidence.md",
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md"
   ],
-  "target_dir": "set-harness-goal-skill",
+  "target_dir": "servo-set-harness-goal-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
@@ -54,7 +54,7 @@
   ],
   "legacy_target_dirs": [
     "aw-set-harness-goal-skill",
-    "servo-set-harness-goal-skill"
+    "set-harness-goal-skill"
   ],
   "claude_frontmatter": {
     "disable-model-invocation": true
