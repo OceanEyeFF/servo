@@ -24,7 +24,7 @@
 
 - scanner_evidence_ref:
 - scanner_command: PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
-  - scanner_command_alternatives: PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json | PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/complexity_signal_scanner.py --repo <repo> --json
+  - scanner_command_alternatives: PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 - scanner_output_role: scanner output is evidence, not verdict
 - complexity_signals:
 - thresholds:

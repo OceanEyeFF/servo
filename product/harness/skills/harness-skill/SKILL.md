@@ -347,20 +347,31 @@ Gate 应汇总**正交校验面**的裁决：
 1. **现有 `.servo` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.servo/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
    - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `set-harness-goal-skill`，不得凭当前对话临时假设长期配置。
    - 必读控制配置段包括 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 和 `Autonomy Ledger`。
-   - 缺失字段按 `docs/harness/artifact/control/control-state.md` 的默认值解释，并在状态估计中记录 `config_hydration_gaps`；缺失不能静默扩大权限或自动性。
-   - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 `docs/harness/artifact/control/control-state.md` 与初始化模板。
+   - 缺失控制字段按最保守默认值解释：权限/自动性为未授权，状态为 `unknown` / `missing` / `blocked` / `not ready`，列表为空，布尔值为 `false`；同时在状态估计中记录 `config_hydration_gaps`。缺失不能静默扩大权限或自动性。Source-side authoring trace: `docs/harness/artifact/control/control-state.md`。
+   - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 source-side control-state contract 与初始化模板。
    - `.servo/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
    - 入口分流必须在 hydration 之后发生；缺少 artifact 或审批信号时，profile / operator mode 只能降级为 observation / handback / blocked，不得扩大权限。
    - operator mode matrix 只消费 trigger signals 并选择 route estimate 与 stop/approval semantics；它不得创建新的 Scope、Gate、controller 或 not approved scope 的执行权限。
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
-   - 从 `.servo/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（Harness 管理的目标分支）
+   - 从 `.servo/control-state.md` 的 `Baseline Branch` 段读取 `baseline_branch`（servo-managed final baseline），并读取 `active_milestone_branch` / `active_milestone_branch_sync_state`。
+   - 若当前处于 WorktrackScope，还必须从当前 `Worktrack Contract` 读取 `branch_source_ref`、`worktrack_branch`、`closeout_target_ref`、`checkpoint_base_ref`。
    - 执行 `git branch --show-current` 获取当前检出的分支
-   - 对比两个分支名：
-     - 若一致：通过，继续正常状态估计
-     - 若不一致：
-       - 如果当前 `Function` 为 `Init`、`Dispatch` 或任何会修改仓库状态的阶段：**必须阻断**。不得在非 Harness 管理分支上执行任何会改变代码状态的操作。返回 `branch_mismatch_blocked` 并明确要求切换到 `baseline_branch`。合法恢复路径只有 `git checkout <baseline_branch>`。
-       - 如果当前 `Function` 为 `Observe`（只读状态估计）：记录 `branch_mismatch_warning`，在状态估计结果中显式标记当前分支与预期基线分支的差异，并在 `proceed_blockers` 中加入 "在进入 Init/Dispatch 之前必须先切换到 baseline_branch"。允许只读 Observe 继续执行，但下游 Decide 在收到此 warning 时必须把分支切换作为前置条件。
+   - 先判定当前 `branch_context`：
+     - `baseline`: 当前分支等于 `baseline_branch`。
+     - `milestone`: 当前分支等于 active Milestone 的 `active_milestone_branch`。
+     - `worktrack`: 当前分支等于当前 Worktrack Contract 的 `worktrack_branch`。
+     - `unknown`: 无法匹配上述任何上下文，或缺少必要合同字段。
+   - 按 Scope / Function 应用合法变更上下文：
+     - `RepoScope.Observe` / `RepoScope.Decide`: 只读，可在任一 branch_context 上继续，但必须记录 `branch_context_observed`；若上下文不是 baseline 或 milestone，进入会修改状态的下一步前必须先切回合法上下文。
+     - `RepoScope.Init` 派生 Milestone branch 或激活/切换 Milestone: 必须在 `baseline` 上执行，除非唯一动作是将已验证 Worktrack closeout 写回现有 active Milestone branch 的 routing metadata。
+     - `WorktrackScope.Init`: 若为 milestone-derived Worktrack，必须在 `milestone` 上执行并从 `active_milestone_branch` 创建 `worktrack_branch`；非 milestone-derived Worktrack 必须在 `baseline` 上执行。
+     - `WorktrackScope.Dispatch` / `Implement` / `Verify` / `Judge`: 必须在 `worktrack` 上执行；只读 evidence collection 可记录 warning，但不得修改非合同 worktrack branch。
+     - `WorktrackScope.Close`: 可以在 `worktrack` 上准备 closeout，也可以在 `closeout_target_ref` 指向的 `milestone` 或 `baseline` 上执行 merge/checkpoint；PR target、merge target 和 checkpoint target 必须来自 Worktrack Contract。
+     - `RepoScope.Refresh`: 必须在刚完成 closeout 的 `closeout_target_ref` 上刷新；Milestone-derived Worktrack 的 direct refresh 是 `milestone`，Milestone final acceptance 后才刷新 `baseline`。
+   - 若当前 branch_context 与预期上下文不一致：
+     - 对只读 `Observe`：记录 `branch_context_warning` 和所需切换目标，允许继续收集状态。
+     - 对任何会修改仓库状态的 Function：返回 `branch_context_blocked`，停止变更，并明确合法恢复路径是切换到 contract/control-state 指定的目标分支；不得猜测默认分支或从当前分支名反推目标。
    - 此检查必须在 `git rev-parse HEAD`（步骤 4）之前执行，确保后续的 hash 对比基于正确的分支上下文
    - 如果 `baseline_branch` 在 control-state 中缺失，按 `origin/HEAD` 动态解析（执行 `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`），并将解析结果写入 `config_hydration_gaps`。不得写死默认分支名
 4. 根据当前 Scope 选择传感器组合：
@@ -412,7 +423,7 @@ Gate 应汇总**正交校验面**的裁决：
 1. 为选定的 Skill 构建限定范围任务简报和信息包
 2. 读取执行载体开关：先看 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope`。默认 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有显式 `global-override` 才让 `.servo/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack。若 worktrack 未声明，再使用 control-state 作为 repo 级默认值，最终默认值为 `auto`
 3. `runtime_dispatch_mode` / `subagent_dispatch_mode` 支持 `auto` / `delegated` / `current-carrier`
-4. `auto` 表示按 `docs/harness/foundations/dispatch-decision-policy.md` 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback
+4. `auto` 表示按本包内 dispatch 决策规则选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。Source-side authoring trace: `docs/harness/foundations/dispatch-decision-policy.md`
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
@@ -640,7 +651,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 
 ## 十五、硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 
@@ -661,7 +672,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 - **相邻系统的引用仅当本轮证据确实消费了其输出时才可包含**；否则 `adjacent_system_referenced` 必须为 `false`。
 - **Control State 仅保存控制面位置信息**（Scope/Function/Route）；业务真相必须保存在 `Repo` 与 `Worktrack` 的正式文档中，禁止写入 Control State。
 - **git hash 一致仅授权跳过重复刷新和重复文档追平**；首次验证和 Gate 裁决在任何情况下都不可跳过。
-- **分支环境守卫（Branch Environment Guard）**：任何会改变代码状态的 Function（Init、Dispatch 等）必须在 `baseline_branch` 上执行。当前分支与 control-state 的 `baseline_branch` 不一致时，只读 Observe 可继续但必须标记 warning；会改变状态的 Function 必须阻断。合法恢复路径只有 `git checkout <baseline_branch>`。`baseline_branch` 缺失时必须从 `origin/HEAD` 动态解析，不得写死默认值。
+- **分支环境守卫（Branch Environment Guard）**：任何会改变代码状态的 Function 必须先匹配合法 `branch_context`。RepoScope baseline mutation 在 `baseline_branch`；Milestone-derived Worktrack 初始化在 `active_milestone_branch`；Worktrack 实施在 `worktrack_branch`；close/refresh 使用 Worktrack Contract 的 `closeout_target_ref` / `checkpoint_base_ref`。只读 Observe 可在不匹配上下文继续但必须标记 warning；会改变状态的 Function 在不匹配上下文必须阻断。合法恢复路径只能切换到 control-state 或 Worktrack Contract 指定的目标分支，不得写死默认值或从当前分支名推断。
 
 ---
 

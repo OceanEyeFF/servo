@@ -36,6 +36,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
    - `硬失败`
    - `阻塞`
    - `基准漂移`
+   - `branch_policy_mismatch`
 5. 评估合法的恢复选择：
    - `重试`
    - `回滚`
@@ -68,6 +69,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 - `工作追踪约定摘要`
 - `节点类型`
 - `节点策略`
+- `Branch Policy`: `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`
 - `计划队列状态`
 - `关卡证据摘要`
 - `失败信号`
@@ -106,7 +108,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
   - 必须保留哪些验收标准留在当前工作追踪，哪些会移出。
 - `刷新基准`
   - 当上游真相变化或漂移使当前分支比较失效时，可以请求代码仓库级基准刷新或重新初始化触发器。
-  - 如果 `baseline_form` 或 `merge_required` 与当前 checkpoint 状态不匹配，必须把该不匹配作为刷新或重新初始化理由。
+  - 如果 `branch_source_ref`、`worktrack_branch`、`closeout_target_ref`、`checkpoint_base_ref`、`baseline_form` 或 `merge_required` 与当前 checkpoint 状态不匹配，必须把该不匹配作为刷新或重新初始化理由。
   - 对 `代码仓库快照/状态`、`目标/章程` 或控制真相的唯一合法操作是读取消费。从本技能改写这些产物的行为必须被阻断。
   - 必须返回一份交接结果，明确告诉 `Harness` 接下来需要哪一轮面向代码仓库的流程。
 - `重新规划`
@@ -116,7 +118,7 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 - 仅当恢复决策已完成、审批已通过时，沿恢复路径继续执行才合法。仅因重试看起来可行而继续沿失败路径执行的行为必须被阻断。
 - `回滚`、`拆分工作追踪` 或 `刷新基准` 的唯一合法处理方式是作为需要程序员审批的显式恢复决策。将其作为隐藏实现细节的行为禁止发生。
@@ -144,11 +146,13 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 - `已应用中断处理策略`
 - `节点类型`
 - `节点策略`
+- `合同分支策略`
 - `后备恢复模式`
 - `重试可行性`
 - `回滚目标或规则`
 - `拆分理由`
 - `基准刷新理由`
+- `branch_policy_mismatch`
 - `权限边界`
 - `即时安全动作`
 - `需要审批`

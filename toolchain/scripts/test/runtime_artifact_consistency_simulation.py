@@ -28,10 +28,14 @@ class Scenario:
     active_milestone: str = "MS-001"
     active_worktrack: str = "none"
     milestone_status: str = "active"
+    active_milestone_continuation_state: str = "ready"
     summary: str = "planned=0 / active=1 / completed=1 / superseded=0"
     live_status: str = "active"
+    live_continuation_state: str = "ready"
+    milestone_branch: str = "ms/MS-001-branch"
     history_status: str = "completed"
     milestone_artifact_status: str = "active"
+    milestone_artifact_continuation_state: str = "ready"
     milestone_artifact_completed: int = 0
     milestone_artifact_total: int = 1
     milestone_artifact_worktrack_status_key: str = "status"
@@ -60,6 +64,21 @@ SCENARIOS = [
         expected_pass=False,
         active_worktrack="WT-001",
         milestone_artifact_worktrack_status="completed",
+    ),
+    Scenario(
+        scenario_id="suspended-primary-status",
+        description="Suspension is incorrectly encoded as the primary milestone status.",
+        expected_pass=False,
+        milestone_artifact_status="suspended",
+    ),
+    Scenario(
+        scenario_id="paused-retains-active-worktrack",
+        description="A waiting milestone still keeps an active worktrack pointer.",
+        expected_pass=False,
+        active_worktrack="WT-001",
+        active_milestone_continuation_state="waiting_external",
+        live_continuation_state="waiting_external",
+        milestone_artifact_continuation_state="waiting_external",
     ),
     Scenario(
         scenario_id="completed-artifact-incomplete-progress",
@@ -104,6 +123,7 @@ def build_fixture(root: Path, scenario: Scenario) -> None:
                 f"- active_milestone: {scenario.active_milestone}",
                 f"- milestone_status: {scenario.milestone_status}",
                 f"- milestone_pipeline_summary: {scenario.summary}",
+                f"- active_milestone_continuation_state: {scenario.active_milestone_continuation_state}",
                 "",
             ]
         ),
@@ -115,6 +135,8 @@ def build_fixture(root: Path, scenario: Scenario) -> None:
             [
                 "- milestone_id: MS-001",
                 f"  - status: {scenario.live_status}",
+                f"  - milestone_branch: {scenario.milestone_branch}",
+                f"  - continuation_state: {scenario.live_continuation_state}",
                 "  - worktrack_list:",
                 "    - WT-001 (planned)",
                 "",
@@ -166,6 +188,13 @@ def build_fixture(root: Path, scenario: Scenario) -> None:
                 "",
                 "## status",
                 f'status: "{scenario.milestone_artifact_status}"',
+                "",
+                "## milestone_branch",
+                "milestone_branch:",
+                f'  name: "{scenario.milestone_branch}"',
+                "",
+                "## continuation_state",
+                f'continuation_state: "{scenario.milestone_artifact_continuation_state}"',
                 "",
                 "## worktrack_list",
                 "worktrack_list:",

@@ -27,6 +27,8 @@ last_verified: 2026-05-10
 | `current_branch_head` | `string` | required | 当前分支最新 commit hash |
 | `working_tree_status` | `clean` \| `dirty` \| `has_untracked` \| `conflict` | required | 工作目录清洁度 |
 | `mainline_status` | `stable` \| `ahead` \| `behind` \| `diverged` \| `unknown` | required | 当前分支相对于 baseline_branch 的偏离状态 |
+| `milestone_branch_status` | `object` | optional | 当前 active Milestone integration branch 的观测摘要，如 `milestone_id`、`milestone_branch`、`branch_head`、`source_baseline_ref`、`last_synced_baseline_ref`、`sync_state` |
+| `branch_context` | `baseline` \| `milestone` \| `worktrack` \| `unknown` | optional | 当前 checkout 所处的控制上下文；只用于观察，不替代 Worktrack Contract 的 branch/baseline 字段 |
 | `latest_observed_checkpoint` | `string` | required | 最近一次观测到的 checkpoint 标识（milestone tag、release ref 等） |
 | `last_verified_checkpoint` | `string` | required | 最近一次通过 gate 验证的 checkpoint 标识 |
 | `activity_summary` | `object` | required | 近期活动摘要，子字段: `last_worktrack_id` (string)、`last_closeout_time` (ISO 8601 string)、`recent_prs` (string[])、`active_branches` (string[]) |
@@ -48,6 +50,8 @@ last_verified: 2026-05-10
 | `milestone-status-skill` | RepoScope.Observe | `latest_observed_checkpoint`、`last_verified_checkpoint`、`activity_summary.recent_prs`、`governance_signals`、`known_risks` | 对照 Milestone 的 `worktrack_list` 计算进度，结合 milestone-backlog 做 pipeline 上下文分析 |
 
 Consumer 读取 Snapshot 时，若 `observed_at` 距今超过合理窗口（默认 24 小时）或 `baseline_ref` 与当前 repo 实际 HEAD 不一致，应标记为 stale 并在输出中暴露过期信号。不得将过期 snapshot 当作当前真相。
+
+`milestone_branch_status` 是 RepoScope.Observe 的分支传感器输出。它记录当前 active Milestone branch 与 servo-managed baseline 的关系，帮助 Decide 判断是否需要 sync、recover 或 handback；它不是 Milestone branch 的权威定义，也不替代 `.servo/milestone/{milestone_id}.md` 的 `milestone_branch` 字段。若 `branch_context = milestone` 或 `worktrack`，消费者仍必须读取 Worktrack Contract / Milestone artifact 确认合法变更边界。
 
 ## Update Triggers
 
@@ -75,6 +79,8 @@ Snapshot/Status 只在以下触发点被显式写入，不随每次 Observe 自�
 ## Writeback Policy
 
 可写入 Snapshot: 经 worktrack 验证的 repo 状态变化（branch、checkpoint、merge 记录）、经 gate 接受的 evidence 摘要、经 Refresh 算子确认的 mainline_status 和 working_tree_status。
+
+可写入的分支观察还包括：当前 active Milestone branch 的 head、与 baseline 的同步状态、当前 checkout 的 branch_context，以及暂停/恢复后需要 RepoScope.Decide 消费的 branch freshness signal。不可把这些观察直接当成 final acceptance 或 branch mutation approval。
 
 不可写入 Snapshot: 未验证的市场判断、未经过 gate 的 speculative 分析结论、与 Goal Charter 冲突但未走 ChangeGoal 的状态声明。
 

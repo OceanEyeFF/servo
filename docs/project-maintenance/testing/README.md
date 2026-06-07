@@ -12,6 +12,7 @@
 | 验证 `npx servo-installer`/registry package/本地 `.tgz` | [npx-command-test-execution.md](./npx-command-test-execution.md) | registry `npx` smoke、本地 package smoke、多临时 workdir |
 | 回归 `servo-installer` CLI/TUI 全命令面 | `toolchain/scripts/test/servo_installer_cli/` 和 `servo_installer_tui/` | CLI 覆盖 agents/claude 命令生命周期；TUI 通过 PTY 覆盖菜单交互 |
 | npm publish 前跑本地 `.tgz` package smoke | [npx-command-test-execution.md](./npx-command-test-execution.md) | 发布前 local package smoke 命令和最小通过证据 |
+| 选择长期 dogfood / target-repo 验证对象 | [dogfood-target-repo-registry.md](./dogfood-target-repo-registry.md) | 固定 5 个长期 target repos，并约束原仓库只读/临时副本 mutation 策略 |
 | 观察 Codex 部署后 Harness 行为 | [codex-post-deploy-behavior-tests.md](./codex-post-deploy-behavior-tests.md) | 临时 repo、隔离 `.agents/skills/`、无交互 Codex 多轮 |
 | 观察 Claude Code 项目级 skill entry、冷启动和新功能真实 backend 行为 | [claude-post-deploy-behavior-tests.md](./claude-post-deploy-behavior-tests.md) | 临时 repo、`.claude/skills/` 项目级安装、Claude 非交互读取；影响用户实际操作路径的新功能默认补真实 Claude dogfood |
 

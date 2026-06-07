@@ -15,7 +15,7 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 
 这个技能也是执行前最后一道限定范围防线。如果调度包对单轮而言过大，这个技能应拒绝它并返回调度阶段，而不是把过大的初始切片强行规范成一次执行。
 
-执行载体选择必须由可开关参数控制：先读取 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 表示按 `docs/harness/foundations/dispatch-decision-policy.md` 判断执行载体，基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。只有 `auto` 命中 runtime fallback、权限边界禁止委派，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。
+执行载体选择必须由可开关参数控制：先读取 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。只有 `auto` 命中 runtime fallback、权限边界禁止委派，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。Runtime decision inputs: `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety`。Source-side authoring trace: `docs/harness/foundations/dispatch-decision-policy.md`。
 
 ## 何时使用
 
@@ -59,7 +59,7 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 - "没有专用技能可用"本身不构成阻塞状态。该情况下应走通用回退路径（`generic-worker-skill` 或一次性任务专用指令），而不是停止流程。
 - `auto` 模式下必须按 Dispatch Decision Policy 选择载体；不得把"宿主支持 SubAgent"单独当成默认委派理由。

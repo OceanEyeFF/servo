@@ -1,9 +1,9 @@
 ---
 title: "Harness Skill Catalog / RepoScope"
 status: active
-updated: 2026-05-16
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-05-08
+last_verified: 2026-06-05
 ---
 # RepoScope Skill Catalog
 
@@ -291,7 +291,7 @@ canonical executable source：
 
 ### 6. repo-refresh-skill
 
-职责：在 worktrack closeout 后刷新 repo 慢变量状态，把已验证结果回收到 repo 级正式对象，只处理 repo 级 writeback 不处理 .servo/worktrack/* 维护。刷新成功后必须把当前 HEAD 写回 `Harness Control State` 的 `Baseline Traceability.latest_observed_checkpoint`，并同步 `checkpoint_ref` / `verified_at` 等观测锚点；首次刷新或字段为空时不得把空值解释为可跳过刷新。
+职责：在 worktrack closeout 后刷新 repo 慢变量状态，把已验证结果回收到 repo 级正式对象，只处理 repo 级 writeback 不处理 .servo/worktrack/* 维护。刷新必须消费 closeout 交接中的 Branch Policy 字段：`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`；Milestone-derived Worktrack 的直接 checkpoint 可落在 Milestone integration branch，servo-managed baseline 只在 Milestone final acceptance 后更新。刷新成功后必须把当前 HEAD 写回 `Harness Control State` 的 `Baseline Traceability.latest_observed_checkpoint`，并同步 `checkpoint_ref` / `verified_at` 等观测锚点；首次刷新或字段为空时不得把空值解释为可跳过刷新。
 
 主要依赖：
 
@@ -304,6 +304,7 @@ checkpoint writeback:
 
 - `latest_observed_checkpoint`: repo-refresh 成功后的 git HEAD；空值表示从未建立该幂等锚点，必须执行完整状态估计和刷新
 - `checkpoint_ref`: 与该 HEAD 对应的 branch/ref 描述
+- `checkpoint_base_ref`: Worktrack Contract 指定的本轮 checkpoint 对比基准
 - `verified_at`: 本次刷新验证日期
 
 canonical executable source：

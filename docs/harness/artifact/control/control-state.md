@@ -1,9 +1,9 @@
 ---
 title: "Harness Control State"
 status: active
-updated: 2026-06-03
+updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-03
+last_verified: 2026-06-05
 ---
 # Harness Control State
 
@@ -30,10 +30,42 @@ Milestone 是 `RepoScope` 下的聚合对象，control-state 应在 Linked Forma
 - `milestone_pipeline_path`: 指向 `.servo/repo/milestone-backlog.md` 的路径指针
 - `milestone_history_path`: 指向 `.servo/repo/milestone-history.md` 的路径指针
 - `milestone_pipeline_summary`: Pipeline aggregate 快照（planned/active 来自 live backlog，completed/superseded 来自 milestone history）
+- `active_milestone_branch`: 当前 active Milestone integration branch 的 routing ref（如存在）
+- `active_milestone_continuation_state`: active Milestone 的可继续性镜像（`ready` / `waiting_external` / `paused_by_programmer` / `blocked`）
+- `active_milestone_branch_sync_state`: 当前 Milestone branch 相对 baseline 的同步状态摘要，例如 `not_created`、`in_sync`、`needs_baseline_merge`、`conflict`、`unknown`
+- `current_branch_context`: 当前 checkout 的 branch context 观测值，合法值为 `baseline` / `milestone` / `worktrack` / `unknown`
+- `expected_branch_context`: 当前 Scope / Function 进入 mutating step 前所需的 branch context
+- `branch_context_guard_status`: `pass` / `warning` / `blocked` / `unknown`
+- `branch_context_required_ref`: 当 guard 需要切换时，记录 control-state 或 Worktrack Contract 指定的目标 ref
 
 `active_milestone` 缺失但 `milestone_pipeline_path` 存在且 pipeline 非空时，表示 pipeline 中有 planned milestone 但尚未激活。设置后 Milestone 进度由 `milestone-status-skill` 独立分析，Pipeline 推进由 `harness-skill` 在收到 `milestone_acceptance_verdict` 后执行，不替代 `RepoScope.Decide` 的决策权。
 
 Milestone final acceptance 写回后，Control State 必须与 `.servo/repo/milestone-backlog.md` 和 `.servo/repo/milestone-history.md` 保持一致：`active_milestone` 只能指向 live backlog 中唯一 `active` milestone；没有 active milestone 时应写为 `none`；`milestone_status` 必须与 active milestone 状态一致或为 `none`；`milestone_pipeline_summary` 的 planned/active 计数必须等于 live backlog 实际条目，completed/superseded 计数必须等于 milestone history 实际条目。若写回后不一致，Harness 必须停在 `writeback_incomplete` / `milestone_pipeline_stale`，不得继续 Worktrack 初始化或 pipeline advancement。
+
+Milestone branch 与 continuation 字段在 Control State 中只是 routing metadata，不是业务真相。权威 branch/pause/resume 事实属于 `.servo/milestone/{milestone_id}.md`，live pipeline 摘要属于 `.servo/repo/milestone-backlog.md`。Control State 不得通过修改 `active_milestone_branch` 或 `active_milestone_continuation_state` 来创建、暂停、恢复或接受 Milestone；必须由 RepoScope Decide/Init/Recover/Close 对正式 artifact 做事务写回。
+
+若 `active_milestone_continuation_state` 为 `waiting_external`、`paused_by_programmer` 或 `blocked`，Harness 不得进入 Worktrack Init/Dispatch，除非正式 Milestone artifact 同时证明 `resume_condition` 已满足并且 RepoScope.Observe 已刷新 baseline 与 Milestone branch head。若暂停 Milestone 释放 active slot，Control State 必须把 `active_milestone` 改为新的唯一 active milestone 或 `none`，并在 handback/last_stop_reason 中记录 transition authority。
+
+## Branch Environment Guard
+
+Branch Environment Guard 是控制面路由守卫，不是分支真相来源。它消费 `baseline_branch`、`active_milestone_branch` 与当前 Worktrack Contract 的 Branch Policy 字段来判定当前 checkout 是否处在合法变更上下文。
+
+合法上下文：
+
+- `baseline`: 当前 checkout 等于 servo-managed `baseline_branch`。
+- `milestone`: 当前 checkout 等于 active Milestone 的 `active_milestone_branch`。
+- `worktrack`: 当前 checkout 等于当前 Worktrack Contract 的 `worktrack_branch`。
+- `unknown`: 缺少必要字段或当前 checkout 不匹配任何已声明 ref。
+
+Scope / Function 约束：
+
+- RepoScope 只读 Observe / Decide 可在任意上下文观察，但必须记录 `current_branch_context` 和 `branch_context_guard_status`。
+- RepoScope 中会改变 baseline、创建 Milestone branch、激活或切换 Milestone 的动作默认要求 `expected_branch_context = baseline`。
+- WorktrackScope.Init 对 milestone-derived Worktrack 要求 `expected_branch_context = milestone`，并从 `active_milestone_branch` 创建 `worktrack_branch`；非 milestone-derived Worktrack 要求 `baseline`。
+- WorktrackScope.Dispatch / Implement / Verify / Judge 的变更动作要求 `expected_branch_context = worktrack`。
+- WorktrackScope.Close / RepoScope.Refresh 使用 Worktrack Contract 的 `closeout_target_ref` / `checkpoint_base_ref`；Milestone-derived Worktrack 的 direct closeout/refresh 可在 `milestone` 上完成，Milestone final acceptance 后才允许合回 `baseline`。
+
+若 `branch_context_guard_status = blocked`，任何 mutating Function 都必须停止。合法恢复路径只能切换到 `branch_context_required_ref` 或重新进入 RepoScope.Observe / Recover；不得从当前分支名、默认分支名或历史习惯推断目标。缺失字段的 conservative runtime backfill 为 `current_branch_context = unknown`、`expected_branch_context = unknown`、`branch_context_guard_status = blocked`，直到正式 artifact 提供足够证据。
 
 ## Milestone Review Gate Routing State
 
@@ -61,6 +93,7 @@ For missing additive Milestone Review Gate fields, conservative runtime backfill
 - `default_servo_work_branch`: Servo 默认工作分支或工作分支命名策略。
 - `protected_branch_policy`: 不允许 Servo 直接修改、强推、删除或自动合并的受保护分支策略。
 - `branch_mutation_policy`: 分支创建、切换、合并、删除与远端推送的默认审批策略。
+- `milestone_branch_policy`: Milestone integration branch 命名、创建、baseline sync 与 final merge 的默认策略。
 
 这些字段属于 user-defined controls，应存放在 `User-Defined Servo Controls`、`Continuation Authority` 或等价控制配置段中；它们不是 repo 目标，也不替代 `WorktrackContract`。未回答时必须按保守默认解释：不扩大连续推进权限，不提高自动 Worktrack 额度，不放宽受保护分支规则。
 

@@ -525,6 +525,70 @@ WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS = [
     "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
     "product/.servo_template/worktrack/contract.md",
 ]
+BRANCH_POLICY_FIELD_CONTRACT_PATHS = [
+    "docs/harness/artifact/worktrack/contract.md",
+    "docs/harness/artifact/standard-fields.md",
+    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "product/harness/skills/close-worktrack-skill/SKILL.md",
+    "product/harness/skills/repo-refresh-skill/SKILL.md",
+    "product/harness/skills/worktrack-status-skill/SKILL.md",
+    "product/harness/skills/recover-worktrack-skill/SKILL.md",
+]
+BRANCH_POLICY_FIELD_REQUIRED_TERMS = [
+    "baseline_branch",
+    "branch_source_ref",
+    "worktrack_branch",
+    "integration_target_ref",
+    "closeout_target_ref",
+    "checkpoint_base_ref",
+]
+BRANCH_CONTEXT_GUARD_FIELD_PATHS = [
+    "docs/harness/artifact/control/control-state.md",
+    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/.servo_template/control-state.md",
+]
+BRANCH_CONTEXT_GUARD_SEMANTIC_PATHS = [
+    "docs/harness/foundations/runtime-state-hydration.md",
+    "docs/harness/foundations/runtime-control-loop.md",
+    "docs/harness/scope/repo-scope.md",
+    "docs/harness/scope/worktrack-scope.md",
+    "docs/harness/catalog/supervisor.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+]
+BRANCH_CONTEXT_GUARD_REQUIRED_TERMS = [
+    "Branch Environment Guard",
+    "branch_context",
+    "baseline",
+    "milestone",
+    "worktrack",
+    "unknown",
+    "active_milestone_branch",
+    "current_branch_context",
+    "expected_branch_context",
+    "branch_context_guard_status",
+    "branch_context_required_ref",
+]
+BRANCH_CONTEXT_GUARD_FIELD_REQUIRED_TERMS = [
+    "Branch Environment Guard",
+    "baseline_branch",
+    "active_milestone_branch",
+    "current_branch_context",
+    "expected_branch_context",
+    "branch_context_guard_status",
+    "branch_context_required_ref",
+    "worktrack_branch",
+    "unknown",
+]
+BRANCH_CONTEXT_GUARD_FORBIDDEN_PHRASES = [
+    "任何会改变代码状态的 Function（Init、Dispatch 等）必须在 `baseline_branch` 上执行",
+    "合法恢复路径只有 `git checkout <baseline_branch>`",
+    "git checkout <baseline_branch>",
+    "必须在 `baseline_branch` 上执行",
+    "必须先切换到 baseline_branch",
+    "不得在非 Harness 管理分支上执行任何会改变代码状态的操作",
+    "当前分支与 control-state 的 `baseline_branch` 不一致",
+]
 WORKTRACK_INTAKE_REVIEW_REQUIRED_TERMS = [
     "worktrack_intake_review",
     "repo_fundamentals",
@@ -951,6 +1015,28 @@ AW_RESIDUE_CLASSIFICATION_CONTRACT = (
 ADAPTER_PAYLOAD_GLOB = "product/harness/adapters/*/skills/*/payload.json"
 CANONICAL_SOURCE_MARKER_GLOB = "product/harness/skills/**/aw.marker"
 ADAPTER_SOURCE_MARKER_GLOB = "product/harness/adapters/**/aw.marker"
+CANONICAL_DISTRIBUTED_SKILLS_DIR = Path("product/harness/skills")
+PAYLOAD_GENERATED_FILES = {"aw.marker", "payload.json"}
+PAYLOAD_SOURCE_EXCLUDED_NAMES = {
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    "aw.marker",
+    "payload.json",
+}
+PAYLOAD_SOURCE_EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS = [
+    re.compile(r"遵循\s*\[docs/harness/"),
+    re.compile(r"execution_policy_contract_ref:\s*docs/harness/"),
+    re.compile(r"以\s*`?docs/harness/[^`\\s]*`?\s*为准"),
+    re.compile(r"最终内容应与\s*`?docs/harness/"),
+    re.compile(r"toolchain/scripts/test/complexity_signal_scanner\\.py"),
+    re.compile(r"DEFAULT_CLAUDE_SKILL_NAME\s*=\s*\"servo-set-harness-goal-skill\""),
+]
+SOURCE_TRACE_MARKERS = [
+    "Source-side authoring trace",
+    "Source-side authoring traces",
+]
 AW_RESIDUE_CONTRACT_REQUIRED_TERMS = [
     "compatibility-allowed",
     "runtime-migration-contract",
@@ -1399,6 +1485,176 @@ def check_aw_residue_classification_contract(repo_root: Path, report: SemanticRe
     )
 
 
+def canonical_payload_source_paths(canonical_dir: Path, repo_root: Path) -> set[str]:
+    paths: set[str] = set()
+    for path in canonical_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(part in PAYLOAD_SOURCE_EXCLUDED_NAMES for part in path.parts):
+            continue
+        if path.suffix in PAYLOAD_SOURCE_EXCLUDED_SUFFIXES:
+            continue
+        paths.add(to_relative_posix(path, repo_root))
+    return paths
+
+
+def line_has_source_trace(line: str) -> bool:
+    return any(marker in line for marker in SOURCE_TRACE_MARKERS)
+
+
+def check_distributed_skill_packages_are_self_contained(repo_root: Path, report: SemanticReport) -> None:
+    skills_root = repo_root / CANONICAL_DISTRIBUTED_SKILLS_DIR
+    if not skills_root.is_dir():
+        report.add_failure(
+            f"missing distributed skill source root: {CANONICAL_DISTRIBUTED_SKILLS_DIR.as_posix()}"
+        )
+        return
+
+    checked_skills = 0
+    checked_payloads = 0
+    for package_dir in sorted(path for path in skills_root.iterdir() if path.is_dir()):
+        checked_skills += 1
+        relative_package_dir = to_relative_posix(package_dir, repo_root)
+
+        skill_entry = package_dir / "SKILL.md"
+        if not skill_entry.is_file():
+            report.add_failure(f"distributed skill package missing SKILL.md: {relative_package_dir}")
+
+        for path in sorted(package_dir.rglob("*")):
+            if path.is_symlink():
+                report.add_failure(
+                    "distributed skill package must not contain symlinked runtime files: "
+                    f"{to_relative_posix(path, repo_root)}"
+                )
+                continue
+            if not path.is_file():
+                continue
+
+            relative_path = to_relative_posix(path, repo_root)
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                if line_has_source_trace(line):
+                    continue
+                for pattern in PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS:
+                    if pattern.search(line):
+                        report.add_failure(
+                            "distributed skill package contains package-external runtime dependency "
+                            f"{relative_path}:{line_number}"
+                        )
+
+    payload_paths = sorted(repo_root.glob(ADAPTER_PAYLOAD_GLOB))
+    for payload_path in payload_paths:
+        checked_payloads += 1
+        relative_payload_path = to_relative_posix(payload_path, repo_root)
+        try:
+            payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report.add_failure(f"adapter payload JSON is invalid: {relative_payload_path}:{exc.lineno}")
+            continue
+
+        canonical_dir_value = payload.get("canonical_dir")
+        canonical_paths = payload.get("canonical_paths")
+        required_payload_files = payload.get("required_payload_files")
+        target_dir = payload.get("target_dir")
+
+        if not isinstance(canonical_dir_value, str):
+            report.add_failure(f"adapter payload missing string canonical_dir: {relative_payload_path}")
+            continue
+        canonical_dir = repo_root / canonical_dir_value
+        if not canonical_dir.is_dir():
+            report.add_failure(
+                f"adapter payload canonical_dir is missing: {relative_payload_path}:{canonical_dir_value}"
+            )
+            continue
+        try:
+            canonical_dir.relative_to(skills_root)
+        except ValueError:
+            report.add_failure(
+                f"adapter payload canonical_dir escapes distributed skill root: {relative_payload_path}"
+            )
+
+        if not isinstance(canonical_paths, list) or not all(isinstance(path, str) for path in canonical_paths):
+            report.add_failure(f"adapter payload missing string canonical_paths list: {relative_payload_path}")
+            continue
+        if not isinstance(required_payload_files, list) or not all(
+            isinstance(path, str) for path in required_payload_files
+        ):
+            report.add_failure(
+                f"adapter payload missing string required_payload_files list: {relative_payload_path}"
+            )
+            continue
+        if not isinstance(target_dir, str) or "/" in target_dir or target_dir in {"", ".", ".."}:
+            report.add_failure(f"adapter payload target_dir must be one package directory name: {relative_payload_path}")
+
+        canonical_set = set(canonical_paths)
+        for canonical_path in canonical_set:
+            path = Path(canonical_path)
+            if path.is_absolute() or ".." in path.parts:
+                report.add_failure(
+                    f"adapter payload canonical_path escapes package source: {relative_payload_path}:{canonical_path}"
+                )
+                continue
+            full_path = repo_root / path
+            if not full_path.exists():
+                report.add_failure(
+                    f"adapter payload canonical_path missing source file: {relative_payload_path}:{canonical_path}"
+                )
+                continue
+            try:
+                full_path.relative_to(canonical_dir)
+            except ValueError:
+                report.add_failure(
+                    f"adapter payload canonical_path is outside canonical_dir: {relative_payload_path}:{canonical_path}"
+                )
+
+        expected_paths = canonical_payload_source_paths(canonical_dir, repo_root)
+        missing_paths = sorted(expected_paths - canonical_set)
+        stale_paths = sorted(canonical_set - expected_paths)
+        for missing_path in missing_paths:
+            report.add_failure(
+                f"adapter payload missing canonical source file: {relative_payload_path}:{missing_path}"
+            )
+        for stale_path in stale_paths:
+            report.add_failure(
+                "adapter payload lists stale or generated file as canonical source: "
+                f"{relative_payload_path}:{stale_path}"
+            )
+
+        expected_required_files: set[str] = set()
+        for canonical_path in canonical_set:
+            try:
+                expected_required_files.add(
+                    to_relative_posix(repo_root / canonical_path, canonical_dir)
+                )
+            except ValueError:
+                continue
+        for generated_file in PAYLOAD_GENERATED_FILES:
+            expected_required_files.add(generated_file)
+
+        required_set = set(required_payload_files)
+        missing_required_files = sorted(expected_required_files - required_set)
+        stale_required_files = sorted(required_set - expected_required_files)
+        for required_file in missing_required_files:
+            report.add_failure(
+                f"adapter payload required_payload_files missing distributed file "
+                f"{required_file!r}: {relative_payload_path}"
+            )
+        for required_file in stale_required_files:
+            report.add_failure(
+                f"adapter payload required_payload_files lists file not copied from canonical source "
+                f"{required_file!r}: {relative_payload_path}"
+            )
+
+    report.add_info(
+        f"checked {checked_skills} distributed skill packages and {checked_payloads} adapter payloads "
+        "for self-containment"
+    )
+
+
 def check_path_governance_docs_list_gitignore_entries(repo_root: Path, report: SemanticReport) -> None:
     doc_path = repo_root / PATH_GOVERNANCE_CHECKS_DOC
     if not doc_path.exists():
@@ -1842,6 +2098,72 @@ def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticRepo
     report.add_info(f"checked {checked} worktrack intake review contract sources")
 
 
+def check_branch_policy_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in BRANCH_POLICY_FIELD_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing Branch Policy contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in BRANCH_POLICY_FIELD_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"Branch Policy contract missing required field {term!r}: {relative_path}"
+                )
+
+    for relative_path in BRANCH_CONTEXT_GUARD_FIELD_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing branch context guard source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        required_terms = list(BRANCH_CONTEXT_GUARD_FIELD_REQUIRED_TERMS)
+        if relative_path == "docs/harness/artifact/control/control-state.md":
+            required_terms.extend(BRANCH_CONTEXT_GUARD_REQUIRED_TERMS)
+        for term in dict.fromkeys(required_terms):
+            if term not in text:
+                report.add_failure(
+                    f"branch context guard missing required term {term!r}: {relative_path}"
+                )
+        for phrase in BRANCH_CONTEXT_GUARD_FORBIDDEN_PHRASES:
+            if phrase in text:
+                report.add_failure(
+                    f"branch context guard still contains baseline-only guard phrase: {relative_path}"
+                )
+
+    for relative_path in BRANCH_CONTEXT_GUARD_SEMANTIC_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing branch context guard semantic source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        lower_text = text.lower()
+        if not (
+            "branch environment guard" in lower_text
+            or "branch_context" in text
+            or "branch context" in lower_text
+        ):
+            report.add_failure(
+                f"branch context guard semantic source missing branch-context routing term: {relative_path}"
+            )
+        for term in ("baseline", "milestone", "worktrack"):
+            if term not in lower_text:
+                report.add_failure(
+                    f"branch context guard semantic source missing required term {term!r}: {relative_path}"
+                )
+        for phrase in BRANCH_CONTEXT_GUARD_FORBIDDEN_PHRASES:
+            if phrase in text:
+                report.add_failure(
+                    f"branch context guard still contains baseline-only guard phrase: {relative_path}"
+                )
+
+    report.add_info(f"checked {checked} Branch Policy / branch context guard sources")
+
+
 def check_pre_milestone_intake_template_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in PRE_MILESTONE_INTAKE_CONTRACT_PATHS:
@@ -2252,7 +2574,12 @@ def _parse_control_state(text: str) -> dict[str, str]:
             continue
         stripped = line.strip()
         if current_section == "Milestone Pipeline":
-            keys = ("active_milestone", "milestone_status", "milestone_pipeline_summary")
+            keys = (
+                "active_milestone",
+                "milestone_status",
+                "milestone_pipeline_summary",
+                "active_milestone_continuation_state",
+            )
         elif current_section == "Active Worktrack":
             keys = ("active_worktrack", "latest_closed_worktrack")
         else:
@@ -2286,6 +2613,8 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
             current = {
                 "milestone_id": line.split(":", 1)[1].strip(),
                 "status": "",
+                "continuation_state": "",
+                "milestone_branch": "",
                 "worktrack_list": [],
                 "accepted": False,
             }
@@ -2300,6 +2629,10 @@ def _parse_milestone_backlog(text: str) -> list[dict[str, object]]:
             in_worktrack_list = stripped.startswith("- worktrack_list:")
             if stripped.startswith("- status:"):
                 current["status"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("- continuation_state:"):
+                current["continuation_state"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("- milestone_branch:"):
+                current["milestone_branch"] = stripped.split(":", 1)[1].strip()
             elif stripped.startswith("- verdict:") and "accepted" in stripped:
                 current["accepted"] = True
             elif stripped.startswith("- acceptance:"):
@@ -2320,6 +2653,8 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
     milestone: dict[str, object] = {
         "milestone_id": "",
         "status": "",
+        "continuation_state": "",
+        "milestone_branch_name": "",
         "progress_total": None,
         "progress_completed": None,
         "worktrack_statuses": {},
@@ -2328,6 +2663,7 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
     current_worktrack_id = ""
     in_worktrack_list = False
     in_progress_counter = False
+    in_milestone_branch = False
 
     for line in text.splitlines():
         stripped = line.strip()
@@ -2335,6 +2671,7 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
             heading = stripped.removeprefix("## ").strip()
             in_worktrack_list = heading == "worktrack_list"
             in_progress_counter = heading == "progress_counter"
+            in_milestone_branch = heading == "milestone_branch"
             current_worktrack_id = ""
             continue
 
@@ -2343,6 +2680,12 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
             continue
         if stripped.startswith("status:") and not milestone["status"]:
             milestone["status"] = stripped.split(":", 1)[1].strip().strip('"')
+            continue
+        if stripped.startswith("continuation_state:") and not milestone["continuation_state"]:
+            milestone["continuation_state"] = stripped.split(":", 1)[1].strip().strip('"')
+            continue
+        if in_milestone_branch and stripped.startswith("name:") and not milestone["milestone_branch_name"]:
+            milestone["milestone_branch_name"] = stripped.split(":", 1)[1].strip().strip('"')
             continue
 
         if in_worktrack_list:
@@ -2377,6 +2720,34 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
                     milestone["progress_completed"] = None
 
     return milestone
+
+
+def _parse_worktrack_contract(text: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    keys = (
+        "worktrack_id",
+        "milestone_id",
+        "derived_from_milestone",
+        "status",
+        "baseline_branch",
+        "branch_source_ref",
+        "worktrack_branch",
+        "integration_target_ref",
+        "closeout_target_ref",
+        "checkpoint_base_ref",
+        "final_baseline_branch",
+    )
+    for line in text.splitlines():
+        stripped = line.strip()
+        for key in keys:
+            for prefix in (f"- {key}:", f"{key}:"):
+                if stripped.startswith(prefix) and key not in fields:
+                    fields[key] = stripped.removeprefix(prefix).strip().strip('"')
+    return fields
+
+
+def _ref_matches_branch(ref: str, branch_name: str) -> bool:
+    return ref == branch_name or ref.startswith(f"{branch_name}@")
 
 
 def _runtime_milestone_counts(
@@ -2425,6 +2796,11 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
         milestone_id = str(entry["milestone_id"])
         by_id[milestone_id] = entry
         status = str(entry.get("status", ""))
+        if status and status not in {"planned", "active", "completed", "superseded"}:
+            report.add_failure(
+                "runtime artifact consistency: milestone "
+                f"{milestone_id} has invalid primary status {status!r}; use continuation_state for waiting/paused semantics"
+            )
         if status in {"completed", "superseded"}:
             report.add_failure(
                 "runtime artifact consistency: live milestone backlog contains history status "
@@ -2441,6 +2817,11 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             )
         by_id[milestone_id] = entry
         status = str(entry.get("status", ""))
+        if status and status not in {"planned", "active", "completed", "superseded"}:
+            report.add_failure(
+                "runtime artifact consistency: milestone-history entry "
+                f"{milestone_id} has invalid primary status {status!r}; use continuation_state for waiting/paused semantics"
+            )
         if status not in {"completed", "superseded"}:
             report.add_failure(
                 "runtime artifact consistency: milestone-history contains live status "
@@ -2474,6 +2855,11 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             artifact_status = str(milestone.get("status", ""))
             entry = by_id.get(milestone_id)
             entry_status = str(entry.get("status", "")) if entry else ""
+            if artifact_status and artifact_status not in {"planned", "active", "completed", "superseded"}:
+                report.add_failure(
+                    "runtime artifact consistency: milestone artifact "
+                    f"{milestone_id} has invalid primary status {artifact_status!r}; use continuation_state for waiting/paused semantics"
+                )
             if artifact_status in {"completed", "superseded"}:
                 if entry is not None and entry_status not in {"completed", "superseded"}:
                     report.add_failure(
@@ -2528,6 +2914,22 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
 
     active_worktrack = control.get("active_worktrack", "")
     if active_worktrack and active_worktrack != "none":
+        active_entry = by_id.get(active_milestone) if active_milestone else None
+        active_artifact = milestone_artifacts.get(active_milestone) if active_milestone else None
+        continuation_state = ""
+        if active_artifact:
+            continuation_state = str(active_artifact.get("continuation_state", ""))
+        if not continuation_state and active_entry:
+            continuation_state = str(active_entry.get("continuation_state", ""))
+        if not continuation_state:
+            continuation_state = control.get("active_milestone_continuation_state", "")
+        if continuation_state in {"waiting_external", "paused_by_programmer", "blocked"}:
+            report.add_failure(
+                "runtime artifact consistency: paused/waiting active milestone "
+                f"{active_milestone} continuation_state {continuation_state} retains "
+                f"active_worktrack {active_worktrack}; release or close the worktrack before pausing/switching"
+            )
+
         for milestone_id, artifact in milestone_artifacts.items():
             worktrack_statuses = artifact.get("worktrack_statuses", {})
             if not isinstance(worktrack_statuses, dict) or active_worktrack not in worktrack_statuses:
@@ -2551,6 +2953,42 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
                     f"(milestone_status={artifact_status!r}, worktrack_status={worktrack_status!r})"
                 )
             break
+
+    worktrack_contract_path = aw_dir / "worktrack/contract.md"
+    if worktrack_contract_path.exists():
+        worktrack_contract = _parse_worktrack_contract(
+            worktrack_contract_path.read_text(encoding="utf-8")
+        )
+        if worktrack_contract.get("derived_from_milestone", "").lower() in {"true", "yes"}:
+            milestone_id = worktrack_contract.get("milestone_id", "")
+            milestone_artifact = milestone_artifacts.get(milestone_id, {})
+            milestone_entry = by_id.get(milestone_id, {})
+            milestone_branch = str(
+                milestone_artifact.get("milestone_branch_name")
+                or milestone_entry.get("milestone_branch")
+                or ""
+            )
+            if milestone_branch:
+                for field_name in ("integration_target_ref", "closeout_target_ref"):
+                    target_ref = worktrack_contract.get(field_name, "")
+                    if not target_ref:
+                        report.add_failure(
+                            "runtime artifact consistency: milestone-derived worktrack contract "
+                            f"is missing {field_name}"
+                        )
+                    elif not _ref_matches_branch(target_ref, milestone_branch):
+                        report.add_failure(
+                            "runtime artifact consistency: milestone-derived worktrack "
+                            f"{field_name}={target_ref!r} does not target milestone_branch {milestone_branch!r}"
+                        )
+                branch_source_ref = worktrack_contract.get("branch_source_ref", "")
+                if branch_source_ref.startswith("ms/") and not _ref_matches_branch(
+                    branch_source_ref, milestone_branch
+                ):
+                    report.add_failure(
+                        "runtime artifact consistency: milestone-derived worktrack "
+                        f"branch_source_ref={branch_source_ref!r} points to unrelated milestone branch {milestone_branch!r}"
+                    )
 
     summary = _parse_pipeline_summary(control.get("milestone_pipeline_summary", ""))
     if summary is None:
@@ -2677,6 +3115,7 @@ def main() -> int:
     check_root_tool_shims_disable_bytecode(repo_root, report)
     check_agents_route_slimming_contract(repo_root, report)
     check_aw_residue_classification_contract(repo_root, report)
+    check_distributed_skill_packages_are_self_contained(repo_root, report)
     check_path_governance_docs_list_gitignore_entries(repo_root, report)
     check_review_verify_docs_list_closeout_steps(repo_root, report)
     check_docs_list_closeout_cache_roots(repo_root, report)
@@ -2705,6 +3144,7 @@ def main() -> int:
     check_complexity_signal_scanner_contract(repo_root, report)
     check_weak_doc_temporary_understanding_contract(repo_root, report)
     check_repo_init_complex_gate_contract(repo_root, report)
+    check_branch_policy_contract(repo_root, report)
     check_artifact_skill_alignment(repo_root, report)
     check_runtime_artifact_consistency(repo_root, report)
     check_orphan_docs(repo_root, report)
