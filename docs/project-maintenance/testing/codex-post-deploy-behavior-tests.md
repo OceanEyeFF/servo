@@ -7,7 +7,7 @@ last_verified: 2026-05-10
 ---
 # Codex Post-Deploy Behavior Tests
 
-> 目的：固定 Codex 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.agents/skills/`、无交互 `codex exec`、多轮观察。
+> 目的：固定用于观察 Codex 部署后 Harness 行为的最小手动操作手册：临时 repo、隔离 `.agents/skills/`、无交互 `codex exec`、多轮观察。
 
 本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)。
 
