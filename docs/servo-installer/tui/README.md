@@ -7,7 +7,7 @@ last_verified: 2026-05-19
 ---
 # servo-installer TUI Documentation
 
-> servo-installer 的 TUI（Terminal User Interface）合同与实现文档。TUI 是推荐的人类 operator 交互路径；CLI 是稳定的 AI、CI 和脚本接口。
+> servo-installer 的 TUI（Terminal User Interface）合同与实现文档。TUI 是面向 operator 的推荐交互方式；CLI 是面向 AI、CI 和脚本的稳定接口。
 
 ## 章节
 
@@ -20,7 +20,7 @@ last_verified: 2026-05-19
 
 ## 与 CLI 的关系
 
-TUI 和 CLI 共享同一命令面合同（见 [distribution-entrypoint-contract.md](../contracts/distribution-entrypoint-contract.md)）。TUI 不引入新的 verb 或 mutating 语义——它是同一合同的交互层表达。
+TUI 和 CLI 共享同一套命令合同（见 [distribution-entrypoint-contract.md](../contracts/distribution-entrypoint-contract.md)）。TUI 不引入新的操作动词或变更语义——它是同一合同在交互层的表达。
 
 ## 阅读路由
 
