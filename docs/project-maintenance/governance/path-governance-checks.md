@@ -25,7 +25,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 
 ## 三、脚本当前会检查什么
 
-1. `folder_logic_check.py` — 根目录下的对象是否在允许列表（allowlist）中：`product/`、`docs/`、`toolchain/`、`.codex/`、`.agents/`、`.claude/`、`.servo/`、legacy / compatibility state `.autoworkflow/`、`.spec-workflow/`、installer run logs `.logs/`、`.nav/`、`tools/`、`.pytest_cache/`、入口/基础设施文件，包括 Claude Code 适配入口 `CLAUDE.md`）；裸 `.pyc`/`.pyo` 不允许
+1. `folder_logic_check.py` — 根目录下的对象是否在允许列表（allowlist）中：`product/`、`docs/`、`toolchain/`、`.codex/`、`.agents/`、`.claude/`、`.servo/`、legacy / compatibility state `.autoworkflow/`、`.spec-workflow/`、installer run logs `.logs/`、`.nav/`、`tools/`、`.pytest_cache/`、入口/基础设施文件，包括 Claude Code 适配入口 `CLAUDE.md`；裸 `.pyc`/`.pyo` 不允许
 2. `product/`、`docs/`、`toolchain/` 一级子目录合规；拦截错放内容（`product/` 不承载 runbook/缓存/state，`docs/` 不承载可执行文件/缓存，`toolchain/` 不承载业务源码/mount，`tools/` 不承载 Python 缓存）
 3. hidden/state/mount 层 tracked 状态受控：`.agents/`、`.claude/` tracked 即失败；`.codex/` 仅 `config.toml`+`rules/repo.rules`；`tools/` 仅显式 compat shim；`.pytest_cache/` tracked 即失败
 4. `.nav/` 仅含 `README.md`、`@docs`、`@skills`；`@docs` 与 `@skills` 是 symlink 且解析到合法目标
