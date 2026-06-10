@@ -7,7 +7,7 @@ last_verified: 2026-06-02
 ---
 # Claude Post-Deploy Behavior Tests
 
-> 目的：固定 Claude Code 部署后 Harness 行为观察的最小手动 runbook：临时 repo、隔离 `.claude/skills/`、无交互 `claude --bare -p`、多轮观察。
+> 目的：固定用于观察 Claude Code 部署后 Harness 行为的最小手动操作手册：临时 repo、隔离 `.claude/skills/`、无交互 `claude --bare -p`、多轮观察。
 
 本页属于 [Testing Runbooks](./README.md)。通用 deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)，Claude 使用入口见 [Claude Repo-local Usage Help](../usage-help/claude.md)。
 
@@ -78,7 +78,7 @@ printf '.claude/\n' >> "$TMP_REPO/.git/info/exclude"
 printf 'TMP_ROOT=%s\n' "$TMP_ROOT"
 ```
 
-默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.servo/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。`--bare` 认证必须来自显式 API key / settings helper；外发日志前确认不泄露认证文件、私有路径或 repo 内容。
+默认临时根 `$HOME/tmp`；`.claude/` 用 `.git/info/exclude` 排除；不预置 `.servo/`，不创建初始提交；`NPM_CONFIG_CACHE` 指向本轮临时目录。`--bare` 认证必须来自显式 API key / settings helper；对外分享日志前，确认不包含认证凭据、私有路径或仓库内容。
 
 ## 五、安装隔离 Claude payload
 
@@ -154,7 +154,7 @@ EOF
 
 `round-0xx` 递增目录名；仅在诊断恢复行为时写长 prompt。
 
-## 九、复杂门禁 dogfood 场景
+## 九、复杂门禁自测场景
 
 当目标是观察复杂项目门禁行为，而不是让 Claude 修改 repo：
 

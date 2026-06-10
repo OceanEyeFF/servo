@@ -7,15 +7,15 @@ last_verified: 2026-05-27
 ---
 # TUI / CLI Responsibility Split Contract
 
-> 目的：定义 servo-installer 的 TUI 和 CLI 的职责分离合同。TUI 是推荐的人类 operator 交互路径；CLI 是稳定的 AI、CI 和脚本接口。两者共享同一命令面合同，TUI 不引入独立的 mutating 语义。
+> 目的：定义 servo-installer 的 TUI 和 CLI 的职责分离合同。TUI 是面向人工操作的推荐交互方式；CLI 是面向 AI、CI 和脚本的稳定接口。两者共享同一命令合同，TUI 不引入独立的 mutating 语义。
 
-本页管理 TUI/CLI 的职责边界、默认行为差异、屏幕模型和色彩语义。命令面合同见 [distribution-entrypoint-contract.md](../contracts/distribution-entrypoint-contract.md)。
+本页管理 TUI/CLI 的职责边界、默认行为差异、屏幕模型和色彩语义。命令合同见 [distribution-entrypoint-contract.md](../contracts/distribution-entrypoint-contract.md)。
 
 ## 角色定位
 
 | 接口 | 角色 | 默认受众 |
 |------|------|---------|
-| **TUI** | 推荐的人类交互路径 | 人类 operator（首次安装、日常维护、卸载） |
+| **TUI** | 面向人工操作的推荐交互方式 | 人工操作（首次安装、日常维护、卸载） |
 | **CLI** | 稳定的机器接口 | AI agent、CI pipeline、shell 脚本 |
 
 **关键约束：** TUI 不拥有独立于 CLI 的 install/update/prune 语义。所有 mutating TUI 动作必须映射到明确的 CLI verb。
@@ -24,9 +24,9 @@ last_verified: 2026-05-27
 
 | 场景 | 推荐接口 | 原因 |
 |------|---------|------|
-| 人类首次安装 | TUI | 引导式流程、状态可见、减少失误 |
-| 人类日常维护 | TUI | diagnose/verify 结果可视化 |
-| 人类卸载 | TUI 或 CLI | 简单操作，两种均可 |
+| 首次安装（人工操作） | TUI | 引导式流程、状态可见、减少失误 |
+| 日常维护（人工操作） | TUI | diagnose/verify 结果可视化 |
+| 卸载（人工操作） | TUI 或 CLI | 简单操作，两种均可 |
 | AI agent 调用 | CLI | 稳定输出、非交互、可脚本化 |
 | CI pipeline | CLI | 非交互环境、`--json` 机器输出 |
 | Shell 脚本 | CLI | 退出码、stdout/stderr 标准处理 |
@@ -62,7 +62,7 @@ TUI 必须包含以下固定状态信息，在整个交互过程中持续可见�
 
 色彩是**次要状态线索**，永远不是状态的唯一载体。每个色彩信号必须有同等的文字/符号表达。
 
-| 色彩 | 语义 | 同等文字表达 |
+| 色彩 | 语义 | 等价文字表达 |
 |------|------|------------|
 | 绿色 | 通过 / 完成 | `[OK]` 或 `✓` |
 | 黄色 | 警告 / 需确认 | `[WARN]` 或 `!` |
@@ -91,7 +91,7 @@ diagnose → preview paths → confirm → install/update → verify → summary
 
 每一步都可以取消。取消时 TUI 不执行任何 mutating 操作。
 
-当 diagnose 发现 installer-managed legacy target dirs（例如 agents backend 的旧 `aw-*` skill 目录）时，TUI 必须展示与 CLI 相同的更新指引，并把 mutating 收敛动作映射到 `servo-installer update --backend <backend> --yes` 或 runtime 迁移路径中的 `migrate-runtime --from aw --to servo --yes --reinstall --backend <backend>`。TUI 不得引入独立的 legacy cleanup verb。
+当 diagnose 发现 installer-managed 旧版 target 目录（例如 agents backend 的旧 `aw-*` skill 目录）时，TUI 必须展示与 CLI 相同的更新指引，并把 mutating 收敛动作映射到 `servo-installer update --backend <backend> --yes` 或 runtime 迁移路径中的 `migrate-runtime --from aw --to servo --yes --reinstall --backend <backend>`。TUI 不得引入独立的旧版清理操作。
 
 TUI 默认必须写入 sanitized run log，并在退出时打印具体日志路径。默认位置为目标仓库 `.logs/servo-installer/`；使用默认目标仓库日志目录时，installer 必须确保目标 `.gitignore` 包含 `.logs/`，避免 TUI 运行日志变成未跟踪根目录噪声。若实现支持 `--log-dir`，显式路径优先。日志只能记录诊断所需的命令、环境摘要、目标状态、阶段输出和最终 verdict，不得写入完整环境变量 dump、token、credential 或 secret 值。
 
@@ -99,8 +99,8 @@ TUI 默认必须写入 sanitized run log，并在退出时打印具体日志路�
 
 | 受众 | 推荐路径 | 文档入口 |
 |------|---------|---------|
-| 人类（新 operator） | TUI guided flow | quickstart → TUI |
-| 人类（经验 operator） | TUI 或 CLI | usage-help → 按需查阅 |
+| 新 operator | TUI guided flow | quickstart → TUI |
+| 有经验的 operator | TUI 或 CLI | usage-help → 按需查阅 |
 | AI agent | CLI `--json` | codex.md / claude.md |
 | CI pipeline | CLI `--json` + 退出码 | testing runbooks |
 | 脚本 | CLI | usage-help / runbooks |
