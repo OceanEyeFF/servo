@@ -60,6 +60,8 @@ last_verified: 2026-06-02
 
 ### 3.1 真实 Claude Dogfood 准入
 
+> **⚠️ TODO（MS-20260608-003 scope 外）**：本节治理细节超出了最初设计意图。原始设想是在临时 repo 中以「Claude + 允许高风险操作 + 无交互 skills 执行」模式直接验证 skills 运行状况，当前版本引入了较多分类讨论与证据记录要求。后续 Milestone（如 MS-20260608-004）应对本节做针对性精简，回归临时 repo smoke 为核心验证路径。
+
 默认需要真实 Claude dogfood 的变更：
 
 - 新增或改变 Harness / skill / gate / dispatch / closeout / worktrack 行为。
