@@ -7,7 +7,7 @@ last_verified: 2026-05-26
 ---
 # 根目录分层
 
-> 目的：固定根目录分层与例外白名单，防止业务源码、文档真相、工具脚本、运行状态混层。
+> 目的：固定根目录分层与例外白名单，防止业务源码、文档真相、工具脚本与运行状态混杂。
 
 ## 一、正式内容区
 
@@ -34,7 +34,7 @@ last_verified: 2026-05-26
 
 ### 0. Repo-local deploy targets
 
-`.agents/skills/`、`.claude/skills/` 只承接 repo-local deploy 结果与 operator runtime 挂载；必须 ignored，不得入库；非 canonical truth 或业务源码根；fresh checkout 不携带其镜像；需要分发或回归验证的 skill 内容从 `product/`、`toolchain/` 或正式文档入口承接。
+`.agents/skills/`、`.claude/skills/` 只承接 repo-local deploy 结果与 operator runtime 挂载；必须 ignored，不得入库；既不是 canonical truth，也不是业务源码的正式存放位置；fresh checkout 不携带其镜像；需要分发或回归验证的 skill 内容从 `product/`、`toolchain/` 或正式文档入口承接。
 
 ### 1. `tools/`
 
@@ -54,7 +54,7 @@ Repo-local execution config。允许 tracked：`.codex/config.toml`、`.codex/ru
 
 ### 5. `.servo/`
 
-Repo-local Harness runtime control-plane state，可被治理检查识别为合法根目录对象但必须保持 ignored。运行合同、队列和 evidence 只用于控制回路，不替代 `docs/`、`product/`、`toolchain/` 中的正式真相与源码。
+Repo-local Harness runtime control-plane state，可被治理检查识别为合法根目录对象，但必须保持 ignored。运行合同、队列和 evidence 仅用于控制回路，不替代 `docs/`、`product/`、`toolchain/` 中的正式真相与源码。
 
 ### 6. `package.json`
 
