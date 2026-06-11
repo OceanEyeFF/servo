@@ -8,7 +8,7 @@ last_verified: 2026-05-26
 
 # Repository Onboarding
 
-> 面向需要理解此仓库内部结构和运行方式的维护者。外部试用者先看 [README.md](../../README.md)。
+> 面向需要理解本仓库内部结构与运行方式的维护者。外部试用者请先看 [README.md](../../README.md)。
 
 ## 仓库定位
 
@@ -72,10 +72,10 @@ Review / Verify / Writeback
 
 含义：
 
-- 先收束已批准输入为正式工作追踪边界
-- 展开工作追踪约定为可调度队列
+- 将已批准输入收束为正式的工作追踪边界
+- 将工作追踪约定展开为可调度队列
 - 只把已验证结果写回真相层
-- backend-specific prompt 和 deploy wrapper 不反向定义主线真相
+- backend 专用 prompt 与 deploy wrapper 不反向定义主线真相
 
 ## 从哪里进入
 
@@ -100,4 +100,4 @@ Review / Verify / Writeback
 - `.agents/`、`.claude/` 是 deploy target，非源码层或真相层
 - `.autoworkflow/`、`.spec-workflow/` 是 legacy / compatibility repo-local state/config，非默认阅读主线
 - `.nav/` 是 compatibility navigation，非结构定义层
-- 后端 prompt/wrapper 不替代跨后端共享 truth
+- backend 专属的 prompt 与 wrapper 不代表跨 backend 共享的规则与合同

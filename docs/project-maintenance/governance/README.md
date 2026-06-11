@@ -7,7 +7,7 @@ last_verified: 2026-05-17
 ---
 # Governance
 
-`docs/project-maintenance/governance/` 保存 review、gate、检查、branch/PR 治理规则，以及 servo-installer 发布治理。分支治理基线由 `origin/HEAD` 动态解析（当前已验证为 `origin/HEAD -> master`）。
+`docs/project-maintenance/governance/` 保存 review、gate、检查、branch/PR 治理规则，以及 servo-installer 发布治理。分支治理基线由 `origin/HEAD` 动态解析，当前已确认解析结果为 `origin/HEAD -> master`。
 
 ## 单一管理原则
 
@@ -22,11 +22,11 @@ last_verified: 2026-05-17
 
 ### 发布治理
 
-servo-installer 发布治理已归入子目录，入口见 [servo-installer/README.md](./servo-installer/README.md)。
+servo-installer 发布治理已归入独立子目录，入口见 [servo-installer/README.md](./servo-installer/README.md)。
 
 | 文档 | 只管理什么 | 不再管理什么 |
 | --- | --- | --- |
-| [servo-installer/README.md](./servo-installer/README.md) | servo-installer 发布操作模型、渠道准入、发布流程、pre-publish 就绪边界、外部试用治理 | 具体发布执行步骤（见子文件） |
+| [servo-installer/README.md](./servo-installer/README.md) | servo-installer 发布操作模型、渠道准入、发布流程、pre-publish 就绪边界、外部试用治理 | 具体发布执行步骤（见子文档） |
 
 ## 按场景进入
 
@@ -56,4 +56,4 @@ servo-installer 发布治理已归入子目录，入口见 [servo-installer/READ
 
 ## 已移除的内容
 
-一次性 release approval 记录、historical smoke evidence、已迁至 testing/ 的测试执行说明。
+一次性 release approval 记录、historical smoke evidence，以及已迁至 testing/ 的测试执行说明。

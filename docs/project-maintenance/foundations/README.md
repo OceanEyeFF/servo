@@ -7,7 +7,7 @@ last_verified: 2026-05-17
 ---
 # Foundations
 
-`docs/project-maintenance/foundations/` 保留仓库最上层结构合同。不重复维护已在其他 owner 中定义的内容。
+`docs/project-maintenance/foundations/` 保存仓库最上层的结构合同，不重复维护已由其他 owner 定义的内容。
 
 ## 入口
 

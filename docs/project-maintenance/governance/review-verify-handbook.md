@@ -7,7 +7,7 @@ last_verified: 2026-06-02
 ---
 # Review / Verify 治理入口
 
-> 目的：把 `plan -> implement -> verify -> review -> writeback` 收成一个 repo-local、可复用、可引用的复核入口。本文说明执行阶段的最小复核动作，不作为长期真相本体。
+> 目的：将 `plan -> implement -> verify -> review -> writeback` 收束为一个 repo-local、可复用、可引用的复核入口。本文说明执行阶段的最小复核动作，不作为长期真相本体。
 
 ## 一、适用范围
 
@@ -30,13 +30,13 @@ last_verified: 2026-06-02
 - root/partition/path/hidden-layer 变更需同步 foundations、关键入口页和治理检查
 - AGENTS.md、INDEX.md、默认启动阅读路径或执行流程变更需同步本文，并保持 `AGENTS.md -> INDEX.md -> 当前任务局部入口` 的轻量路由主线
 - runbook/usage-help/testing/Harness 长文变更需说明当前页类型（入口/runbook/合同/指导）并清理重复正文
-- 新增、移动、重命名、删除或改为 `status: superseded` 的 `docs/` markdown 文档必须维护 `docs/book.md` spine：先更新最近章节 `README.md`，再更新 `docs/book.md` 的 Full Reading Order，确认除 `docs/book.md` 自身外的所有 `docs/**/*.md` 都有直接有序链接，最后修复旧路径引用，并检查 `docs/book.md` markdown 链接与反引号 inline path 都指向当前 checkout 真实存在的 docs 路径或 owner 边界；superseded 文档只能通过显式 historical references 区块暴露，并应说明当前 owner 或接管路径
+- 新增、移动、重命名、删除或改为 `status: superseded` 的 `docs/` markdown 文档必须维护 `docs/book.md` spine：先更新最近章节 `README.md`，再更新 `docs/book.md` 的 Full Reading Order；确认除 `docs/book.md` 自身外，所有 `docs/**/*.md` 都有直接有序链接；最后修复旧路径引用，并检查 `docs/book.md` 的 markdown 链接与反引号 inline path 都指向当前 checkout 真实存在的 docs 路径或 owner 边界。superseded 文档只能通过显式 `Retained Historical References` 区块暴露，并应说明当前 owner 或接管路径。
 - deploy/adapter 变更需同步对应 runbook、maintenance 与 usage-help，口径保持 destructive reinstall model
 - package/release/version/VCS baseline 事实变更需调用 `doc-catch-up-worker-skill` 做 version fact sync；pre-publish 只同步 source version facts 与 VCS tracking facts，post-publish registry verification 后才能同步 published version facts；canonical skill source baseline 由 repo snapshot 的 `source_baselines.product_harness_skills` 和 control-state Baseline Traceability 承接，长期 docs 不手写分散 git hash
 - docs/harness/、product/harness/skills/ 或 adapters 变更需保持合同层与 executable layer 分工
 - branch/PR/baseline 规则变更需从 `origin/HEAD` 或 Worktrack Contract 的 `baseline_branch` 取值，不写死默认分支名
 - 新功能若改变 Harness 控制流、canonical skill 行为、adapter/deploy 行为、CLI/operator runbook 或用户实际操作路径，必须把真实 Claude Code dogfood 作为验证策略的一层；mock、fixture、generator smoke 和单元测试只能证明回归面，不能单独替代真实 backend 行为观察。若本轮不跑 Claude dogfood，closeout 必须写明不适用理由或延期 Worktrack。
-- 单人维护模式下 release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作；`reviewDecision` 为空不是失败，draft、required check failure、pending/skipped required check 或 release-readiness 证据缺失才是阻断信号
+- 单人维护模式下，release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作；`reviewDecision` 为空不是失败，draft、required check failure、pending/skipped required check 或 release-readiness 证据缺失才是阻断信号
 - release PR 正文只能声明实际运行且有本地输出或 CI run/job URL 支撑的验证结果；被 CI 跳过、尚未运行或只计划运行的检查必须标成 pending/not-run，不能写成 passed
 - 退役/删除文档域需同步入口页、旧路径引用和治理检查
 - SKILL.md 变更需保持最小 executable body；已退役 references 需同步清理
@@ -59,6 +59,8 @@ last_verified: 2026-06-02
 - Harness runtime 观察或 operator-facing runbook 变更：先跑对应 deploy/adapter 最小验证，再按 [Codex Post-Deploy Behavior Tests](../testing/codex-post-deploy-behavior-tests.md) 和 [Claude Post-Deploy Behavior Tests](../testing/claude-post-deploy-behavior-tests.md) 做真实观察；Claude dogfood 是新功能影响实际使用路径时的默认真实 backend 验证层，不用 mock smoke 替代
 
 ### 3.1 真实 Claude Dogfood 准入
+
+> **⚠️ TODO（MS-20260608-003 scope 外）**：本节治理细节超出了最初设计意图。原始设想是在临时 repo 中以「Claude + 允许高风险操作 + 无交互 skills 执行」模式直接验证 skills 运行状况，当前版本引入了较多分类讨论与证据记录要求。后续 Milestone（如 MS-20260608-004）应对本节做针对性精简，回归临时 repo smoke 为核心验证路径。
 
 默认需要真实 Claude dogfood 的变更：
 
@@ -85,7 +87,7 @@ bugfix/review 响应/回归修复需覆盖根因或相邻执行链状态，检�
 
 ### 4.1 Docs 重构收口
 
-docs restructuring closeout 必须记录 reader-coherence evidence，至少说明 `docs/book.md` Full Reading Order、最近章节入口和移动后的正文之间的阅读路径，以及删除/迁移后的旧入口如何处理。若当前任务无法完成 reader-coherence 验证，必须在 closeout 中写明 explicit deferral：延期原因、剩余入口风险、后续验证命令和接管位置。
+docs restructuring closeout 必须记录 reader-coherence evidence，至少说明 `docs/book.md` Full Reading Order、最近章节入口和被移动正文之间的阅读路径，以及删除/迁移后的旧入口如何处理。若当前任务无法完成 reader-coherence 验证，必须在 closeout 中明确记录延期：延期原因、剩余入口风险、后续验证命令和接管位置。
 
 ## 四、完成标准
 
