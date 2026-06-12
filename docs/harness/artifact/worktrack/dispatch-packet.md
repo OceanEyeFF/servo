@@ -54,9 +54,9 @@ dispatch-skills → gate-skill / review-evidence-skill
 
 | 值 | 语义 |
 |------|------|
-| `auto` | 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；无法安全委派时显式 fallback |
-| `delegated` | 必须委派 SubAgent；无法委派时返回 gap/block |
-| `current-carrier` | 显式关闭委派，由当前 carrier 直接执行 |
+| `auto` | 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；无法安全分派时显式 fallback |
+| `delegated` | 必须分派 SubAgent；无法分派时返回 gap/block |
+| `current-carrier` | 显式关闭分派，由当前 carrier 直接执行 |
 
 ### 约束规则
 
@@ -84,7 +84,7 @@ dispatch-skills → gate-skill / review-evidence-skill
 | `dispatch_mode` | enum | 是 | 分派模式：`auto` / `delegated` / `current-carrier` |
 | `shared_fact_pack` | object | 是 | 必须共享给执行载体的最小项目事实包，见下方定义 |
 | `context_budget` | object | 是 | 本轮可读取上下文预算，见下方定义 |
-| `runtime_dispatch_profile` | object | 是 | backend/model/runtime 的委派能力画像，见下方定义 |
+| `runtime_dispatch_profile` | object | 是 | backend/model/runtime 的分派能力画像，见下方定义 |
 | `recovery_hint` | string | 否 | 失败恢复提示，供执行载体在出错时参考 |
 | `context_files` | string[] | 否 | 需要预加载的上下文文件路径列表（路径引用，非内联全文） |
 
@@ -148,7 +148,7 @@ context_budget:
 
 ### runtime_dispatch_profile 说明
 
-`runtime_dispatch_profile` 记录本轮运行时是否能真实委派，以及为什么选择或放弃 SubAgent。它不改变权限，只让 `auto` 的判断可审计。
+`runtime_dispatch_profile` 记录本轮运行时是否能真实分派，以及为什么选择或放弃 SubAgent。它不改变权限，只让 `auto` 的判断可审计。
 
 ```yaml
 runtime_dispatch_profile:
@@ -186,10 +186,10 @@ runtime_dispatch_profile:
 | `recommendations` | string[] | 否 | 对下一步的建议 |
 | `dispatch_mode_used` | enum | 是 | 实际使用的分派模式：`auto` / `delegated` / `current-carrier` |
 | `dispatch_policy_ref` | string | 是 | 使用的执行载体选择策略引用，通常为 `docs/harness/foundations/dispatch-decision-policy.md` |
-| `runtime_dispatch_profile` | object | 是 | 本轮 backend/model/runtime 委派能力画像 |
+| `runtime_dispatch_profile` | object | 是 | 本轮 backend/model/runtime 分派能力画像 |
 | `carrier_decision` | string | 是 | 实际载体选择：如 `SubAgent` / `current-carrier` / `doc-catch-up-worker-skill` / `generic-worker-skill` |
 | `decision_inputs` | object | 否 | `auto` 模式下用于选择载体的输入摘要 |
-| `delegation_attempted` | enum | 是 | 是否真实尝试委派：`yes` / `no` |
+| `delegation_attempted` | enum | 是 | 是否真实尝试分派：`yes` / `no` |
 | `attempted_carrier` | string | 是 | 被尝试或被选择的载体：`SubAgent` / `generic-worker-skill` / `doc-catch-up-worker-skill` / `current-carrier` / `none` |
 | `fallback_reason` | string | 否 | 如果发生 fallback，记录原因 |
 | `artifacts_produced` | string[] | 否 | 产出的 artifact 路径列表 |
@@ -207,8 +207,8 @@ runtime_dispatch_profile:
 
 | 值 | 说明 |
 |------|------|
-| `runtime fallback` | 运行时因权限、环境或依赖缺口无法委派，退回当前 carrier 执行 |
-| `permission blocked` | 权限边界阻止委派，例如目标 SubAgent 不可达或超出授权范围 |
+| `runtime fallback` | 运行时因权限、环境或依赖缺口无法分派，退回当前 carrier 执行 |
+| `permission blocked` | 权限边界阻止分派，例如目标 SubAgent 不可达或超出授权范围 |
 | `dispatch package unsafe` | dispatch packet 内容不安全（scope 过大、context_files 越界等），dispatch-skills 拒绝转发 |
 
 ### 约束规则

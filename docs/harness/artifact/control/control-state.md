@@ -7,17 +7,17 @@ last_verified: 2026-06-05
 ---
 # Harness Control State
 
-保存控制面所处模式，不保存业务真相。最少应包含控制级别、活跃 worktrack、`baseline_branch`、下一动作和关联正式文档路径。不替代 `RepoSnapshot/Status` 或 `WorktrackContract`。
+保存控制平面所处模式，不保存业务真相。最少应包含控制级别、活跃 worktrack、`baseline_branch`、下一动作和关联正式文档路径。不替代 `RepoSnapshot/Status` 或 `WorktrackContract`。
 
 Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 与 `Autonomy Ledger`。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
 
 ## Conservative Runtime Backfill
 
-`.servo` runtime artifacts may be older than the current artifact contract. Missing additive fields must be handled with conservative runtime backfill: apply forward-only defaults of `false`, `unknown`, `missing`, `blocked`, `not ready`, `N/A`, or empty blockers as appropriate, and record the gap as runtime evidence. Backfill must preserve existing observed facts, must not infer programmer confirmation, must not grant permissions, must not increment counters, and must not turn a missing gate into `ready` or `allowed`.
+> `.servo` 运行时正式对象可能落后于当前正式对象合同。对于缺失的增量字段，以保守运行时回填处理：仅向前应用默认值（`false`、`unknown`、`missing`、`blocked`、`not ready`、`N/A` 或空阻塞项，视字段而定），并将缺口记录为运行时证据。回填必须保留已有观测事实，不得推断 programmer 确认，不得授予权限，不得递增计数器，不得将缺失 gate 变为 `ready` 或 `allowed`。
 
-Conservative runtime backfill is not a broad migration. It may populate the current routing view or the current worktrack artifact with additive default fields, but it must not rewrite historical `.servo` truth or expand authority. Any field that controls approval, dispatch, review pass, effective pass, autonomy, destructive permission, or Worktrack Init/Dispatch defaults to blocked/not ready until verified evidence or programmer confirmation exists.
+保守运行时回填不是大规模迁移。它可以填平当前路由视图或当前 worktrack 正式对象的增量字段缺口，但不得重写历史 `.servo` 真相或扩大权限。任何控制审批、分派、review pass、effective pass、自治、破坏性操作或 Worktrack Init/Dispatch 的字段，在没有已验证证据或 programmer 确认前，默认值为 blocked/not ready。
 
-Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
+守则：保守运行时回填不得授予权限，不得推断 programmer 确认，不得递增计数器，不得启用 Worktrack Init/Dispatch。
 
 ## Linked Formal Documents
 
@@ -48,7 +48,7 @@ Milestone branch 与 continuation 字段在 Control State 中只是 routing meta
 
 ## Branch Environment Guard
 
-Branch Environment Guard 是控制面路由守卫，不是分支真相来源。它消费 `baseline_branch`、`active_milestone_branch` 与当前 Worktrack Contract 的 Branch Policy 字段来判定当前 checkout 是否处在合法变更上下文。
+Branch Environment Guard 是控制平面路由守卫，不是分支真相来源。它消费 `baseline_branch`、`active_milestone_branch` 与当前 Worktrack Contract 的 Branch Policy 字段来判定当前 checkout 是否处在合法变更上下文。
 
 合法上下文：
 
@@ -69,7 +69,7 @@ Scope / Function 约束：
 
 ## Milestone Review Gate Routing State
 
-Active Milestone 的执行入口复核路由状态也保存在 Control State，但只作为 routing metadata，不保存业务 truth。字段默认值必须保守，不得扩大权限。业务事实来自 Milestone artifact 的 `milestone_review_gate` 和 pre-intake 输出的 `milestone_review_gate_handoff`；Control State 只镜像 routing 所需字段：
+Active Milestone 的执行入口复核路由状态也保存在 Control State，但只作为 routing metadata，不保存业务真相。字段默认值必须保守，不得扩大权限。业务事实来自 Milestone artifact 的 `milestone_review_gate` 和 pre-intake 输出的 `milestone_review_gate_handoff`；Control State 只镜像 routing 所需字段：
 
 - `active_milestone_review_gate_status`: `missing`（默认）/`effective_pass`/`questions_required`/`blocked`/`skipped`/`stale`/`invalidated`
 - `active_milestone_review_count`: integer，默认 `0`
@@ -82,11 +82,11 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 
 只有当 `active_milestone_review_gate_status = effective_pass`、`active_milestone_review_count >= 1`、`active_milestone_review_checkpoint` 非空且 Milestone artifact 中 `effective_review_pass = true` 时，Control State 才能允许进入 Worktrack Init/Dispatch。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段缺失都必须按 blocked 解释。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 改变时，control-state 的 routing state 必须降级为 `invalidated` 或 `stale`，等待新的 `pre_milestone_intake_review` checkpoint。
 
-For missing additive Milestone Review Gate fields, conservative runtime backfill is: `active_milestone_review_gate_status = missing`, `active_milestone_review_count = 0`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, `milestone_review_gate_ready = false`, `active_milestone_review_required = true` for goal-driven milestones, and `active_milestone_review_blockers` containing `milestone_review_gate_not_ready`. These defaults must not increment `milestone_review_count`, must not set `effective_pass`, and must block Worktrack Init/Dispatch.
+对于缺失的增量 Milestone Review Gate 字段，保守运行时回填为：`active_milestone_review_gate_status = missing`，`active_milestone_review_count = 0`，`effective_review_pass = false`，`latest_review_checkpoint = N/A`，`milestone_review_gate_ready = false`；目标驱动型 Milestone 的 `active_milestone_review_required = true`，且 `active_milestone_review_blockers` 包含 `milestone_review_gate_not_ready`。这些默认值不得递增 `milestone_review_count`，不得设置 `effective_pass`，且必须阻断 Worktrack Init/Dispatch。
 
 ## User-Defined Servo Controls
 
-初始化 Harness 控制面时，Servo 只应询问用户可定义且会影响后续审批边界的控制变量。默认问题集为：
+初始化 Harness 控制平面时，Servo 只应询问用户可定义且会影响后续审批边界的控制变量。默认问题集为：
 
 - `continuous_progression_permission`: 是否允许在已批准 milestone / worktrack 边界内连续推进。
 - `per_milestone_automatic_worktrack_budget`: 每个 Milestone 内允许自动连续开启或推进的 Worktrack 额度。
@@ -97,7 +97,7 @@ For missing additive Milestone Review Gate fields, conservative runtime backfill
 
 这些字段属于 user-defined controls，应存放在 `User-Defined Servo Controls`、`Continuation Authority` 或等价控制配置段中；它们不是 repo 目标，也不替代 `WorktrackContract`。未回答时必须按保守默认解释：不扩大连续推进权限，不提高自动 Worktrack 额度，不放宽受保护分支规则。
 
-初始化不得向用户询问 Servo 可以自动维护的 runtime facts；模板中以 `auto_maintained_runtime_facts_not_asked` 列出这些禁止提问项，例如 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary`。这些事实由 Observe / Refresh / Dispatch / Close 等控制步骤写回，不能被用户偏好伪装成 truth。
+初始化不得向用户询问 Servo 可以自动维护的 runtime facts；模板中以 `auto_maintained_runtime_facts_not_asked` 列出这些禁止提问项，例如 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary`。这些事实由 Observe / Refresh / Dispatch / Close 等控制步骤写回，不能被用户偏好伪装成真相。
 
 一次性执行授权只写入本轮 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新上述 user-defined controls。
 
@@ -119,11 +119,11 @@ For missing additive Milestone Review Gate fields, conservative runtime backfill
 - `max_auto_new_worktracks`: 默认 `1`，大于 1 为显式 override
 - `stop_after_autonomous_slice`: 默认 `yes`
 - `subagent_dispatch_mode`: `auto`（默认）/`delegated`/`current-carrier`；repo 级默认值，不遮蔽 worktrack 级策略
-- `subagent_dispatch_mode_override_scope`: 默认 `worktrack-contract-primary`；仅 `global-override` 才压过 worktrack contract
+- `subagent_dispatch_mode_override_scope`: 默认 `worktrack-contract-primary`；仅 `global-override` 才覆盖 worktrack contract
 - `subagent_default_model`: 可选，不改变权限边界
 - `runtime_dispatch_profile`: 最近一次 dispatch 能力画像摘要，可包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`
 
-以上字段属于 control policy，不回答 repo 目标，不替代 `WorktrackContract`。`subagent_dispatch_mode` 是 SubAgent 委派的 repo 级默认策略，语义与 worktrack 级 `runtime_dispatch_mode` 一致：`auto` 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；`delegated` 必须委派否则返回 gap/block；`current-carrier` 关闭委派。若权限边界、运行时缺口或 `dispatch package unsafe` 阻止委派，fallback 原因须写入执行结果或 `gate evidence`，并使用 `runtime fallback` 标记运行时回退。若 runtime 为 ClaudeCodeCLI 或 model family 为 Deepseek 且无法证明 SubAgent shell 可用，必须把 `runtime_dispatch_profile`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason` 写入本轮 evidence，不得静默使用 current-carrier。
+以上字段属于 control policy，不回答 repo 目标，不替代 `WorktrackContract`。`subagent_dispatch_mode` 是 SubAgent 分派的 repo 级默认策略，语义与 worktrack 级 `runtime_dispatch_mode` 一致：`auto` 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；`delegated` 必须分派否则返回 gap/block；`current-carrier` 关闭分派。若权限边界、运行时缺口或 `dispatch package unsafe` 阻止分派，fallback 原因须写入执行结果或 `gate evidence`，并使用 `runtime fallback` 标记运行时回退。若 runtime 为 ClaudeCodeCLI 或 model family 为 Deepseek 且无法证明 SubAgent shell 可用，必须把 `runtime_dispatch_profile`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason` 写入本轮 evidence，不得静默使用 current-carrier。
 
 程序员授予的长期权限、自动性或分派策略变更必须写回本 artifact 对应配置段，不得仅停留于对话记忆。一次性审批仅对当前 worktrack、gate 或 destructive action 生效，应写入本轮 `evidence`/`handoff`，不得改变长期默认值。仅当用户明确表达持久授权或更改默认策略时，才可更新 `post_contract_autonomy`、`max_auto_new_worktracks`、`stop_after_autonomous_slice`、`subagent_dispatch_mode`、`subagent_dispatch_mode_override_scope` 或其他长期 authority 字段。若字段语义或默认值改变，须同步更新初始化模板和 canonical skill 说明。
 
@@ -144,16 +144,16 @@ For missing additive Milestone Review Gate fields, conservative runtime backfill
 
 ## Skill Source Baseline Traceability
 
-Canonical skill source version facts are owned by repo-level checkpoint artifacts, not by scattered prose hash mentions in catalog pages. For `product/harness/skills/`, the stable relation is:
+Canonical skill 源版本事实由 repo 级 checkpoint 正式对象持有，而非散布在 catalog 页面的 prose hash 引用中。对于 `product/harness/skills/`，稳定关系为：
 
-- canonical source root: `product/harness/skills/`
-- docs/catalog owner: `docs/harness/catalog/`
-- current source checkpoint owner: `.servo/repo/snapshot-status.md` after `repo-refresh-skill`
-- current control-plane idempotency owner: `.servo/control-state.md` `Baseline Traceability`
+- canonical 源根：`product/harness/skills/`
+- docs/catalog 所有者：`docs/harness/catalog/`
+- 当前源 checkpoint 所有者：`.servo/repo/snapshot-status.md`（经 `repo-refresh-skill` 后）
+- 当前控制平面幂等所有者：`.servo/control-state.md` 的 `Baseline Traceability`
 
-When a verified worktrack changes canonical skill source, source-side skill indexes, or docs/source traceability, closeout records the evidence and merge commit in its closeout record, then `repo-refresh-skill` writes the refreshed git HEAD to `latest_observed_checkpoint` and `checkpoint_ref`. If the same change also updates operator-facing docs or version facts, `doc-catch-up-worker-skill` records the HEAD as `last_doc_catch_up_checkpoint`.
+已验证的 worktrack 变更 canonical skill 源、源侧 skill 索引或文档/源码可追溯性时，closeout 记录将证据与合并提交写入其 closeout 记录，随后 `repo-refresh-skill` 将刷新后的 git HEAD 写入 `latest_observed_checkpoint` 和 `checkpoint_ref`。若同一变更同时更新了 operator-facing 文档或版本事实，`doc-catch-up-worker-skill` 将该 HEAD 记录为 `last_doc_catch_up_checkpoint`。
 
-Long-term docs should link to the source root or catalog owner, not embed one-off commit hashes for each skill. If a commit hash is needed for an audit handoff, keep it in runtime artifacts such as closeout records, repo snapshot, or release/version evidence. Deploy targets remain consumers of the source baseline and must not become the baseline owner.
+长期文档应链接到源根或 catalog 所有者，不应为每个 skill 嵌入一次性 commit hash。若审计交接需要 commit hash，保留在运行时正式对象中，如 closeout 记录、repo snapshot 或 release/version evidence。部署目标是源基线的消费者，不得成为基线所有者。
 
 `milestone_input_checkpoint` 是 Milestone 输入指纹锚点，由 `milestone-status-skill` 按 `milestone-input-checkpoint/v1` 计算（格式 `sha256:<64 位小写 hex>`）。算法对 milestone artifact、worktrack backlog、gate evidence、repo snapshot 的已纳入字段取 SHA-256，使用字典键排序、repo-relative POSIX path、稳定列表顺序和显式 `null` 值。不得纳入文件 mtime、时间戳、绝对路径、上次 checkpoint 或 progress counter 等易变/派生值。该指纹与 git HEAD 独立（`.servo/` 下 artifact 变化不产生 git commit）。下一轮 `Observe` 仅当 `milestone_input_checkpoint` 与新指纹一致且 `latest_observed_checkpoint` 与 `git rev-parse HEAD` 一致时，才可跳过 Milestone 进度重算。
 

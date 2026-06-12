@@ -10,7 +10,7 @@
 
 以下文件保留为历史引用，不作为当前 workflow family 主线 owner：
 
-- [standard-worktrack.md](./standard-worktrack.md)：已由 [Harness运行协议.md](../../foundations/Harness运行协议.md) 和 runtime 章节接管
+- [standard-worktrack.md](./standard-worktrack.md)：已由 [Harness运行协议.md](../../foundations/Harness运行协议.md)、[runtime-control-loop.md](../../foundations/runtime-control-loop.md) 接管
 - [policy-profiles.md](./policy-profiles.md)：已由 [skill-common-constraints.md](../../foundations/skill-common-constraints.md) 与两层控制律接管
 
 family 说明以 `docs/harness/` 为准；若后续在 `product/harness/` 中引入对应 executable source，以 `docs` 中的定义为上游真相。

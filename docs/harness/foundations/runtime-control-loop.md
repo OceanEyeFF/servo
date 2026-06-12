@@ -70,7 +70,7 @@ Milestone Review Gate route guard 是从 active goal-driven milestone 派生 Wor
 
 Branch Environment Guard 在任何 mutating Function 前执行。它先把当前 checkout 判定为 `baseline`、`milestone`、`worktrack` 或 `unknown`，再按 Scope / Function 选择合法上下文：RepoScope baseline mutation 要求 `baseline`；milestone-derived Worktrack 初始化要求 `milestone`；Worktrack 实施要求 `worktrack`；close/refresh 使用 Worktrack Contract 的 `closeout_target_ref` 和 `checkpoint_base_ref`。只读 Observe 可在不匹配上下文继续，但必须输出 warning；mutating Function 在不匹配上下文必须阻断并要求切到合同指定 ref。
 
-当请求命中 complex-project trigger 时，还必须先消费 `complex_project_entry_gate`。这是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。gate handoff 必须携带 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`。`milestone_blocking_decision` 中存在 `block_create`、`block_upsert`、`block_activate` 或 `block_derive_worktrack` 时，监督器不得绑定对应 initializer。unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`。弱文档命中且理解不足时，默认路由到 reinforcement documentation / project-understanding milestone；`needed = true` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该阻断。
+当请求命中 complex-project trigger 时，必须先通过 `complex_project_entry_gate` 的准入校验。这是一组 Milestone 侧的准入条件，不是固定工作模式——scanner 只提供证据，不代替最终判断。gate 交接包必须包含 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 以及结构化 `reinforcement_milestone_recommendation`。若 `milestone_blocking_decision` 中存在 `block_create`、`block_upsert`、`block_activate` 或 `block_derive_worktrack`，监督器不得绑定对应的初始操作。校验条件缺失、空白、占位、未完成或状态不明时，默认按阻断处理，不得解释为 `clear` 或 `not_applicable`。文档薄弱导致理解不足时，默认先路由到补充文档型 Milestone（reinforcement documentation / project-understanding milestone）；`needed = true` 或 `blocks_implementation_until_resolved = true` 时阻断实现型 Worktrack 派生。Worktrack 执行模式（`normal`、`autoreview`、`yolo`）不能绕过该阻断。
 
 ## Single-Entry Routing
 
@@ -83,7 +83,7 @@ Branch Environment Guard 在任何 mutating Function 前执行。它先把当前
 - `milestone_state`: 是否有 active milestone、是否已达到 final acceptance handback、是否存在 planned candidates。
 - `worktrack_state`: 是否有 active worktrack、queue 是否可继续、gate/closeout 是否待处理。
 - `risk_signals`: 是否涉及 release/publish/tag、破坏性操作、长期 truth 写回、跨目录治理、权限升级或高不确定调研。
-- `approval_signals`: programmer 是否明确批准目标变更、milestone 创建/激活、worktrack 初始化、连续推进、委派或外部副作用。
+- `approval_signals`: programmer 是否明确批准目标变更、milestone 创建/激活、worktrack 初始化、连续推进、分派或外部副作用。
 
 这些信号只能选择 workflow path 和 stop/approval semantics；最终仍由 Harness 正常控制链选择 Scope、Function、Skill 或 execution carrier。profile / operator-facing mode 只是 route hint，例如 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive。它不创建第二 controller，不拥有独立 gate，不写长期 truth，不绕过 Worktrack Contract，不把 candidate milestone 或 candidate worktrack 解释成已批准执行范围。
 
