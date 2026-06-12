@@ -1,3 +1,10 @@
+---
+title: "Harness Artifact / Repo"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness Artifact / Repo
 
 `docs/harness/artifact/repo/` 承接 `RepoScope` 的长期基线对象。

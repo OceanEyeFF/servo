@@ -1,3 +1,10 @@
+---
+title: "Repo Evolution"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Repo Evolution
 
 `repo-evolution/` 是主线 workflow family，承接 repo 演进问题中可复用的流程政策。

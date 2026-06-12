@@ -1,3 +1,10 @@
+---
+title: "Harness 文档主线入口"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness
 
 `docs/harness/` 是当前仓库的 Harness-first 文档主线，承接 Harness doctrine、runtime protocol、scope、artifact contracts、skill inventory 与 workflow family policy。

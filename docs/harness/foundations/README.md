@@ -1,3 +1,10 @@
+---
+title: "Harness Foundations"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness Foundations
 
 `docs/harness/foundations/` 承接 Harness 的 thought layer：指导思想、runtime protocol、跨 skill 公共约束和执行载体选择策略。

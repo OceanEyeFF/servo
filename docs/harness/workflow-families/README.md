@@ -1,3 +1,10 @@
+---
+title: "Workflow Families"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Workflow Families
 
 `docs/harness/workflow-families/` 固定可复用的 Harness workflow family policy。
