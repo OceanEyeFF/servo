@@ -52,3 +52,24 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 | [worktrack.md](./worktrack.md) | [worktrack-status-skill](../../../product/harness/skills/worktrack-status-skill/), [init-worktrack-skill](../../../product/harness/skills/init-worktrack-skill/), [schedule-worktrack-skill](../../../product/harness/skills/schedule-worktrack-skill/), [dispatch-skills](../../../product/harness/skills/dispatch-skills/), [generic-worker-skill](../../../product/harness/skills/generic-worker-skill/), [doc-catch-up-worker-skill](../../../product/harness/skills/doc-catch-up-worker-skill/), [review-evidence-skill](../../../product/harness/skills/review-evidence-skill/), [test-evidence-skill](../../../product/harness/skills/test-evidence-skill/), [rule-check-skill](../../../product/harness/skills/rule-check-skill/), [gate-skill](../../../product/harness/skills/gate-skill/), [recover-worktrack-skill](../../../product/harness/skills/recover-worktrack-skill/), [close-worktrack-skill](../../../product/harness/skills/close-worktrack-skill/) |
 
 Deploy targets such as `.agents/` or `.claude/` may consume these sources after deployment, but they are not canonical source locations.
+
+## Distributed Skill 自洽性
+
+`product/harness/skills/` 下每个一级子目录是一个独立分发单元。经 adapter deploy 复制到 `.agents/skills/` 或 `.claude/skills/` 后，安装包必须能在不依赖源仓库 `docs/harness/` 的前提下独立运行。
+
+分布式 skill 包的运行时权限表面仅限：
+
+- `SKILL.md`：主要可执行指令与运行时合同
+- `templates/`：skill 执行时复制、渲染或要求使用的模板
+- `references/`：随包分发的短参考材料
+- `scripts/`：skill 私有辅助脚本
+- `assets/`：skill 私有静态资产
+
+分布式 skill 包不得依赖以下任何一项来执行其运行时语义：
+
+- 源仓库中的 `docs/harness/`、`docs/project-maintenance/` 或其他 docs 路径
+- 当前包外的 `.agents/`、`.claude/`、`.servo/` 路径
+- 父目录逃逸引用（`../`）
+- 包外软链或绝对路径
+
+Trace link 到 docs 只能作为源侧 ownership 或 authoring 引用，不能作为安装后包的运行时权威来源。完整规则见 [product/harness/skills/README.md](../../../product/harness/skills/README.md) 的 Distributed Skill Product Shape 节。

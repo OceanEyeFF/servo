@@ -19,7 +19,7 @@ last_verified: 2026-06-13
 | 架构层 | [scope/README.md](./scope/README.md) | 说明 `RepoScope`、`WorktrackScope` 与两层状态闭环 |
 | 架构层 | [artifact/README.md](./artifact/README.md) | 说明 Repo / Worktrack / Control 正式对象和字段 |
 | 架构层 | [workflow-families/README.md](./workflow-families/README.md) | 说明多个 worktrack 如何组成稳定流程 |
-| 实现映射层 | [catalog/README.md](./catalog/README.md) | 说明这些结构在 Codex skill 体系里对应哪些入口 |
+| 实现映射层 | [catalog/README.md](./catalog/README.md) | 说明这些结构在 Codex skill 体系里对应哪些入口；分布式 skill 包必须自洽，安装后不依赖 `docs/harness/` |
 
 ## 阅读边界
 

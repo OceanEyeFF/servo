@@ -24,7 +24,7 @@ last_verified: 2026-06-13
 | [runtime-state-hydration.md](./runtime-state-hydration.md) | `.servo/control-state.md` 恢复、authority 配置、baseline traceability 与 autonomy ledger |
 | [dispatch-decision-policy.md](./dispatch-decision-policy.md) | `dispatch_mode: auto` 的执行载体选择策略 |
 | [model-runtime-support.md](./model-runtime-support.md) | Deepseek、Claude、Pi、GPT/CodeX 等模型/runtime 支持边界和非认证语义 |
-| [skill-common-constraints.md](./skill-common-constraints.md) | 所有 Harness Skills 的公共约束定义（C-1 至 C-7） |
+| [skill-common-constraints.md](./skill-common-constraints.md) | 所有 Harness Skills 的公共约束定义（C-1 至 C-8），含分布式 skill 自洽约束 |
 
 ## Owner Boundaries
 
