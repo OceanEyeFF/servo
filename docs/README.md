@@ -1,3 +1,10 @@
+---
+title: "Docs 文档层入口"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Docs
 
 `docs/` 承载文档真相与仓库操作说明。
