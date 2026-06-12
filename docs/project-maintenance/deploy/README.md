@@ -1,3 +1,10 @@
+---
+title: "Deploy — servo-installer"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Deploy → servo-installer
 
 `docs/project-maintenance/deploy/` 下的 servo-installer operator 文档已迁移到独立文档体系。

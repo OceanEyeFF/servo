@@ -1,3 +1,10 @@
+---
+title: "Project Maintenance 维护文档入口"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Project Maintenance
 
 `docs/project-maintenance/` 承接 operator-facing 维护文档：结构真相、治理入口、部署 runbook，以及按 backend 聚合的 repo-local usage help。

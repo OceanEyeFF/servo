@@ -1,3 +1,10 @@
+---
+title: "Testing Runbooks"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Testing Runbooks
 
 `docs/project-maintenance/testing/` 保存测试执行指南：可重复执行的验证命令、registry/package smoke、Codex/Claude 部署后行为检查。deploy 合同在 `../deploy/`，发布治理在 `../governance/`。
