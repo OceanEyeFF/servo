@@ -115,7 +115,6 @@ ENTRYPOINT_LINK_RULES = {
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/worktrack.md",
         "docs/harness/catalog/milestone-status-skill.md",
-        "docs/harness/catalog/skill-impact-matrix.md",
         "docs/harness/foundations/Harness指导思想.md",
         "docs/harness/foundations/Harness运行协议.md",
         "product/harness/skills/README.md",
