@@ -13,7 +13,7 @@ last_verified: 2026-06-05
 
 ## 原则
 
-`WorktrackScope` skills 负责局部状态转移闭环，消费 contract/plan/evidence/control state，可派发下游 `SubAgent` 但不伪装成”控制平面+执行平面一体”。schedule-worktrack-skill 是 `selected_next_action` 与 dispatch handoff packet 的唯一 authority；dispatch-skills 只消费 scheduling packet 不反向改写 queue。generic-worker-skill 是无专用 skill 时的通用执行载体；doc-catch-up-worker-skill 是 Harness 入口观察和 closeout 前推荐使用的文档基线追平载体，release / publish / version / VCS tracking 事实变化后也必须承担 version fact sync。freshly seeded 或 autonomous continuation 的首个 execution-facing round，初始 slice 必须先收紧到最小可验证子片段。`runtime_dispatch_mode` 读取顺序：默认 worktrack-contract-primary 下 contract 的 `runtime_dispatch_mode` 优先；仅 global-override 时 control-state 覆盖；contract 未声明时使用 control-state 默认值。control-state 的 `subagent_dispatch_mode` 与 `subagent_dispatch_mode_override_scope` 只提供 repo 级默认和覆盖边界。`runtime_dispatch_mode` 支持 `auto`/`delegated`/`current-carrier`，默认 `auto`；无法委派需记录 runtime fallback 和 dispatch package unsafe 等边界事实。
+`WorktrackScope` skills 负责局部状态转移闭环，消费 contract/plan/evidence/control state，可派发下游 `SubAgent` 但不伪装成”控制平面+执行平面一体”。schedule-worktrack-skill 是 `selected_next_action` 与 dispatch handoff packet 的唯一 authority；dispatch-skills 只消费 scheduling packet 不反向改写 queue。generic-worker-skill 是无专用 skill 时的通用执行载体；doc-catch-up-worker-skill 是 Harness 入口观察和 closeout 前推荐使用的文档基线追平载体，release / publish / version / VCS tracking 事实变化后也必须执行版本事实同步。freshly seeded 或 autonomous continuation 的首个 execution-facing round，初始 slice 必须先收紧到最小可验证子片段。`runtime_dispatch_mode` 读取顺序：默认 worktrack-contract-primary 下 contract 的 `runtime_dispatch_mode` 优先；仅 global-override 时 control-state 覆盖；contract 未声明时使用 control-state 默认值。control-state 的 `subagent_dispatch_mode` 与 `subagent_dispatch_mode_override_scope` 只提供 repo 级默认和覆盖边界。`runtime_dispatch_mode` 支持 `auto`/`delegated`/`current-carrier`，默认 `auto`；无法分派需记录 runtime fallback 和 dispatch package unsafe 等边界事实。
 
 Worktrack Contract 的 `node_type` 字段合法值来自 [Node Type Registry](../artifact/control/node-type-registry.md)，Contract 中的 `baseline_form`、`merge_required`、`gate_criteria`、`if_interrupted_strategy` 从 Registry 继承默认值并可在 Contract 中显式覆盖；gate-skill 根据 `node_type` 查找对应 `gate_criteria` 确定需要收集的证据面。
 
@@ -97,7 +97,7 @@ preferred scheduling fields：
 
 ### 3. dispatch-skills
 
-职责：接收 Worktrack 的下一任务，校验 scheduling handoff packet，拒收 oversized packet 退回 schedule-worktrack-skill。优先选择语义匹配的专门 skill；无专门 skill 时 fallback 到 generic-worker-skill 或 current-carrier。文档追平优先绑定 doc-catch-up-worker-skill。按 runtime_dispatch_mode 选择载体：auto 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；delegated 必须委派否则返回 gap/block；current-carrier 显式关闭委派。跑一轮 bounded execution 并回传 evidence。
+职责：接收 Worktrack 的下一任务，校验 scheduling handoff packet，拒收 oversized packet 退回 schedule-worktrack-skill。优先选择语义匹配的专门 skill；无专门 skill 时 fallback 到 generic-worker-skill 或 current-carrier。文档追平优先绑定 doc-catch-up-worker-skill。按 runtime_dispatch_mode 选择载体：auto 按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；delegated 必须分派否则返回 gap/block；current-carrier 显式关闭分派。跑一轮 bounded execution 并回传 evidence。
 
 主要依赖：
 
@@ -149,7 +149,7 @@ canonical executable source：
 - `docs/harness/`
 - 相关入口页和承接层正文
 
-checkpoint writeback:
+checkpoint 写回约定：
 
 - `last_doc_catch_up_checkpoint`: doc-catch-up 成功后的 git HEAD；空值表示未执行过文档追平或锚点未知
 - `checkpoint_ref`: 与该 HEAD 对应的 branch/ref 描述
@@ -166,7 +166,7 @@ canonical executable source：
 
 ### 6. review-evidence-skill
 
-职责：按 `review_profile` 选择并行 review SubAgent lanes，而不是所有改动固定四路执行。`light` 只跑 `static-semantic-review`；`standard` 增加 `test-review`；`risky` 增加 `project-security-review`；`deep` 使用四路 review（static-semantic-review、test-review、project-security-review、complexity-performance-review），分别覆盖静态语义解释、测试 review、security review、代码复杂度和性能 review。运行时无法委派所选 lanes 时记录 fallback，汇总 code review/静态检查/结构评估结果，形成 review lane envelope 供 gate 汇总，对低严重度噪声做截断并将重复症状标为可能的上游约束问题。
+职责：按 `review_profile` 选择并行 review SubAgent lanes，而不是所有改动固定四路执行。`light` 只跑 `static-semantic-review`；`standard` 增加 `test-review`；`risky` 增加 `project-security-review`；`deep` 使用四路 review（static-semantic-review、test-review、project-security-review、complexity-performance-review），分别覆盖静态语义解释、测试 review、security review、代码复杂度和性能 review。运行时无法分派所选 lanes 时记录 fallback，汇总 code review/静态检查/结构评估结果，形成 review lane envelope 供 gate 汇总，对低严重度噪声做截断并将重复症状标为可能的上游约束问题。
 
 主要依赖：
 

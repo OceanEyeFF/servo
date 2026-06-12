@@ -26,7 +26,6 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 - [repo.md](./repo.md)：RepoScope 能力入口
 - [milestone/README.md](./milestone/README.md)：Milestone Skills，Milestone 初始化与状态分析
 - [worktrack.md](./worktrack.md)：WorktrackScope 能力入口
-- [skill-impact-matrix.md](./skill-impact-matrix.md)：Skill Impact Matrix，历史影响分析与同步追踪记录；不是 skill inventory 正文
 
 边界：
 
@@ -40,8 +39,6 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 |----------|--------------|----------------|
 | `supervisor.md`、`repo.md`、`worktrack.md` 中的运行策略摘要 | 用于解释 skill 选择和 handoff 字段，不作为独立规则正文 | doctrine / runtime protocol 归 [../foundations/README.md](../foundations/README.md)；正式对象字段归 [../artifact/README.md](../artifact/README.md)；workflow policy 归 [../workflow-families/README.md](../workflow-families/README.md) |
 | `milestone/` 中的 milestone 行为摘要 | 用于固定两个 milestone skills 的 inventory surface | Milestone artifact 合同归 [../artifact/README.md](../artifact/README.md)；运行协议归 [../foundations/README.md](../foundations/README.md)；executable source 归 [../../../product/harness/skills/README.md](../../../product/harness/skills/README.md) |
-| `skill-impact-matrix.md` | 历史合同变更对 skill 的影响分析与同步追踪记录 | 当前文件本身是历史分析记录；skill inventory 正文仍以本 catalog 的 skill 条目为准 |
-
 新增 catalog 页面时，若正文超过 inventory surface，需要先确认目标 owner；不能把分析、policy 或协议正文长期沉淀在 `catalog/`。
 
 ## Canonical Source Traceability

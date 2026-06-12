@@ -7,7 +7,7 @@ last_verified: 2026-05-17
 ---
 # Harness Scope
 
-`docs/harness/scope/` 固定 Harness 的两层控制对象（RepoScope / WorktrackScope）与它们之间的状态闭环。
+`docs/harness/scope/` 固定 Harness 的两个控制 Scope（RepoScope / WorktrackScope）、RepoScope 内的 Milestone 子层控制，以及两层 Scope 之间的状态闭环。
 
 本目录不复制 doctrine 或 runtime protocol 正文。`RepoScope` / `WorktrackScope` 的概念定义见 [../foundations/Harness指导思想.md](../foundations/Harness指导思想.md)，运行时合法算子与连续推进规则见 [../foundations/Harness运行协议.md](../foundations/Harness运行协议.md) 和 [../foundations/runtime-control-loop.md](../foundations/runtime-control-loop.md)。
 
@@ -21,15 +21,15 @@ last_verified: 2026-05-17
 ## 两层 Scope 的关系
 
 ```
-RepoScope (慢变量层)                   WorktrackScope (快变量层)
-┌──────────────────────┐              ┌──────────────────────┐
-│ 维护长期基线         │   Decide     │ 单个 worktrack 的    │
-│ 管理 Milestone 管线  │ ────────→   │ 完整生命周期        │
-│ 观测→决策循环       │              │ Init→Dispatch→      │
-│                      │  ←────────  │ Verify→Judge→       │
-│                      │  Close/      │ Close/Recover        │
-│                      │  Refresh     │                      │
-└──────────────────────┘              └──────────────────────┘
+RepoScope (慢变量层，含 Milestone 子层)         WorktrackScope (快变量层)
+┌───────────────────────────┐              ┌──────────────────────┐
+│ 维护长期基线              │   Decide     │ 单个 worktrack 的    │
+│ Milestone: 目标分批+闸门  │ ────────→   │ 完整生命周期        │
+│ 管理 Pipeline             │              │ Init→Dispatch→      │
+│ 观测→决策循环             │  ←────────  │ Verify→Judge→       │
+│                           │  Close/      │ Close/Recover        │
+│                           │  Refresh     │                      │
+└───────────────────────────┘              └──────────────────────┘
 ```
 
 - **RepoScope** 是决策层：判断什么时候需要执行、执行什么
