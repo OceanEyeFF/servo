@@ -10,6 +10,9 @@ const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
 const DEFAULT_CLAUDE_SKILL_NAME = "servo-set-harness-goal-skill";
+const CANONICAL_TEMPLATE_RELPATH = path.join("product", ".servo_template");
+
+let _templateRoot = undefined;
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
   ".git",
   "__pycache__",
@@ -567,13 +570,6 @@ const TEMPLATE_SPECS = {
       "Review Lane": [
         "input_ref",
         "freshness",
-        "review_subagent_lanes",
-        "four_lane_dispatch_status",
-        "static_semantic_review",
-        "test_review",
-        "project_security_review",
-        "complexity_performance_review",
-        "four_lane_fallback_reason",
         "confidence",
         "missing_evidence",
         "residual_risks",
@@ -688,12 +684,47 @@ const SECTION_VALUE_FIELDS = {
   "Baseline Branch": "baseline_branch",
 };
 
+function setTemplateRoot(explicitRoot) {
+  if (explicitRoot) {
+    const resolved = path.resolve(explicitRoot);
+    if (!fs.existsSync(resolved)) {
+      throw new DeployAwError(`template root does not exist: ${resolved}`);
+    }
+    _templateRoot = resolved;
+    return;
+  }
+  // Auto-detect: prefer product/.servo_template/ from CWD (repo dev mode)
+  const canonical = path.resolve(process.cwd(), CANONICAL_TEMPLATE_RELPATH);
+  if (fs.existsSync(canonical) && fs.statSync(canonical).isDirectory()) {
+    _templateRoot = canonical;
+    return;
+  }
+  // Fall back to bundled assets/ under SKILL_ROOT (npm distribution mode)
+  _templateRoot = undefined;
+}
+
+function templateRoot() {
+  return _templateRoot;
+}
+
 function sourcePath(spec) {
+  // When using canonical template root (product/.servo_template/),
+  // sourceRelpath like "assets/control-state.md" maps to "control-state.md"
+  if (_templateRoot) {
+    const assetRel = spec.sourceRelpath.replace(/^assets\//, "");
+    return path.join(_templateRoot, assetRel);
+  }
   return path.join(SKILL_ROOT, spec.sourceRelpath);
 }
 
 function sourceDisplayPath(spec) {
-  return path.join(path.basename(SKILL_ROOT), spec.sourceRelpath).split(path.sep).join("/");
+  const root = _templateRoot
+    ? path.relative(process.cwd(), _templateRoot)
+    : path.basename(SKILL_ROOT);
+  const assetRel = _templateRoot
+    ? spec.sourceRelpath.replace(/^assets\//, "")
+    : spec.sourceRelpath;
+  return path.join(root, assetRel).split(path.sep).join("/");
 }
 
 function slugify(label) {
@@ -745,6 +776,8 @@ function parseArgs(argv) {
   const args = {
     mode,
     json: false,
+    adoptMode: undefined,
+    templateRoot: undefined,
     profile: undefined,
     template: [],
     all: false,
@@ -792,6 +825,7 @@ function parseArgs(argv) {
     else if (token === "--baseline-branch") args.baselineBranch = nextValue();
     else if (token === "--worktrack-id") args.worktrackId = nextValue();
     else if (token === "--branch") args.branch = nextValue();
+    else if (token === "--template-root") args.templateRoot = nextValue();
     else if (token === "--claude-root") args.claudeRoot = nextValue();
     else throw new DeployAwError(`unsupported option: ${token}`);
   }
@@ -1496,6 +1530,7 @@ function runInstallClaudeSkill(args) {
 
 function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
+  setTemplateRoot(args.templateRoot);
   if (args.mode === "list") return runList(args.json);
   if (args.mode === "install-claude-skill") return runInstallClaudeSkill(args);
   const selectedSpecs = resolveSelectedSpecs(args);
