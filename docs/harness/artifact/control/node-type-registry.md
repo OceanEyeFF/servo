@@ -106,3 +106,12 @@ last_verified: 2026-06-13
 - Registry 定义"每种节点类型的默认规则是什么"（类型定义）
 - 若 Charter 引用了 Registry 未定义的类型，gate-skill 应标记为 `policy-gate: blocked`
 - Charter 可以为实例覆盖 Registry 默认值（如某 feature 的 gate_criteria 降级为 validation + policy）
+
+## Skill 部署脚本引用
+
+- 部署入口：`toolchain/scripts/deploy/bin/servo-installer.js` — 所有 backend 的 skill 部署统一入口。
+- 部署源路径：`product/harness/adapters/{backend}/skills/` — 各 backend 的 canonical skill payload descriptor source。
+- 部署目标路径：`.agents/skills/` (agents backend) / `.claude/skills/` (claude backend) — 运行时消费的 deploy target。
+- Skill 与 Node Type 关系：每个 skill 对应一种或多种 node type 的执行能力；deploy 时无需按 node type 过滤，但 `gate-skill` 在 gate 阶段会按 Worktrack Contract 中的 `node_type` 查找对应的 `gate_criteria` 以确定证据面。
+- 验证命令：`node toolchain/scripts/deploy/bin/servo-installer.js diagnose --backend agents --json` — 获取当前 skill set 的部署状态；`verify --backend agents` — 验证部署完整性。
+- 本 Registry 是 gate-skill 的 node type 默认值来源，不直接参与 deploy 流程；deploy 脚本无需引用本 Registry。
