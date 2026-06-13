@@ -126,6 +126,7 @@
   - attempted_carrier:
   - carrier_decision:
   - fallback_reason:
+  - decision_inputs:
 - persistent_authority_notes:
 
 ## Handback Guard

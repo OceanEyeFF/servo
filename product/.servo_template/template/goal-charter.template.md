@@ -39,6 +39,14 @@
 
 ### This Goal's Node Types
 
+> 列出本 Goal 实际使用的节点类型。可添加多个条目。
+
+- type:
+  - expected_count:
+  - merge_required:
+  - baseline_form:
+  - gate_criteria:
+  - if_interrupted_strategy:
 - type:
   - expected_count:
   - merge_required:

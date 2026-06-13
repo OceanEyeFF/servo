@@ -9,6 +9,8 @@
 - baseline_ref:
 - updated:
 - analysis_status:
+- current_phase:
+- decide_mode:
 
 ## Facts
 
