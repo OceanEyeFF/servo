@@ -3,7 +3,7 @@ title: "全局语言风格"
 status: active
 updated: 2026-04-19
 owner: servo-kernel
-last_verified: 2026-04-19
+last_verified: 2026-06-13
 ---
 # 全局语言风格
 

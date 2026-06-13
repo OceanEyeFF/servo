@@ -3,7 +3,7 @@ title: "Claude Post-Deploy Behavior Tests"
 status: active
 updated: 2026-06-02
 owner: servo-kernel
-last_verified: 2026-06-02
+last_verified: 2026-06-13
 ---
 # Claude Post-Deploy Behavior Tests
 

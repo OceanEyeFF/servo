@@ -3,7 +3,7 @@ title: "Codex Post-Deploy Behavior Tests"
 status: active
 updated: 2026-05-10
 owner: servo-kernel
-last_verified: 2026-05-10
+last_verified: 2026-06-13
 ---
 # Codex Post-Deploy Behavior Tests
 

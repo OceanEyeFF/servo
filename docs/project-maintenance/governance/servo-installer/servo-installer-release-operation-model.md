@@ -3,7 +3,7 @@ title: "servo-installer Release Operation Model"
 status: active
 updated: 2026-05-06
 owner: servo-kernel
-last_verified: 2026-05-06
+last_verified: 2026-06-13
 ---
 # servo-installer Release Operation Model
 

@@ -3,7 +3,7 @@ title: "Init Milestone Skill"
 status: active
 updated: 2026-05-14
 owner: servo-kernel
-last_verified: 2026-05-14
+last_verified: 2026-06-13
 ---
 
 # Init Milestone Skill

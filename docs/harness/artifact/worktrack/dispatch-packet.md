@@ -3,7 +3,7 @@ title: "Dispatch Packet Schema"
 status: active
 updated: 2026-05-20
 owner: servo-kernel
-last_verified: 2026-05-20
+last_verified: 2026-06-13
 ---
 
 # Dispatch Packet Schema

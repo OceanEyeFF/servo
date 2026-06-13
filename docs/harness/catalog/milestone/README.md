@@ -3,7 +3,7 @@ title: "Milestone Skills"
 status: active
 updated: 2026-05-17
 owner: servo-kernel
-last_verified: 2026-05-17
+last_verified: 2026-06-13
 ---
 # Milestone Skills
 

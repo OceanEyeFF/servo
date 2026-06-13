@@ -3,7 +3,7 @@ title: "模型运行时支持边界"
 status: active
 updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-06-13
 ---
 # 模型运行时支持边界
 

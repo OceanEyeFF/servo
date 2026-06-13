@@ -3,7 +3,7 @@ title: "TUI / CLI Responsibility Split Contract"
 status: active
 updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-13
 ---
 # TUI / CLI Responsibility Split Contract
 

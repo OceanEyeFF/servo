@@ -3,7 +3,7 @@ title: "Skill 公共约束"
 status: active
 updated: "2026-05-09"
 owner: "servo-kernel"
-last_verified: "2026-05-09"
+last_verified: 2026-06-13
 ---
 
 # Skill 公共约束

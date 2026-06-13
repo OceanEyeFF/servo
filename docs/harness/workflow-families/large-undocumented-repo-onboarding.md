@@ -3,7 +3,7 @@ title: "Large Undocumented Repo Onboarding"
 status: active
 updated: 2026-05-31
 owner: servo-kernel
-last_verified: 2026-05-31
+last_verified: 2026-06-13
 ---
 # Large Undocumented Repo Onboarding
 

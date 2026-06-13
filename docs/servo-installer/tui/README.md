@@ -3,7 +3,7 @@ title: "servo-installer TUI Documentation"
 status: active
 updated: 2026-05-19
 owner: servo-kernel
-last_verified: 2026-05-19
+last_verified: 2026-06-13
 ---
 # servo-installer TUI Documentation
 

@@ -3,7 +3,7 @@ title: "Harness Quickstart Tutorial"
 status: active
 updated: 2026-05-18
 owner: servo-kernel
-last_verified: 2026-05-18
+last_verified: 2026-06-13
 ---
 
 # Harness Quickstart Tutorial

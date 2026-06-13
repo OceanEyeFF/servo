@@ -3,7 +3,7 @@ title: "Review / Verify 治理入口"
 status: active
 updated: 2026-06-02
 owner: servo-kernel
-last_verified: 2026-06-02
+last_verified: 2026-06-13
 ---
 # Review / Verify 治理入口
 

@@ -3,7 +3,7 @@ title: "Append Request Routing"
 status: active
 updated: 2026-05-25
 owner: servo-kernel
-last_verified: 2026-05-25
+last_verified: 2026-06-13
 ---
 # Append Request Routing
 

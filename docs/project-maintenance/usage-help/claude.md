@@ -3,7 +3,7 @@ title: "Claude Repo-local Usage Help"
 status: active
 updated: 2026-06-02
 owner: servo-kernel
-last_verified: 2026-06-02
+last_verified: 2026-06-13
 ---
 # Claude Repo-local Usage Help
 

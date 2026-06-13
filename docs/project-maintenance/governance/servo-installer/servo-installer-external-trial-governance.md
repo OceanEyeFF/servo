@@ -3,7 +3,7 @@ title: "servo-installer External Trial Governance"
 status: active
 updated: 2026-05-05
 owner: servo-kernel
-last_verified: 2026-05-05
+last_verified: 2026-06-13
 ---
 # servo-installer External Trial Governance
 

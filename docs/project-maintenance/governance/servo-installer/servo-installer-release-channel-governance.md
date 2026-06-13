@@ -3,7 +3,7 @@ title: "servo-installer Release Channel Governance"
 status: active
 updated: 2026-06-07
 owner: servo-kernel
-last_verified: 2026-06-07
+last_verified: 2026-06-13
 ---
 # servo-installer Release Channel Governance
 

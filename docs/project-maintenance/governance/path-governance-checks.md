@@ -3,7 +3,7 @@ title: "路径与文档治理检查运行说明"
 status: active
 updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-06-13
 ---
 # 路径与文档治理检查运行说明
 

@@ -3,7 +3,7 @@ title: "旧版本处理"
 status: active
 updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-13
 ---
 # 旧版本处理
 

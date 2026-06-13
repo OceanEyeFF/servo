@@ -3,7 +3,7 @@ title: Harness Skill Catalog
 status: active
 updated: 2026-05-16
 owner: servo-kernel
-last_verified: 2026-05-14
+last_verified: 2026-06-13
 ---
 
 # Harness Skill Catalog

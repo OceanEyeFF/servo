@@ -3,7 +3,7 @@ title: "Repo Analysis"
 status: active
 updated: 2026-04-26
 owner: servo-kernel
-last_verified: 2026-04-26
+last_verified: 2026-06-13
 ---
 # Repo Analysis
 

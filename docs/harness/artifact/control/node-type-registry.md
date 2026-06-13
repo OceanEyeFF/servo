@@ -3,7 +3,7 @@ title: "Node Type Registry"
 status: active
 updated: 2026-05-08
 owner: servo-kernel
-last_verified: 2026-05-08
+last_verified: 2026-06-13
 ---
 
 # Node Type Registry
