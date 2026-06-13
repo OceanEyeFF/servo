@@ -28,7 +28,7 @@
 - `.servo_template/` 中的文件是 **runtime bootstrap 模板**，用于 skill 初始化时生成 `.servo/` 目录结构。
 - 真正的 canonical source 是 **写入该文件的 skill 的「预期输出」字段定义**，不是 `docs/harness/artifact/`（那是字段规范文档）。
 - 审计方法：读 skill SKILL.md 的「预期输出」章节 → 列出 skill 会写入的所有字段 → 与 template 对比，找出缺失字段。
-- **当前状态**：8 个 template 已完成字段级审计，缺失字段已同步到 template。`, `- **建议**：后续 milestone 可考虑将剩余瞬态/低优先级字段补齐。
+- **当前状态**：8 个 template 全部审计 + 同步完成。所有 MANIFEST ✅。
 
 ## 更新规则
 
