@@ -495,8 +495,14 @@ Gate 应汇总**正交校验面**的裁决：
    - 不得跳过 milestone progress writeback；不得在 `milestone_acceptance_verdict` 未达成时变更 milestone status
 7. 如果命中正式停止条件 → 向程序员返回控制权
 8. 不要直接把子代理的返回结果当成状态更新的唯一依据；必须经过 Gate 裁决
+9. **项目基本面刷新触发**：以下条件任意满足时，必须在当前或下一轮 Harness 回路中触发项目基本面刷新（至少包含 repo snapshot/status 刷新、backlog hygiene 检查、control-state checkpoint 更新）：
+   - **Worktrack closeout 后**：每次 Worktrack 完成 closeout（merge → cleanup）后，必须在返回到 RepoScope 时刷新 Repo 级慢变量（`repo-refresh-skill`），并更新 `latest_observed_checkpoint`。
+   - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后，必须刷新 milestone-backlog → milestone-history 迁移、worktrack-backlog 状态归一化、control-state active_milestone 清空和 pipeline 重新评估。Work-collection milestone 完成时自动推进 pipeline。
+   - **Git hash 变更后**：每次 Harness 启动时，若 `latest_observed_checkpoint` 与当前 HEAD 不一致，必须在 Observe 阶段标记 `repo_baseline_changed: true`，并在当前回路中绑定 `repo-refresh-skill` 刷新 Repo 基线观察。
+   - **Pipeline 不一致检测**：若 milestone-backlog、worktrack-backlog、control-state 的 active_milestone 或 milestone artifact 之间存在不一致（如指向不存在的 milestone、状态矛盾），必须触发 pipeline 恢复动作（见 §十二 恢复策略 → Milestone Pipeline 恢复）。
+   - 以上触发条件是项目基本面刷新的最小必要时机；不得因为"未见明显变化"而跳过 closeout 后或 hash 变更后的刷新动作。
 
-### 10.8 Git Commit Hash 幂等性守卫
+### 10.9 Git Commit Hash 幂等性守卫
 
 Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `doc-catch-up-worker-skill`。
 
