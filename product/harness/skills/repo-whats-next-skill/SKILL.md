@@ -92,7 +92,12 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
    - `优先级重构/矛盾分析` 模式
    - `overview fallback` 模式
 8. 为当前 `通用高能力模型` 推理轮构建一份限定范围代码仓库判定包。
-9. 评估允许的候选代码仓库动作：
+9. **消费刷新信号**：若上游 `repo-status-skill` 输出的 `refresh_signals` 中包含以下任一信号，优先评估刷新需求，再进入正常候选动作评估：
+   - `repo_baseline_changed == true`：代码基线自上次观察后已变更 => `recommended_repo_action = "刷新代码仓库状态"`，建议绑定 `repo-refresh-skill` 刷新 Repo 慢变量并更新 `latest_observed_checkpoint`。在 milestone/worktrack closeout 后的 hash 变更场景，这是法定第一步。
+   - `analysis_stale == true`：Repo Analysis 过期或结论与当前验证事实矛盾 => `recommended_repo_action = "刷新代码仓库状态"`，建议重新生成 Repo Analysis。`analysis_stale` 不自动触发新 worktrack；刷新后由下一轮 Decide 判断。
+   - `doc_catch_up_needed == true`：文档追平 checkpoint 落后于代码基线 => 在 `继续阻塞项` 中记录 `doc_catch_up_needed`，建议在合适的阶段绑定 `doc-catch-up-worker-skill`。不阻断其他动作，但必须显式暴露。
+   - 若刷新信号同时伴随已批准的 worktrack 等待执行，刷新与执行可并行评估；但 `repo_baseline_changed` 信号必须优先于 `进入工作追踪`（先刷新基线再派生 worktrack）。
+10. 评估允许的候选代码仓库动作：
    - `进入工作追踪`
    - `刷新代码仓库状态`
    - `保持并观察`

@@ -39,6 +39,10 @@ description: 当 Harness 处于代码仓库范围，且需要一轮限定范围�
 1. 确认这是一轮 `代码仓库范围` 状态观察轮次，不是工作追踪分派、下一步决策或直接执行。
 2. 载入 `Harness 控制状态`、`代码仓库目标/章程`、`代码仓库快照/状态`，以及当前问题所需的最小额外产物。
    - 检查 `Goal Charter` 的 `Engineering Node Map` 是否存在、字段是否完整，并记录 `goal_node_map_status`
+   - 检查 `control-state` 的 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 是否一致，产出 `repo_baseline_changed` 信号
+   - 若 `repo_baseline_changed == true`，按 harness-skill §10.1 步骤 6 检查是否需要绑定 `doc-catch-up-worker-skill`（比较 `last_doc_catch_up_checkpoint` 与当前 HEAD）
+   - 检查是否存在 `Repo Analysis` artifact，其 `analysis_stale` 标记或 freshness 是否过期
+   - 产出结构化 `refresh_signals` 集合：`{ repo_baseline_changed, doc_catch_up_needed, analysis_stale, refresh_actions }`
 3. 如果标准快照缺失、过期或明显不足，只收集解释缺口所需的最小探查证据。
 4. 以狭窄、可重复的字段集总结当前代码仓库基准状态、活动分支、治理与时效性信号、以及已知风险。
 5. 判断当前观察依据是否足以进入下一轮限定范围代码仓库判定，并显式记录该就绪状态。
@@ -87,6 +91,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮限定范围�
 - `快照时效性`
 - `使用的目标引用`
 - `goal_node_map_status`
+- `refresh_signals`：`{ repo_baseline_changed, doc_catch_up_needed, analysis_stale, refresh_actions }` — 按 harness-skill §10.7 项目基本面刷新触发规则收集的刷新信号集合
 - `active_milestone`：当前活跃的 Milestone ID（如存在）
 - `milestone_status`：当前活跃 Milestone 的状态（planned / active / completed / superseded / N/A）
 - `milestone_pipeline_planned_count`：Pipeline 中处于 planned 状态的 milestone 数量
