@@ -122,7 +122,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js --version
    - 若文件内容正文近期有实质性变更但 `last_verified` 未更新，标记为 `frontmatter_drift`
 
 2. **Broken link 扫描**：
-   - 扫描 `docs/` 下所有 .md 文件中的相对链接 `[text](path)` 和引用格式 `[path#section]`
+   - 扫描 `docs/` 下所有 .md 文件中的相对链接 `` `[text](path)` `` 和引用格式 `` `[path#section]` ``
    - 验证目标文件是否存在、目标章节 anchor 是否可达
    - 对 `AGENTS.md`、`INDEX.md`、`docs/README.md` 中的路由链接做重点检查
 
