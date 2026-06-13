@@ -156,7 +156,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 - `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct` 任一修改都必须触发 milestone 重新评估标记
 - append worktrack 只有在 programmer 确认其归属当前 milestone，且 `coverage_verdict` 不为 `not_covered` 时才可继续；否则必须建议其他 milestone 路径，避免静默 scope creep
 - 在 create / upsert / activate 之前必须先输出结构化 `milestone brief` 并等待 programmer 确认；brief 不是可选摘要，而是激活前约束边界
-- 高风险或模糊 milestone 在 create / upsert / activate 前必须先通过 `pre-milestone-intake-skill` 的 `pre_milestone_intake_review`；薄确认不得替代 intake review
+- **Goal-driven milestone 的 create / upsert / activate / append_worktracks 前必须经过 `pre-milestone-intake-skill` 至少一次（pre-milestone intake route guard）**。无论风险高低，所有 goal-driven milestone 必须消费 `pre_milestone_intake_review`；只有 `intake_status == "ready"`、`programmer_confirmed == true`、`ready_for_init_milestone == true`，或 `intake_status == "skipped"` 且 programmer 显式接受风险时，才允许继续。`questions_required`、`blocked`、`missing`、字段不全或 intake review 缺失时，必须返回 blocked。已计划的 milestone 如果从未经过 intake，激活前必须先补做 intake review。work-collection milestone 不适用此 guard。
 - 复杂项目、弱文档或高风险 milestone 在 create / upsert / activate 前必须先通过 `complex_project_entry_gate`；该 gate 是 Milestone-side blocking gate, not fixed heavy mode。
 - scanner output is evidence, not verdict；`scanner_evidence_ref` 与 `complexity_signals` 只能作为判定依据，不得替代 programmer confirmation 或 safety policy。
 - `operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation` 缺失时，必须 blocked。
