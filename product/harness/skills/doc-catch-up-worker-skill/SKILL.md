@@ -23,6 +23,7 @@ description: 当工作追踪需要把已验证实现事实追平到正确文档�
 - 实现已通过匹配验证，但长期文档仍引用旧路径、旧数量、旧命令或旧边界
 - closeout 前需要确认文档是否与已验证事实一致
 - 一个任务完成后需要为后续 worktrack 拉平上下文基线
+- **文档质量审查**：需要检查 stale frontmatter、broken links 或中英文表达一致性时（只读模式，不写入文档）
 
 不适用于：
 
@@ -102,6 +103,56 @@ node toolchain/scripts/deploy/bin/servo-installer.js --version
 - `docs/project-maintenance/usage-help/codex.md`
 - `docs/project-maintenance/usage-help/claude.md`
 - root `README.md`，仅当根入口 selector、试用路径或成熟度口径确实变化
+
+## Document Quality Review（文档质量审查）
+
+文档质量审查是本技能的只读审查子模式，用于在 Milestone 验收或定期维护中发现文档质量问题。它不影响实现代码，不写入文档。
+
+### 触发时机
+
+- Milestone 验收前（由 `milestone-status-skill` 的 `doc_freshness_warning` 触发）
+- 定期文档维护（如 MS-20260611-001 `stale-frontmatter` worktrack 完成后）
+- Closeout 前文档基线对齐检查
+
+### 审查维度
+
+1. **Stale frontmatter 检测**：
+   - 扫描 `docs/` 下所有正文 .md 文件的 `last_verified` 字段
+   - 与当前日期对比，逾期超过 90 天标记为 stale
+   - 若文件内容正文近期有实质性变更但 `last_verified` 未更新，标记为 `frontmatter_drift`
+
+2. **Broken link 扫描**：
+   - 扫描 `docs/` 下所有 .md 文件中的相对链接 `[text](path)` 和引用格式 `[path#section]`
+   - 验证目标文件是否存在、目标章节 anchor 是否可达
+   - 对 `AGENTS.md`、`INDEX.md`、`docs/README.md` 中的路由链接做重点检查
+
+3. **中英文表达一致性检查**：
+   - 检查同一篇文档中是否存在中英混杂术语不一致（如同时用 "worktrack" 和 "工作追踪" 但不统一）
+   - 检查标题层级（H1-H3）和 frontmatter 是否为全中文（除代码/路径/字段名外）
+   - 输出不一致项供人工判断（不自动修复）
+
+### 工作流
+
+1. 读取任务 Prompt 中指定的审查范围（文件列表、目录或全量 `docs/`）。
+2. 依次执行三个审查维度，每个维度独立输出发现项。
+3. 发现项按严重度分类：`error`（阻断性问题，如关键入口死链）、`warning`（非阻断，如 stale frontmatter）、`info`（建议性）。
+4. 生成结构化审查报告，不写入文档。
+
+### 输出字段
+
+- `review_scope`：审查范围
+- `stale_frontmatter`：{ file, last_verified, days_stale, severity }
+- `broken_links`：{ source_file, target, reason, severity }
+- `language_consistency`：{ file, issue_type, description, severity }
+- `total_errors` / `total_warnings` / `total_infos`
+- `recommendations`：建议修复动作
+
+### 约束
+
+- 本子模式只读，不修改任何文件。
+- Broken link 检查仅验证本地文件存在性和 markdown heading anchor 可达性，不发起 HTTP 请求。
+- 中英文一致性检查是启发式的，所有发现标记为 `info` 或 `warning`，不做 auto-fix。
+- 若任务 Prompt 同时包含实现追平和质量审查，先完成追平再审查。
 
 ## 硬约束
 
