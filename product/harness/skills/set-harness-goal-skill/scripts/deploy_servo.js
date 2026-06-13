@@ -770,8 +770,8 @@ function parseArgs(argv) {
     process.exit(0);
   }
   const mode = argv[0];
-  if (!mode || !["list", "validate", "generate", "install-claude-skill"].includes(mode)) {
-    throw new DeployAwError("missing or unsupported mode: expected list, validate, generate, or install-claude-skill");
+  if (!mode || !["list", "validate", "generate", "migrate", "install-claude-skill"].includes(mode)) {
+    throw new DeployAwError("missing or unsupported mode: expected list, validate, generate, migrate, or install-claude-skill");
   }
   const args = {
     mode,
@@ -1520,6 +1520,295 @@ function runGenerate(selectedSpecs, staticAssets, args) {
   return 0;
 }
 
+// ---- Migration Mode ----
+
+function runMigrate(args) {
+  const deployPath = resolveDeployPath(args);
+  const templateRoot = _templateRoot || path.join(SKILL_ROOT, "assets");
+
+  if (!fs.existsSync(deployPath)) {
+    throw new DeployAwError(`deploy path does not exist: ${deployPath}`);
+  }
+
+  const allSpecs = Object.values(TEMPLATE_SPECS);
+  const specs = allSpecs.filter(s => s.sourceRelpath && s.outputRelpath);
+
+  const report = collectMigrationChanges(templateRoot, deployPath, specs);
+
+  if (args.json) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    printMigrationReport(report);
+  }
+
+  if (!args.dryRun && report.changes.length > 0) {
+    applyMigrationChanges(deployPath, report.changes);
+  }
+
+  return 0;
+}
+
+function collectMigrationChanges(templateRoot, deployPath, specs) {
+  const changes = [];
+  const errors = [];
+  let filesProcessed = 0;
+
+  for (const spec of specs) {
+    const templatePath = sourcePath(spec);
+    const runtimePath = path.join(deployPath, DEFAULT_AW_DIRNAME, spec.outputRelpath);
+
+    if (!fs.existsSync(templatePath)) {
+      errors.push({ file: spec.templateId, error: `template not found: ${templatePath}`, severity: 'warning' });
+      continue;
+    }
+
+    try {
+      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+      const templateParsed = parseTemplate(templateContent);
+
+      let runtimeParsed = null;
+      if (fs.existsSync(runtimePath)) {
+        const runtimeContent = fs.readFileSync(runtimePath, 'utf-8');
+        runtimeParsed = parseTemplate(runtimeContent);
+      }
+
+      const fileChanges = reconcileFile(templateParsed, runtimeParsed, spec);
+      if (fileChanges.length > 0) {
+        changes.push(...fileChanges);
+      }
+      filesProcessed++;
+    } catch (err) {
+      errors.push({ file: spec.templateId, error: err.message, severity: 'error' });
+    }
+  }
+
+  return { changes, errors, filesProcessed };
+}
+
+function parseTemplate(content) {
+  const lines = content.split('\n');
+  const frontmatter = {};
+  let bodyStart = 0;
+
+  if (lines[0] && lines[0].trim() === '---') {
+    let i = 1;
+    while (i < lines.length && lines[i].trim() !== '---') {
+      const line = lines[i];
+      const fmMatch = line.match(/^(\w[-\w]*):\s*(.*)?$/);
+      if (fmMatch) {
+        frontmatter[fmMatch[1]] = (fmMatch[2] || '').trim();
+      }
+      i++;
+    }
+    bodyStart = i + 1;
+  }
+
+  const sections = [];
+  let currentSection = null;
+  let currentSubSection = null;
+
+  for (let i = bodyStart; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^> /.test(line) || /^<!--/.test(line)) continue;
+
+    const h2Match = line.match(/^## (.+)/);
+    const h3Match = line.match(/^### (.+)/);
+    const fieldMatch = line.match(/^(\s*)- ([a-z0-9_-]+):\s*(.*)$/);
+
+    if (h2Match) {
+      currentSection = { name: h2Match[1].trim(), fields: [], subSections: [] };
+      sections.push(currentSection);
+      currentSubSection = null;
+    } else if (h3Match && currentSection) {
+      currentSubSection = { name: h3Match[1].trim(), fields: [], subSections: [] };
+      currentSection.subSections.push(currentSubSection);
+    } else if (fieldMatch) {
+      const indent = fieldMatch[1].length;
+      const key = fieldMatch[2];
+      const value = (fieldMatch[3] || '').trim();
+      const target = currentSubSection || currentSection;
+      if (target) {
+        target.fields.push({ key, value, indent });
+      }
+    }
+  }
+
+  return { frontmatter, sections };
+}
+
+function isEffectiveEmpty(value) {
+  const trimmed = (value || '').trim();
+  if (trimmed === '') return true;
+  if (/^(N\/A|n\/a|none|null|undefined)$/i.test(trimmed)) return true;
+  return false;
+}
+
+function reconcileFile(template, runtime, spec) {
+  const changes = [];
+  if (!runtime) {
+    changes.push({ type: 'new_file', file: spec.outputRelpath });
+    return changes;
+  }
+
+  for (const [tKey, tVal] of Object.entries(template.frontmatter)) {
+    if (!(tKey in runtime.frontmatter) || isEffectiveEmpty(runtime.frontmatter[tKey])) {
+      changes.push({ type: 'append_frontmatter', file: spec.outputRelpath, key: tKey, value: tVal });
+    }
+  }
+
+  for (const tSection of template.sections) {
+    const rSection = runtime.sections.find(s => s.name === tSection.name);
+    if (!rSection) {
+      changes.push({ type: 'append_section', file: spec.outputRelpath, section: tSection.name });
+      continue;
+    }
+
+    const rKeyMap = new Map();
+    for (const f of rSection.fields) {
+      if (!rKeyMap.has(f.key)) rKeyMap.set(f.key, f);
+    }
+
+    for (const tField of tSection.fields) {
+      const rField = rKeyMap.get(tField.key);
+      if (!rField) {
+        // Field missing in runtime → append
+        changes.push({ type: 'append_field', file: spec.outputRelpath, section: tSection.name, key: tField.key, value: tField.value });
+      } else if (tField.value && !isEffectiveEmpty(tField.value) && isEffectiveEmpty(rField.value)) {
+        // Template has meaningful value, runtime is empty/N/A → append template value
+        changes.push({ type: 'append_field', file: spec.outputRelpath, section: tSection.name, key: tField.key, value: tField.value });
+      }
+      // else: runtime has value or both are empty → skip
+    }
+
+    for (const tSub of tSection.subSections) {
+      const rSub = (rSection.subSections || []).find(s => s.name === tSub.name);
+      if (!rSub) {
+        changes.push({ type: 'append_sub_section', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}` });
+        continue;
+      }
+      const subKeyMap = new Map();
+      for (const f of rSub.fields) {
+        if (!subKeyMap.has(f.key)) subKeyMap.set(f.key, f);
+      }
+      for (const tField of tSub.fields) {
+        const rField = subKeyMap.get(tField.key);
+        if (!rField) {
+          changes.push({ type: 'append_nested_field', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}`, key: tField.key, value: tField.value });
+        } else if (tField.value && !isEffectiveEmpty(tField.value) && isEffectiveEmpty(rField.value)) {
+          changes.push({ type: 'append_nested_field', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}`, key: tField.key, value: tField.value });
+        }
+      }
+    }
+  }
+
+  return changes;
+}
+
+function applyMigrationChanges(deployPath, changes) {
+  const byFile = new Map();
+  for (const change of changes) {
+    if (!byFile.has(change.file)) byFile.set(change.file, []);
+    byFile.get(change.file).push(change);
+  }
+
+  for (const [relPath, fileChanges] of byFile) {
+    const runtimePath = path.join(deployPath, DEFAULT_AW_DIRNAME, relPath);
+    let content = '';
+    if (fs.existsSync(runtimePath)) {
+      content = fs.readFileSync(runtimePath, 'utf-8');
+    }
+
+    for (const change of fileChanges) {
+      switch (change.type) {
+        case 'append_frontmatter':
+          content = appendFrontmatterField(content, change.key, change.value);
+          break;
+        case 'append_field':
+          content = appendSectionField(content, change.section, change.key, change.value);
+          break;
+        case 'append_nested_field': {
+          const parts = change.section.split(' > ');
+          content = appendNestedSectionField(content, parts[0], parts[1], change.key, change.value);
+          break;
+        }
+      }
+    }
+
+    const tmpPath = runtimePath + '.tmp';
+    fs.writeFileSync(tmpPath, content, 'utf-8');
+    fs.renameSync(tmpPath, runtimePath);
+  }
+}
+
+function appendFrontmatterField(content, key, value) {
+  const lines = content.split('\n');
+  let closeIdx = -1;
+  let inFm = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() === '---') {
+      if (!inFm) { inFm = true; continue; }
+      closeIdx = i;
+      break;
+    }
+  }
+  if (closeIdx < 0) return content;
+  const valueStr = value ? ` ${value}` : '';
+  lines.splice(closeIdx, 0, `${key}:${valueStr}`);
+  return lines.join('\n');
+}
+
+function appendSectionField(content, sectionName, key, value) {
+  const lines = content.split('\n');
+  const sectionIdx = lines.findIndex(l => l.trim() === `## ${sectionName}`);
+  if (sectionIdx < 0) return content;
+  let insertIdx = sectionIdx + 1;
+  while (insertIdx < lines.length && !lines[insertIdx].startsWith('## ')) {
+    insertIdx++;
+  }
+  const valueStr = value ? ` ${value}` : '';
+  lines.splice(insertIdx, 0, `- ${key}:${valueStr}`);
+  return lines.join('\n');
+}
+
+function appendNestedSectionField(content, parentName, childName, key, value) {
+  const lines = content.split('\n');
+  let parentIdx = lines.findIndex(l => l.trim() === `## ${parentName}`);
+  if (parentIdx < 0) return content;
+  let childIdx = -1;
+  for (let i = parentIdx + 1; i < lines.length; i++) {
+    if (lines[i].startsWith('## ')) break;
+    if (lines[i].trim() === `### ${childName}`) { childIdx = i; break; }
+  }
+  if (childIdx < 0) return content;
+  let insertIdx = childIdx + 1;
+  while (insertIdx < lines.length && !lines[insertIdx].startsWith('## ') && !lines[insertIdx].startsWith('### ')) {
+    insertIdx++;
+  }
+  const valueStr = value ? ` ${value}` : '';
+  lines.splice(insertIdx, 0, `- ${key}:${valueStr}`);
+  return lines.join('\n');
+}
+
+function printMigrationReport(report) {
+  console.log(`Files processed: ${report.filesProcessed}`);
+  if (report.errors.length > 0) {
+    console.log(`Errors: ${report.errors.length}`);
+    for (const err of report.errors) {
+      console.log(`  [${err.severity}] ${err.file}: ${err.error}`);
+    }
+  }
+  if (report.changes.length > 0) {
+    console.log(`\nChanges (${report.changes.length}):`);
+    for (const change of report.changes) {
+      const loc = change.section ? ` [${change.section}]` : '';
+      const detail = change.key ? ` ${change.key}` : '';
+      console.log(`  + ${change.file}${loc}: ${change.type}${detail}`);
+    }
+  } else {
+    console.log('No changes needed. .servo/ is up to date.');
+  }
+}
+
 function runInstallClaudeSkill(args) {
   const deployPath = resolveDeployPath(args);
   const packageFiles = collectSkillPackageFiles();
@@ -1533,6 +1822,7 @@ function main(argv = process.argv.slice(2)) {
   setTemplateRoot(args.templateRoot);
   if (args.mode === "list") return runList(args.json);
   if (args.mode === "install-claude-skill") return runInstallClaudeSkill(args);
+  if (args.mode === "migrate") return runMigrate(args);
   const selectedSpecs = resolveSelectedSpecs(args);
   const staticAssets = resolveStaticAssetSpecs(args);
   if (args.mode === "validate") return runValidate(selectedSpecs, staticAssets);
