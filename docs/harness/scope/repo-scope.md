@@ -74,9 +74,10 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - Milestone brief 必须经 programmer 确认后才能激活 goal-driven milestone
 - 命中 complex-project trigger 时：
   - `milestone_blocking_decision` 必须允许 create / activate / derive-worktrack 三种操作
-  - scanner 只提供证据，不能单独据此放行
+  - 该 gate 不是固定 heavy mode（`not fixed heavy mode`）
+  - `scanner output is evidence`；scanner 只提供证据，不能单独据此放行
   - gate 交接包必须提供：`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision`、`reinforcement_milestone_recommendation`
-  - 校验条件缺失、空白、占位、未完成或状态不明时，默认按阻断处理，不得解释为 clear 或 `not_applicable`
+  - 校验条件缺失、空白（`blank`）、占位、未完成或状态不明时，默认按阻断处理；这是 `unresolved gate blocking default`，不得解释为 clear 或 `not_applicable`
   - 文档薄弱时优先路由到补充文档型 Milestone（reinforcement documentation / project-understanding）
   - `needed = true` 或 `blocks_implementation_until_resolved = true` 时阻断实现型 Worktrack 派生
   - Worktrack 执行模式（`normal`、`autoreview`、`yolo`）不能绕过 Milestone 侧阻断
