@@ -5396,6 +5396,49 @@ async function runGuidedUpdateFlow(rl, state) {
   await pause(rl);
 }
 
+async function runTuiServoReconcileFlow(rl, state) {
+  state.currentStep = "servo-reconcile:dry-run";
+  refreshTui(state);
+  process.stdout.write(`\n${SYM_ARROW} Running reconcile-servo --json (dry-run; not migrate-runtime)...\n`);
+  const dryRunStatus = await runNodeOwned(["reconcile-servo", "--json"]);
+  if (dryRunStatus !== 0) {
+    console.log(`${SYM_FAIL} .servo template reconcile dry-run failed; not applying.`);
+    await pause(rl);
+    return;
+  }
+
+  const confirmation = (await question(
+    rl,
+    `${SYM_ARROW} Type ${colorYellow("yes")} to apply .servo template reconciliation: `,
+  )).trim();
+  if (confirmation !== "yes") {
+    console.log(".servo template reconciliation cancelled. No changes applied.");
+    await pause(rl);
+    return;
+  }
+
+  state.currentStep = "servo-reconcile:apply";
+  refreshTui(state);
+  process.stdout.write(`\n${SYM_ARROW} Running reconcile-servo --yes (apply; not migrate-runtime)...\n`);
+  const applyStatus = await runNodeOwned(["reconcile-servo", "--yes"]);
+  if (applyStatus !== 0) {
+    console.log(`${SYM_FAIL} .servo template reconciliation apply failed.`);
+    await pause(rl);
+    return;
+  }
+
+  state.currentStep = "servo-reconcile:verify";
+  refreshTui(state);
+  process.stdout.write(`\n${SYM_ARROW} Running reconcile-servo --json again (verify idempotency)...\n`);
+  const verifyStatus = await runNodeOwned(["reconcile-servo", "--json"]);
+  if (verifyStatus === 0) {
+    console.log(`${SYM_OK} .servo template reconciliation verification completed.`);
+  } else {
+    console.log(`${SYM_FAIL} .servo template reconciliation verification failed.`);
+  }
+  await pause(rl);
+}
+
 const backendCycle = [agentsBackend, claudeBackend, bundleBackend];
 
 function cycleBackend(current) {
@@ -5499,7 +5542,7 @@ async function runTui(logDir) {
         "Diagnose current install",
         "Verify current install",
         "Show update dry-run plan",
-        "Show .servo template reconcile dry-run",
+        ".servo template reconcile (dry-run/apply)",
         "Exit",
       ];
 
@@ -5538,11 +5581,7 @@ async function runTui(logDir) {
           await runNodeOwned(["update", "--backend", tuiState.backend]);
           await pause(null);
         } else if (idx === 5) {
-          tuiState.currentStep = "servo-reconcile-dry-run";
-          refreshTui(tuiState);
-          process.stdout.write(`\n${SYM_ARROW} Running reconcile-servo --json (dry-run; not migrate-runtime)...\n`);
-          await runNodeOwned(["reconcile-servo", "--json"]);
-          await pause(null);
+          await runTuiServoReconcileFlow(null, tuiState);
         } else if (idx === 6) {
           break;
         }
