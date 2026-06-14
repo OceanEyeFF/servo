@@ -113,6 +113,7 @@ const cliFlags = Object.freeze({
   logDir: "--log-dir",
   reinstall: "--reinstall",
   source: "--source",
+  templateRoot: "--template-root",
   to: "--to",
   yes: "--yes",
 });
@@ -313,6 +314,8 @@ commands:
                               update from a GitHub source archive containing current payloads
   migrate-runtime --from aw --to servo [--json|--yes]
                               preview or copy .aw runtime state into .servo
+  reconcile-servo [--json|--yes]
+                              reconcile existing .servo templates in a target repo
   prune --all --backend agents|claude|bundle
                               remove managed installs for the backend
   check_paths_exist --backend agents|claude|bundle
@@ -326,6 +329,7 @@ options:
                               include backend in migration reinstall plan output
   --reinstall                 include deploy reinstall/update in migration plan output
   --source package|github     select package-local or GitHub update source
+  --template-root PATH        override .servo template source for reconcile-servo
   --agents-root PATH          override the managed agents skills target root
   --claude-root PATH          override the managed Claude skills target root
   --github-repo OWNER/REPO    GitHub source repository for --source github
@@ -3137,6 +3141,47 @@ function parseNodeMigrateRuntimeArgs(args) {
   };
 }
 
+function parseNodeReconcileServoArgs(args) {
+  if (args[0] !== "reconcile-servo") {
+    return null;
+  }
+  const parsed = {
+    json: false,
+    yes: false,
+    templateRoot: undefined,
+  };
+  for (let index = 1; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === cliFlags.json) {
+      parsed.json = true;
+      continue;
+    }
+    if (arg === cliFlags.yes) {
+      parsed.yes = true;
+      continue;
+    }
+    if (arg === cliFlags.templateRoot) {
+      const value = readOptionValue(args, index);
+      if (value === null) {
+        return null;
+      }
+      parsed.templateRoot = value;
+      index += 1;
+      continue;
+    }
+    const templateRootValue = readEqualsOption(arg, cliFlags.templateRoot);
+    if (templateRootValue !== null) {
+      parsed.templateRoot = templateRootValue;
+      continue;
+    }
+    return null;
+  }
+  if (parsed.json && parsed.yes) {
+    return null;
+  }
+  return parsed;
+}
+
 function parseNodeUpdateArgs(args) {
   if (args[0] !== "update") {
     return null;
@@ -3561,6 +3606,80 @@ function runtimeMigrationContext(parsed) {
     destinationRuntimePath: join(targetRepoRoot, servoRuntimeDir),
     sentinelPath: join(targetRepoRoot, servoRuntimeDir, runtimeMigrationSentinel),
   };
+}
+
+function reconcileServoContext(parsed) {
+  const sourceRoot = resolveSourceRoot();
+  const targetRepoRoot = resolveTargetRepoRoot(sourceRoot, Boolean(process.env.SERVO_HARNESS_REPO_ROOT));
+  const helperPath = join(
+    sourceRoot,
+    "product",
+    "harness",
+    "skills",
+    "set-harness-goal-skill",
+    "scripts",
+    "deploy_servo.js",
+  );
+  if (!isFile(helperPath)) {
+    throw new Error(`reconcile-servo helper not found: ${helperPath}`);
+  }
+  const templateRoot = parsed.templateRoot === undefined
+    ? undefined
+    : validateTargetRepoRoot(parsed.templateRoot, sourceRoot);
+  return {
+    ...parsed,
+    sourceRoot,
+    targetRepoRoot,
+    helperPath,
+    templateRoot,
+  };
+}
+
+function runDeployServoMigrate(context) {
+  validateNotSensitiveRepoRoot(context.targetRepoRoot, "reconcile-servo target repo root", "reconciled");
+  const helperArgs = [
+    context.helperPath,
+    "migrate",
+    "--deploy-path",
+    context.targetRepoRoot,
+  ];
+  if (context.templateRoot !== undefined) {
+    helperArgs.push("--template-root", context.templateRoot);
+  }
+  if (context.json) {
+    helperArgs.push("--json");
+  }
+  if (!context.yes) {
+    helperArgs.push("--dry-run");
+  }
+  const result = spawnSync(process.execPath, helperArgs, {
+    cwd: context.sourceRoot,
+    encoding: "utf8",
+    env: { ...process.env, npm_config_update_notifier: "false" },
+  });
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+  if (result.error) {
+    throw result.error;
+  }
+  return result.status === null ? 1 : result.status;
+}
+
+async function runNodeReconcileServo(args) {
+  const parsed = parseNodeReconcileServoArgs(args);
+  if (parsed === null) {
+    return null;
+  }
+  try {
+    return runDeployServoMigrate(reconcileServoContext(parsed));
+  } catch (error) {
+    console.error(`error: ${error.message}`);
+    return 1;
+  }
 }
 
 function readRuntimeMigrationSentinel(path) {
@@ -4586,6 +4705,11 @@ async function runNodeOwned(args) {
     return nodeMigrateRuntimeStatus;
   }
 
+  const nodeReconcileServoStatus = await runNodeReconcileServo(args);
+  if (nodeReconcileServoStatus !== null) {
+    return nodeReconcileServoStatus;
+  }
+
   const nodeDiagnoseStatus = runNodeDiagnoseJson(args);
   if (nodeDiagnoseStatus !== null) {
     return nodeDiagnoseStatus;
@@ -5375,6 +5499,7 @@ async function runTui(logDir) {
         "Diagnose current install",
         "Verify current install",
         "Show update dry-run plan",
+        "Show .servo template reconcile dry-run",
         "Exit",
       ];
 
@@ -5413,6 +5538,12 @@ async function runTui(logDir) {
           await runNodeOwned(["update", "--backend", tuiState.backend]);
           await pause(null);
         } else if (idx === 5) {
+          tuiState.currentStep = "servo-reconcile-dry-run";
+          refreshTui(tuiState);
+          process.stdout.write(`\n${SYM_ARROW} Running reconcile-servo --json (dry-run; not migrate-runtime)...\n`);
+          await runNodeOwned(["reconcile-servo", "--json"]);
+          await pause(null);
+        } else if (idx === 6) {
           break;
         }
 
@@ -5524,6 +5655,7 @@ module.exports = {
   parseNodeDiagnoseArgs,
   parseNodeInstallArgs,
   parseNodeMigrateRuntimeArgs,
+  parseNodeReconcileServoArgs,
   parseNodePruneArgs,
   parseNodeUnsupportedPruneMissingAllArgs,
   parseNodeUnsupportedUpdateJsonYesArgs,

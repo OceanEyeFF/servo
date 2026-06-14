@@ -160,7 +160,7 @@ def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: P
     code, output = run_tui_script(
         repo_root,
         target_repo,
-        choose_menu_steps(5),
+        choose_menu_steps(6),
     )
 
     assert code == 0, output
@@ -168,6 +168,7 @@ def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: P
     assert "servo-installer log:" in output
     assert "Guided install/update" in output
     assert "Show update dry-run plan" in output
+    assert "Show .servo template reconcile dry-run" in output
     assert "Exit" in output
     log_files = list((target_repo / ".logs" / "servo-installer").glob("*.json"))
     assert len(log_files) == 1
