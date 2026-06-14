@@ -30,6 +30,7 @@ last_verified: 2026-06-13
 - `merge_commit`: 合并 hash（如有）
 - `validation`: 验证结果摘要
 - `intake_route`: 追加请求来源
+- `decision_refs`: optional，关联 `.servo/repo/decision-log.md` 中的 `decision_id`，用于把 worktrack 执行状态追溯到长期决策理由
 
 `milestone-status-skill` 读取 backlog 时先按 `milestone_id` 过滤（匹配当前 active milestone），再将 `status` 按以下映射转换后参与 progress 计算：`done`/`resolved` -> completed，`deferred` -> deferred，`blocked` -> blocked。
 

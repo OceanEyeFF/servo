@@ -88,6 +88,9 @@ NPM_VERSION = json.loads((closeout_acceptance_gate.REPO_ROOT / "package.json").r
 ]
 NPM_VERSION_STDOUT = f"servo-installer {NPM_VERSION}\n"
 CLAUDE_SKILL_DIR_NAMES = closeout_acceptance_gate.CLAUDE_REQUIRED_PAYLOAD_SKILLS
+CLAUDE_TARGET_DIR_BY_SKILL = {
+    "set-harness-goal-skill": "servo-set-harness-goal-skill",
+}
 
 
 def write_root_package_json(repo_root: Path, version: str = NPM_VERSION) -> None:
@@ -149,7 +152,10 @@ def successful_npm_command_result(
                 *npm_exec_skill_dirs("claude"),
             ]
         if current_backend == "claude":
-            return [npm_exec_target_root("claude") / skill_name for skill_name in CLAUDE_SKILL_DIR_NAMES]
+            return [
+                npm_exec_target_root("claude") / CLAUDE_TARGET_DIR_BY_SKILL.get(skill_name, skill_name)
+                for skill_name in CLAUDE_SKILL_DIR_NAMES
+            ]
         return [npm_exec_target_root("agents") / "servo-harness-skill"]
 
     if command[:4] == ["npm", "pack", "--dry-run", "--json"]:

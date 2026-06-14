@@ -37,15 +37,15 @@ last_verified: 2026-06-13
 
 ## 当前 source release tuple
 
-2026-06-07，当前 source release tuple 已准备 `v0.6.1-rc.2` next-channel RC candidate；published registry facts still reflect the last completed `v0.6.1-rc.1` publish until the release Worktrack completes.
+2026-06-14，当前 source release tuple 正在准备 `v0.6.1-rc.3` next-channel RC candidate；published registry facts still reflect the last completed `v0.6.1-rc.2` publish until the release Worktrack completes.
 
-- root `package.json` version：`0.6.1-rc.2`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.1-rc.2`
-- approval lock：`approvedVersion=0.6.1-rc.2`、`approvedGitTag=v0.6.1-rc.2`、`approvedChannel=next`
-- release scope：发布 v0.6.1-rc.2 RC 测试版本，包含 `MS-20260606-001` 已验收的 Distributed Skill 自洽性、无包外软依赖治理、payload coverage 和 target install smoke 证据。
-- publish status：pre-publish candidate only; GitHub Release `v0.6.1-rc.2`、publish workflow、npm `servo-installer@0.6.1-rc.2` and `next` dist-tag movement are not yet performed. Last published `next` remains `0.6.1-rc.1`; `latest` 保持 `0.5.8`。
+- root `package.json` version：`0.6.1-rc.3`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.1-rc.3`
+- approval lock：`approvedVersion=0.6.1-rc.3`、`approvedGitTag=v0.6.1-rc.3`、`approvedChannel=next`
+- release scope：发布 v0.6.1-rc.3 RC 测试版本，包含 `MS-20260613-004` 已验收的 `deploy_servo.js migrate` 命令实现。
+- publish status：pre-publish candidate only; GitHub Release `v0.6.1-rc.3`、publish workflow、npm `servo-installer@0.6.1-rc.3` and `next` dist-tag movement are not yet performed. Last published `next` remains `0.6.1-rc.2`; `latest` 保持 `0.5.8`。
 
-注意：`0.6.1-rc.2` 是 prerelease RC candidate；发布完成后的试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
+注意：`0.6.1-rc.3` 是 prerelease RC candidate；发布完成后的试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 

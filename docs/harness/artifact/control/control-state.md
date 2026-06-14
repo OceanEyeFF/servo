@@ -17,7 +17,7 @@ Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，
 
 保守运行时回填不是大规模迁移。它可以填平当前路由视图或当前 worktrack 正式对象的增量字段缺口，但不得重写历史 `.servo` 真相或扩大权限。任何控制审批、分派、review pass、effective pass、自治、破坏性操作或 Worktrack Init/Dispatch 的字段，在没有已验证证据或 programmer 确认前，默认值为 blocked/not ready。
 
-守则：保守运行时回填不得授予权限，不得推断 programmer 确认，不得递增计数器，不得启用 Worktrack Init/Dispatch。
+守则：保守运行时回填只能是 `forward-only`。It `must not grant permissions`, `must not infer programmer confirmation`, `must not increment counters`, and `must not enable Worktrack Init/Dispatch`。等价中文约束为：不得授予权限，不得推断 programmer 确认，不得递增计数器，不得启用 Worktrack Init/Dispatch。
 
 ## Linked Formal Documents
 

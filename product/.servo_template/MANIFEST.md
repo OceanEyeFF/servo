@@ -11,6 +11,9 @@
 |---|---|---|---|
 | `control-state.md` | `harness-skill`（状态更新阶段） | `.servo/control-state.md` 初始化模板 | ✅ 2026-06-13 — 23 missing/7 extra/4 naming deviations；synced: current_function, Milestone Pipeline, Review Gate |
 | `goal-charter.md` | `set-harness-goal-skill` / `repo-change-goal-skill` | `.servo/goal-charter.md` 初始化模板 | ✅ 2026-06-13 — 12 missing (6 cross-artifact)/2 extra/1 naming deviation |
+| `repo/discovery-input.md` | `set-harness-goal-skill`（Existing Code Project Adoption） | `.servo/repo/discovery-input.md` 只读事实输入模板 | ✅ 2026-06-14 — restored for set-harness-goal adoption fixture and package smoke |
+| `repo/temporary-understanding.md` | `set-harness-goal-skill`（Weak-doc onboarding） | `.servo/repo/temporary-understanding.md` 临时理解模板 | ✅ 2026-06-14 — restored for weak-doc onboarding fixture |
+| `repo/complex-project-entry-gate.md` | `set-harness-goal-skill`（Complex Project Entry Gate） | `.servo/repo/complex-project-entry-gate.md` 复杂项目准入 gate 模板 | ✅ 2026-06-14 — restored for complex gate fixture |
 | `repo/analysis.md` | `repo-whats-next-skill`（优先级重构模式） | `.servo/repo/analysis.md` 模板 | ✅ 2026-06-13 — 12 missing (7 transient)/0 extra/2 naming deviations |
 | `repo/snapshot-status.md` | `repo-refresh-skill` | `.servo/repo/snapshot-status.md` 模板 | ✅ 2026-06-13 — 10 missing (3 from Contract, 7 transient)/0 extra |
 | `worktrack/contract.md` | `init-worktrack-skill` | `.servo/worktrack/contract.md` 模板 | ✅ 2026-06-13 — 8 missing/0 extra/3 naming deviations；synced: Milestone Review Gate, Branch Policy, milestone_id |

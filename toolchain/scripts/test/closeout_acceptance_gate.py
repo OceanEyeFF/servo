@@ -999,7 +999,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "set-harness-goal-skill"
+                    / "servo-set-harness-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (
@@ -1106,7 +1106,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "set-harness-goal-skill"
+                    / "servo-set-harness-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (
