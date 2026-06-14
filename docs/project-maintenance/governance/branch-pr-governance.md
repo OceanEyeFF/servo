@@ -1,9 +1,9 @@
 ---
 title: "Branch / PR 治理规则"
 status: active
-updated: 2026-06-07
+updated: 2026-06-14
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-14
 ---
 # Branch / PR 治理规则
 
@@ -30,7 +30,7 @@ Decision time: 2026-04-25
 
 变更必须通过 PR 提交，target 由 Worktrack Contract 的 `baseline_branch` 决定（合同缺失时，用 `origin/HEAD` 解析结果补齐或阻断 closeout）；PR 必须包含变更摘要、验证结果与风险说明，默认遵循 `.github/pull_request_template.md`。
 
-发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 `v0.6.1-rc.2` 发布周期使用 `develop -> master`。发布型 PR 打开或更新前必须确认：
+发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 `v0.6.1-rc.3` 发布周期使用 `develop -> master`。发布型 PR 打开或更新前必须确认：
 
 - root `package.json`、`toolchain/scripts/deploy/package.json`、approval lock、CLI `--version` 和 PR 标题/正文中的版本一致
 - `v<package.version>` tag 不存在，npm registry 中 `servo-installer@<package.version>` 不存在
