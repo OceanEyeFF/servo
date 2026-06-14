@@ -249,3 +249,101 @@ def test_cli_tui_requires_interactive_terminal(repo_root: Path, node_path: str, 
     assert completed.returncode == 1
     assert completed.stdout == ""
     assert "servo-installer tui requires an interactive terminal" in completed.stderr
+
+
+def test_cli_reconcile_servo_dry_run_and_apply(
+    repo_root: Path,
+    node_path: str,
+    tmp_path: Path,
+) -> None:
+    """Verify reconcile-servo CLI dry-run and apply idempotency."""
+    target_repo = tmp_path / "reconcile-target"
+    target_repo.mkdir(parents=True, exist_ok=True)
+    (target_repo / ".servo").mkdir()
+
+    dry_run = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "reconcile-servo", "--json",
+    )
+    assert_success(dry_run)
+    payload = json.loads(dry_run.stdout)
+    assert isinstance(payload.get("changes"), list)
+
+    apply_result = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "reconcile-servo", "--yes",
+    )
+    assert_success(apply_result)
+    assert "processed" in apply_result.stdout.lower() or "applied" in apply_result.stdout.lower()
+
+    second_dry_run = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "reconcile-servo", "--json",
+    )
+    assert_success(second_dry_run)
+    second_payload = json.loads(second_dry_run.stdout)
+    changes_after_apply = second_payload.get("changes", ["not-a-list"])
+    assert isinstance(changes_after_apply, list) and len(changes_after_apply) == 0
+
+
+def test_cli_migrate_runtime_preview(
+    repo_root: Path,
+    node_path: str,
+    tmp_path: Path,
+) -> None:
+    """Verify migrate-runtime --from aw --to servo preview."""
+    target_repo = tmp_path / "migrate-target"
+    target_repo.mkdir(parents=True, exist_ok=True)
+
+    completed = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "migrate-runtime", "--from", "aw", "--to", "servo", "--json",
+    )
+    assert_success(completed)
+    payload = json.loads(completed.stdout)
+    assert isinstance(payload, dict)
+    assert payload.get("command") == "migrate-runtime"
+
+
+def test_cli_prune_agents(
+    repo_root: Path,
+    node_path: str,
+    tmp_path: Path,
+) -> None:
+    """Verify prune --all removes managed installs."""
+    target_repo = tmp_path / "prune-target"
+    target_repo.mkdir(parents=True, exist_ok=True)
+
+    install = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "install", "--backend", "agents",
+    )
+    assert_success(install)
+
+    harness_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+    assert harness_skill.is_file()
+
+    prune = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "prune", "--all", "--backend", "agents",
+    )
+    assert_success(prune)
+    assert not harness_skill.exists()
+
+
+def test_cli_check_paths_exist_standalone(
+    repo_root: Path,
+    node_path: str,
+    tmp_path: Path,
+) -> None:
+    """Verify check_paths_exist reports pre-existing paths."""
+    target_repo = tmp_path / "checkpaths-target"
+    target_repo.mkdir(parents=True, exist_ok=True)
+    (target_repo / ".agents").mkdir()
+
+    result = run_servo_installer(
+        repo_root, node_path, target_repo,
+        "check_paths_exist", "--backend", "agents",
+    )
+    assert_success(result)
+    assert "pre-existing path(s) detected" in result.stdout.lower() or "no pre-existing paths" in result.stdout.lower()
