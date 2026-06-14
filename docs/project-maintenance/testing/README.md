@@ -11,6 +11,41 @@ last_verified: 2026-06-13
 
 范围：Python 脚本/治理检查/closeout gate 运行方式、`npx servo-installer`/本地 `.tgz` smoke、Codex/Claude 部署后测试。不包含：deploy 主流程、canonical skill 真相、release approval、npm publish 授权。
 
+## 测试分层（Test Lane Taxonomy）
+
+当前测试体系按 5 个 in-gate lane + 5 个 independent lane 分层。完整 taxonomy 见 `.servo/worktrack/test-lane-taxonomy-report.md`。
+
+### In-Gate Lanes（在 closeout gate 内运行）
+
+| Lane | 用途 | Gate |
+|------|------|------|
+| **governance** | 文件夹分层、路径治理、语义治理检查 | spec_gate |
+| **focused** | 单个 checker/tool 的 pytest 回归测试 | test_gate (pytest) |
+| **deploy-unit** | servo-installer Node.js 部署包单元测试 | test_gate (npm test) |
+| **package-smoke** | 本地 .tgz 包全生命周期 smoke | test_gate (tarball) |
+| **release-gate** | 串联 6 个 sequential gate | 全部 gate |
+
+### Independent Lanes（不在 closeout gate 内）
+
+| Lane | 用途 | 触发方式 |
+|------|------|---------|
+| **dogfood** | Claude/Codex/Pi 真实 backend 行为测试 | Pre-release，Human 触发或规范化脚本 |
+| **registry-smoke** | npm registry `npx` smoke | Release Milestone |
+| **complexity-scan** | Repo 复杂度信号扫描（只读证据） | RepoScope 初始化 |
+| **runtime-consistency** | milestone/backlog/control-state 一致性模拟 | 手动或 governance_semantic |
+| **composite-acceptance** | Milestone final acceptance 多 lane 聚合 | Programmer judgment |
+
+## Gate Profile 选择
+
+`closeout_acceptance_gate.py` 支持 `--profile` 参数：
+
+| Profile | 运行 Gates | 适用场景 |
+|---------|-----------|---------|
+| `lightweight` | scope_gate, spec_gate, static_gate, cache_gate | docs-only、配置修改、小范围 analysis WT |
+| `full`（默认） | 全部 6 gate（含 test_gate, smoke_gate） | 默认行为；release、feature、代码修改 WT |
+
+轻量 profile 跳过 test_gate（pytest/npm test/tarball smoke）和 smoke_gate。release-sensitive 变更必须用 `full`。
+
 ## 按问题进入
 
 | 问题 | 先看哪里 | 说明 |
