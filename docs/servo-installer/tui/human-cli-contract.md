@@ -93,6 +93,8 @@ diagnose → preview paths → confirm → install/update → verify → summary
 
 当 diagnose 发现 installer-managed 旧版 target 目录（例如 agents backend 的旧 `aw-*` skill 目录）时，TUI 必须展示与 CLI 相同的更新指引，并把 mutating 收敛动作映射到 `servo-installer update --backend <backend> --yes` 或 runtime 迁移路径中的 `migrate-runtime --from aw --to servo --yes --reinstall --backend <backend>`。TUI 不得引入独立的旧版清理操作。
 
+TUI 的 `.servo` template reconcile action 映射到 `reconcile-servo` CLI。它必须先展示 `reconcile-servo --json` dry-run 结果；只有 operator 输入明确确认后才运行 `reconcile-servo --yes`；apply 后必须再次运行 `reconcile-servo --json`，用空 `changes` 结果证明幂等。该 action 不等同于 legacy `.aw -> .servo` runtime migration，不得调用 `migrate-runtime`。
+
 TUI 默认必须写入 sanitized run log，并在退出时打印具体日志路径。默认位置为目标仓库 `.logs/servo-installer/`；使用默认目标仓库日志目录时，installer 必须确保目标 `.gitignore` 包含 `.logs/`，避免 TUI 运行日志变成未跟踪根目录噪声。若实现支持 `--log-dir`，显式路径优先。日志只能记录诊断所需的命令、环境摘要、目标状态、阶段输出和最终 verdict，不得写入完整环境变量 dump、token、credential 或 secret 值。
 
 ## 受众路径

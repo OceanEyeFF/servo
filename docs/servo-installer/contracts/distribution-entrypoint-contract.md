@@ -27,6 +27,8 @@ last_verified: 2026-06-13
 | `check_paths_exist` | 写入前全量冲突扫描；失败时零业务写入 |
 | `install` | 只写当前 source 声明的 live payload |
 | `update` | 默认只输出 dry-run plan；`--yes` 才执行 `prune -> check_paths_exist -> install -> verify` |
+| `migrate-runtime --from aw --to servo` | 显式 legacy `.aw/` runtime state 升级；默认 dry-run，`--yes` 才复制到 `.servo/`，可选 `--reinstall --backend <backend>` 收敛 managed skills |
+| `reconcile-servo` | 调和已有 `.servo/` runtime 与当前模板；默认 dry-run，`--json` 输出机器摘要，`--yes` 只追加缺失文件/section/subsection，不覆盖已有 runtime 值 |
 
 wrapper 可以改变启动方式，不能改变这些 deploy 语义。
 
@@ -77,6 +79,8 @@ dual-root 失败短路是 aggregate mode 的"fail-closed on writes"硬合同，�
 ## CLI / TUI 不变量
 
 - TUI 不得拥有独立于 CLI 的 install/update 语义；所有 mutating TUI 动作必须映射到明确的 CLI mode（包括 `--backend bundle` 模式）
+- TUI 的 `.servo` template reconcile action 必须先运行 `reconcile-servo --json` dry-run；只有 operator 显式确认后才运行 `reconcile-servo --yes`，随后再次运行 `reconcile-servo --json` 验证幂等性
+- `reconcile-servo` 与 `migrate-runtime --from aw --to servo` 是两个不同命令：前者只调和已有 `.servo/` 模板缺口，后者只处理 legacy `.aw/` runtime state 升级
 - 非交互环境不得隐式启动 TUI；`--json` 只属 CLI 机器输出，不得混入交互渲染
 - `diagnose` 不是安装成功证明；严格失败信号只能来自 `verify`
 - wrapper 不得把 deploy target 当成 source of truth
