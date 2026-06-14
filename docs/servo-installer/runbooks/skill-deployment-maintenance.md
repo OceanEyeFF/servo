@@ -1,9 +1,9 @@
 ---
 title: "Skill Deployment 维护流"
 status: active
-updated: 2026-05-22
+updated: 2026-06-14
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-14
 ---
 # Skill Deployment 维护流
 
@@ -21,8 +21,8 @@ last_verified: 2026-06-13
 
 | 变更面 | 必查同步 |
 | --- | --- |
-| canonical skill source | 更新 `product/harness/skills/README.md` 的 source index 和 docs traceability；确认 skill 包内不依赖 package-external runtime-only docs |
-| adapter payload | 同步 `product/harness/adapters/agents/skills/*/payload.json` 与 `product/harness/adapters/claude/skills/*/payload.json` 的 `canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段 |
+| canonical skill source | 更新 `product/harness/skills/README.md` 的 source index 和 docs traceability；确认 skill 包内不依赖 package-external runtime-only docs；若 skill 名称容易被误用，使用带控制域前缀的 canonical name |
+| adapter payload | 同步 `product/harness/adapters/agents/skills/*/payload.json` 与 `product/harness/adapters/claude/skills/*/payload.json` 的 `skill_id`、`canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段；重命名时旧名只能保留为 legacy alias，不再作为推荐入口 |
 | `.servo` template / deploy helper | 同步 `product/.servo_template/`、`product/harness/skills/set-harness-goal-skill/assets/`、`deploy_servo.js` 相关生成/迁移路径，并补 dry-run/apply/idempotency 证据 |
 | Harness artifact contract | 同步 `docs/harness/artifact/` canonical contract、skill template、`.servo_template` template 和对应 governance semantic check |
 | operator-facing installer behavior | 同步 `docs/servo-installer/contracts/`、`docs/servo-installer/runbooks/`、`toolchain/scripts/deploy/README.md` 和 CLI/TUI/package smoke 命令说明 |

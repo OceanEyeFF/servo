@@ -12,7 +12,6 @@ ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "agents" /
 CLAUDE_ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
 AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
 EXPECTED_AGENTS_SKILLS = {
-    "cleanup-skill",
     "close-worktrack-skill",
     "dispatch-skills",
     "doc-catch-up-worker-skill",
@@ -33,6 +32,7 @@ EXPECTED_AGENTS_SKILLS = {
     "rule-check-skill",
     "schedule-worktrack-skill",
     "set-harness-goal-skill",
+    "servo-cleanup-skill",
     "test-evidence-skill",
     "worktrack-status-skill",
 }
@@ -42,9 +42,11 @@ EXPECTED_CLAUDE_SKILLS = {
 AGENTS_TARGET_DIR_OVERRIDES = {
     "harness-skill": "servo-harness-skill",
     "set-harness-goal-skill": "servo-set-harness-goal-skill",
+    "servo-cleanup-skill": "servo-cleanup-skill",
 }
 CLAUDE_TARGET_DIR_OVERRIDES = {
     "set-harness-goal-skill": "servo-set-harness-goal-skill",
+    "servo-cleanup-skill": "servo-cleanup-skill",
 }
 AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     "harness-skill": ["harness-skill"],
@@ -53,11 +55,12 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
         "repo-change-goal-skill",
         "aw-repo-change-goal-skill",
     ],
+    "servo-cleanup-skill": ["cleanup-skill", "aw-cleanup-skill"],
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
-    "cleanup-skill": ["servo-cleanup-skill", "aw-cleanup-skill"],
     "harness-skill": ["servo-harness-skill"],
     "set-harness-goal-skill": ["aw-set-harness-goal-skill", "set-harness-goal-skill"],
+    "servo-cleanup-skill": ["cleanup-skill", "aw-cleanup-skill"],
 }
 
 
@@ -205,6 +208,20 @@ class AgentsAdapterContractTest(unittest.TestCase):
             {},
             f"duplicate target_dir bindings are not allowed: {duplicates}",
         )
+
+    def test_cleanup_skill_uses_servo_qualified_identity(self) -> None:
+        self.assertFalse((ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
+        self.assertFalse((CLAUDE_ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
+
+        agents_payload = load_json(ADAPTER_SKILLS_DIR / "servo-cleanup-skill" / "payload.json")
+        claude_payload = load_json(CLAUDE_ADAPTER_SKILLS_DIR / "servo-cleanup-skill" / "payload.json")
+
+        for payload in (agents_payload, claude_payload):
+            self.assertEqual(payload["skill_id"], "servo-cleanup-skill")
+            self.assertEqual(payload["canonical_dir"], "product/harness/skills/servo-cleanup-skill")
+            self.assertEqual(payload["target_dir"], "servo-cleanup-skill")
+            self.assertIn("cleanup-skill", payload["legacy_target_dirs"])
+            self.assertIn("aw-cleanup-skill", payload["legacy_target_dirs"])
 
     def test_set_harness_goal_agents_payload_includes_default_repo_analysis_template(self) -> None:
         payload = load_json(
