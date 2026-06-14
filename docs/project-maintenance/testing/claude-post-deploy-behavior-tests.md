@@ -95,7 +95,7 @@ PACKAGE_TGZ="/path/to/servo-installer-<version>.tgz"
 )
 ```
 
-`claude` install 包含全部 22 个 skills（含 Milestone 观测器与 pre-milestone intake）；cold-start helper 以 `scripts/deploy_servo.js` 随 payload 分发。
+`claude` install 包含全部 23 个 skills（含 Milestone 观测器、pre-milestone intake 与清理 skill）；cold-start helper 以 `scripts/deploy_servo.js` 随 payload 分发。
 
 ## 六、选择观察策略
 
