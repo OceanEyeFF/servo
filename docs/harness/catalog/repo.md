@@ -77,13 +77,13 @@ preferred handoff fields：
 - `temporary_understanding_ref`
 - `blocks_implementation_until_resolved`
 
-Complex-project 入场交接是 Milestone 侧阻断关卡，非固定 heavy mode（规范术语：not fixed heavy mode）。scanner 输出是证据（evidence），非裁决（verdict）。Worktrack 执行模式 `normal`、`autoreview`、`yolo` 属于用户自有策略选择，不绕过 `milestone_blocking_decision`。弱文档强化路由使用结构化 `reinforcement_milestone_recommendation`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时，先路由到强化文档/项目理解 Milestone，再进入实现。
+Complex-project 入场交接是 Milestone 侧阻断关卡（`Milestone-side blocking gate`），非固定 heavy mode（规范术语：not fixed heavy mode）。`scanner output is evidence`，scanner 输出是证据（evidence），非裁决（verdict）。Worktrack 执行模式 `normal`、`autoreview`、`yolo` 属于用户自有策略选择，不绕过 `milestone_blocking_decision`。弱文档强化路由使用结构化 `reinforcement_milestone_recommendation`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时，先路由到强化文档/项目理解 Milestone（reinforcement documentation / project-understanding），再进入实现。缺失、空白（`blank`）或未解析 gate 不得视为通过。
 
 ### 1. pre-milestone-intake-skill
 
 职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
 
-连续 intake 模式可跨多轮 assistant 交互。若一轮内无法安全通过复核，skill 返回 `questions_required`，记录 `continuation_state`，每次只提一个 `next_required_question` 并等待 programmer 输入。此逐题推进的 checkpoint 是延续交接（continuation handoff），不是 Milestone Review Gate 通过。
+连续 intake 模式可跨多轮 assistant 交互。若一轮内无法安全通过复核，skill 返回 `questions_required`，记录 `continuation_state`，每次只提一个 `next_required_question` 并等待 programmer 输入；规范术语为 `one-question-at-a-time`。此逐题推进的 checkpoint 是延续交接（continuation handoff），不是 Milestone Review Gate 通过。
 
 下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
 

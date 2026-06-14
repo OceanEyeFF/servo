@@ -13,6 +13,7 @@ last_verified: 2026-06-13
 
 - [discovery-input.md](./discovery-input.md)
 - [complex-project-entry-gate.md](./complex-project-entry-gate.md) — 运行时 artifact / handoff contract：在复杂项目、弱文档或高风险 milestone 创建/激活/派生 worktrack 前记录 `complex_project_entry_gate`、scanner evidence、operator safety policy 和 Milestone-side blocking decision
+- [decision-log.md](./decision-log.md) — 运行时 artifact：记录跨 worktrack / milestone 的结构化决策、替代方案、影响面和 `decision_refs` traceability
 - [goal-charter.md](./goal-charter.md)
 - [repo-analysis.md](./repo-analysis.md)
 - [snapshot-status.md](./snapshot-status.md)
