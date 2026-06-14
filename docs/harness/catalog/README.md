@@ -1,9 +1,9 @@
 ---
 title: Harness Skill Catalog
 status: active
-updated: 2026-05-16
+updated: 2026-06-14
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-14
 ---
 
 # Harness Skill Catalog
@@ -46,7 +46,7 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 | Catalog surface | Canonical executable source |
 |-----------------|-----------------------------|
 | [supervisor.md](./supervisor.md) | [harness-skill](../../../product/harness/skills/harness-skill/) |
-| [repo.md](./repo.md) | [set-harness-goal-skill](../../../product/harness/skills/set-harness-goal-skill/), [pre-milestone-intake-skill](../../../product/harness/skills/pre-milestone-intake-skill/), [repo-status-skill](../../../product/harness/skills/repo-status-skill/), [repo-whats-next-skill](../../../product/harness/skills/repo-whats-next-skill/), [repo-append-request-skill](../../../product/harness/skills/repo-append-request-skill/), [repo-change-goal-skill](../../../product/harness/skills/repo-change-goal-skill/), [repo-refresh-skill](../../../product/harness/skills/repo-refresh-skill/), [cleanup-skill](../../../product/harness/skills/cleanup-skill/) |
+| [repo.md](./repo.md) | [set-harness-goal-skill](../../../product/harness/skills/set-harness-goal-skill/), [pre-milestone-intake-skill](../../../product/harness/skills/pre-milestone-intake-skill/), [repo-status-skill](../../../product/harness/skills/repo-status-skill/), [repo-whats-next-skill](../../../product/harness/skills/repo-whats-next-skill/), [repo-append-request-skill](../../../product/harness/skills/repo-append-request-skill/), [repo-change-goal-skill](../../../product/harness/skills/repo-change-goal-skill/), [repo-refresh-skill](../../../product/harness/skills/repo-refresh-skill/), [servo-cleanup-skill](../../../product/harness/skills/servo-cleanup-skill/) |
 | [milestone/init-milestone-skill.md](./milestone/init-milestone-skill.md) | [init-milestone-skill](../../../product/harness/skills/init-milestone-skill/) |
 | [milestone/milestone-status-skill.md](./milestone/milestone-status-skill.md) | [milestone-status-skill](../../../product/harness/skills/milestone-status-skill/) |
 | [worktrack.md](./worktrack.md) | [worktrack-status-skill](../../../product/harness/skills/worktrack-status-skill/), [init-worktrack-skill](../../../product/harness/skills/init-worktrack-skill/), [schedule-worktrack-skill](../../../product/harness/skills/schedule-worktrack-skill/), [dispatch-skills](../../../product/harness/skills/dispatch-skills/), [generic-worker-skill](../../../product/harness/skills/generic-worker-skill/), [doc-catch-up-worker-skill](../../../product/harness/skills/doc-catch-up-worker-skill/), [review-evidence-skill](../../../product/harness/skills/review-evidence-skill/), [test-evidence-skill](../../../product/harness/skills/test-evidence-skill/), [rule-check-skill](../../../product/harness/skills/rule-check-skill/), [gate-skill](../../../product/harness/skills/gate-skill/), [recover-worktrack-skill](../../../product/harness/skills/recover-worktrack-skill/), [close-worktrack-skill](../../../product/harness/skills/close-worktrack-skill/) |
