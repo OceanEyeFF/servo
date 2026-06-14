@@ -45,9 +45,9 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `install` 在写入前失败 | 先修 source contract，再从 `prune --all` 重跑 |
 | 想确认重装后是否干净 | 转到 [Skill Deployment 维护流](./skill-deployment-maintenance.md) 跑 `diagnose` 或 `verify` |
 
-## .servo 模板迁移（migrate）
+## .servo 模板调和（reconcile-servo）
 
-`deploy_servo.js migrate` 用于将已有 `.servo/` runtime 目录与最新 `product/.servo_template/` 模板声明式调和。
+`servo-installer reconcile-servo` 用于将已有 `.servo/` runtime 目录与当前 package/checkout 内的 `.servo` 模板声明式调和。它封装 `deploy_servo.js migrate`，是 operator 侧首选入口。
 
 ### 原则
 
@@ -58,32 +58,34 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 ### 预览（dry-run）
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo --dry-run
+servo-installer reconcile-servo
 ```
 
 输出 JSON：
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo --dry-run --json
+servo-installer reconcile-servo --json
 ```
 
-### 执行迁移
+### 执行调和
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo
+servo-installer reconcile-servo --yes
 ```
 
 ### 幂等性验证
 
-迁移后再次 dry-run 应显示 "No changes needed. .servo/ is up to date."
+执行后再次运行 `servo-installer reconcile-servo --json`，`changes` 应为空。TUI 中对应菜单项也必须先 dry-run，再要求显式确认，apply 后自动执行第二次 dry-run 验证。
 
 ### 故障恢复
 
 | 现象 | 处理 |
 |---|---|
-| migrate 中断后文件不完整 | 重新运行 `migrate`（幂等，自动补齐） |
-| 误覆盖了用户数据 | migrate 不覆盖已有值，应无此风险。如有，检查 template 是否引入了同名 field |
-| template 文件缺失 | migrate 跳过并输出 warning，不影响其他文件 |
-| `.servo/` 目录不存在 | migrate 报错，建议先运行 `generate` 创建初始结构 |
+| reconcile 中断后文件不完整 | 重新运行 `reconcile-servo`（幂等，自动补齐） |
+| 误覆盖了用户数据 | `reconcile-servo` 不覆盖已有值，应无此风险。如有，检查 template 是否引入了同名 field |
+| template 文件缺失 | helper 跳过并输出 warning，不影响其他文件 |
+| `.servo/` 目录不存在 | 先运行初始化/generate 创建初始结构，再执行 reconcile |
+
+`reconcile-servo` 不迁移 `.aw/`。如果目标仓库存在 legacy `.aw/` runtime state，先看 [Legacy `.aw` Runtime Upgrade Runbook](./aw-runtime-upgrade-runbook.md) 并使用 `migrate-runtime --from aw --to servo`。
 
 drift/conflict/unrecognized 见 [Skill Deployment 维护流](./skill-deployment-maintenance.md)；字段合同见 [Mapping Spec](../contracts/deploy-mapping-spec.md)；trust boundary 见 [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；pack/smoke/release 见 [Testing](../../project-maintenance/testing/README.md) 和 [Governance](../../project-maintenance/governance/README.md)。
