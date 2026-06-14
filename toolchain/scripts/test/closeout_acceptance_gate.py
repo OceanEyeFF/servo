@@ -1403,8 +1403,8 @@ def main() -> int:
 
     if getattr(args, "profile", "full") == "lightweight":
         print(
-            "WARNING: lightweight gate profile skips test_gate and smoke_gate. "
-            "Not suitable for release or code-change Worktracks.",
+            "WARNING: 轻量门禁方案跳过了 test_gate 和 smoke_gate，"
+            "不适用于发布版本或涉及代码修改的工作追踪。",
             file=sys.stderr,
         )
 

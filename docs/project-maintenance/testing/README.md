@@ -11,40 +11,40 @@ last_verified: 2026-06-13
 
 范围：Python 脚本/治理检查/closeout gate 运行方式、`npx servo-installer`/本地 `.tgz` smoke、Codex/Claude 部署后测试。不包含：deploy 主流程、canonical skill 真相、release approval、npm publish 授权。
 
-## 测试分层（Test Lane Taxonomy）
+## 测试分层
 
-当前测试体系按 5 个 in-gate lane + 5 个 independent lane 分层。完整 taxonomy 见 `.servo/worktrack/test-lane-taxonomy-report.md`。
+当前测试按 5 个集成测试层加 5 个独立验证层组织。完整定义见 `.servo/worktrack/test-lane-taxonomy-report.md`。
 
-### In-Gate Lanes（在 closeout gate 内运行）
+### 集成测试层
 
-| Lane | 用途 | Gate |
+| 测试项 | 覆盖内容 | 所在检查点 |
 |------|------|------|
-| **governance** | 文件夹分层、路径治理、语义治理检查 | spec_gate |
-| **focused** | 单个 checker/tool 的 pytest 回归测试 | test_gate (pytest) |
-| **deploy-unit** | servo-installer Node.js 部署包单元测试 | test_gate (npm test) |
-| **package-smoke** | 本地 .tgz 包全生命周期 smoke | test_gate (tarball) |
-| **release-gate** | 串联 6 个 sequential gate | 全部 gate |
+| **治理检查** | 目录结构、链接完整性、模板及语义一致性 | spec_gate |
+| **聚焦测试** | 单个检查器或工具的 pytest 回归测试 | test_gate (pytest) |
+| **部署包测试** | servo-installer Node.js 包的单元测试 | test_gate (npm test) |
+| **包体冒烟测试** | 本地 .tgz 打包后的安装、诊断、升级全周期验证 | test_gate (tarball) |
+| **发布门禁** | 以上全部 6 道检查点依次通过 | 全部 gate |
 
-### Independent Lanes（不在 closeout gate 内）
+### 独立验证层
 
-| Lane | 用途 | 触发方式 |
+| 验证项 | 覆盖内容 | 触发方式 |
 |------|------|---------|
-| **dogfood** | Claude/Codex/Pi 真实 backend 行为测试 | Pre-release，Human 触发或规范化脚本 |
-| **registry-smoke** | npm registry `npx` smoke | Release Milestone |
-| **complexity-scan** | Repo 复杂度信号扫描（只读证据） | RepoScope 初始化 |
-| **runtime-consistency** | milestone/backlog/control-state 一致性模拟 | 手动或 governance_semantic |
-| **composite-acceptance** | Milestone final acceptance 多 lane 聚合 | Programmer judgment |
+| **真机验证** | 在 Claude、Codex 或 Pi 真实环境中运行完整 Harness 流程，验证行为正确性 | 发布前，由人工或自动化脚本触发 |
+| **注册表烟测** | 从 npm registry 通过 `npx` 拉取并运行，验证已发布包可用 | 发布里程碑 |
+| **复杂度扫描** | 仓库复杂度信号扫描，仅输出只读证据，不做裁决 | RepoScope 初始化 |
+| **运行时一致性检查** | 验证 milestone、backlog、control-state 三方数据是否一致 | 手动执行，或随 governance_semantic 检查触发 |
+| **复合验收** | 里程碑最终验收时聚合多个验证维度的结果 | 由程序员判定 |
 
-## Gate Profile 选择
+## 收尾策略
 
 `closeout_acceptance_gate.py` 支持 `--profile` 参数：
 
-| Profile | 运行 Gates | 适用场景 |
+| 策略 | 执行的检查点 | 适用场景 |
 |---------|-----------|---------|
-| `lightweight` | scope_gate, spec_gate, static_gate, cache_gate | docs-only、配置修改、小范围 analysis WT |
-| `full`（默认） | 全部 6 gate（含 test_gate, smoke_gate） | 默认行为；release、feature、代码修改 WT |
+| `lightweight`（轻量） | scope_gate, spec_gate, static_gate, cache_gate | 纯文档修改、配置调整、小范围分析任务 |
+| `full`（完整，默认） | 全部 6 道检查点（含 test_gate, smoke_gate） | 默认行为；发布版本、功能开发、代码修改任务 |
 
-轻量 profile 跳过 test_gate（pytest/npm test/tarball smoke）和 smoke_gate。release-sensitive 变更必须用 `full`。
+轻量策略会跳过 test_gate（含 pytest、npm test 和 tarball 烟测）以及 smoke_gate。涉及发布或代码修改的任务必须用完整策略。
 
 ## 按问题进入
 
