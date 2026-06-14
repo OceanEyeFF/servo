@@ -82,6 +82,8 @@ def test_cli_help_version_and_noninteractive_default(
             "verify",
             "install",
             "update",
+            "reconcile-servo",
+            "migrate-runtime",
             "prune",
             "check_paths_exist",
         ]:

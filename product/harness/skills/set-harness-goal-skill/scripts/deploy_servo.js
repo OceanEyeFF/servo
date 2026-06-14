@@ -1752,6 +1752,7 @@ function applyMigrationChanges(deployPath, changes, specs) {
     }
 
     const tmpPath = runtimePath + '.tmp';
+    fs.mkdirSync(path.dirname(runtimePath), { recursive: true });
     fs.writeFileSync(tmpPath, content, 'utf-8');
     fs.renameSync(tmpPath, runtimePath);
   }
