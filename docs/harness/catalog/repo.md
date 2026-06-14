@@ -1,9 +1,9 @@
 ---
 title: "Harness Skill Catalog / RepoScope"
 status: active
-updated: 2026-06-05
+updated: 2026-06-14
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-14
 ---
 # RepoScope Skill Catalog
 
@@ -314,3 +314,25 @@ canonical executable source：
 当前状态：
 
 - `initial canonical executable skeleton landed`
+
+### 7. servo-cleanup-skill
+
+职责：执行 Servo repo/runtime 管理空间的限定清理，包括已完成 backlog 条目归档和已闭环本地 `ms/*` / `wt/*` 分支的安全删除。它不是 Milestone/Worktrack 控制循环里的默认动作，也不是通用文件清理工具；使用前必须先 dry-run，且不得删除 remote、protected branch 或 `.servo/` artifact 文件。
+
+主要依赖：
+
+- `Harness Control State`
+- `.servo/repo/worktrack-backlog.md`
+- `.servo/repo/worktrack-history.md`
+- `.servo/repo/milestone-history.md`
+- local git branch list
+
+canonical executable source：
+
+- [../../../product/harness/skills/servo-cleanup-skill/SKILL.md](../../../product/harness/skills/servo-cleanup-skill/SKILL.md)
+
+当前状态：
+
+- `canonical executable skeleton landed`
+- `active distributed identity is servo-cleanup-skill`
+- `cleanup-skill is legacy alias only`
