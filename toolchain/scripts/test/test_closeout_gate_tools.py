@@ -1358,3 +1358,84 @@ def test_find_primary_worktree_root_prefers_non_nested_worktree(monkeypatch, tmp
     monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_run)
 
     assert closeout_acceptance_gate.find_primary_worktree_root(current_root.resolve()) == primary_root.resolve()
+
+
+def test_main_with_profile_lightweight_runs_four_gates(monkeypatch, tmp_path, capsys) -> None:
+    """Verify --profile lightweight runs only scope/spec/static/cache gates."""
+    class Args:
+        repo_root = tmp_path
+        workflow_id = "workflow-1"
+        json = True
+        profile = "lightweight"
+
+    gates_run: list[str] = []
+
+    def fake_run_gate(gate: str, *, repo_root: Path, python: str, workflow_id: str) -> dict:
+        gates_run.append(gate)
+        return {"passed": True, "returncode": 0}
+
+    def fake_subprocess_run(*args, **kwargs) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args[0], 0, stdout="{}", stderr="")
+
+    monkeypatch.setattr(closeout_acceptance_gate, "parse_args", lambda: Args())
+    monkeypatch.setattr(closeout_acceptance_gate, "run_gate", fake_run_gate)
+    monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_subprocess_run)
+
+    assert closeout_acceptance_gate.main() == 0
+    assert gates_run == ["scope_gate", "spec_gate", "static_gate", "cache_gate"]
+
+    payload = json.loads(capsys.readouterr().out)
+    assert len(payload["results"]) == 4
+
+
+def test_main_with_profile_full_runs_all_six_gates(monkeypatch, tmp_path, capsys) -> None:
+    """Verify --profile full runs all 6 gates (same as default)."""
+    class Args:
+        repo_root = tmp_path
+        workflow_id = "workflow-1"
+        json = True
+        profile = "full"
+
+    gates_run: list[str] = []
+
+    def fake_run_gate(gate: str, *, repo_root: Path, python: str, workflow_id: str) -> dict:
+        gates_run.append(gate)
+        return {"passed": True, "returncode": 0}
+
+    def fake_subprocess_run(*args, **kwargs) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args[0], 0, stdout="{}", stderr="")
+
+    monkeypatch.setattr(closeout_acceptance_gate, "parse_args", lambda: Args())
+    monkeypatch.setattr(closeout_acceptance_gate, "run_gate", fake_run_gate)
+    monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_subprocess_run)
+
+    assert closeout_acceptance_gate.main() == 0
+    assert gates_run == ["scope_gate", "spec_gate", "static_gate", "cache_gate", "test_gate", "smoke_gate"]
+
+    payload = json.loads(capsys.readouterr().out)
+    assert len(payload["results"]) == 6
+
+
+def test_main_without_profile_defaults_to_full(monkeypatch, tmp_path, capsys) -> None:
+    """Verify no --profile defaults to full (6 gates, backward compat)."""
+    class Args:
+        repo_root = tmp_path
+        workflow_id = "workflow-1"
+        json = True
+        # profile not set → default "full"
+
+    gates_run: list[str] = []
+
+    def fake_run_gate(gate: str, *, repo_root: Path, python: str, workflow_id: str) -> dict:
+        gates_run.append(gate)
+        return {"passed": True, "returncode": 0}
+
+    def fake_subprocess_run(*args, **kwargs) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args[0], 0, stdout="{}", stderr="")
+
+    monkeypatch.setattr(closeout_acceptance_gate, "parse_args", lambda: Args())
+    monkeypatch.setattr(closeout_acceptance_gate, "run_gate", fake_run_gate)
+    monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_subprocess_run)
+
+    assert closeout_acceptance_gate.main() == 0
+    assert len(gates_run) == 6
