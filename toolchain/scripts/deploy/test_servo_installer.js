@@ -986,6 +986,23 @@ test("parseNodeMigrateRuntimeArgs accepts only explicit aw to servo migration fo
   assert.equal(installer.parseNodeMigrateRuntimeArgs(["migrate-runtime", "--from", "aw"]), null);
 });
 
+test("parseNodeReconcileServoArgs accepts dry-run and apply forms", () => {
+  assert.deepEqual(
+    installer.parseNodeReconcileServoArgs(["reconcile-servo"]),
+    { json: false, yes: false, templateRoot: undefined },
+  );
+  assert.deepEqual(
+    installer.parseNodeReconcileServoArgs(["reconcile-servo", "--json", "--template-root=/tmp/templates"]),
+    { json: true, yes: false, templateRoot: "/tmp/templates" },
+  );
+  assert.deepEqual(
+    installer.parseNodeReconcileServoArgs(["reconcile-servo", "--yes", "--template-root", "/tmp/templates"]),
+    { json: false, yes: true, templateRoot: "/tmp/templates" },
+  );
+  assert.equal(installer.parseNodeReconcileServoArgs(["reconcile-servo", "--json", "--yes"]), null);
+  assert.equal(installer.parseNodeReconcileServoArgs(["migrate-runtime", "--json"]), null);
+});
+
 test("parseNodeUpdateJsonArgs accepts agents and claude package JSON update dry-runs", () => {
   const originalAwRepo = process.env.SERVO_INSTALLER_GITHUB_REPO;
   const originalGithubRepository = process.env.GITHUB_REPOSITORY;
@@ -4594,6 +4611,107 @@ test("migrate-runtime treats destination-only .servo as a safe no-op", () => {
     const summary = JSON.parse(result.stdout);
     assert.equal(summary.state, "destination-only");
     assert.equal(summary.action, "noop");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("reconcile-servo dry-run and apply converge .servo templates", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-reconcile-"));
+  try {
+    const templateRoot = join(root, "templates");
+    const targetRepo = join(root, "target-repo");
+    mkdirSync(templateRoot, { recursive: true });
+    mkdirSync(join(targetRepo, ".servo", "repo"), { recursive: true });
+    writeFileSync(join(templateRoot, "control-state.md"), [
+      "---",
+      'title: "Harness Control State"',
+      "---",
+      "# Harness Control State",
+      "",
+      "## Existing Section",
+      "- preserved: template-default",
+      "",
+      "## Missing Section",
+      "- added: section-value",
+      "",
+      "## Parent Section",
+      "- parent: template-value",
+      "",
+      "### Missing Child",
+      "- child: child-value",
+      "",
+    ].join("\n"), "utf8");
+    writeFileSync(join(templateRoot, "goal-charter.md"), [
+      "---",
+      'title: "Repo Goal / Charter"',
+      "---",
+      "# Repo Goal / Charter",
+      "",
+      "## Metadata",
+      "- repo: target",
+      "",
+    ].join("\n"), "utf8");
+    writeFileSync(join(targetRepo, ".servo", "control-state.md"), [
+      "---",
+      'title: "Runtime Control State"',
+      "---",
+      "# Harness Control State",
+      "",
+      "## Existing Section",
+      "- preserved: user-value",
+      "",
+      "## Parent Section",
+      "- parent: runtime-value",
+      "",
+    ].join("\n"), "utf8");
+
+    const env = {
+      ...process.env,
+      SERVO_HARNESS_TARGET_REPO_ROOT: targetRepo,
+    };
+    const dryRun = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--json",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    const dryRunSummary = JSON.parse(dryRun.stdout);
+    assert.deepEqual(
+      new Set(dryRunSummary.changes.map((change) => change.type)),
+      new Set(["append_section", "append_sub_section", "new_file"]),
+    );
+    assert.equal(existsSync(join(targetRepo, ".servo", "goal-charter.md")), false);
+
+    const apply = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--yes",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(apply.status, 0, apply.stderr);
+    const controlState = readFileSync(join(targetRepo, ".servo", "control-state.md"), "utf8");
+    assert.match(controlState, /- preserved: user-value/);
+    assert.doesNotMatch(controlState, /- preserved: template-default/);
+    assert.match(controlState, /## Missing Section/);
+    assert.match(controlState, /### Missing Child/);
+    assert.equal(
+      readFileSync(join(targetRepo, ".servo", "goal-charter.md"), "utf8"),
+      readFileSync(join(templateRoot, "goal-charter.md"), "utf8"),
+    );
+
+    const secondDryRun = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--json",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(secondDryRun.status, 0, secondDryRun.stderr);
+    assert.deepEqual(JSON.parse(secondDryRun.stdout).changes, []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

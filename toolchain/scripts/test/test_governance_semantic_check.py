@@ -29,6 +29,7 @@ from governance_semantic_check import (
     check_harness_entry_profile_route_hint_contract,
     check_orphan_docs,
     check_manual_runbook_agents_skill_count,
+    check_skill_deployment_maintenance_checklist,
     check_init_milestone_intake_handoff_contract,
     check_milestone_recommendation_fact_first_contract,
     check_milestone_review_gate_contract,
@@ -224,6 +225,37 @@ def test_check_pull_request_template_release_evidence_accepts_guard_terms(tmp_pa
 
     report = SemanticReport()
     check_pull_request_template_release_evidence(tmp_path, report)
+
+    assert report.failures == []
+
+
+def test_check_skill_deployment_maintenance_checklist_flags_missing_terms(tmp_path: Path) -> None:
+    write_doc(
+        tmp_path / "docs/servo-installer/runbooks/skill-deployment-maintenance.md",
+        "## Source maintenance checklist\ncanonical skill source only\n",
+    )
+
+    report = SemanticReport()
+    check_skill_deployment_maintenance_checklist(tmp_path, report)
+
+    assert any("adapter payload" in item for item in report.failures)
+
+
+def test_check_skill_deployment_maintenance_checklist_accepts_required_terms(tmp_path: Path) -> None:
+    write_doc(
+        tmp_path / "docs/servo-installer/runbooks/skill-deployment-maintenance.md",
+        "## Source maintenance checklist\n"
+        "canonical skill source product/harness/skills/README.md\n"
+        "adapter payload canonical_paths required_payload_files\n"
+        "`.servo` template product/.servo_template/ deploy_servo.js\n"
+        "Harness artifact contract docs/harness/artifact/\n"
+        "operator-facing installer behavior docs/servo-installer/contracts/ "
+        "toolchain/scripts/deploy/README.md\n"
+        "package and release program no-publish boundary governance_semantic_check.py\n",
+    )
+
+    report = SemanticReport()
+    check_skill_deployment_maintenance_checklist(tmp_path, report)
 
     assert report.failures == []
 

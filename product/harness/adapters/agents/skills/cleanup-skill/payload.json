@@ -1,0 +1,27 @@
+{
+  "payload_version": "agents-skill-payload.v1",
+  "backend": "agents",
+  "skill_id": "cleanup-skill",
+  "canonical_dir": "product/harness/skills/cleanup-skill",
+  "canonical_paths": [
+    "product/harness/skills/cleanup-skill/SKILL.md",
+    "product/harness/skills/cleanup-skill/VERSION"
+  ],
+  "target_dir": "servo-cleanup-skill",
+  "target_entry_name": "SKILL.md",
+  "payload_policy": "canonical-copy",
+  "supported_target_scopes": [
+    "local"
+  ],
+  "reference_distribution": "copy-listed-canonical-paths",
+  "required_payload_files": [
+    "SKILL.md",
+    "VERSION",
+    "payload.json",
+    "aw.marker"
+  ],
+  "legacy_target_dirs": [
+    "cleanup-skill",
+    "aw-cleanup-skill"
+  ]
+}

@@ -15,6 +15,29 @@ last_verified: 2026-06-13
 
 `diagnose --json` -> `verify` -> 如需恢复则回 deploy runbook 三步重装 -> 重装后再跑 `diagnose`/`verify`。
 
+## Source maintenance checklist
+
+当维护者新增、重命名或改变 canonical skill、adapter payload、`.servo` template、Harness artifact contract 或 operator-facing installer 行为时，必须在同一 Worktrack 内检查以下同步面；不能完成时要在 closeout evidence 中写明不适用理由。
+
+| 变更面 | 必查同步 |
+| --- | --- |
+| canonical skill source | 更新 `product/harness/skills/README.md` 的 source index 和 docs traceability；确认 skill 包内不依赖 package-external runtime-only docs |
+| adapter payload | 同步 `product/harness/adapters/agents/skills/*/payload.json` 与 `product/harness/adapters/claude/skills/*/payload.json` 的 `canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段 |
+| `.servo` template / deploy helper | 同步 `product/.servo_template/`、`product/harness/skills/set-harness-goal-skill/assets/`、`deploy_servo.js` 相关生成/迁移路径，并补 dry-run/apply/idempotency 证据 |
+| Harness artifact contract | 同步 `docs/harness/artifact/` canonical contract、skill template、`.servo_template` template 和对应 governance semantic check |
+| operator-facing installer behavior | 同步 `docs/servo-installer/contracts/`、`docs/servo-installer/runbooks/`、`toolchain/scripts/deploy/README.md` 和 CLI/TUI/package smoke 命令说明 |
+| package and release program | 同步 npm pack/publish dry-run、tarball/npx-style smoke、release-channel no-publish boundary，以及必要的 closeout evidence |
+
+最小本地检查：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
+npm test --prefix toolchain/scripts/deploy
+```
+
+这个 checklist 是 source-side 维护入口；operator 只需要下方 diagnose/verify 分流。
+
 ## 只读命令角色
 
 | 命令 | 职责 | 退出语义 |
@@ -44,6 +67,7 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `unrecognized-target-directory` | 不让脚本猜测；人工确认保留、改名或删除 |
 | `target-payload-drift`/`missing-target-entry`/`missing-required-payload` | 默认完整重装，除非确认是更上游 source 问题 |
 | legacy `.aw/` runtime state exists | 不走 `prune --all`；先看 [Legacy `.aw` Runtime Upgrade Runbook](./aw-runtime-upgrade-runbook.md) |
+| `.servo/` runtime 缺少新模板 section/file | 先运行 `servo-installer reconcile-servo --json` 预览；确认后运行 `servo-installer reconcile-servo --yes`，再跑第二次 `--json` 验证 `changes` 为空 |
 
 已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](../contracts/deploy-mapping-spec.md) + [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../../project-maintenance/testing/README.md) + [Governance](../../project-maintenance/governance/README.md)。
 

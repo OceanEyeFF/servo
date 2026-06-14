@@ -6,6 +6,7 @@ import re
 import select
 import shutil
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -155,12 +156,38 @@ def quit_menu_step() -> tuple[str, str]:
     return ("↑↓ navigate", "raw:q")
 
 
+def home_temp_dir(prefix: str) -> Path:
+    return Path(tempfile.mkdtemp(prefix=prefix, dir=str(Path.home())))
+
+
+def write_reconcile_fixture(root: Path) -> Path:
+    target_repo = root / "target-repo"
+    (target_repo / ".servo" / "repo").mkdir(parents=True)
+    (target_repo / ".servo" / "control-state.md").write_text(
+        "\n".join(
+            [
+                "---",
+                'title: "Runtime Control State"',
+                "---",
+                "# Harness Control State",
+                "",
+                "## Existing Section",
+                "- preserved: user-value",
+                "",
+            ],
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return target_repo
+
+
 def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: Path) -> None:
     target_repo = tmp_path / "menu-target"
     code, output = run_tui_script(
         repo_root,
         target_repo,
-        choose_menu_steps(5),
+        choose_menu_steps(6),
     )
 
     assert code == 0, output
@@ -168,6 +195,7 @@ def test_tui_menu_renders_current_actions_and_exits(repo_root: Path, tmp_path: P
     assert "servo-installer log:" in output
     assert "Guided install/update" in output
     assert "Show update dry-run plan" in output
+    assert ".servo template reconcile (dry-run/apply)" in output
     assert "Exit" in output
     log_files = list((target_repo / ".logs" / "servo-installer").glob("*.json"))
     assert len(log_files) == 1
@@ -236,6 +264,61 @@ def test_tui_update_dry_run_menu_action(repo_root: Path, tmp_path: Path) -> None
     assert "[agents] update plan" in output
     assert "dry-run only; pass --yes to apply update" in output
     assert not (tmp_path / "dry-run-target" / ".agents" / "skills").exists()
+
+
+def test_tui_reconcile_decline_does_not_apply(repo_root: Path) -> None:
+    root = home_temp_dir("servo-tui-reconcile-decline-")
+    try:
+        target_repo = write_reconcile_fixture(root)
+        code, output = run_tui_script(
+            repo_root,
+            target_repo,
+            [
+                *choose_menu_steps(5),
+                ("Type yes to apply .servo template reconciliation", "no\n"),
+                ("Press Enter to return to the installer menu...", "\n"),
+                quit_menu_step(),
+            ],
+        )
+
+        assert code == 0, output
+        assert "Running reconcile-servo --json (dry-run; not migrate-runtime)" in output
+        assert "Running reconcile-servo --yes" not in output
+        assert ".servo template reconciliation cancelled. No changes applied." in output
+        assert not (target_repo / ".servo" / "goal-charter.md").exists()
+        assert "## Current Control Level" not in (target_repo / ".servo" / "control-state.md").read_text(
+            encoding="utf-8",
+        )
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_tui_reconcile_apply_runs_second_dry_run(repo_root: Path) -> None:
+    root = home_temp_dir("servo-tui-reconcile-apply-")
+    try:
+        target_repo = write_reconcile_fixture(root)
+        code, output = run_tui_script(
+            repo_root,
+            target_repo,
+            [
+                *choose_menu_steps(5),
+                ("Type yes to apply .servo template reconciliation", "yes\n"),
+                (".servo template reconciliation verification completed", "\n"),
+                quit_menu_step(),
+            ],
+        )
+
+        assert code == 0, output
+        assert "Running reconcile-servo --json (dry-run; not migrate-runtime)" in output
+        assert "Running reconcile-servo --yes (apply; not migrate-runtime)" in output
+        assert "Running reconcile-servo --json again (verify idempotency)" in output
+        assert output.count('"changes": []') >= 1
+        assert (target_repo / ".servo" / "goal-charter.md").is_file()
+        control_state = (target_repo / ".servo" / "control-state.md").read_text(encoding="utf-8")
+        assert "- preserved: user-value" in control_state
+        assert "## Current Control Level" in control_state
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def test_tui_guided_update_cancel_does_not_install(repo_root: Path, tmp_path: Path) -> None:

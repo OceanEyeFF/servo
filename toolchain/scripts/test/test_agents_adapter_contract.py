@@ -12,6 +12,7 @@ ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "agents" /
 CLAUDE_ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
 AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
 EXPECTED_AGENTS_SKILLS = {
+    "cleanup-skill",
     "close-worktrack-skill",
     "dispatch-skills",
     "doc-catch-up-worker-skill",
@@ -54,6 +55,7 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     ],
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
+    "cleanup-skill": ["servo-cleanup-skill", "aw-cleanup-skill"],
     "harness-skill": ["servo-harness-skill"],
     "set-harness-goal-skill": ["aw-set-harness-goal-skill", "set-harness-goal-skill"],
 }

@@ -1542,7 +1542,7 @@ function runMigrate(args) {
   }
 
   if (!args.dryRun && report.changes.length > 0) {
-    applyMigrationChanges(deployPath, report.changes);
+    applyMigrationChanges(deployPath, report.changes, specs);
   }
 
   return 0;
@@ -1704,7 +1704,8 @@ function reconcileFile(template, runtime, spec) {
   return changes;
 }
 
-function applyMigrationChanges(deployPath, changes) {
+function applyMigrationChanges(deployPath, changes, specs) {
+  const specsByOutputPath = new Map(specs.map((spec) => [spec.outputRelpath, spec]));
   const byFile = new Map();
   for (const change of changes) {
     if (!byFile.has(change.file)) byFile.set(change.file, []);
@@ -1712,6 +1713,9 @@ function applyMigrationChanges(deployPath, changes) {
   }
 
   for (const [relPath, fileChanges] of byFile) {
+    const spec = specsByOutputPath.get(relPath);
+    if (!spec) throw new DeployAwError(`missing template spec for migration target: ${relPath}`);
+    const templateContent = fs.readFileSync(sourcePath(spec), 'utf-8');
     const runtimePath = path.join(deployPath, DEFAULT_AW_DIRNAME, relPath);
     let content = '';
     if (fs.existsSync(runtimePath)) {
@@ -1720,6 +1724,19 @@ function applyMigrationChanges(deployPath, changes) {
 
     for (const change of fileChanges) {
       switch (change.type) {
+        case 'new_file':
+          if (!fs.existsSync(runtimePath)) {
+            content = templateContent;
+          }
+          break;
+        case 'append_section':
+          content = appendSectionBlock(content, templateContent, change.section);
+          break;
+        case 'append_sub_section': {
+          const parts = change.section.split(' > ');
+          content = appendSubSectionBlock(content, templateContent, parts[0], parts[1]);
+          break;
+        }
         case 'append_frontmatter':
           content = appendFrontmatterField(content, change.key, change.value);
           break;
@@ -1735,9 +1752,89 @@ function applyMigrationChanges(deployPath, changes) {
     }
 
     const tmpPath = runtimePath + '.tmp';
+    fs.mkdirSync(path.dirname(runtimePath), { recursive: true });
     fs.writeFileSync(tmpPath, content, 'utf-8');
     fs.renameSync(tmpPath, runtimePath);
   }
+}
+
+function headingLevel(line) {
+  const match = line.match(/^(#{1,6})\s+/);
+  return match ? match[1].length : 0;
+}
+
+function extractSectionBlock(templateContent, sectionName) {
+  const lines = templateContent.split('\n');
+  const startIdx = lines.findIndex((line) => line.trim() === `## ${sectionName}`);
+  if (startIdx < 0) throw new DeployAwError(`template section not found: ${sectionName}`);
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const level = headingLevel(lines[i]);
+    if (level > 0 && level <= 2) {
+      endIdx = i;
+      break;
+    }
+  }
+  return `${lines.slice(startIdx, endIdx).join('\n').trimEnd()}\n`;
+}
+
+function extractSubSectionBlock(templateContent, parentName, childName) {
+  const lines = templateContent.split('\n');
+  const parentIdx = lines.findIndex((line) => line.trim() === `## ${parentName}`);
+  if (parentIdx < 0) throw new DeployAwError(`template parent section not found: ${parentName}`);
+  let parentEndIdx = lines.length;
+  for (let i = parentIdx + 1; i < lines.length; i++) {
+    if (headingLevel(lines[i]) === 2) {
+      parentEndIdx = i;
+      break;
+    }
+  }
+  let childIdx = -1;
+  for (let i = parentIdx + 1; i < parentEndIdx; i++) {
+    if (lines[i].trim() === `### ${childName}`) {
+      childIdx = i;
+      break;
+    }
+  }
+  if (childIdx < 0) throw new DeployAwError(`template subsection not found: ${parentName} > ${childName}`);
+  let childEndIdx = parentEndIdx;
+  for (let i = childIdx + 1; i < parentEndIdx; i++) {
+    const level = headingLevel(lines[i]);
+    if (level > 0 && level <= 3) {
+      childEndIdx = i;
+      break;
+    }
+  }
+  return `${lines.slice(childIdx, childEndIdx).join('\n').trimEnd()}\n`;
+}
+
+function appendBlockAtEnd(content, block) {
+  const base = content.trimEnd();
+  const normalizedBlock = block.trimEnd();
+  return base ? `${base}\n\n${normalizedBlock}\n` : `${normalizedBlock}\n`;
+}
+
+function appendSectionBlock(content, templateContent, sectionName) {
+  return appendBlockAtEnd(content, extractSectionBlock(templateContent, sectionName));
+}
+
+function appendSubSectionBlock(content, templateContent, parentName, childName) {
+  const block = extractSubSectionBlock(templateContent, parentName, childName).trimEnd();
+  const lines = content.split('\n');
+  const parentIdx = lines.findIndex((line) => line.trim() === `## ${parentName}`);
+  if (parentIdx < 0) return content;
+  let insertIdx = lines.length;
+  for (let i = parentIdx + 1; i < lines.length; i++) {
+    if (headingLevel(lines[i]) === 2) {
+      insertIdx = i;
+      break;
+    }
+  }
+  while (insertIdx > parentIdx + 1 && lines[insertIdx - 1].trim() === '') {
+    insertIdx--;
+  }
+  lines.splice(insertIdx, 0, '', ...block.split('\n'));
+  return `${lines.join('\n').trimEnd()}\n`;
 }
 
 function appendFrontmatterField(content, key, value) {

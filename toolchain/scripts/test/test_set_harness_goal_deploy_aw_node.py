@@ -254,6 +254,122 @@ def test_node_deploy_servo_blocks_unverified_baseline_before_writes(tmp_path: Pa
     assert not (tmp_path / ".gitignore").exists()
 
 
+def test_node_deploy_servo_migrate_applies_missing_file_section_and_subsection(
+    tmp_path: Path,
+) -> None:
+    template_root = tmp_path / "templates"
+    deploy_path = tmp_path / "target"
+    template_root.mkdir()
+    (deploy_path / ".servo" / "repo").mkdir(parents=True)
+
+    (template_root / "control-state.md").write_text(
+        "\n".join(
+            [
+                "---",
+                'title: "Harness Control State"',
+                "---",
+                "# Harness Control State",
+                "",
+                "## Existing Section",
+                "- preserved: template-default",
+                "",
+                "## Missing Section",
+                "- added: section-value",
+                "",
+                "## Parent Section",
+                "- parent: template-value",
+                "",
+                "### Missing Child",
+                "- child: child-value",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (template_root / "goal-charter.md").write_text(
+        "\n".join(
+            [
+                "---",
+                'title: "Repo Goal / Charter"',
+                "---",
+                "# Repo Goal / Charter",
+                "",
+                "## Metadata",
+                "- repo: target",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (deploy_path / ".servo" / "control-state.md").write_text(
+        "\n".join(
+            [
+                "---",
+                'title: "Runtime Control State"',
+                "---",
+                "# Harness Control State",
+                "",
+                "## Existing Section",
+                "- preserved: user-value",
+                "",
+                "## Parent Section",
+                "- parent: runtime-value",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    dry_run = run_node(
+        "migrate",
+        "--deploy-path",
+        str(deploy_path),
+        "--template-root",
+        str(template_root),
+        "--dry-run",
+        "--json",
+    )
+    assert dry_run.returncode == 0, dry_run.stderr
+    dry_report = json.loads(dry_run.stdout)
+    dry_change_types = {change["type"] for change in dry_report["changes"]}
+    assert {"new_file", "append_section", "append_sub_section"} <= dry_change_types
+
+    applied = run_node(
+        "migrate",
+        "--deploy-path",
+        str(deploy_path),
+        "--template-root",
+        str(template_root),
+    )
+    assert applied.returncode == 0, applied.stderr
+
+    control_state = (deploy_path / ".servo" / "control-state.md").read_text(
+        encoding="utf-8"
+    )
+    assert "- preserved: user-value" in control_state
+    assert "- preserved: template-default" not in control_state
+    assert "## Missing Section" in control_state
+    assert "- added: section-value" in control_state
+    assert "### Missing Child" in control_state
+    assert "- child: child-value" in control_state
+    assert (deploy_path / ".servo" / "goal-charter.md").read_text(
+        encoding="utf-8"
+    ) == (template_root / "goal-charter.md").read_text(encoding="utf-8")
+
+    second_dry_run = run_node(
+        "migrate",
+        "--deploy-path",
+        str(deploy_path),
+        "--template-root",
+        str(template_root),
+        "--dry-run",
+        "--json",
+    )
+    assert second_dry_run.returncode == 0, second_dry_run.stderr
+    second_report = json.loads(second_dry_run.stdout)
+    assert second_report["changes"] == []
+
+
 def test_node_deploy_servo_installs_claude_skill_without_python_helper(tmp_path: Path) -> None:
     completed = run_node(
         "install-claude-skill",
