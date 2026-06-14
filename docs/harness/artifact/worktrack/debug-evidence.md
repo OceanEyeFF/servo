@@ -3,7 +3,7 @@ title: "Debug Evidence"
 status: active
 updated: 2026-05-13
 owner: servo-kernel
-last_verified: 2026-05-13
+last_verified: 2026-06-13
 ---
 
 # Debug Evidence

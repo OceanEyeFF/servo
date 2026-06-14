@@ -3,7 +3,7 @@ title: "TUI Bundle Default & Guided Flow Contract"
 status: active
 updated: 2026-05-19
 owner: servo-kernel
-last_verified: 2026-05-19
+last_verified: 2026-06-13
 ---
 # TUI Bundle Default & Guided Flow Contract
 
@@ -58,7 +58,7 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 | CLI 映射 | `servo-installer diagnose --backend bundle --json` |
 | TUI 行为 | 展示当前双 root 状态摘要：已安装 backend、版本、受管目录数；若存在可收敛的 legacy target dirs，展示 CLI 等价更新指引 |
 | 失败处理 | 展示 issue 列表；允许继续到下一步（diagnose 不是阻断 gate） |
-| operator 可选操作 | 切换 backend、退出 |
+| 可选操作 | 切换 backend、退出 |
 
 **展示信息：** 每个 backend 的 installed version、managed directory count、last verify status，以及 legacy target dir replacement guidance。bundle 模式下同时展示 agents 和 claude 信息，各自带 `[backend=agents]` / `[backend=claude]` 前缀。
 
@@ -69,7 +69,7 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 | CLI 映射 | `servo-installer check_paths_exist --backend bundle` |
 | TUI 行为 | 列出将要写入/更新的所有路径，标注冲突 |
 | 失败处理 | 如有冲突，展示冲突列表并要求 operator 解决后才可继续 |
-| operator 可选操作 | 查看冲突详情、取消 |
+| 可选操作 | 查看冲突详情、取消 |
 
 **冲突展示：** 按 backend 分组展示冲突路径。每项冲突标注类型（already exists / permission denied / outside target root）。
 
@@ -80,7 +80,7 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 | CLI 映射 | （无对应 CLI verb——纯交互确认） |
 | TUI 行为 | 展示操作摘要，要求 operator 明确确认 |
 | 确认内容 | backend 选择、将写入的目录数、将覆盖/新增的文件数 |
-| operator 可选操作 | 确认执行、返回修改 backend 选择、取消 |
+| 可选操作 | 确认执行、返回修改 backend 选择、取消 |
 
 **确认是显式 gate。** 在 operator 确认之前，任何 mutating 操作都不得执行。确认后进入 install/update 阶段不可撤销。
 
@@ -90,12 +90,12 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 |------|-----|
 | CLI 映射 | `servo-installer install --backend bundle` 或 `servo-installer update --backend bundle --yes` |
 | TUI 行为 | 按 ASCII 顺序执行（agents → claude），展示实时进度 |
-| 失败处理 | 展示 partial 状态，附 single-backend recovery 建议 |
-| operator 可选操作 | 查看失败详情、重试失败 backend |
+| 失败处理 | 展示部分完成状态，附单 backend 恢复建议 |
+| 可选操作 | 查看失败详情、重试失败 backend |
 
-**进度展示：** 每个 backend 的当前阶段（prune → check → install → verify），失败时立即展示错误信息。bundle 的 aggregate partial 信息在固定状态区持续可见。
+**进度展示：** 每个 backend 的当前阶段（prune → check → install → verify），失败时立即展示错误信息。bundle 的聚合部分信息在固定状态区持续可见。
 
-旧 `aw-*` agents target dir 的收敛属于 update/install 同一流程：TUI 只能通过既有 `update --backend <backend> --yes` 或 `migrate-runtime --reinstall` 映射执行，不提供单独 cleanup 动作。
+旧的 `aw-*` agents target 目录的收敛属于 update/install 同一流程：TUI 只能通过既有 `update --backend <backend> --yes` 或 `migrate-runtime --reinstall` 映射执行，不提供单独 cleanup 动作。
 
 ### 5. Verify
 
@@ -104,7 +104,7 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 | CLI 映射 | `servo-installer verify --backend bundle` |
 | TUI 行为 | 对双 root 执行严格复验，展示通过/失败状态 |
 | 失败处理 | 按 backend 分组展示 issue，附 recovery 建议 |
-| operator 可选操作 | 查看 issue 详情、重试 install、退出 |
+| 可选操作 | 查看 issue 详情、重试 install、退出 |
 
 **verify 是严格 gate。** 任何 backend 的 verify 失败都必须在 summary 中标记为 incomplete，并阻止"全部完成"的结论。
 
@@ -116,7 +116,7 @@ TUI guided flow 包含六个阶段，每个阶段映射到明确的 CLI verb 或
 | TUI 行为 | 汇总所有 backend 最终状态，附下一步建议 |
 | 成功时 | 展示版本、backend 数、受管目录数、"install complete" |
 | 失败/partial 时 | 展示失败 backend、失败阶段、recovery 命令 |
-| operator 可选操作 | 查看详情、重试、退出 |
+| 可选操作 | 查看详情、重试、退出 |
 
 ## 取消与恢复
 

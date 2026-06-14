@@ -3,7 +3,7 @@ title: "初始化 Harness：已有代码项目"
 status: active
 updated: 2026-05-07
 owner: servo-kernel
-last_verified: 2026-05-07
+last_verified: 2026-06-13
 ---
 
 # 初始化 Harness：已有代码项目

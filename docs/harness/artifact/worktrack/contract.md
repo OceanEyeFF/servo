@@ -3,7 +3,7 @@ title: "Worktrack Contract"
 status: active
 updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-05
+last_verified: 2026-06-13
 ---
 # Worktrack Contract
 
@@ -94,7 +94,7 @@ Execution Policy 控制本 worktrack 的执行载体选择，不替代 `ControlS
 - `dispatch_mode_source`: 默认 `worktrack-contract`。
 - `fallback_reason_required`: 默认 `yes`。
 
-语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能委派就委派"。`delegated` 必须委派否则返回 gap/block。`current-carrier` 关闭委派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口或 `dispatch package unsafe` 不能委派，须记录 fallback reason，并使用 `runtime fallback` 标记运行时回退。
+语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能分派就分派"。`delegated` 必须分派否则返回 gap/block。`current-carrier` 关闭分派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口或 `dispatch package unsafe` 不能分派，须记录 fallback reason，并使用 `runtime fallback` 标记运行时回退。
 
 ## Worktrack Intake Review
 

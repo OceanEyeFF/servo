@@ -3,7 +3,7 @@ title: "Managed Files Ownership"
 status: active
 updated: 2026-05-22
 owner: servo-kernel
-last_verified: 2026-05-22
+last_verified: 2026-06-13
 ---
 # Managed Files Ownership
 
@@ -24,7 +24,7 @@ target repo root/
 │   └── skills/        ← installer 管理的 skill payload
 │       └── */         ← 受管目录（含 marker）
 ├── .servo/               ← 运行时控制状态（Harness 管理，非 installer payload）
-├── .aw/                  ← legacy 运行时控制状态（仅显式升级路径处理）
+├── .aw/                  ← 旧版运行时控制状态（仅显式升级路径处理）
 ├── src/               ← 用户自有
 ├── docs/              ← 用户自有
 ├── package.json       ← 用户自有（npm package 元数据）
@@ -44,11 +44,11 @@ target repo root/
 | 识别方式 | 每个受管目录内的 `aw.marker` 文件 |
 | 真相源 | canonical source (`product/harness/skills/`) |
 
-**operator 可以做什么：**
+**允许操作：**
 - 使用 `servo-installer prune --all` 安全删除
 - 手动删除后运行 `servo-installer verify` 检测不一致
 
-**operator 不应做什么：**
+**禁止操作：**
 - 不应手动编辑受管目录内的文件——下次 `install`/`update` 会覆盖
 - 不应把受管文件当作配置模板来修改——修改应回到 canonical source
 - 不应将 deploy target 内容视为版本真相
@@ -72,20 +72,20 @@ target repo root/
 
 **重要约束：**
 - `.servo/` 不是 installer payload，不受 `prune --all` 影响
-- `.servo/` 不是 source of truth——真相在 `docs/` 和 `product/`
+- `.servo/` 不是真相源——真相在 `docs/` 和 `product/`
 - `.servo/` 通常是 gitignored 的运行时状态，不同步到 remote
 - 删除 `.servo/` 后 Harness 需要重新初始化
 
-### 2a. Legacy 运行时控制状态（`.aw/`）
+### 2a. 旧版运行时控制状态（`.aw/`）
 
 | 属性 | 值 |
 |------|-----|
 | 路径 | `<targetRepoRoot>/.aw/` |
-| 角色 | 旧命名 Harness runtime state |
+| 角色 | 旧版 Harness 运行时状态（`.servo/` 的前身） |
 | 是否受 installer 管理 | **否**——`prune --all` 不删除 `.aw/` |
 | 默认升级行为 | 只允许显式 upgrade path；普通 install/update/verify/diagnose 不迁移 |
 
-`.aw/` 不是 installer payload，也不是 deploy target。它只在 legacy runtime upgrade 场景下作为迁移源参与处理；安全边界见 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md)。
+`.aw/` 不是 installer payload，也不是 deploy target。它只在旧版运行时迁移场景下作为迁移源参与处理；安全边界见 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md)。
 
 **重要约束：**
 - 不把 `.aw/` 当作 `aw.marker`
@@ -108,7 +108,7 @@ target repo root/
 - 每个 `install`/`update` 操作都会完整替换
 
 **deploy target 不是什么：**
-- **不是 source of truth**——真相在 `product/harness/skills/`
+- **不是真相源**——真相在 `product/harness/skills/`
 - **不是配置位置**——operator 不应手动修改 deploy target 内容
 - **不是备份**——`prune --all` 会完全删除
 - **不是版本事实**——deploy target 中是否存在文件不能替代 `verify` 命令
@@ -155,7 +155,7 @@ servo/           ← 用户自有（target repo 本身）
 │   ├── repo/                      ← 仓库级快照与 backlog
 │   ├── worktrack/                 ← 当前 worktrack artifacts
 │   └── milestone/                 ← Milestone artifacts
-├── .aw/                              ← legacy 运行时控制状态（仅显式升级路径处理）
+├── .aw/                              ← 旧版运行时控制状态（仅显式升级路径处理）
 │
 ├── .git/                          ← 用户自有（Git 仓库数据）
 ├── docs/                          ← 用户自有（文档真相层）
@@ -173,11 +173,11 @@ servo/           ← 用户自有（target repo 本身）
 | 完全清理 installer 部署产物 | `servo-installer prune --all --backend bundle` | 仅上述两个 skills 目录 |
 | 将旧 `aw-*` agents skill 目录收敛到 `servo-*` | `servo-installer update --backend agents --yes` 或 runtime 迁移时加 `--reinstall` | 仅 `.agents/skills/` 受管目录 |
 | 重置 Harness 控制状态 | `rm -rf .servo/` 然后重新 `set-harness-goal-skill` | 仅 `.servo/`，不影响源码和文档 |
-| 升级 legacy runtime state | 按 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) 先 dry-run，再显式确认 | `.aw/` 作为源；`.servo/` 作为目标 |
+| 升级旧版 control state | 按 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) 先 dry-run，再显式确认 | `.aw/` 作为源；`.servo/` 作为目标 |
 | 修改 skill 行为 | 编辑 `product/harness/skills/` 下的 canonical source | 下次 install 时生效 |
 | 修改文档 | 编辑 `docs/` 下的文件 | 正常的 git 工作流 |
 
-**关键记忆点：** `.agents/` 和 `.claude/` 是 installer 的写入目标（可随时重建）；`.servo/` 是 Harness 的当前运行时笔记；`.aw/` 是 legacy 运行时笔记，只能通过显式升级路径处理；其他一切都是你的代码和文档（installer 不会碰）。
+**关键记忆点：** `.agents/` 和 `.claude/` 是 installer 的写入目标（可随时重建）；`.servo/` 是 Harness 的当前运行时笔记；`.aw/` 是旧版运行时笔记，只能通过显式升级路径处理；其他一切都是你的代码和文档（installer 不会碰）。
 
 ## 非目标（Non-Goals）
 
@@ -197,7 +197,7 @@ servo/           ← 用户自有（target repo 本身）
 - `.servo/` 与 installer payload 生命周期独立
 - `.aw/` 与 installer payload 生命周期独立；普通 install/update/prune 不迁移或删除 `.aw/`
 - 用户自有文件永远不会被 installer 修改或删除
-- deploy target 不是 source of truth
+- deploy target 不是真相源
 - 单一真相源保持在 `product/harness/skills/` 和 `docs/`
 
 ## 停止线

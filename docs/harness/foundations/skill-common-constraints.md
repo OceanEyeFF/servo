@@ -3,7 +3,7 @@ title: "Skill 公共约束"
 status: active
 updated: "2026-05-09"
 owner: "servo-kernel"
-last_verified: "2026-05-09"
+last_verified: 2026-06-13
 ---
 
 # Skill 公共约束
@@ -66,10 +66,24 @@ last_verified: "2026-05-09"
 - 当当前问题很狭窄时，扩展成完整重新发现的行为必须被阻断
 - 唯一合法行为是保持限定范围内操作
 
+## C-8: 分布式 Skill 自洽约束
+
+`product/harness/skills/` 下每个 canonical skill package 必须作为可独立分发、可独立运行的执行单元自洽。安装到 `.agents/` 或 `.claude/` 后，skill 包不得依赖以下任何一项来执行其运行时语义：
+
+- 源仓库中的 `docs/harness/`、`docs/project-maintenance/` 或其他 docs 路径
+- 当前包外的 `.agents/`、`.claude/`、`.servo/`、`.nav/`、`.autoworkflow/` 或 `.spec-workflow/` 路径
+- 父目录逃逸引用（`../`）
+- 包外软链
+- 仓库外绝对路径、本地机器路径或未发布合同
+
+Trace link 到 docs 只能作为源侧 ownership 或 authoring 引用，不能作为安装后包的运行时权威来源。当 docs 合同在运行时确属必需时，应将最小稳定合同复制到 `SKILL.md` 或同包内的捆绑文件，并确保 adapter payload 描述符包含该文件。
+
+完整规则见 [product/harness/skills/README.md](../../../product/harness/skills/README.md) 的 Distributed Skill Product Shape 节。
+
 ---
 
 ## 各 Skill 特有约束指引
 
 引用本文档后，各 Skill 的 `## 硬约束` 段应仅包含：
-1. 一句引用声明：`遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-7`
+1. 一句引用声明：`遵循 [docs/harness/foundations/skill-common-constraints.md] 中定义的公共约束 C-1 至 C-8`
 2. 本 Skill 特有的约束（通常 3-8 条）

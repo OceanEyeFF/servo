@@ -1,3 +1,10 @@
+---
+title: "Harness Artifact"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness Artifact
 
 `docs/harness/artifact/` 固定 Harness 依赖的正式对象，并按控制层次收成 3 个子域。

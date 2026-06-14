@@ -3,7 +3,7 @@ title: "Legacy .aw Runtime 升级手册"
 status: active
 updated: 2026-05-27
 owner: servo-kernel
-last_verified: 2026-05-27
+last_verified: 2026-06-13
 ---
 # Legacy .aw Runtime 升级手册
 

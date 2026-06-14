@@ -3,7 +3,7 @@ title: "Worktrack Backlog"
 status: active
 updated: 2026-05-10
 owner: servo-kernel
-last_verified: 2026-05-10
+last_verified: 2026-06-13
 ---
 
 # Worktrack Backlog
@@ -29,8 +29,8 @@ last_verified: 2026-05-10
 - `scope`: 简要变更说明
 - `merge_commit`: 合并 hash（如有）
 - `validation`: 验证结果摘要
-- `decision_refs`: 关联 Decision Log 条目 ID 列表（如无关键跨 worktrack 决策则为空列表）
 - `intake_route`: 追加请求来源
+- `decision_refs`: optional，关联 `.servo/repo/decision-log.md` 中的 `decision_id`，用于把 worktrack 执行状态追溯到长期决策理由
 
 `milestone-status-skill` 读取 backlog 时先按 `milestone_id` 过滤（匹配当前 active milestone），再将 `status` 按以下映射转换后参与 progress 计算：`done`/`resolved` -> completed，`deferred` -> deferred，`blocked` -> blocked。
 
@@ -38,7 +38,6 @@ last_verified: 2026-05-10
 
 - 不替代 `docs/harness/artifact/repo/snapshot-status.md`（snapshot-status 是 Repo 级当前快照，backlog 是历史列表）。
 - 不替代 `docs/harness/artifact/worktrack/contract.md`（contract 是单个 worktrack 的局部合同）。
-- 不替代 `docs/harness/artifact/repo/decision-log.md`（decision log 记录关键决策理由；backlog 只通过 `decision_refs` 引用）。
 - `milestone-status-skill` 使用 backlog 对照 Milestone 的 `worktrack_list` 统计 completed/blocked/deferred，计算 progress counter。
 
 ## 维护约定

@@ -1,11 +1,11 @@
 ---
-title: "模型 Runtime 支持边界"
+title: "模型运行时支持边界"
 status: active
 updated: 2026-05-26
 owner: servo-kernel
-last_verified: 2026-05-26
+last_verified: 2026-06-13
 ---
-# 模型 Runtime 支持边界
+# 模型运行时支持边界
 
 > 目的：记录 Servo 已测试过的 model/runtime 支持边界，同时避免把观察到的兼容性写成永久认证声明。
 

@@ -3,11 +3,11 @@ title: "Python Script Test Execution"
 status: active
 updated: 2026-05-08
 owner: servo-kernel
-last_verified: 2026-05-08
+last_verified: 2026-06-13
 ---
 # Python Script Test Execution
 
-> 目的：固定本仓库运行 Python 验证、治理检查和 closeout gate 的 operator-facing 命令口径。
+> 目的：固定本仓库运行 Python 验证、治理检查和 closeout gate 的命令规范。
 
 本页属于 [Testing Runbooks](./README.md)。deploy 主流程见 [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)，review/verify 口径见 [Review / Verify Handbook](../governance/review-verify-handbook.md)。
 

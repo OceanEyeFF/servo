@@ -41,6 +41,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
+  - [cleanup-skill/](./cleanup-skill/) — repo 清理（backlog 归档 + stale 分支清理）
 - [init-milestone-skill/](./init-milestone-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
 - 已落地的 `WorktrackScope` 技能骨架：
@@ -92,6 +93,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [repo-append-request-skill/](./repo-append-request-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-change-goal-skill/](./repo-change-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-refresh-skill/](./repo-refresh-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [cleanup-skill/](./cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [init-milestone-skill/](./init-milestone-skill/) | [docs/harness/catalog/milestone/init-milestone-skill.md](../../../docs/harness/catalog/milestone/init-milestone-skill.md) |
 | [milestone-status-skill/](./milestone-status-skill/) | [docs/harness/catalog/milestone/milestone-status-skill.md](../../../docs/harness/catalog/milestone/milestone-status-skill.md) |
 | [worktrack-status-skill/](./worktrack-status-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |

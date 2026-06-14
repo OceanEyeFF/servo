@@ -3,13 +3,13 @@ title: "WorktrackScope 状态机"
 status: active
 updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-05
+last_verified: 2026-06-13
 ---
 # WorktrackScope 状态机
 
-> 目的：固定 WorktrackScope 内部的 11 个合法状态、状态转移矩阵、异常路径和治理约束。两层 Scope 之间的闭环管理见 [repo-scope.md](./repo-scope.md)。
+> 目的：定义 WorktrackScope 内部的 11 个合法状态、状态转移矩阵、异常路径和治理约束。两层 Scope 之间的闭环管理见 [repo-scope.md](./repo-scope.md)。
 
-WorktrackScope 是 Harness 两层控制模型中的**快变量层**，负责单个 worktrack 从初始化到关闭的完整生命周期。两层 Scope 之间的闭环（RepoScope → WorktrackScope → RepoScope）见 [repo-scope.md](./repo-scope.md#reposcope--worktrackscope-切换)。
+WorktrackScope 是 Harness 三层控制模型中的**快变量层**，负责单个 worktrack 从初始化到关闭的完整生命周期。两层 Scope 之间的闭环（RepoScope → WorktrackScope → RepoScope）见 [repo-scope.md](./repo-scope.md#reposcope--worktrackscope-切换)。
 
 闭环路径（单 worktrack 视角）：RepoScope 观测决定 → Worktrack Contract → 初始化 Worktrack 和 baseline → 调度执行 → 收集 verify evidence → gate verdict → PR/merge/cleanup → 回到 RepoScope 刷新快照。失败判定（任一条即为未闭环）：仅发 PR 未完成 closeout、closeout 结果未回写 repo 级状态、RepoScope 与 WorktrackScope 混为同一文档。
 

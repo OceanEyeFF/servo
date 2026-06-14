@@ -3,15 +3,15 @@ title: "RepoScope 管理文档"
 status: active
 updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-05
+last_verified: 2026-06-13
 ---
 # RepoScope 管理文档
 
-> 目的：固定 Harness 在 RepoScope 层的控制对象、观测循环、决策逻辑，以及 RepoScope 与 WorktrackScope 之间的切换条件。
+> 目的：定义 Harness 在 RepoScope 层的控制对象、观测循环、决策逻辑，以及 RepoScope 与 WorktrackScope 之间的切换条件。
 
 ## 定位
 
-RepoScope 是 Harness 两层控制模型中的**慢变量层**。它不直接执行代码变更，而是维护长期基线、观测系统整体状态、管理 Milestone Pipeline，并决定何时进入 WorktrackScope 执行局部状态转移。
+RepoScope 是 Harness 三层控制模型中的**慢变量层**——它在 RepoScope 内包含 Milestone 子层控制（目标分批与入口闸门审裁），负责维护长期基线、观测系统整体状态、管理 Milestone Pipeline，并决定何时进入 WorktrackScope 执行局部状态转移。
 
 RepoScope 的权威定义见 [../foundations/Harness指导思想.md](../foundations/Harness指导思想.md)；运行时合法算子见 [../foundations/Harness运行协议.md](../foundations/Harness运行协议.md) 和 [../foundations/runtime-control-loop.md](../foundations/runtime-control-loop.md)。
 
@@ -26,7 +26,7 @@ RepoScope 维护以下慢变量：
 | Goal / Charter | `.servo/goal-charter.md` | 长期参考信号，定义 Repo 的目标状态和 Engineering Node Map |
 | Repo Snapshot / Status | `.servo/repo/snapshot-status.md` | RepoScope.Observe 的观测面，记录 `baseline_ref`、`source_baselines`、governance 信号 |
 | Milestone Pipeline | `.servo/repo/milestone-backlog.md` | 所有 milestone 的聚合管线，含 planned/active/completed/superseded 状态 |
-| Control State | `.servo/control-state.md` | 控制面配置与位置信息（Scope/Function/Route），不承载业务真相 |
+| Control State | `.servo/control-state.md` | 控制平面配置与当前定位（Scope/Function/Route），不承载业务真相 |
 | Worktrack Backlog | `.servo/repo/worktrack-backlog.md` | 所有 worktrack 的执行记录与状态追踪 |
 | Complex Project Entry Gate | `.servo/repo/complex-project-entry-gate.md` 或结构化 `complex_project_entry_gate` handoff | 复杂项目、弱文档或高风险 Milestone 进入前的 Milestone-side blocking gate |
 
@@ -72,10 +72,18 @@ RepoScope.Decide 基于观测结果做出以下判定：
 **关键约束**：
 - `ChangeGoal` 不由常规 Decide 选择；目标变更由外部 `GoalChangeRequest` 触发
 - Milestone brief 必须经 programmer 确认后才能激活 goal-driven milestone
-- 命中 complex-project trigger 时，`complex_project_entry_gate.milestone_blocking_decision` 必须允许 create / activate / derive-worktrack；scanner output is evidence, not verdict，不能单独清空阻断。gate handoff 必须暴露 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 与结构化 `reinforcement_milestone_recommendation`；缺失、空白、placeholder、pending 或 incomplete gate 按 unresolved gate blocking default 处理；canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable；不能解释为 clear 或 `not_applicable`；弱文档 recommendation 的 `needed = true` 或 `blocks_implementation_until_resolved = true` 必须优先路由到 reinforcement documentation / project-understanding Milestone；canonical guard term: not fixed heavy mode；Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代 Milestone-side blocker
+- 命中 complex-project trigger 时：
+  - `milestone_blocking_decision` 必须允许 create / activate / derive-worktrack 三种操作
+  - 该 gate 不是固定 heavy mode（`not fixed heavy mode`）
+  - `scanner output is evidence`；scanner 只提供证据，不能单独据此放行
+  - gate 交接包必须提供：`scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision`、`reinforcement_milestone_recommendation`
+  - 校验条件缺失、空白（`blank`）、占位、未完成或状态不明时，默认按阻断处理；这是 `unresolved gate blocking default`，不得解释为 clear 或 `not_applicable`
+  - 文档薄弱时优先路由到补充文档型 Milestone（reinforcement documentation / project-understanding）
+  - `needed = true` 或 `blocks_implementation_until_resolved = true` 时阻断实现型 Worktrack 派生
+  - Worktrack 执行模式（`normal`、`autoreview`、`yolo`）不能绕过 Milestone 侧阻断
 - 不要在没有 milestone 上下文的情况下直接创建 worktrack
 - RepoScope.Decide / Milestone-level scheduler 每轮一次只选出一个 `selected_worktrack_id` / current worktrack；不得把 milestone 的 `worktrack_list` 批量投影为 Worktrack `Plan / Task Queue`、task window 或 dispatch queue
-- 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，覆盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
+- 从 active milestone 进入 WorktrackScope 前必须形成 `worktrack_intake_review`，涵盖 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations`、`add_remove_worktrack_recommendations`、`intake_review_verdict` 与 `ready_for_worktrack_init`
 - 从 active goal-driven milestone 派生 Worktrack 前，还必须满足 Milestone Review Gate route guard：`milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化；`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须阻断 Worktrack Init/Dispatch，并暴露 `milestone_review_gate_not_ready`
 - 从 active milestone 派生 Worktrack 前还必须满足 Branch Environment Guard：milestone-derived Worktrack 的 `WorktrackScope.Init` 必须在 active `milestone_branch` 上执行；非 milestone-derived Worktrack 才从 `baseline_branch` 开始。若当前 checkout 是 `unknown` 或不匹配 expected branch context，RepoScope.Decide 只能返回切换/恢复动作，不得初始化 Worktrack。
 
@@ -104,9 +112,9 @@ RepoScope.Decide 基于观测结果做出以下判定：
 2. 存在活跃 milestone 且有待初始化的 worktrack
 3. RepoScope.Decide 已从 active milestone 的 `worktrack_list` 中选出唯一 `selected_worktrack_id`
 4. `worktrack_intake_review.intake_review_verdict` 为 `ready_for_worktrack_init`
-4. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 明确允许 derive-worktrack；缺失、空白、placeholder、pending、incomplete 或 `block_derive_worktrack` 均阻断进入 WorktrackScope
-5. `Milestone Review Gate` 明确允许 derive-worktrack；缺失、`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated`、checkpoint 为空或 review count 为 0 均阻断进入 WorktrackScope
-5. 当前无阻塞条件（审批、证据缺失、运行时缺口）
+5. 若当前 milestone 命中 complex-project trigger，`complex_project_entry_gate` 明确允许 derive-worktrack；缺失、空白、placeholder、pending、incomplete 或 `block_derive_worktrack` 均阻断进入 WorktrackScope
+6. `Milestone Review Gate` 明确允许 derive-worktrack；缺失、`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated`、checkpoint 为空或 review count 为 0 均阻断进入 WorktrackScope
+7. 当前无阻塞条件（审批、证据缺失、运行时缺口）
 
 进入前审查：
 - `repo_fundamentals`：确认当前 milestone、目标/非目标、baseline、已闭环 worktrack 与禁止项仍一致
@@ -156,7 +164,7 @@ RepoScope 负责 Milestone Pipeline 的全局视图：
 - 依赖关系（`depends_on_milestones`）必须在激活前验证
 - Work-collection milestone 完成后自动推进；goal-driven milestone 完成后 handback
 
-Pipeline 恢复动作（损坏、不一致、孤儿绑定）的定义见 Harness 运行协议第十二节。
+Pipeline 恢复动作（损坏、不一致、孤儿绑定）的定义见 [Harness 运行协议](../foundations/Harness运行协议.md)。
 
 ## 文档新鲜度管理
 
@@ -175,5 +183,5 @@ RepoScope 在以下情况触发文档追平：
 1. RepoScope 不直接执行代码变更；所有变更通过 WorktrackScope 执行
 2. Goal 在常规循环中不可变；目标变更必须走 ChangeGoal
 3. Milestone 最终验收权归 programmer
-4. Control State 只保存控制面位置信息；业务真相在正式 artifact 中
+4. Control State 只保存控制平面当前定位信息；业务真相在正式 artifact 中
 5. git hash 一致仅跳过重复刷新，不可跳过首次验证和 Gate 裁决

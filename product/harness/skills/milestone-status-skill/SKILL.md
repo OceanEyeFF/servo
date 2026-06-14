@@ -81,6 +81,21 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 `milestone_acceptance_verdict == achieved` 的前置条件包括：composite acceptance verdict 为 `accepted` 或 `accepted_with_residual_risk`；没有 `blocked` lane；没有未被 programmer 接受为后续范围的 `needs_followup_worktrack` lane；没有 high severity finding；所有 mandatory lane 的 fallback evidence 足以支撑判断。
 
+### 文档 Freshness Warning（非阻断）
+
+在 Milestone 验收分析中，文档不完善作为 **warning**（非 blocking）项处理，不影响 `milestone_acceptance_verdict` 的判定，但必须在 `doc_freshness_warning` 字段中显式暴露。
+
+**检查维度**：
+1. **Stale frontmatter**：检查 `docs/` 下正文文档的 `last_verified` 是否逾期（与当前日期相差超过 90 天，或与 milestone 涉及的内容域明显不匹配）。
+2. **Broken cross-references**：检查 milestone scope 内涉及的文档是否存在死链（引用已被删除或重命名的文件/章节）。
+3. **Missing required docs**：检查 milestone 涉及的 skill/adapter/contract 变更是否在对应 `docs/harness/` 或 `docs/project-maintenance/` 中有匹配的文档记录。
+
+**输出规则**：
+- 若不存在文档问题：`doc_freshness_warning` 为 `N/A`
+- 若存在 warning 级问题：在 `doc_freshness_warning` 中逐条列出，格式 `[文件路径] 问题描述`
+- `doc_freshness_warning` 不得单独触发 `handback_required`，不得将 `milestone_acceptance_verdict` 从 `achieved` 降级，但应在 `recommendations` 中建议后续 worktrack 跟进
+- 若存在严重文档问题（如关键 contract 文档缺失或内容与实际实现矛盾），应在 `developer_decisions_needed` 中暴露供 programmer 判断
+
 ## 正式停止条件
 
 至少在以下任一条件成立时停止并返回控制权：
@@ -178,6 +193,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `handback_required`：boolean
 - `release_version_consideration`：string
 - `developer_decisions_needed`：array of strings
+- `doc_freshness_warning`：array of strings / N/A — 文档不完善 warning 项（非阻断），逐条列出 stale frontmatter、broken cross-references、missing required docs
 - `recommendations`：array of strings
 - `depends_on_status`：前置 Milestone 检查结果（如有）
 - `aggregated_evidence_summary`：聚合 evidence 摘要

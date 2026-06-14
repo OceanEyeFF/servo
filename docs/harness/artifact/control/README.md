@@ -1,3 +1,10 @@
+---
+title: "Harness Artifact / Control"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness Artifact / Control
 
 `docs/harness/artifact/control/` 承接 Harness supervisor 自身依赖的控制对象。

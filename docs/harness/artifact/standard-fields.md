@@ -3,7 +3,7 @@ title: "Standard Fields Vocabulary"
 status: active
 updated: "2026-06-05"
 owner: "servo-kernel"
-last_verified: "2026-06-05"
+last_verified: 2026-06-13
 ---
 
 # Standard Fields Vocabulary

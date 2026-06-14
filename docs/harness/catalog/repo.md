@@ -3,7 +3,7 @@ title: "Harness Skill Catalog / RepoScope"
 status: active
 updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-05
+last_verified: 2026-06-13
 ---
 # RepoScope Skill Catalog
 
@@ -13,13 +13,13 @@ last_verified: 2026-06-05
 
 ## 原则
 
-`RepoScope` skills 负责长期基线的观察、判断、目标变更和 repo 状态刷新，不承担编码执行。repo-status-skill 对应 `RepoScope` observing，repo-whats-next-skill 对应 `RepoScope` deciding。repo-status-skill 是顺手调用的稳定观测包，非强制前置。repo-whats-next-skill 须能在无 repo-status-skill 产物时直接基于 repo truth 完成判断。三者都不负责 worktrack 级文档维护。structured handoff 优先使用 `recommended_next_route` 与 canonical approval 字段。`RepoScope` 内可挂载有界分析模式但不应为分析框架新增 skill 数量。Repo Analysis 可喂给 repo-whats-next-skill 但不能替代 Goal/Charter 或 Snapshot/Status。append-feature、append-design 与 append-milestone 由同一 skill 分类，不拆分。需要改动系统状态时由 supervisor 决定是否切入 `WorktrackScope`。
+`RepoScope` skills 负责长期基线的观察、判断、目标变更和 repo 状态刷新，不承担编码执行。repo-status-skill 对应 `RepoScope` observing，repo-whats-next-skill 对应 `RepoScope` deciding。repo-status-skill 是顺手调用的稳定观测包，非强制前置。repo-whats-next-skill 须能在无 repo-status-skill 产物时直接基于代码仓库实际状态完成判断。两者都不负责 worktrack 级文档维护。structured handoff 优先使用 `recommended_next_route` 与 canonical approval 字段。`RepoScope` 内可挂载有界分析模式但不应为分析框架新增 skill 数量。Repo Analysis 可作为输入提供给 repo-whats-next-skill 但不能替代 Goal/Charter 或 Snapshot/Status。append-feature、append-design 与 append-milestone 由同一 skill 分类，不拆分。需要改动系统状态时由 supervisor 决定是否切入 `WorktrackScope`。
 
 ## Catalog
 
 ### 0. set-harness-goal-skill
 
-职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
+职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制平面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
 
 主要依赖：
 
@@ -77,13 +77,13 @@ preferred handoff fields：
 - `temporary_understanding_ref`
 - `blocks_implementation_until_resolved`
 
-Complex-project adoption handoff is a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain user-owned policy choices and do not bypass `milestone_blocking_decision`. Weak-doc reinforcement routing uses structured `reinforcement_milestone_recommendation`; `needed = true` or `blocks_implementation_until_resolved = true` routes to reinforcement documentation / project-understanding Milestone before implementation.
+Complex-project 入场交接是 Milestone 侧阻断关卡（`Milestone-side blocking gate`），非固定 heavy mode（规范术语：not fixed heavy mode）。`scanner output is evidence`，scanner 输出是证据（evidence），非裁决（verdict）。Worktrack 执行模式 `normal`、`autoreview`、`yolo` 属于用户自有策略选择，不绕过 `milestone_blocking_decision`。弱文档强化路由使用结构化 `reinforcement_milestone_recommendation`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时，先路由到强化文档/项目理解 Milestone（reinforcement documentation / project-understanding），再进入实现。缺失、空白（`blank`）或未解析 gate 不得视为通过。
 
 ### 1. pre-milestone-intake-skill
 
 职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
 
-Continuous intake mode may span multiple assistant turns. When the review cannot safely pass in one turn, the skill returns `questions_required`, records `continuation_state`, asks exactly one `next_required_question`, and waits for programmer input. This one-question-at-a-time checkpoint is a continuation handoff, not a Milestone Review Gate pass.
+连续 intake 模式可跨多轮 assistant 交互。若一轮内无法安全通过复核，skill 返回 `questions_required`，记录 `continuation_state`，每次只提一个 `next_required_question` 并等待 programmer 输入；规范术语为 `one-question-at-a-time`。此逐题推进的 checkpoint 是延续交接（continuation handoff），不是 Milestone Review Gate 通过。
 
 下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
 
@@ -156,11 +156,11 @@ preferred handoff fields：
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
 
-Milestone Review Gate handoff records whether pre-milestone intake produced an `effective_pass` before Worktrack Init/Dispatch. It must carry `milestone_review_gate`, `milestone_review_gate_handoff`, `milestone_review_count`, `latest_review_status`, `latest_review_checkpoint`, `effective_review_pass`, and `review_invalidated_by`. Non-pass states `questions_required`, `blocked`, `skipped`, `missing`, `stale`, and `invalidated` are not pass states. A questions-required review must continue one-question-at-a-time and must not increment `milestone_review_count`. Changing `worktrack_list`, `completion_signals`, `acceptance_criteria`, scope/non-goals, or risk boundary invalidates the checkpoint and requires a fresh review.
+Milestone Review Gate 交接记录了 pre-milestone intake 是否在 Worktrack Init/Dispatch 前产出了 `effective_pass`。交接包必须携带 `milestone_review_gate`、`milestone_review_gate_handoff`、`milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`effective_review_pass` 以及 `review_invalidated_by`。非通过状态（`questions_required`、`blocked`、`skipped`、`missing`、`stale`、`invalidated`）不是通过状态。`questions_required` 状态的复核必须逐题继续，不得递增 `milestone_review_count`。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变更会使 checkpoint 失效，需要重新复核。
 
-These complex gate fields represent a Milestone-side blocking gate, not fixed heavy mode. scanner output is evidence, not verdict. Worktrack execution modes `normal`、`autoreview`、`yolo` remain WorktrackScope policy choices. Missing, blank, placeholder, pending, or incomplete gate handoff must use unresolved gate blocking default and must not be interpreted as clear or `not_applicable`.
+这些 complex gate 字段构成 Milestone 侧阻断关卡，非固定 heavy mode。scanner 输出是证据（evidence），非裁决（verdict）。Worktrack 执行模式 `normal`、`autoreview`、`yolo` 属于 WorktrackScope 策略选择。缺失、空白、placeholder、pending 或 incomplete 的 gate 交接，必须按 unresolved gate blocking default 处理，不得解释为 clear 或 `not_applicable`。
 
-When weak docs are the blocker, `reinforcement_milestone_recommendation` must be structured with `needed`, `recommendation_status`, `recommendation_type`, `suggested_title` or `suggested_purpose`, `reason` or `recommendation_reason`, `temporary_understanding_ref`, `evidence_refs`, `confirmation_required`, and `blocks_implementation_until_resolved`. `recommendation_status` values include `not_needed`, `recommended`, `required`, and `pending_operator_review`. `needed = true` or `blocks_implementation_until_resolved = true` blocks implementation-oriented Worktrack derivation; `needed = false` alone must not block a low-risk clear / `not_applicable` gate.
+当弱文档是阻断项时，`reinforcement_milestone_recommendation` 必须结构化包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 及 `blocks_implementation_until_resolved`。`recommendation_status` 取值包括 `not_needed`、`recommended`、`required` 和 `pending_operator_review`。`needed = true` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生；仅 `needed = false` 不得阻断低风险 clear / `not_applicable` gate。
 
 ### 2. repo-status-skill
 
@@ -300,7 +300,7 @@ canonical executable source：
 - `Gate Evidence`
 - `Harness Control State`
 
-checkpoint writeback:
+checkpoint 写回约定：
 
 - `latest_observed_checkpoint`: repo-refresh 成功后的 git HEAD；空值表示从未建立该幂等锚点，必须执行完整状态估计和刷新
 - `checkpoint_ref`: 与该 HEAD 对应的 branch/ref 描述

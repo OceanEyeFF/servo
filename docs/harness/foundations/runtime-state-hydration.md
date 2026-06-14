@@ -3,7 +3,7 @@ title: Harness Runtime State Hydration
 status: active
 updated: 2026-06-05
 owner: servo-kernel
-last_verified: 2026-06-05
+last_verified: 2026-06-13
 ---
 
 # Harness Runtime State Hydration
@@ -27,7 +27,7 @@ last_verified: 2026-06-05
 
 ## Control State Boundary
 
-`Control State` 只保存控制面状态、路径指针、配置和可复核的 traceability metadata。它不承载 repo 目标、worktrack 业务真相或未验证结论。
+`Control State` 只保存控制平面状态、路径指针、配置和可复核的 traceability metadata。它不承载 repo 目标、worktrack 业务真相或未验证结论。
 
 业务真相写入：
 

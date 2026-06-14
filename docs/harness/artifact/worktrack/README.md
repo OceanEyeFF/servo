@@ -1,3 +1,10 @@
+---
+title: "Harness Artifact / Worktrack"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Harness Artifact / Worktrack
 
 `docs/harness/artifact/worktrack/` 承接 `WorktrackScope` 的局部状态转移对象字段和结构化 artifact 合同。

@@ -1,3 +1,10 @@
+---
+title: "Agent-Facing 最小工作规则入口"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # AGENTS.md
 
 > 这是当前仓库的 agent-facing 最小工作规则入口。若与 `docs/project-maintenance/` 或 `docs/harness/` 冲突，以对应承接层文档为准。

@@ -1,6 +1,13 @@
+---
+title: "Testing Runbooks"
+status: active
+updated: 2026-06-13
+owner: servo-kernel
+last_verified: 2026-06-13
+---
 # Testing Runbooks
 
-`docs/project-maintenance/testing/` 保存 operator-facing 测试执行指南：可重复验证命令、registry/package smoke、Codex/Claude 部署后行为检查。deploy 合同在 `../deploy/`，发布治理在 `../governance/`。
+`docs/project-maintenance/testing/` 保存测试执行指南：可重复执行的验证命令、registry/package smoke、Codex/Claude 部署后行为检查。deploy 合同在 `../deploy/`，发布治理在 `../governance/`。
 
 范围：Python 脚本/治理检查/closeout gate 运行方式、`npx servo-installer`/本地 `.tgz` smoke、Codex/Claude 部署后测试。不包含：deploy 主流程、canonical skill 真相、release approval、npm publish 授权。
 
@@ -18,7 +25,7 @@
 
 ## 真实 Backend Dogfood
 
-Mock、fixture、generator smoke 和单元测试只承接可重复回归层；它们不能单独证明真实 Claude Code 会按新策略工作。新功能只要影响 Harness / skill / adapter / CLI / operator runbook 等实际使用路径，closeout 前默认补 [Claude Post-Deploy Behavior Tests](./claude-post-deploy-behavior-tests.md) 证据。若不跑，closeout 必须说明不适用理由、环境阻塞或后续 Worktrack。
+Mock、fixture 和单元测试只能覆盖可重复的回归验证；当新功能改变了 Harness、skill、adapter、CLI 或 runbook 的实际交互路径时，它们无法替代真实 Claude Code 环境中的行为验证。新功能只要影响 Harness / skill / adapter / CLI / operator runbook 等实际使用路径，closeout 前默认补 [Claude Post-Deploy Behavior Tests](./claude-post-deploy-behavior-tests.md) 证据。若不跑，closeout 必须说明不适用理由、环境阻塞或后续 Worktrack。
 
 ## 和 Deploy 文档的分工
 

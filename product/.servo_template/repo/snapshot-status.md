@@ -15,6 +15,7 @@
 - last_verified_checkpoint:
 - checkpoint_ref:
 - checkpoint_type:
+- checkpoint_policy_match:
 
 ## Architecture And Module Map
 

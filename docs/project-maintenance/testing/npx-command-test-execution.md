@@ -3,7 +3,7 @@ title: "npx Command Test Execution"
 status: active
 updated: 2026-06-07
 owner: servo-kernel
-last_verified: 2026-06-07
+last_verified: 2026-06-13
 ---
 # npx Command Test Execution
 
@@ -115,7 +115,7 @@ for target_name in target-alpha target-beta; do
 done
 ```
 
-Claude commands 在临时 target repo 中通过 Node-owned compatibility lane 执行 package payload。`servo-installer` 不包含 Python fallback；Python deploy scripts 仅作 repo-local reference/parity/governance。
+Claude 命令在临时 target repo 中通过 Node 兼容层执行 package payload。`servo-installer` 不包含 Python fallback；Python deploy scripts 仅作 repo-local reference/parity/governance。
 
 ## What The Registry Runner Does
 

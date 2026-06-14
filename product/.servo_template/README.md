@@ -11,6 +11,8 @@
 - [repo/README.md](./repo/README.md)
 - [worktrack/README.md](./worktrack/README.md)
 - [template/README.md](./template/README.md)
+- [docs/node-type-registry.md](./docs/node-type-registry.md) — Worktrack 节点类型默认规则（Gate 阶段引用，与 `.servo/` 一并分发）
+- [MANIFEST.md](./MANIFEST.md) — 文件清单跟踪，记录每个 template 与 canonical source 的同步状态
 
 规则：
 

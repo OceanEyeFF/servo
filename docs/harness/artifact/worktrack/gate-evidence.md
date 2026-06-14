@@ -3,11 +3,11 @@ title: "Gate Evidence"
 status: active
 updated: 2026-05-13
 owner: servo-kernel
-last_verified: 2026-05-06
+last_verified: 2026-06-13
 ---
 # Gate Evidence
 
-为状态转移裁决提供证据。最少应包含 review/validation/policy 三类证据面。review evidence 使用 `review_profile` 按风险选择 lane，而不是所有变更固定四路 SubAgent。四个可用 review lanes 为：`static-semantic-review`（静态语义解释）、`test-review`（测试 review）、`project-security-review`（security review）、`complexity-performance-review`（代码复杂度和性能 review）。无法委派所选 lanes 时记录 fallback 原因。还需记录每条证据面的 freshness/缺失状态、残余风险、上游约束信号、gate intake readiness、`verdict` 和后续动作。
+为状态转移裁决提供证据。最少应包含 review/validation/policy 三类证据面。review evidence 使用 `review_profile` 按风险选择 lane，而非对所有变更均固定使用四路 SubAgent。四个可用 review lanes 为：`static-semantic-review`（静态语义解释）、`test-review`（测试 review）、`project-security-review`（security review）、`complexity-performance-review`（代码复杂度和性能 review）。无法分派所选 lanes 时记录 fallback 原因。还需记录每条证据面的 freshness/缺失状态、残余风险、上游约束信号、gate intake readiness、`verdict` 和后续动作。
 
 ## review_profile 字段
 
@@ -26,7 +26,7 @@ last_verified: 2026-05-06
 - 普通 canonical skill 修改默认 `standard`。
 - dispatch、authority、path governance、adapter/deploy 安全边界默认 `risky`。
 - control-state、gate、installer/publish、destructive action 默认 `deep`。
-- `deep` 等价于原四路 SubAgent 覆盖；无法真实并行委派时保留 lane 覆盖状态和 fallback 原因。
+- `deep` 等价于原四路 SubAgent 覆盖；无法真实并行分派时保留 lane 覆盖状态和 fallback 原因。
 
 ## Verdict 字段定义
 

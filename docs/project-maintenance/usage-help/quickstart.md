@@ -3,7 +3,7 @@ title: "Harness Quickstart Tutorial"
 status: active
 updated: 2026-05-18
 owner: servo-kernel
-last_verified: 2026-05-18
+last_verified: 2026-06-13
 ---
 
 # Harness Quickstart Tutorial
@@ -63,7 +63,7 @@ npx servo-installer verify --backend agents
 /set-harness-goal-skill
 ```
 
-这一步会创建 `.servo/` 目录并生成 Goal Charter（`repo goal/charter`），定义仓库的长期目标、工程节点类型和系统不变量。
+这一步会创建 `.servo/` 目录并生成 Goal Charter，定义仓库的长期目标、工程节点类型和系统不变量。
 
 初始化完成后，`.servo/` 下会生成：
 - `control-state.md` — Harness 控制面状态
@@ -74,8 +74,26 @@ npx servo-installer verify --backend agents
 
 在启动 Harness 之前，需要理解两个核心概念：
 
-- **Milestone（里程碑）**：一组相关 Worktrack 的集合，有明确的 `purpose`、`completion_signals` 和 `acceptance_criteria`。Milestone 不是凭空出现的 —— 它来自对仓库目标的分析和手动编排。
-- **Worktrack（工作追踪）**：单个受约束的执行单元，有独立的 Git 分支、Contract、Plan/Task Queue 和 Gate Evidence。
+Milestone 是一个比较明确的、界限分明的模块，类似于需求侧的「我要一个功能」。
+Worktrack 则是把 Milestone 根据项目实际情况落到实处的多个子任务——当然内部
+还会有额外的任务规划。
+
+具体来说：
+
+- **Milestone**：一组相关 Worktrack 的集合，有明确的 `purpose`（目的）、
+  `completion_signals`（确认达成所有完成条件）和 `acceptance_criteria`（验收标准）。
+  Milestone 并非凭空产生——它来自对仓库目标的分析和规划。
+- **Worktrack**：单个受约束的执行单元，有独立的 Git 分支、Contract、
+  Plan/Task Queue 和 Gate Evidence。
+
+> **In English:**
+> A Milestone is a clearly bounded module—think of it as "I want a feature" on the
+> requirements side. A Worktrack breaks that Milestone down into concrete, actionable
+> subtasks based on the project's actual situation, with room for additional internal
+> task planning. Each Milestone carries a `purpose`, `completion_signals` (confirmation
+> that all completion conditions are met), and `acceptance_criteria`. Each Worktrack is a
+> single constrained execution unit with its own Git branch, Contract, Plan/Task Queue,
+> and Gate Evidence.
 
 **典型流程：**
 
@@ -143,7 +161,9 @@ Harness 在以下情况会停止并将控制权交还给 programmer：
 
 ### 什么是显式 Unlock
 
-Handback 后，**裸"继续工作"或"继续"不构成有效的 unlock 信号**。Harness 要求 programmer 提供实质性新输入：
+Handback 后，**简单的"继续工作"或"继续"不构成有效的 Unlock 信号**。Harness 要求 programmer 提供实质性新输入：
+
+> 这种设计的目的是要求 human 明确知晓每一轮 AI 做了什么。如果确认模型性能足够好，也可以通过调整全局行为模式变量使其自动验收（不推荐）。
 
 **有效的 unlock 信号示例：**
 - 对 Milestone 的明确验收决定（"接受 MS-xxx"或"拒绝，原因：..."）
@@ -160,10 +180,10 @@ Handback 后，**裸"继续工作"或"继续"不构成有效的 unlock 信号**�
 ### Handback 后的正确操作
 
 ```
-程序员审阅 Milestone 完成状态
+programmer 审阅 Milestone 完成状态
     ↓
 验收通过？
-    ├─ 是 → "接受 MS-xxx，激活下一个 Milestone"
+    ├─ 是 → "接受 MS-xxx，收尾 Milestone，更新 .servo 控制面"
     └─ 否 → "拒绝 MS-xxx，原因：xxx。追加 Worktrack：WT-xxx"
 ```
 
@@ -179,7 +199,9 @@ Harness 在每轮控制回路中会自动报告 Milestone 进度。你也可以�
 
 ### Q: agents 和 claude backend 有什么区别？
 
-`agents` 是主路径，部署到 `.agents/skills/`；`claude` 是兼容路径，部署到 `.claude/skills/`。两者共享同一套 Harness 合同和验证标准。
+`agents` 是主路径，部署到 `.agents/skills/`；`claude` 是为 Claude Code 使用者
+专门编写的 `.claude` 分发路径，提供部署上的支持。两者共享同一套 Harness 合同与
+验证标准。
 
 ### Q: 如何修改仓库目标？
 

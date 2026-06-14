@@ -5,6 +5,8 @@
 ## Metadata
 
 - worktrack_id:
+- milestone_id:
+- derived_from_milestone:
 - branch:
 - baseline_branch:
 - baseline_ref:
@@ -23,6 +25,18 @@
 - gate_criteria:
 - if_interrupted_strategy:
 
+## Branch Policy
+
+> 分支来源、worktrack 分支、集成目标、收尾目标的唯一合法来源。
+
+- baseline_branch:
+- branch_source_ref:
+- worktrack_branch:
+- integration_target_ref:
+- closeout_target_ref:
+- final_baseline_branch:
+- checkpoint_base_ref:
+
 ## Worktrack Intake Review
 
 > Milestone 派生 worktrack 必须引用 RepoScope.Decide 的 pre-init intake review。
@@ -36,6 +50,17 @@
 - add_remove_worktrack_recommendations:
 - intake_review_verdict:
 - ready_for_worktrack_init:
+
+## Milestone Review Gate
+
+> Milestone 派生 worktrack 必须验证 Milestone Review Gate 状态。
+
+- milestone_review_gate_ready:
+- latest_review_status:
+- milestone_review_count:
+- latest_review_checkpoint:
+- effective_review_pass:
+- review_invalidated_by:
 
 ## Execution Policy
 

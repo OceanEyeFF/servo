@@ -10,12 +10,44 @@
 
 ## Current Control Level
 
-- repo_scope: active
-- worktrack_scope: closed
+- repo_scope: RepoScope
+- worktrack_scope: RepoScope
+- current_function: Observe
 
 ## Active Worktrack
 
-- 
+- active_worktrack:
+- active_worktrack_branch:
+- active_worktrack_node_type:
+- latest_closed_worktrack:
+- latest_closed_worktrack_commit:
+- worktrack_autonomy_policy:
+
+## Milestone Pipeline
+
+- active_milestone:
+- milestone_status:
+- milestone_pipeline_path:
+- milestone_pipeline_summary:
+- active_milestone_branch:
+- active_milestone_branch_sync_state:
+- active_milestone_progress:
+- active_milestone_review_gate_status:
+- active_milestone_review_count:
+- active_milestone_review_checkpoint:
+- active_milestone_review_blockers:
+- milestone_intake_confirmed:
+
+## Milestone Review Gate
+
+- milestone_review_gate_ready:
+- latest_review_status:
+- milestone_review_count:
+- latest_review_checkpoint:
+- effective_review_pass:
+- review_invalidated_by:
+
+
 
 ## Baseline Branch
 
@@ -94,6 +126,7 @@
   - attempted_carrier:
   - carrier_decision:
   - fallback_reason:
+  - decision_inputs:
 - persistent_authority_notes:
 
 ## Handback Guard
