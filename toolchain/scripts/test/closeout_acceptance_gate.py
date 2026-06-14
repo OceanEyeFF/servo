@@ -1401,6 +1401,13 @@ def main() -> int:
     python = sys.executable
     steps = PROFILE_GATE_MAP.get(getattr(args, "profile", "full"), PROFILE_GATE_MAP["full"])
 
+    if getattr(args, "profile", "full") == "lightweight":
+        print(
+            "WARNING: lightweight gate profile skips test_gate and smoke_gate. "
+            "Not suitable for release or code-change Worktracks.",
+            file=sys.stderr,
+        )
+
     results = []
     backfill_results = []
     passed = True
