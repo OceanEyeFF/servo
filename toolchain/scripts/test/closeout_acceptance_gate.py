@@ -1399,7 +1399,7 @@ def main() -> int:
     args = parse_args()
     repo_root = args.repo_root.resolve()
     python = sys.executable
-    steps = PROFILE_GATE_MAP.get(args.profile, PROFILE_GATE_MAP["full"])
+    steps = PROFILE_GATE_MAP.get(getattr(args, "profile", "full"), PROFILE_GATE_MAP["full"])
 
     results = []
     backfill_results = []
