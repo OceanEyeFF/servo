@@ -70,6 +70,24 @@ class GateStep:
     required: bool = True
 
 
+PROFILE_GATE_MAP: dict[str, list[GateStep]] = {
+    "lightweight": [
+        GateStep(gate="scope_gate"),
+        GateStep(gate="spec_gate"),
+        GateStep(gate="static_gate"),
+        GateStep(gate="cache_gate"),
+    ],
+    "full": [
+        GateStep(gate="scope_gate"),
+        GateStep(gate="spec_gate"),
+        GateStep(gate="static_gate"),
+        GateStep(gate="cache_gate"),
+        GateStep(gate="test_gate"),
+        GateStep(gate="smoke_gate"),
+    ],
+}
+
+
 def extract_verify_issue_codes(stdout: str) -> list[str]:
     return re.findall(r"^\s+- ([a-z0-9-]+):", stdout, flags=re.MULTILINE)
 
@@ -104,6 +122,13 @@ def parse_args() -> argparse.Namespace:
         "--json",
         action="store_true",
         help="Emit JSON only.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=["lightweight", "full"],
+        default="full",
+        help="Gate profile: 'lightweight' runs governance gates only (scope/spec/static/cache), "
+             "'full' runs all 6 sequential gates including test and smoke (default).",
     )
     return parser.parse_args()
 
@@ -1374,14 +1399,7 @@ def main() -> int:
     args = parse_args()
     repo_root = args.repo_root.resolve()
     python = sys.executable
-    steps = [
-        GateStep(gate="scope_gate"),
-        GateStep(gate="spec_gate"),
-        GateStep(gate="static_gate"),
-        GateStep(gate="cache_gate"),
-        GateStep(gate="test_gate"),
-        GateStep(gate="smoke_gate"),
-    ]
+    steps = PROFILE_GATE_MAP.get(args.profile, PROFILE_GATE_MAP["full"])
 
     results = []
     backfill_results = []
