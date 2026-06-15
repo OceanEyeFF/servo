@@ -129,6 +129,28 @@ PULL_REQUEST_TEMPLATE_PATH = ".github/pull_request_template.md"
 CODEX_HARNESS_MANUAL_RUNBOOK_DOC = (
     "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md"
 )
+SKILL_DEPLOYMENT_MAINTENANCE_RUNBOOK_DOC = (
+    "docs/servo-installer/runbooks/skill-deployment-maintenance.md"
+)
+SKILL_DEPLOYMENT_MAINTENANCE_REQUIRED_TERMS = [
+    "Source maintenance checklist",
+    "canonical skill source",
+    "product/harness/skills/README.md",
+    "adapter payload",
+    "canonical_paths",
+    "required_payload_files",
+    "`.servo` template",
+    "product/.servo_template/",
+    "deploy_servo.js",
+    "Harness artifact contract",
+    "docs/harness/artifact/",
+    "operator-facing installer behavior",
+    "docs/servo-installer/contracts/",
+    "toolchain/scripts/deploy/README.md",
+    "package and release program",
+    "no-publish boundary",
+    "governance_semantic_check.py",
+]
 SUBAGENT_DEFAULT_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/dispatch-skills/SKILL.md",
@@ -1750,6 +1772,23 @@ def check_manual_runbook_agents_skill_count(repo_root: Path, report: SemanticRep
     report.add_info("checked Codex Harness manual runbook agents skill count")
 
 
+def check_skill_deployment_maintenance_checklist(repo_root: Path, report: SemanticReport) -> None:
+    path = repo_root / SKILL_DEPLOYMENT_MAINTENANCE_RUNBOOK_DOC
+    if not path.is_file():
+        report.add_failure(
+            f"missing skill deployment maintenance runbook: {SKILL_DEPLOYMENT_MAINTENANCE_RUNBOOK_DOC}"
+        )
+        return
+    text = path.read_text(encoding="utf-8")
+    for term in SKILL_DEPLOYMENT_MAINTENANCE_REQUIRED_TERMS:
+        if term not in text:
+            report.add_failure(
+                "skill deployment maintenance checklist missing term "
+                f"{term!r}: {SKILL_DEPLOYMENT_MAINTENANCE_RUNBOOK_DOC}"
+            )
+    report.add_info("checked skill deployment maintenance checklist")
+
+
 def check_subagent_dispatch_default_contract(repo_root: Path, report: SemanticReport) -> None:
     checked = 0
     for relative_path in SUBAGENT_DEFAULT_CONTRACT_PATHS:
@@ -3119,6 +3158,7 @@ def main() -> int:
     check_review_verify_docs_list_closeout_steps(repo_root, report)
     check_docs_list_closeout_cache_roots(repo_root, report)
     check_manual_runbook_agents_skill_count(repo_root, report)
+    check_skill_deployment_maintenance_checklist(repo_root, report)
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)

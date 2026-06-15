@@ -37,6 +37,7 @@ docs/servo-installer/
 │   ├── deploy-runbook.md
 │   ├── aw-runtime-upgrade-runbook.md
 │   ├── skill-deployment-maintenance.md
+│   ├── distribution-maintenance-checklist.md
 │   └── uninstall-remove-runbook.md
 │
 ├── reference/                      ← 参考与说明（explanatory）
@@ -60,6 +61,7 @@ docs/servo-installer/
 |------|---------|
 | `distribution-entrypoint-contract.md` | CLI/TUI 包装层语义、命令面合同、backend 枚举、bundle aggregate 模式 |
 | `deploy-mapping-spec.md` | canonical source → target 映射链路、最小字段、target 命名约定 |
+| `distribution-entrypoint-contract.md` | `reconcile-servo` 与 `migrate-runtime` 的 CLI/TUI 命令面边界 |
 | `aw-runtime-upgrade-contract.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` 的安全边界 |
 | `aw-residue-classification-contract.md` | `.aw` / `aw-*` / `aw.marker` 遗留的分类、allowlist 与 remediation 判定 |
 | `payload-provenance-trust-boundary.md` | payload 来源种类、source/target root 分离、GitHub source 准入 |
@@ -74,6 +76,7 @@ operator 执行具体任务时使用。
 | `deploy-runbook.md` | 首次安装或完整重装 |
 | `aw-runtime-upgrade-runbook.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` |
 | `skill-deployment-maintenance.md` | 已有安装，判断 drift/conflict，diagnose/verify 分流 |
+| `distribution-maintenance-checklist.md` | 维护技能源码、适配器载荷、模板、合同或安装器行为时的源码侧同步清单 |
 | `uninstall-remove-runbook.md` | 安全卸载，prune --all 边界，bundle 模式行为 |
 
 ### reference/ — 参考与说明
@@ -116,12 +119,14 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 |------|------|
 | 安装 servo-installer 管理的 skills | runbooks/deploy-runbook.md |
 | 更新到新版本 | runbooks/skill-deployment-maintenance.md |
+| 更新已有 `.servo/` 管理体系模板 | runbooks/deploy-runbook.md#servo-模板调和reconcile-servo |
 | 诊断安装状态 | runbooks/skill-deployment-maintenance.md |
 | 完全卸载 | runbooks/uninstall-remove-runbook.md |
 | 理解 installer 写入哪些文件 | reference/managed-files-ownership.md |
 | 理解 CLI 命令不变量 | contracts/distribution-entrypoint-contract.md |
 | 理解 canonical source 到 target 的映射 | contracts/deploy-mapping-spec.md |
 | 升级 legacy `.aw/` runtime state | runbooks/aw-runtime-upgrade-runbook.md |
+| 区分 `.servo` 模板调和与 legacy `.aw -> .servo` runtime migration | contracts/distribution-entrypoint-contract.md |
 | 分类 `.aw` / `aw-*` / `aw.marker` 分发遗留 | contracts/aw-residue-classification-contract.md |
 | 理解旧版本兼容处理窗口 | reference/legacy-version-handling.md |
 | 复现 TUI `.aw -> .servo` migration 缺口 | reference/tui-aw-runtime-migration-repro.md |

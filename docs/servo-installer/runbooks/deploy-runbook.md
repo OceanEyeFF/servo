@@ -45,45 +45,47 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `install` 在写入前失败 | 先修 source contract，再从 `prune --all` 重跑 |
 | 想确认重装后是否干净 | 转到 [Skill Deployment 维护流](./skill-deployment-maintenance.md) 跑 `diagnose` 或 `verify` |
 
-## .servo 模板迁移（migrate）
+## .servo 模板同步
 
-`deploy_servo.js migrate` 用于将已有 `.servo/` runtime 目录与最新 `product/.servo_template/` 模板声明式调和。
+`servo-installer reconcile-servo` 对比已有 `.servo/` 运行时目录与当前包中的 `.servo` 模板，自动补齐缺失的节和字段。底层调用 `deploy_servo.js migrate`，是运维侧的首选入口。
 
 ### 原则
 
-- **只追加，不覆盖**：已有 runtime field 的值保持不变
+- **只追加，不覆盖**：已有运行时字段的值保持不变
 - **幂等**：重复执行结果一致
-- **无版本依赖**：仅基于 section/field 名称匹配
+- **无版本依赖**：仅基于节和字段名称匹配
 
 ### 预览（dry-run）
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo --dry-run
+servo-installer reconcile-servo
 ```
 
 输出 JSON：
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo --dry-run --json
+servo-installer reconcile-servo --json
 ```
 
-### 执行迁移
+### 执行同步
 
 ```bash
-node deploy_servo.js migrate --deploy-path /path/to/repo
+servo-installer reconcile-servo --yes
 ```
 
 ### 幂等性验证
 
-迁移后再次 dry-run 应显示 "No changes needed. .servo/ is up to date."
+执行后再次运行 `servo-installer reconcile-servo --json`，`changes` 应为空。TUI 中对应菜单项流程相同：先 dry-run → 要求显式确认 → apply → 自动再次 dry-run 以验证幂等。
 
 ### 故障恢复
 
 | 现象 | 处理 |
 |---|---|
-| migrate 中断后文件不完整 | 重新运行 `migrate`（幂等，自动补齐） |
-| 误覆盖了用户数据 | migrate 不覆盖已有值，应无此风险。如有，检查 template 是否引入了同名 field |
-| template 文件缺失 | migrate 跳过并输出 warning，不影响其他文件 |
-| `.servo/` 目录不存在 | migrate 报错，建议先运行 `generate` 创建初始结构 |
+| 同步中断后文件不完整 | 重新运行 `reconcile-servo`，幂等特性会自动补齐缺失内容 |
+| 误覆盖了用户数据 | `reconcile-servo` 只追加不覆盖，正常情况不会发生。如发生，检查模板是否新增了与已有字段同名的节或字段 |
+| 模板文件缺失 | 辅助程序跳过该文件并输出警告，不影响其他文件的同步 |
+| `.servo/` 目录不存在 | 先完成 Harness 初始化创建目录结构，再执行同步 |
 
-drift/conflict/unrecognized 见 [Skill Deployment 维护流](./skill-deployment-maintenance.md)；字段合同见 [Mapping Spec](../contracts/deploy-mapping-spec.md)；trust boundary 见 [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；pack/smoke/release 见 [Testing](../../project-maintenance/testing/README.md) 和 [Governance](../../project-maintenance/governance/README.md)。
+`reconcile-servo` 不处理 `.aw/` 旧版运行时数据。如果目标仓库仍有 `.aw/` 目录，先阅读 [旧版 `.aw` 运行时升级手册](./aw-runtime-upgrade-runbook.md)，再使用 `migrate-runtime --from aw --to servo` 完成迁移。
+
+诊断命令和故障分流见 [Skill 部署维护流](./skill-deployment-maintenance.md)；字段映射规则见 [映射规格](../contracts/deploy-mapping-spec.md)；载荷来源的信任边界见 [载荷信任边界](../contracts/payload-provenance-trust-boundary.md)；打包、烟测和发布流程见 [测试手册](../../project-maintenance/testing/README.md) 与 [发布治理](../../project-maintenance/governance/README.md)。

@@ -43,15 +43,15 @@ last_verified: 2026-06-14
 
 ## 当前 source release tuple
 
-2026-06-14，当前 source release tuple 已发布为 `v0.6.1-rc.3` next-channel RC prerelease。
+2026-06-15，当前 source release tuple 是 `v0.6.1-rc.4` next-channel RC candidate，尚未发布到 npm registry 或 GitHub Release。
 
-- root `package.json` version：`0.6.1-rc.3`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.1-rc.3`
-- approval lock：`approvedVersion=0.6.1-rc.3`、`approvedGitTag=v0.6.1-rc.3`、`approvedChannel=next`
-- release scope：发布 v0.6.1-rc.3 RC 测试版本，包含 `MS-20260613-004` 已验收的 `deploy_servo.js migrate` 命令实现。
-- publish status：GitHub Release `v0.6.1-rc.3` 已创建为 prerelease；publish workflow run `27488618986` 已完成；npm `servo-installer@0.6.1-rc.3` 已发布；`next` dist-tag 已指向 `0.6.1-rc.3`；`latest` 保持 `0.5.8`。
+- root `package.json` version：`0.6.1-rc.4`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.6.1-rc.4`
+- approval lock：`approvedVersion=0.6.1-rc.4`、`approvedGitTag=v0.6.1-rc.4`、`approvedChannel=next`
+- release scope：发布 v0.6.1-rc.4 RC 测试版本，包含 `MS-20260614-001`、`MS-20260614-002`、`MS-20260614-003` 与 `MS-20260615-001` 已合入 develop 的 installer reconcile、dogfood、测试分层与维护治理改动。
+- publish status：尚未发布；pre-publish probes 显示 npm `servo-installer@0.6.1-rc.4`、local tag `v0.6.1-rc.4`、remote tag `v0.6.1-rc.4` 均未占用。registry 事实仍为 `next` -> `0.6.1-rc.3`，`latest` -> `0.5.8`。
 
-注意：`0.6.1-rc.3` 是 prerelease RC；试用 selector 必须使用 `servo-installer@next`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
+注意：`0.6.1-rc.4` 是 prerelease RC candidate；发布完成前试用 selector `servo-installer@next` 仍解析到已发布的 `0.6.1-rc.3`。默认 `servo-installer` 仍应解析到 `latest` 的 `0.5.8`，除非另有 stable release approval。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 

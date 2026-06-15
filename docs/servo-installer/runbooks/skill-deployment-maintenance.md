@@ -1,9 +1,9 @@
 ---
 title: "Skill Deployment 维护流"
 status: active
-updated: 2026-05-22
+updated: 2026-06-14
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-14
 ---
 # Skill Deployment 维护流
 
@@ -14,6 +14,31 @@ last_verified: 2026-06-13
 ## 推荐维护循环
 
 `diagnose --json` -> `verify` -> 如需恢复则回 deploy runbook 三步重装 -> 重装后再跑 `diagnose`/`verify`。
+
+## 源码侧维护检查清单（Source maintenance checklist）
+
+> 独立入口见 [Distribution Maintenance Checklist](./distribution-maintenance-checklist.md)，该文档面向上游 governance checker 的英文术语验证。
+
+当维护者新增、重命名或修改技能源码、适配器载荷、`.servo` 模板、Harness 合同或运维侧安装器行为时，必须在同一工作追踪内检查以下同步面。无法完成时，在收尾证据中写明理由。
+
+| 变更面 | 同步要求 |
+| --- | --- |
+| canonical skill source（技能源码） | 更新 `product/harness/skills/README.md` 的技能索引和文档追溯链；确认技能包内不依赖包外的运行时文档；若技能名称容易误用，采用带控制域前缀的规范名称 |
+| adapter payload（适配器载荷） | 同步 `agents` 和 `claude` 两个后端的 `payload.json`，核对 `skill_id`、`canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段；重命名时旧名只能保留为旧版别名，不可作为推荐入口 |
+| `.servo` template（`.servo` 模板与部署辅助） | 同步 `product/.servo_template/`、`set-harness-goal-skill/assets/`、`deploy_servo.js` 的生成和迁移路径，并补齐预览、执行和幂等性验证证据 |
+| Harness artifact contract（Harness 合同） | 同步 `docs/harness/artifact/` 规范合同、技能模板、`.servo_template` 模板和对应的治理检查 |
+| operator-facing installer behavior（运维侧安装器行为） | 同步 `docs/servo-installer/contracts/`、`docs/servo-installer/runbooks/`、`toolchain/scripts/deploy/README.md` 以及 CLI、TUI、包体烟测的命令说明 |
+| package and release program（打包与发布流程） | 同步 npm 打包和发布预览、tarball 和 npx 烟测、发布通道不发版边界（no-publish boundary），以及必要的收尾证据 |
+
+最小本地检查：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py
+PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
+npm test --prefix toolchain/scripts/deploy
+```
+
+以上检查清单面向源码侧维护者。运维侧日常使用只需下方 diagnose / verify 分流。
 
 ## 只读命令角色
 
@@ -44,6 +69,7 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `unrecognized-target-directory` | 不让脚本猜测；人工确认保留、改名或删除 |
 | `target-payload-drift`/`missing-target-entry`/`missing-required-payload` | 默认完整重装，除非确认是更上游 source 问题 |
 | legacy `.aw/` runtime state exists | 不走 `prune --all`；先看 [Legacy `.aw` Runtime Upgrade Runbook](./aw-runtime-upgrade-runbook.md) |
+| `.servo/` runtime 缺少新模板 section/file | 先运行 `servo-installer reconcile-servo --json` 预览；确认后运行 `servo-installer reconcile-servo --yes`，再跑第二次 `--json` 验证 `changes` 为空 |
 
 已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](../contracts/deploy-mapping-spec.md) + [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../../project-maintenance/testing/README.md) + [Governance](../../project-maintenance/governance/README.md)。
 

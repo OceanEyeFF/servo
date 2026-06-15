@@ -10,7 +10,7 @@
 | `path_governance_check.py` | markdown 链接、主入口完整性、frontmatter 检查 | path, link, frontmatter, entry |
 | `governance_semantic_check.py` | 模板存在性、知识页回链、skill 自洽性、orphan 检查 | template, handoff, authority, skill, orphan |
 | `scope_gate_check.py` | 改动范围是否越界 | scope, in_scope, out_of_scope |
-| `closeout_acceptance_gate.py` | closeout 串联 gate（scope/spec/static/cache/test/smoke） | closeout, gate, cache, smoke |
+| `closeout_acceptance_gate.py` | 收尾门禁，依次执行 scope / spec / static / cache / test / smoke 六道检查点。支持 `--profile lightweight`（仅治理检查）和 `--profile full`（全部六道，默认） | closeout, gate, cache, smoke, profile |
 | `complexity_signal_scanner.py` | repo 复杂度信号扫描（只读） | complexity, scanner, compose, service |
 | `repo_analysis_contract_check.py` | Repo Analysis 模板 contract 检查 | analysis, contract, template |
 | `runtime_artifact_consistency_simulation.py` | milestone/backlog/control-state 一致性模拟 | runtime, artifact, consistency, simulation |
@@ -52,6 +52,19 @@ Checher 输出中使用的英文关键词及其对应的中文语义：
 | gate | 关卡 |
 
 ## 当前主线
+
+### 门禁方案
+
+`closeout_acceptance_gate.py` 支持两种 profile：
+
+| 方案 | 执行的检查点 | 适用场景 | 耗时 |
+|---------|-------|------|------|
+| `lightweight`（轻量） | scope_gate, spec_gate, static_gate, cache_gate | 纯文档修改、配置调整、小范围分析任务 | 快（< 30s） |
+| `full`（完整，默认） | scope_gate, spec_gate, static_gate, cache_gate, test_gate, smoke_gate | 默认行为；发布版本、功能开发、代码修改任务 | 慢（数分钟） |
+
+轻量方案会跳过 test_gate（含 pytest、npm test 和 tarball 烟测）以及 smoke_gate。涉及发布或代码修改的任务必须用完整方案。
+
+### 原有内容
 
 - `folder_logic_check.py`：检查根目录分层、一级目录白名单、hidden/state/mount layer 例外白名单，以及 `docs/` / `toolchain/` 下的错位内容
 - `path_governance_check.py`：检查 markdown 相对链接、关键主入口、路径/文档治理回链、`docs/project-maintenance/` 与 `docs/harness/` 主线入口完整性、正文文档 frontmatter、目录状态约束和 `.gitignore` 中的关键 hidden-layer 忽略项
