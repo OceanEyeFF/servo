@@ -1643,6 +1643,12 @@ function isEffectiveEmpty(value) {
   return false;
 }
 
+function sectionHasMeaningfulValue(section) {
+  if (!section) return false;
+  if ((section.fields || []).some((field) => !isEffectiveEmpty(field.value))) return true;
+  return (section.subSections || []).some((subSection) => sectionHasMeaningfulValue(subSection));
+}
+
 function reconcileFile(template, runtime, spec) {
   const changes = [];
   if (!runtime) {
@@ -1659,7 +1665,9 @@ function reconcileFile(template, runtime, spec) {
   for (const tSection of template.sections) {
     const rSection = runtime.sections.find(s => s.name === tSection.name);
     if (!rSection) {
-      changes.push({ type: 'append_section', file: spec.outputRelpath, section: tSection.name });
+      if (sectionHasMeaningfulValue(tSection)) {
+        changes.push({ type: 'append_section', file: spec.outputRelpath, section: tSection.name });
+      }
       continue;
     }
 
@@ -1670,10 +1678,13 @@ function reconcileFile(template, runtime, spec) {
 
     for (const tField of tSection.fields) {
       const rField = rKeyMap.get(tField.key);
+      const templateHasMeaningfulValue = !isEffectiveEmpty(tField.value);
       if (!rField) {
-        // Field missing in runtime → append
-        changes.push({ type: 'append_field', file: spec.outputRelpath, section: tSection.name, key: tField.key, value: tField.value });
-      } else if (tField.value && !isEffectiveEmpty(tField.value) && isEffectiveEmpty(rField.value)) {
+        if (templateHasMeaningfulValue) {
+          // Field missing in runtime and template carries a real default → append.
+          changes.push({ type: 'append_field', file: spec.outputRelpath, section: tSection.name, key: tField.key, value: tField.value });
+        }
+      } else if (templateHasMeaningfulValue && isEffectiveEmpty(rField.value)) {
         // Template has meaningful value, runtime is empty/N/A → append template value
         changes.push({ type: 'append_field', file: spec.outputRelpath, section: tSection.name, key: tField.key, value: tField.value });
       }
@@ -1683,7 +1694,9 @@ function reconcileFile(template, runtime, spec) {
     for (const tSub of tSection.subSections) {
       const rSub = (rSection.subSections || []).find(s => s.name === tSub.name);
       if (!rSub) {
-        changes.push({ type: 'append_sub_section', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}` });
+        if (sectionHasMeaningfulValue(tSub)) {
+          changes.push({ type: 'append_sub_section', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}` });
+        }
         continue;
       }
       const subKeyMap = new Map();
@@ -1692,9 +1705,12 @@ function reconcileFile(template, runtime, spec) {
       }
       for (const tField of tSub.fields) {
         const rField = subKeyMap.get(tField.key);
+        const templateHasMeaningfulValue = !isEffectiveEmpty(tField.value);
         if (!rField) {
-          changes.push({ type: 'append_nested_field', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}`, key: tField.key, value: tField.value });
-        } else if (tField.value && !isEffectiveEmpty(tField.value) && isEffectiveEmpty(rField.value)) {
+          if (templateHasMeaningfulValue) {
+            changes.push({ type: 'append_nested_field', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}`, key: tField.key, value: tField.value });
+          }
+        } else if (templateHasMeaningfulValue && isEffectiveEmpty(rField.value)) {
           changes.push({ type: 'append_nested_field', file: spec.outputRelpath, section: `${tSection.name} > ${tSub.name}`, key: tField.key, value: tField.value });
         }
       }

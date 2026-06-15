@@ -4717,6 +4717,190 @@ test("reconcile-servo dry-run and apply converge .servo templates", () => {
   }
 });
 
+test("reconcile-servo skips blank worktrack placeholders and remains idempotent", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-reconcile-blank-"));
+  try {
+    const templateRoot = join(root, "templates");
+    const targetRepo = join(root, "target-repo");
+    mkdirSync(join(templateRoot, "worktrack"), { recursive: true });
+    mkdirSync(join(targetRepo, ".servo", "worktrack"), { recursive: true });
+
+    writeFileSync(join(templateRoot, "worktrack", "plan-task-queue.md"), [
+      "# Plan / Task Queue",
+      "",
+      "## Metadata",
+      "- worktrack_id:",
+      "- updated:",
+      "- current_phase:",
+      "- contract_ref:",
+      "- queue_status:",
+      "",
+      "## Task List",
+      "",
+      "1. [ ]",
+      "   - task_id:",
+      "   - status:",
+      "   - priority:",
+      "   - assigned:",
+      "   - description:",
+      "   - depends_on:",
+      "   - acceptance:",
+      "   - risk_level:",
+      "   - stop_condition:",
+      "2. [ ]",
+      "   - task_id:",
+      "   - status:",
+      "   - priority:",
+      "   - assigned:",
+      "   - description:",
+      "   - depends_on:",
+      "   - acceptance:",
+      "   - risk_level:",
+      "   - stop_condition:",
+    ].join("\n"), "utf8");
+    writeFileSync(join(templateRoot, "worktrack", "contract.md"), [
+      "# Worktrack Contract",
+      "",
+      "## Metadata",
+      "- worktrack_id:",
+      "- branch:",
+      "- baseline_branch:",
+      "- baseline_ref:",
+      "- owner:",
+      "- updated:",
+      "- contract_status:",
+      "",
+      "## Scope",
+      "",
+      "### Control Signal",
+      "- 范围摘要（一句话）：",
+      "",
+      "### Supporting Detail",
+      "- 详细范围项：",
+    ].join("\n"), "utf8");
+    writeFileSync(join(templateRoot, "worktrack", "gate-evidence.md"), [
+      "# Gate Evidence",
+      "",
+      "## Metadata",
+      "- worktrack_id:",
+      "- updated:",
+      "- gate_round:",
+      "- required_evidence_lanes:",
+      "- review_profile:",
+      "",
+      "## Review Lane",
+      "",
+      "### Control Signal",
+      "- confidence:",
+      "- ready_for_gate:",
+    ].join("\n"), "utf8");
+    writeFileSync(join(templateRoot, "control-state.md"), "# Control\n", "utf8");
+    writeFileSync(join(templateRoot, "goal-charter.md"), "# Goal\n", "utf8");
+
+    writeFileSync(join(targetRepo, ".servo", "worktrack", "plan-task-queue.md"), [
+      "# Plan / Task Queue",
+      "",
+      "## Metadata",
+      "- worktrack_id: WT-20260615-v061-rc4-post-publish-sync",
+      "- milestone_id: MS-20260615-002",
+      "- node_type: docs",
+      "- total_tasks: 5",
+      "- completed_tasks: 5",
+      "- selected_next_action_id: closeout",
+      "",
+      "## Task List",
+      "",
+      "### RC4-SYNC-001: Version fact scope scan",
+      "",
+      "- status: done",
+      "- priority: P0",
+      "- assigned: current-carrier",
+      "- description: Identify stale release facts.",
+      "- depends_on: []",
+      "- risk_level: low",
+    ].join("\n"), "utf8");
+    writeFileSync(join(targetRepo, ".servo", "worktrack", "contract.md"), [
+      "# Worktrack Contract",
+      "",
+      "## Metadata",
+      "- worktrack_id: WT-20260615-v061-rc4-post-publish-sync",
+      "- 分支：develop",
+      "- 基准分支：develop",
+      "- 基准引用：develop@f140c96",
+      "- 约定状态：active",
+      "- milestone_id：MS-20260615-002",
+      "",
+      "## Scope",
+      "",
+      "- Update docs.",
+    ].join("\n"), "utf8");
+    writeFileSync(join(targetRepo, ".servo", "worktrack", "gate-evidence.md"), [
+      "# Gate Evidence",
+      "",
+      "## Metadata",
+      "- worktrack_id: WT-20260615-v061-rc4-post-publish-sync",
+      "- milestone_id: MS-20260615-002",
+      "- node_type: docs",
+      "- gate_status: passed",
+      "",
+      "## Evidence Slots",
+      "",
+      "- validation: passed",
+    ].join("\n"), "utf8");
+
+    const env = {
+      ...process.env,
+      SERVO_HARNESS_TARGET_REPO_ROOT: targetRepo,
+    };
+    const dryRun = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--json",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    const dryRunSummary = JSON.parse(dryRun.stdout);
+    assert.equal(
+      dryRunSummary.changes.some((change) => change.type === "append_field" && change.value === ""),
+      false,
+    );
+    assert.equal(
+      dryRunSummary.changes.some((change) => change.file === "worktrack/plan-task-queue.md" && change.section === "Task List"),
+      false,
+    );
+    assert.equal(
+      dryRunSummary.changes.some((change) => change.file.startsWith("worktrack/")),
+      false,
+    );
+
+    const apply = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--yes",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(apply.status, 0, apply.stderr);
+    const planTaskQueue = readFileSync(join(targetRepo, ".servo", "worktrack", "plan-task-queue.md"), "utf8");
+    assert.doesNotMatch(planTaskQueue, /- task_id:\n- status:/);
+    assert.doesNotMatch(planTaskQueue, /- updated:\n- current_phase:/);
+    assert.doesNotMatch(planTaskQueue, /## Task Window/);
+
+    const secondDryRun = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--json",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(secondDryRun.status, 0, secondDryRun.stderr);
+    assert.deepEqual(JSON.parse(secondDryRun.stdout).changes, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("migrate-runtime --yes --reinstall agents copies runtime then refreshes managed skill payload", () => {
   const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
   try {
