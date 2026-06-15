@@ -17,7 +17,7 @@ Manages branch/merge sequence, GitHub Release creation, publish workflow observa
 
 Only start after passing Pre-Publish Governance, tuple still satisfies Channel Governance, root `package.json` has approved version+lock, and release notes are ready. If the release requires a version change, complete [Prepare Candidate Version](./servo-installer-pre-publish-governance.md#0-prepare-candidate-version) before opening or updating the release PR.
 
-For release PRs from the approved release development branch to `master`, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on the release development branch, rerun preflight, and push the correction to the PR. The current v0.6.1-rc.3 release cycle uses `develop` as the release development branch.
+For release PRs from the approved release development branch to `master`, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on the release development branch, rerun preflight, and push the correction to the PR. The current v0.6.1-rc.4 release cycle uses `develop` as the release development branch.
 
 ## 1. Refresh Local State
 
