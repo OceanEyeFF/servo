@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-06-14
+updated: 2026-06-15
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-15
 ---
 # npx Command Test Execution
 
@@ -21,7 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
-- last_registry_smoke: 2026-06-14 `servo-installer@next` (`0.6.1-rc.3`, `next`) passed with `--skip-remote`; `latest` remained `0.5.8`
+- last_registry_smoke: 2026-06-15 `servo-installer@next` (`0.6.1-rc.4`, `next`) passed with `--skip-remote`; `latest` remained `0.5.8`
 
 ## Boundary
 
@@ -58,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
+
+2026-06-15 post-publish verification for `servo-installer@next` passed in `--skip-remote` mode after `0.6.1-rc.4` publication. Evidence was kept in `/tmp/servo-installer-registry-npx-smoke-MVeICq/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used `next -> 0.6.1-rc.4`, confirmed `latest -> 0.5.8`, temporary targets passed, and no remote mutation was performed by the smoke.
 
 2026-06-14 post-publish verification for `servo-installer@next` passed in `--skip-remote` mode after `0.6.1-rc.3` publication. Evidence was kept in `/tmp/servo-installer-registry-npx-smoke-gdICWX/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used `next -> 0.6.1-rc.3`, confirmed `latest -> 0.5.8`, temporary targets passed, and no remote mutation was performed by the smoke.
 
