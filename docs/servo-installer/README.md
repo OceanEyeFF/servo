@@ -37,6 +37,7 @@ docs/servo-installer/
 │   ├── deploy-runbook.md
 │   ├── aw-runtime-upgrade-runbook.md
 │   ├── skill-deployment-maintenance.md
+│   ├── distribution-maintenance-checklist.md
 │   └── uninstall-remove-runbook.md
 │
 ├── reference/                      ← 参考与说明（explanatory）
@@ -75,6 +76,7 @@ operator 执行具体任务时使用。
 | `deploy-runbook.md` | 首次安装或完整重装 |
 | `aw-runtime-upgrade-runbook.md` | legacy `.aw/` runtime state 显式升级到 `.servo/` |
 | `skill-deployment-maintenance.md` | 已有安装，判断 drift/conflict，diagnose/verify 分流 |
+| `distribution-maintenance-checklist.md` | 维护技能源码、适配器载荷、模板、合同或安装器行为时的源码侧同步清单 |
 | `uninstall-remove-runbook.md` | 安全卸载，prune --all 边界，bundle 模式行为 |
 
 ### reference/ — 参考与说明

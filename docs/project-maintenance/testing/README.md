@@ -13,7 +13,7 @@ last_verified: 2026-06-13
 
 ## 测试分层
 
-当前测试按 5 个集成测试层加 5 个独立验证层组织。完整定义见 `.servo/worktrack/test-lane-taxonomy-report.md`。
+当前测试按 5 个集成测试层加 5 个独立验证层组织。完整定义见 [测试分层定义](./test-lane-taxonomy.md)，运行时工作追踪证据见 `.servo/worktrack/test-lane-taxonomy-report.md`。
 
 ### 集成测试层
 

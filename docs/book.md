@@ -146,11 +146,12 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 #### 3.2 测试验证
 
 1. [project-maintenance/testing/README.md](./project-maintenance/testing/README.md)
-2. [project-maintenance/testing/dogfood-target-repo-registry.md](./project-maintenance/testing/dogfood-target-repo-registry.md)
-3. [project-maintenance/testing/python-script-test-execution.md](./project-maintenance/testing/python-script-test-execution.md)
-4. [project-maintenance/testing/npx-command-test-execution.md](./project-maintenance/testing/npx-command-test-execution.md)
-5. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
-6. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
+2. [project-maintenance/testing/test-lane-taxonomy.md](./project-maintenance/testing/test-lane-taxonomy.md)
+3. [project-maintenance/testing/dogfood-target-repo-registry.md](./project-maintenance/testing/dogfood-target-repo-registry.md)
+4. [project-maintenance/testing/python-script-test-execution.md](./project-maintenance/testing/python-script-test-execution.md)
+5. [project-maintenance/testing/npx-command-test-execution.md](./project-maintenance/testing/npx-command-test-execution.md)
+6. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
+7. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
 
 ---
 
@@ -180,7 +181,8 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 1. [servo-installer/runbooks/deploy-runbook.md](./servo-installer/runbooks/deploy-runbook.md)
 2. [servo-installer/runbooks/aw-runtime-upgrade-runbook.md](./servo-installer/runbooks/aw-runtime-upgrade-runbook.md)
 3. [servo-installer/runbooks/skill-deployment-maintenance.md](./servo-installer/runbooks/skill-deployment-maintenance.md)
-4. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
+4. [servo-installer/runbooks/distribution-maintenance-checklist.md](./servo-installer/runbooks/distribution-maintenance-checklist.md)
+5. [servo-installer/runbooks/uninstall-remove-runbook.md](./servo-installer/runbooks/uninstall-remove-runbook.md)
 
 ##### 4.1.3 参考（Reference）
 
