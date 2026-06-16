@@ -4901,6 +4901,46 @@ test("reconcile-servo skips blank worktrack placeholders and remains idempotent"
   }
 });
 
+test("reconcile-servo treats later meaningful duplicate field as converged", () => {
+  const root = mkdtempSync(join(tmpdir(), "servo-installer-reconcile-duplicate-"));
+  try {
+    const templateRoot = join(root, "templates");
+    const targetRepo = join(root, "target-repo");
+    mkdirSync(templateRoot, { recursive: true });
+    mkdirSync(join(targetRepo, ".servo"), { recursive: true });
+
+    writeFileSync(join(templateRoot, "control-state.md"), [
+      "# Harness Control State",
+      "",
+      "## Approval Boundary",
+      "- approval_persistence: one-shot",
+    ].join("\n"), "utf8");
+    writeFileSync(join(targetRepo, ".servo", "control-state.md"), [
+      "# Harness Control State",
+      "",
+      "## Approval Boundary",
+      "- approval_persistence: N/A",
+      "- approval_persistence: one-shot",
+    ].join("\n"), "utf8");
+
+    const env = {
+      ...process.env,
+      SERVO_HARNESS_TARGET_REPO_ROOT: targetRepo,
+    };
+    const dryRun = spawnSync(process.execPath, [
+      join(__dirname, "bin", "servo-installer.js"),
+      "reconcile-servo",
+      "--template-root",
+      templateRoot,
+      "--json",
+    ], { cwd: root, encoding: "utf8", env });
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    assert.deepEqual(JSON.parse(dryRun.stdout).changes, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("migrate-runtime --yes --reinstall agents copies runtime then refreshes managed skill payload", () => {
   const root = mkdtempSync(join(tmpdir(), "servo-installer-migrate-"));
   try {

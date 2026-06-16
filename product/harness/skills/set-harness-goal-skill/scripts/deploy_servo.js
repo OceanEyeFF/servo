@@ -1649,6 +1649,17 @@ function sectionHasMeaningfulValue(section) {
   return (section.subSections || []).some((subSection) => sectionHasMeaningfulValue(subSection));
 }
 
+function buildPreferredFieldMap(fields) {
+  const fieldMap = new Map();
+  for (const field of fields) {
+    const existing = fieldMap.get(field.key);
+    if (!existing || (isEffectiveEmpty(existing.value) && !isEffectiveEmpty(field.value))) {
+      fieldMap.set(field.key, field);
+    }
+  }
+  return fieldMap;
+}
+
 function reconcileFile(template, runtime, spec) {
   const changes = [];
   if (!runtime) {
@@ -1671,10 +1682,7 @@ function reconcileFile(template, runtime, spec) {
       continue;
     }
 
-    const rKeyMap = new Map();
-    for (const f of rSection.fields) {
-      if (!rKeyMap.has(f.key)) rKeyMap.set(f.key, f);
-    }
+    const rKeyMap = buildPreferredFieldMap(rSection.fields);
 
     for (const tField of tSection.fields) {
       const rField = rKeyMap.get(tField.key);
@@ -1699,10 +1707,7 @@ function reconcileFile(template, runtime, spec) {
         }
         continue;
       }
-      const subKeyMap = new Map();
-      for (const f of rSub.fields) {
-        if (!subKeyMap.has(f.key)) subKeyMap.set(f.key, f);
-      }
+      const subKeyMap = buildPreferredFieldMap(rSub.fields);
       for (const tField of tSub.fields) {
         const rField = subKeyMap.get(tField.key);
         const templateHasMeaningfulValue = !isEffectiveEmpty(tField.value);
