@@ -1,7 +1,7 @@
 ---
 title: "根目录分层"
 status: active
-updated: 2026-05-26
+updated: 2026-06-15
 owner: servo-kernel
 last_verified: 2026-06-13
 ---
@@ -24,6 +24,7 @@ last_verified: 2026-06-13
 | Distribution Manifest Layer | `package.json` | npm/npx 分发包络元数据 | 业务源码真相、运行状态 |
 | Repo-local Install / Mount Layer | `.claude/` `.agents/` | repo-local 安装载荷、挂载与 deploy target | 主线真相、业务源码 |
 | Repo-local State Layer | `.servo/` `.autoworkflow/` `.spec-workflow/` | 运行状态、Harness 控制面运行产物；`.autoworkflow/` 与 `.spec-workflow/` 仅保留 legacy / compatibility state 语义 | 主线入口、业务源码、长期真相 |
+| Repo-local Test Execution State Layer | `.test/` | 本地 dogfood / freeze specimen / testcase execution state；用于 ignored 的测试标本、规则草案、测试用例草案和派生执行工作区 | 主线入口、业务源码、长期真相、canonical Harness runtime |
 | Repo-local Execution Config Layer | `.codex/` | repo-local 执行配置 | 长期真相正文、运行产物 |
 | Compatibility Navigation Layer | `.nav/` | 兼容导航 | 结构定义与规则正文 |
 | Compatibility Shim Layer | `tools/` | 兼容入口 shim | canonical 逻辑实现 |
@@ -59,6 +60,10 @@ Repo-local Harness runtime control-plane state，可被治理检查识别为合�
 ### 6. `package.json`
 
 只承接 `servo-installer` 的 npm/npx 分发包络元数据，可从根目录打包 `product/` 中的 canonical Harness payload 和 `toolchain/scripts/deploy/` 中的 wrapper 工具，不得把业务源码真相迁出 `product/`。发布动作由 deploy/release 合同控制。
+
+### 7. `.test/`
+
+Repo-local dogfood test execution state。允许作为 ignored 根目录对象存在，用于本地 freeze repo specimen、规则草案、测试用例草案和后续派生执行工作区；不得入库，不得承接长期真相、canonical source、发布产物或远程副作用凭据。需要长期化的规则、流程或结论必须回写到 `docs/project-maintenance/`、`docs/harness/`、`product/` 或 `toolchain/` 的正式承接层。
 
 ## 四、新增根目录对象规则
 

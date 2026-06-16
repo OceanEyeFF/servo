@@ -4,6 +4,7 @@
 .spec-workflow/
 .exrepos/
 .logs/
+.test/
 
 # Repo-local install/mount targets remain ignored by default.
 .agents/
