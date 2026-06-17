@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Pre-Publish Governance"
 status: active
-updated: 2026-05-27
+updated: 2026-06-17
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-17
 ---
 # servo-installer Pre-Publish Governance
 
@@ -124,9 +124,121 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/closeout_acceptance_gat
 
 完成 [npx Command Test Execution](../../testing/npx-command-test-execution.md) 定义的 local package smoke；证据要求属于本页，命令矩阵与 pass criteria 属 testing runbook。
 
-## 5. Approval Lock
+## 5. Real Dogfood Gate
 
-前述检查通过后才可设置 approval lock：
+> 目的：确认已发布的 RC 候选包在真实 target repo 上通过 skills 更新、`.servo` reconcile 收敛和 Harness 入口语义的 dogfood 验证。local-source-root pass、unit test、fixture 和 pack dry-run 不能替代真实 registry-only package surface 证据。
+
+### 5.1 为什么需要 Real Dogfood Gate
+
+- **unit / fixture / deploy test** 在 source checkout 内运行，不经过 npm registry package surface → 不能证明已发布包在外部 repo 上的行为
+- **local-source-root pass**（通过 `SERVO_HARNESS_REPO_ROOT` 指向 source checkout）是补充证据，不是 registry-only package proof；它证明当前 HEAD 的 reconcile helper/template 可以收敛，但不证明已发布的 npm tarball 含有相同版本的 helper/template
+- **local `.tgz` smoke** 验证打包结构、命令入口与基本 install/verify 周期，但不验证跨 repo `.servo` reconcile 收敛
+- **git diff/status** 需要 `.gitignore` 配合才能感知 `.skills`/`.agents`/`.claude`/`.servo` 的变化；当这些 managed surface 被 gitignore 屏蔽时，git status 为空的 repo 仍可能存在未审计的 managed surface 变更
+
+因此，发布 RC 前必须收集以下真实 dogfood 证据。
+
+### 5.2 COV-SKILLS：Skills 更新 Dogfood
+
+在至少 3 个 disposable freeze repo workspace 上，对已发布 `servo-installer@<channel>` 跑 skills update → diagnose → verify 全周期：
+
+- 覆盖 `agents` 和 `claude` 两个 backend
+- 每 target 验证 marker 数量、skill 目录数量与预期一致
+- 验证 `forbidden_surfaces_unchanged: true` 且 `safe_diff_passed: true`
+- 证据锚点：`.test/execution/evidence/cov-skills-summary/` 下的 aggregate manifest
+
+### 5.3 COV-SERVO：`.servo` Reconcile 收敛 Dogfood
+
+在至少 3 个 disposable freeze repo workspace 上，对已发布 `servo-installer@<channel>` 跑 `.servo` reconcile 收敛周期：
+
+```text
+backup .servo → dry-run --json → apply --yes → second dry-run --json
+```
+
+**通过条件**：
+- `second_dry_run_change_count == 0`（收敛）
+- `blank_placeholder_ok == true`（无空白 placeholder field/section 追加）
+- `safe_diff_passed == true` 且 diff 范围限于 `.servo/`
+- `forbidden_surfaces_unchanged == true`
+- freeze manifest digest 在 reconcile 前后不变
+
+**证据锚点**：`.test/execution/evidence/cov-servo-summary/` 下的 aggregate manifest。
+
+### 5.4 Registry-Only 与 Local-Source-Root 的区分
+
+| 模式 | 设置方式 | 证明什么 | 不能证明什么 |
+|------|---------|---------|-------------|
+| **registry-only** | 不设置 `SERVO_HARNESS_REPO_ROOT`，纯 `npx --package servo-installer@<channel>` | 已发布 npm tarball 内的 helper/template 在外部 repo 上的行为 | N/A — 这是最接近 operator 真实使用路径的包面证据 |
+| **local-source-root** | 设置 `SERVO_HARNESS_REPO_ROOT=<source-checkout-path>` | source checkout 内的最新 helper/template 可以收敛；用于回归已发现并修复的 bug | 不能证明已发布 tarball 的行为；不能证明 npm registry 上的包面质量 |
+
+**发布前要求**：registry-only reconcile 收敛是必须项；local-source-root pass 是补充项，可以用来说明 "已知 bug 在 source HEAD 已修复"，但不能替代 registry-only 证据。
+
+如果 registry-only lane 未收敛（如 rc.4 的 blank Task List append_field 非收敛），则该 RC 的包面行为不能通过此 gate。后续修复需要发布新的 RC（如 rc.5）后重新收集 registry-only 证据。此时 local-source-root pass 可以作为 "fix is in HEAD" 的辅助声明，但不得写成 "package surface is fixed"。
+
+### 5.5 Managed Surface Audit
+
+独立于 git status 审计以下 installer/runtime managed surfaces 的完整性：
+
+- `.skills/`：skill payload 目录
+- `.agents/`：agents backend 输出
+- `.claude/`：claude backend 输出
+- `.servo/`：runtime control-plane state
+
+**要求**：
+- 在 reconcile 前后的 workspace baseline 上各跑一次 managed surface audit
+- 记录 content hash，检测 same-size content change（git status 无法感知的变化）
+- 证明 managed surface 变更被完整捕获，不依赖目标 repo 的 `.gitignore` 配置
+- 审计工具的证据能力是"future evidence"级别；本次 dogfood 收集的实际审计数据是"current evidence"级别
+
+**证据锚点**：`.test/` 下的 managed surface audit helper 实现与对应 test coverage（10/10 pytest pass）；dogfood runner 在每次 reconcile 中集成的 `managed_surface_audit_refs`。
+
+### 5.6 COV-HARNESS：Harness 入口语义 Dogfood
+
+在至少 3 个 external freeze repo 上，用真实 agent runtime（Pi `/` Claude）调用 `harness-skill`，验证：
+
+- skill 可被正确解析与加载
+- Harness 控制回路入口可被进入（read-only planning/invocation）
+- 不会误执行危险工具（no unapproved mutation）
+- transcript 和 marker check 通过
+
+**明确不覆盖**：
+- 不证明 SubAgent 真实创建
+- 不证明子代理分派成功
+- 不证明 target repo 实现质量
+- 不拆解模型能力与 Harness 框架贡献（当前归因模型标记为 non-identifiable）
+
+**证据锚点**：`.test/execution/evidence/cov-harness-summary/` 下的 aggregate manifest。
+
+### 5.7 Disposable Workspace 与 Evidence 要求
+
+所有 dogfood 执行必须使用 disposable workspace（freeze repo 的临时副本），不得变更原始 repo 或 freeze specimen：
+
+- 原始 repo：只读 observe only
+- freeze specimen：作为 workspace baseline，reconcile 前后对比 digest
+- disposable workspace：实际执行 reconcile → apply → second dry-run 的目标
+- backup：apply 前备份 workspace `.servo`，用于 restore/convergence 验证
+
+每行 dogfood 的 evidence manifest 必须记录：`protected_mutation`（freeze/remote/release 均未变更）、`stop_or_continue_signal`、`threshold_verdict` 和 `residual_risk`。
+
+### 5.8 收集 Matrix 参考
+
+当前 MS-20260615-003 已验证的 dogfood matrix（`servo-installer@next` → `0.6.1-rc.4`）：
+
+| Coverage Family | Repos | Verdict | 关键 Caveat |
+|----------------|-------|---------|------------|
+| COV-SKILLS | repo-rating-function, minigame1, reqflow | pass | minigame1/reqflow 的 `.agents`/`.claude` 被 `.gitignore` 屏蔽，safe_diff 无路径变更；用 installer diagnose/verify logs 和 managed surface manifest 补充 |
+| COV-SERVO | servo-source-current, repo-rating-function, minigame1, reqflow | pass | **local-source-root mode**（`npx-wrapper-with-local-servo-source-root`），不是 registry-only |
+| COV-HARNESS | repo-rating-function, minigame1, reqflow | pass | Pi read-only invocation/planning only；support-only current-repo row 不计入 release coverage |
+
+**rc.4 已知问题**：
+- registry-only reconcile 在 rc.4 上不收敛（dry-run 84 changes，second dry-run 7 changes，含 27 个 blank Task List append_field）
+- post-rc4 fix（commit `893f8c6` 和 `ddc7467`）在 local source HEAD（`122f6be`）修复了 blank placeholder 和 duplicate-field 收敛问题
+- 但修复后的代码不在已发布的 rc.4 tarball 中；npm `gitHead` 和 remote tag 都指向 `09c3f5c`（rc.4 发布时的 commit）
+- registry-only smoke 对 rc.4 的失败是"已发布包面失败"，不是"当前 HEAD 仍失败"
+- 如需验证修复后的包面行为，需发布新 RC 后重跑 registry-only reconcile
+
+## 6. Approval Lock
+
+前述检查（含 Real Dogfood Gate）通过后才可设置 approval lock：
 
 ```json
 {

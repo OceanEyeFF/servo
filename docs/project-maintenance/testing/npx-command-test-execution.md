@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-06-15
+updated: 2026-06-17
 owner: servo-kernel
-last_verified: 2026-06-15
+last_verified: 2026-06-17
 ---
 # npx Command Test Execution
 
@@ -141,3 +141,103 @@ Record Node/npm 版本、git branch/ref、dist-tags；创建空 git repo + exist
 - 无 push/PR/issue/remote mutation
 - 每 target 有可脱敏反馈的 `servo-installer-npx-run.log`
 - 长期回写只复制脱敏摘要，不存私有路径/token/credential
+
+## `.servo` Reconcile 收敛验证
+
+`.servo` reconcile 的完整收敛周期是 release gate 的核心证据之一。单次 dry-run 通过不代表幂等性。
+
+### 收敛命令序列
+
+```bash
+# 在 disposable workspace 中执行：
+
+# 1. 备份当前 .servo
+cp -r .servo .servo.backup
+
+# 2. 首次 dry-run（发现变更）
+npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo --json
+
+# 3. 应用变更
+npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo --yes
+
+# 4. 第二次 dry-run（验证收敛）
+npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo --json
+# 期望输出: {"changes": [], "errors": [], "filesProcessed": N}
+```
+
+### 收敛判定标准
+
+- `second_dry_run_change_count == 0`：apply 后第二次 dry-run 无变更
+- `blank_placeholder_ok == true`：无 blank value 的 placeholder 追加行为（如空 Task List append_field）
+- `safe_diff_passed == true`：diff 范围限于 `.servo/` 目录
+- `forbidden_surfaces_unchanged == true`：非 `.servo` 文件未被修改
+- `freeze_manifest_digest_unchanged == true`：freeze specimen 在 reconcile 前后不变
+
+### 非收敛示例（rc.4 已知问题）
+
+`servo-installer@next`（`0.6.1-rc.4`）在 registry-only 模式下不收敛：
+- 首次 dry-run：84 changes，含 60 个 blank value field、27 个 blank Task List append_field
+- apply 后第二次 dry-run：7 changes（仍有 blank Task List append_field）
+- 这表明 rc.4 的 reconcile helper/template 在已发布 tarball 中存在非幂等 bug
+- post-rc4 修复（commit `893f8c6`、`ddc7467`）已在 local source HEAD（`122f6be`）修复，但不在已发布的 rc.4 包内
+
+## Registry-Only 与 Local-Source-Root 的区分
+
+`servo-installer` 在运行 reconcile 时有两种 source-root 解析模式，它们证明不同的事情：
+
+| 维度 | Registry-Only | Local-Source-Root |
+|------|-------------|-------------------|
+| **环境设置** | 不设 `SERVO_HARNESS_REPO_ROOT` | `SERVO_HARNESS_REPO_ROOT=<source-checkout-path>` |
+| **helper/template 来源** | npm tarball 内的 `deploy_servo.js` 和 template specs | source checkout 内的最新文件 |
+| **证明什么** | 已发布 npm 包在外部 repo 上的真实行为 | source checkout 内最新代码可以收敛 |
+| **不能证明什么** | N/A — 最接近 operator 真实使用路径 | 不能证明 npm tarball 内的 helper/template 版本相同 |
+| **发布 gate 角色** | **必须项**：证明已发布包面质量 | **补充项**：说明已知 bug 在 source HEAD 是否已修复 |
+
+**关键规则**：
+- 不要用 local-source-root pass 声称 "registry package surface 无问题"
+- 如果 registry-only lane 失败，说明已发布包面有问题，需要修复后发布新 RC 再验证
+- local-source-root pass 可以写成 "fix is in HEAD"，但必须同时说明 "published package still carries the bug"
+
+## Managed Surface Audit
+
+`servo-installer` 管理的 skill 和 control-plane surface（`.skills`、`.agents`、`.claude`、`.servo`）通常被目标 repo 的 `.gitignore` 屏蔽，因此 `git diff` / `git status` 无法感知这些路径的变更。
+
+### 为什么 Git Status 不够
+
+- 目标 repo 的 `.gitignore` 是 repo owner 控制的，installer 不应假设 `.gitignore` 对 managed surface 可见
+- 即使 git status 干净，`.skills`/`.agents`/`.claude`/`.servo` 仍可能已被 installer 修改
+- same-size content change（内容变化但文件大小不变）在 path-level diff 中可能被忽略
+
+### Audit 要求
+
+- 在 reconcile 前后的 workspace 上各跑一次 managed surface audit
+- 记录 content hash per file，检测 same-size content change
+- 覆盖 `.skills/`、`.agents/`、`.claude/`、`.servo/` 四个 managed surface
+- 不依赖目标 repo 的 `.gitignore` 配置
+- audit 工具和 runner 集成位于 `.test/`（gitignored local test assets）
+
+### 与 safe_diff 的关系
+
+- `safe_diff`（path-level diff + forbidden-surface check）：对 tracked 和 git-aware 路径有效
+- `managed_surface_audit`：对 gitignored managed surface 补充独立 hash-level 证据
+- 两者组合形成完整的 reconcile 前后 surface 审计
+
+## Disposable Workspace 方法论
+
+所有 dogfood 和 reconcile 验证必须使用 disposable workspace，不得变更原始 repo：
+
+### 工作流
+
+1. **Freeze specimen**：从 freeze repo 复制一份作为 workspace baseline（不修改 freeze repo 原始文件）
+2. **Create disposable workspace**：从 freeze specimen 创建独立的工作副本
+3. **Record baseline**：记录 workspace 的 `.servo` manifest、git status、freeze manifest digest
+4. **Execute**：在 workspace 内运行 reconcile / skills update 等命令
+5. **Collect evidence**：记录 dry-run JSON、apply stdout、second dry-run JSON、safe_diff、managed surface audit
+6. **Verify boundary**：确认 freeze specimen 未被修改、原始 repo 未被修改、无 remote/release mutation
+7. **Retain or cleanup**：保留证据目录（`.test/execution/evidence/`），清理 disposable workspace
+
+### 反模式
+
+- 直接在原始 repo 上跑 reconcile apply（除非 operator 明确批准）
+- 修改 `.gitignore` 使 managed surface 对 git 可见（这会改变目标 repo 的配置）
+- 用 `git add -f` 强制追踪 gitignored 文件（同样改变 repo 状态）
