@@ -1,6 +1,6 @@
 {
   "name": "servo-installer",
-  "version": "0.6.1-rc.5",
+  "version": "0.6.1",
   "description": "servo harness installer: install, verify, diagnose, and update CLI + TUI",
   "license": "MIT",
   "repository": {
@@ -34,9 +34,9 @@
   },
   "servoInstallerRelease": {
     "realPublishApproval": "approved",
-    "approvedVersion": "0.6.1-rc.5",
-    "approvedGitTag": "v0.6.1-rc.5",
-    "approvedChannel": "next"
+    "approvedVersion": "0.6.1",
+    "approvedGitTag": "v0.6.1",
+    "approvedChannel": "latest"
   },
   "engines": {
     "node": ">=18"
