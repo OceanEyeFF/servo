@@ -1,9 +1,9 @@
 ---
 title: "Testing Runbooks"
 status: active
-updated: 2026-06-13
+updated: 2026-06-17
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-17
 ---
 # Testing Runbooks
 
@@ -61,6 +61,60 @@ last_verified: 2026-06-13
 ## 真实 Backend Dogfood
 
 Mock、fixture 和单元测试只能覆盖可重复的回归验证；当新功能改变了 Harness、skill、adapter、CLI 或 runbook 的实际交互路径时，它们无法替代真实 Claude Code 环境中的行为验证。新功能只要影响 Harness / skill / adapter / CLI / operator runbook 等实际使用路径，closeout 前默认补 [Claude Post-Deploy Behavior Tests](./claude-post-deploy-behavior-tests.md) 证据。若不跑，closeout 必须说明不适用理由、环境阻塞或后续 Worktrack。
+
+### Real Dogfood Gate（发布前）
+
+发布 RC 前，除 unit test / fixture / local package smoke 外，必须收集以下真实 dogfood 证据。详细准入要求见 [servo-installer Pre-Publish Governance](../governance/servo-installer/servo-installer-pre-publish-governance.md#5-real-dogfood-gate)。
+
+#### COV-SKILLS：Skills 更新 Dogfood
+
+在至少 3 个 disposable freeze repo workspace 上验证 `servo-installer@<channel>` 的 skills update/diagnose/verify 全周期。
+
+- **证据锚点**：`.test/execution/evidence/cov-skills-summary/`
+- **覆盖**：repo-rating-function、minigame1、reqflow
+- **通过条件**：agents 和 claude backend 均 23 managed installs，safe_diff passed，forbidden surfaces unchanged
+
+#### COV-SERVO：`.servo` Reconcile 收敛 Dogfood
+
+在至少 3 个 disposable freeze repo workspace 上验证 `.servo` reconcile 的 dry-run → apply → second dry-run 收敛。
+
+- **证据锚点**：`.test/execution/evidence/cov-servo-summary/`
+- **覆盖**：servo-source-current、repo-rating-function、minigame1、reqflow
+- **通过条件**：second dry-run changes=[]，blank_placeholder_ok=true，safe_diff passed，freeze manifest unchanged
+- **关键区分**：本次 COV-SERVO 是 **local-source-root** pass（`npx-wrapper-with-local-servo-source-root`），不是 registry-only；它证明 source HEAD 内的 helper/template 可以收敛，但不能替代 registry-only 包面验证。见 [npx-command-test-execution.md](./npx-command-test-execution.md#registry-only-与-local-source-root-的区分)
+
+#### COV-HARNESS：Harness 入口语义 Dogfood
+
+在至少 3 个 external freeze repo 上用真实 agent runtime 调用 `harness-skill`，验证 skill 解析、入口语义和无越界行为。
+
+- **证据锚点**：`.test/execution/evidence/cov-harness-summary/`
+- **覆盖**：repo-rating-function、minigame1、reqflow（Pi read-only）
+- **明确不覆盖**：SubAgent 真实创建、子代理分派、target repo 实现质量、模型能力与 Harness 框架贡献拆分
+- **support-only row**：current-repo Harness conditional 不计入 release coverage
+
+#### Managed Surface Audit
+
+独立于 git status 审计 `.skills`/`.agents`/`.claude`/`.servo` 的 managed surface 变更。
+
+- **工具位置**：`.test/`（gitignored local test assets）
+- **测试通过**：10/10 pytest pass
+- **覆盖**：content hash、same-size change detection、walk error recording、symlink isolation
+
+#### Registry-Only vs Local-Source-Root
+
+| 模式 | 设置 | 证明什么 | 不证明什么 |
+|------|------|---------|-----------|
+| registry-only | 不设 `SERVO_HARNESS_REPO_ROOT` | 已发布 npm tarball 的真实包面行为 | N/A — 最接近 operator 路径 |
+| local-source-root | `SERVO_HARNESS_REPO_ROOT=<path>` | source HEAD 的最新代码可收敛 | 不能证明已发布包的行为 |
+
+**禁止**：将 local-source-root pass 写成 "registry package surface 无问题"。
+
+#### rc.4 已知问题
+
+- registry-only `servo-installer@next`（`0.6.1-rc.4`）reconcile 不收敛：blank Task List append_field 重复出现
+- post-rc4 修复在 local source HEAD（`122f6be`，commit `893f8c6` + `ddc7467`）中，但不在已发布 rc.4 tarball 中
+- npm gitHead 和 remote tag 均指向 rc.4 发布时的 commit `09c3f5c`
+- 如需验证修复后的包面行为，需发布新 RC 后重跑 registry-only reconcile
 
 ## 和 Deploy 文档的分工
 

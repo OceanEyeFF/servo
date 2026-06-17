@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-06-15
+updated: 2026-06-17
 owner: servo-kernel
-last_verified: 2026-06-15
+last_verified: 2026-06-17
 ---
 # servo-installer Release Channel Governance
 
@@ -93,3 +93,29 @@ approval lock 只能在显式 release-approval worktrack 中修改。
 - [servo-installer Release Operation Model](./servo-installer-release-operation-model.md)
 - [servo-installer Pre-Publish Governance](./servo-installer-pre-publish-governance.md)
 - [npx Command Test Execution](../../testing/npx-command-test-execution.md)
+
+## 当前 Known Issues
+
+### rc.4 (0.6.1-rc.4) Registry-Only Reconcile 非收敛
+
+`servo-installer@next`（`0.6.1-rc.4`）在 registry-only 模式下 `.servo` reconcile 不收敛：
+
+- **现象**：apply 后的 second dry-run 仍有 7 changes，其中含 repeated blank Task List `append_field`（`task_id`、`status`、`priority`、`assigned`、`description`、`depends_on`、`acceptance`、`risk_level`、`stop_condition` 等字段均为空值）
+- **影响**：rc.4 的已发布包面在外部 repo 上不能通过 reconcile 收敛验证
+- **根因**：reconcile helper/template 在写入 runtime artifact 时对已有 blank placeholder field 继续追加，而非 skip
+- **修复状态**：post-rc4 fix（commit `893f8c6` blank placeholder idempotency fix + `ddc7467` duplicate field convergence fix）已在 local source HEAD（`122f6be7f0396639f4ab80d3c40ff5ee1484902f`）中，但不在已发布的 rc.4 tarball 内
+- **npm registry 事实**：`servo-installer@0.6.1-rc.4` 的 `gitHead` 为 `09c3f5cad18262dcb0e5b2e0a68aae187ec0a722`；remote tag `v0.6.1-rc.4` 也指向同一 commit
+- **修复包面验证**：需发布新 RC 后重跑 registry-only reconcile smoke；local-source-root pass 可以声明 "fix in HEAD"，但不能替代 registry-only 包面证据
+- **证据**：`.test/execution/evidence/registry-repro/att-registry-repro-20260617t011911-p0800-a01/manifest.json`；`.test/execution/evidence/light-runtime-smoke-rating-registry/att-light-runtime-smoke-rating-registry-20260617t145310-p0800-a03/manifest.json`
+
+### 发布前 Real Dogfood Gate
+
+自 MS-20260615-003 起，发布 RC 前必须收集真实 dogfood 证据。详细准入要求见 [servo-installer Pre-Publish Governance](./servo-installer-pre-publish-governance.md#5-real-dogfood-gate)。覆盖：
+
+- COV-SKILLS：skills update/diagnose/verify dogfood
+- COV-SERVO：`.servo` reconcile dry-run/apply/second-dry-run 收敛（registry-only 必须项 + local-source-root 补充项）
+- COV-HARNESS：harness-skill 入口语义 read-only invocation
+- Managed Surface Audit：独立于 git status 的 `.skills`/`.agents`/`.claude`/`.servo` hash 审计
+- Disposable workspace 方法论：所有 dogfood 在 freeze repo 临时副本上执行，不变更原始 repo
+
+Dogfood evidence 存放于 `.test/execution/evidence/`；长期参考见 [Testing Runbooks](../../testing/README.md#真实-backend-dogfood)。

@@ -35,6 +35,7 @@ ROOT_ALLOWED_NAMES = {
     ".nav",
     ".pytest_cache",
     ".spec-workflow",
+    ".test",
 }
 ROOT_ALLOWED_PREFIXES = (".git",)
 NAV_SLOT_TARGETS = {
