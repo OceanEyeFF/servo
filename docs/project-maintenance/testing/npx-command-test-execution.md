@@ -214,7 +214,7 @@ npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo
 
 - 在 reconcile 前后的 workspace 上各跑一次 managed surface audit
 - 记录 content hash per file，检测 same-size content change
-- 覆盖 `.skills/`、`.agents`、`.claude`、`.servo` 四个 managed surface
+- 覆盖 `.skills/`、`.agents/`、`.claude/`、`.servo/` 四个 managed surface
 - 不依赖目标 repo 的 `.gitignore` 配置
 - audit 工具和 runner 集成位于 `.test/`（gitignored local test assets）
 
