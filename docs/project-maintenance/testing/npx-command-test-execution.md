@@ -21,7 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
-- last_registry_smoke: 2026-06-15 `servo-installer@next` (`0.6.1-rc.4`, `next`) passed with `--skip-remote`; `latest` remained `0.5.8`
+- last_registry_smoke: 2026-06-17 `servo-installer` (`0.6.1`, `latest`) passed with `--skip-remote`; `next` remained `0.6.1-rc.5`
 
 ## Boundary
 
@@ -58,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
+
+2026-06-17 post-publish verification for stable `servo-installer` passed in `--skip-remote` mode after `0.6.1` publication. Evidence was kept in `/tmp/servo-installer-stable-npx-smoke-20260617/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used default selector `servo-installer -> 0.6.1`, confirmed `next -> 0.6.1-rc.5`, temporary targets passed, existing-work fixture files were preserved, and no remote mutation was performed by the smoke.
 
 2026-06-15 post-publish verification for `servo-installer@next` passed in `--skip-remote` mode after `0.6.1-rc.4` publication. Evidence was kept in `/tmp/servo-installer-registry-npx-smoke-MVeICq/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used `next -> 0.6.1-rc.4`, confirmed `latest -> 0.5.8`, temporary targets passed, and no remote mutation was performed by the smoke.
 
@@ -212,7 +214,7 @@ npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo
 
 - 在 reconcile 前后的 workspace 上各跑一次 managed surface audit
 - 记录 content hash per file，检测 same-size content change
-- 覆盖 `.skills/`、`.agents/`、`.claude/`、`.servo/` 四个 managed surface
+- 覆盖 `.skills/`、`.agents`、`.claude`、`.servo` 四个 managed surface
 - 不依赖目标 repo 的 `.gitignore` 配置
 - audit 工具和 runner 集成位于 `.test/`（gitignored local test assets）
 
