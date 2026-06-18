@@ -15,7 +15,7 @@ last_verified: 2026-06-18
 |------|------|
 | [external-positioning.md](./external-positioning.md) | Servo 对外技术定位、适用场景与文案边界 |
 | [external-technical-architecture.md](./external-technical-architecture.md) | 对外技术叙事、系统工程方法、快慢 tick 架构与平台适配骨架 |
-| [linuxdo-release-post-v061.md](./linuxdo-release-post-v061.md) | Linux Do 开源推广帖 v0.6.1 发布版 |
+| [linuxdo-release-post-v061.md](./linuxdo-release-post-v061.md) | Linux Do 开源推广帖 v0.6.1 发布版仓内副本与平台派生管理规则 |
 
 ## 边界
 
@@ -23,3 +23,4 @@ last_verified: 2026-06-18
 - 不承载 release channel、publish flow 或 pre-publish governance（这些归 `../governance/servo-installer/`）
 - 不承载 Harness doctrine、artifact contract 或 workflow policy（这些归 `../../harness/`）
 - 帖子正文以社区实际发布版本为准；仓内副本作为维护参考
+- 平台派生文案应复用技术/架构骨架，再按平台重写表达；不要把某个平台的正文当成全平台模板

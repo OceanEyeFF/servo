@@ -4,10 +4,35 @@ status: active
 updated: 2026-06-18
 owner: servo-kernel
 last_verified: 2026-06-18
+source_platform: "Linux Do"
+source_url: "TBD"
+copy_status: "managed-platform-sample"
+published_status: "published"
+canonical_copy: "platform-original"
+derivative_policy: "derive-by-platform-from-technical-architecture"
 ---
 # Linux Do v0.6.1 发布推广帖
 
 > 仓内维护说明：本文保留 Linux Do 社区发布语境和原帖表达。技术侧、架构侧和能力边界的整理版见 [Servo 对外技术与架构叙事](./external-technical-architecture.md)。
+
+## 仓内管理说明
+
+本文是 Linux Do 平台语境下的 v0.6.1 发布推广帖仓内副本，定位是 `managed-platform-sample`：
+
+- **原帖正文**：从“本帖使用社区开源推广”开始到文末碎碎念，保留 Linux Do 的平台语气、梗和发布语境；除错别字、失效链接或事实校准外，不把它改成通用模板。
+- **仓内维护说明**：只解释本文在仓库中的管理方式，不代表实际平台正文的一部分。
+- **事实校准来源**：技术侧和架构侧叙事看 [Servo 对外技术与架构叙事](./external-technical-architecture.md)；项目定位和适用场景看 [Servo 对外技术定位与适用场景](./external-positioning.md)；release、install、runtime 事实回到对应 owner 文档，不由本文单独承接。
+- **source_url**：发布帖实际 URL 确认后补入 frontmatter；未确认前保持 `TBD`，不得伪造。
+
+## 平台派生规则
+
+后续写知乎、小红书、Reddit 或其他平台版本时，不从本文逐句改写，而是按下面顺序取材：
+
+1. 先使用 [Servo 对外技术与架构叙事](./external-technical-architecture.md) 保留需求侧、技术侧、架构侧骨架。
+2. 再用 [Servo 对外技术定位与适用场景](./external-positioning.md) 校准适用场景、安装入口和基础边界。
+3. 最后参考本文的 Linux Do 语气和案例，但按目标平台重写叙事节奏、标题、例子密度和互动方式。
+
+平台派生版本不应反向改写本文原帖正文；若派生版本发现事实变化，应回到对应 owner 文档更新，再决定是否给本文加维护说明。
 
 #### 本帖使用社区开源推广，符合推广要求。我申明并遵循社区要求的以下内容：
 
