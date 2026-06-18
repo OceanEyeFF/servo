@@ -156,7 +156,8 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 #### 3.3 社区推广
 
 1. [project-maintenance/community/README.md](./project-maintenance/community/README.md)
-2. [project-maintenance/community/linuxdo-release-post-v061.md](./project-maintenance/community/linuxdo-release-post-v061.md)
+2. [project-maintenance/community/external-positioning.md](./project-maintenance/community/external-positioning.md)
+3. [project-maintenance/community/linuxdo-release-post-v061.md](./project-maintenance/community/linuxdo-release-post-v061.md)
 
 ---
 

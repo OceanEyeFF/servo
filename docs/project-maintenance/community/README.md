@@ -13,6 +13,7 @@ last_verified: 2026-06-18
 
 | 文件 | 说明 |
 |------|------|
+| [external-positioning.md](./external-positioning.md) | Servo 对外技术定位、适用场景与文案边界 |
 | [linuxdo-release-post-v061.md](./linuxdo-release-post-v061.md) | Linux Do 开源推广帖 v0.6.1 发布版 |
 
 ## 边界
