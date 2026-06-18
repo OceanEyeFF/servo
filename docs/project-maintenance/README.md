@@ -18,6 +18,7 @@ last_verified: 2026-06-13
 3. `deploy/` — destructive reinstall 主流程、drift/conflict/unrecognized 维护、已有项目接入
 4. `testing/` — Python 脚本/治理检查/closeout gate 命令、registry `npx`/本地 `.tgz` smoke、Codex/Claude 行为测试
 5. `usage-help/` — `agents`、`claude` 的 backend 差异、安装后使用和 source 变更后的 operator 决策
+6. `community/` — 外部社区推广文案与发布公告草案
 
 ## 从这里怎么进
 
@@ -26,6 +27,7 @@ last_verified: 2026-06-13
 - [deploy/README.md](./deploy/README.md)
 - [testing/README.md](./testing/README.md)
 - [usage-help/README.md](./usage-help/README.md)
+- [community/README.md](./community/README.md)
 
 ## Operator 常见入口
 
