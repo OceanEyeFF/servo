@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-06-13
+updated: 2026-06-19
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-19
 ---
 # Docs Book Spine
 
@@ -153,10 +153,12 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 6. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
 7. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
 
-#### 3.3 社区推广
+#### 3.3 社区推广与对外技术叙事
 
 1. [project-maintenance/community/README.md](./project-maintenance/community/README.md)
-2. [project-maintenance/community/linuxdo-release-post-v061.md](./project-maintenance/community/linuxdo-release-post-v061.md)
+2. [project-maintenance/community/external-positioning.md](./project-maintenance/community/external-positioning.md)
+3. [project-maintenance/community/external-technical-architecture.md](./project-maintenance/community/external-technical-architecture.md)
+4. [project-maintenance/community/linuxdo-release-post-v061.md](./project-maintenance/community/linuxdo-release-post-v061.md)
 
 ---
 
