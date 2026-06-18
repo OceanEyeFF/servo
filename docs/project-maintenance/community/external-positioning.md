@@ -106,11 +106,8 @@ npx servo-installer verify --backend agents
 - 事实更新以 README、usage-help、servo-installer 文档、release governance 和已验证 evidence 为准。
 - 社区平台上的实际发布版本可以保留平台语气；仓内副本用于归档和后续校准，不反向改写 release 或 Harness truth。
 
-## 后续校准项
+## 技术叙事延伸
 
-以下问题交给 `WT-20260618-external-claims-boundary` 审核后再固化到对外文案：
+对外技术介绍不应停留在能力声明表。需要更完整解释系统工程方法、控制论动机、快慢 tick 分层和 Review 粒度设计时，使用 [Servo 对外技术与架构叙事](./external-technical-architecture.md)。
 
-- “兼容 Codex、Pi、Claude Code”的最小准确表述。
-- runtime 支持记录如何描述为“已观察支持”，避免写成认证。
-- v0.6.1 功能清单是否需要逐项映射到已验证 release / dogfood evidence。
-- 安装命令在 TUI、bundle backend、agents backend 三种路径中的默认推荐口径。
+本文只承接定位、适用场景和基础边界；技术侧和架构侧叙事以该文档为主。
