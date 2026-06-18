@@ -1,13 +1,15 @@
 ---
 title: "Servo 对外技术与架构叙事"
 status: active
-updated: 2026-06-18
+updated: 2026-06-19
 owner: servo-kernel
-last_verified: 2026-06-18
+last_verified: 2026-06-19
 ---
 # Servo 对外技术与架构叙事
 
 本文用于整理 Servo 面向外部读者时的技术侧和架构侧表达。它不是安装 runbook，也不是 release governance；它回答的是：为什么 AI coding 需要一个 harness，Servo 用什么技术思路降低大模型工作的偏差、错误和幻觉，以及为什么要把工作拆成不同速度的控制层级。
+
+项目定位、适用场景、安装试用入口和基础表达边界见 [Servo 对外技术定位与适用场景](./external-positioning.md)。本文只承接技术和架构骨架。
 
 ## 需求侧问题
 
