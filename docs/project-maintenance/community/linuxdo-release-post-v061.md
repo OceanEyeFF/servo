@@ -7,6 +7,8 @@ last_verified: 2026-06-18
 ---
 # Linux Do v0.6.1 发布推广帖
 
+> 仓内维护说明：本文保留 Linux Do 社区发布语境和原帖表达。技术侧、架构侧和能力边界的整理版见 [Servo 对外技术与架构叙事](./external-technical-architecture.md)。
+
 #### 本帖使用社区开源推广，符合推广要求。我申明并遵循社区要求的以下内容：
 
 *   **我的帖子已经打上 [开源推广](https://linux.do/tag/2234-tag/2234) 标签：** 是
