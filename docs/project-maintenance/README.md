@@ -1,9 +1,9 @@
 ---
 title: "Project Maintenance 维护文档入口"
 status: active
-updated: 2026-06-13
+updated: 2026-06-19
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-19
 ---
 # Project Maintenance
 
@@ -18,7 +18,7 @@ last_verified: 2026-06-13
 3. `deploy/` — destructive reinstall 主流程、drift/conflict/unrecognized 维护、已有项目接入
 4. `testing/` — Python 脚本/治理检查/closeout gate 命令、registry `npx`/本地 `.tgz` smoke、Codex/Claude 行为测试
 5. `usage-help/` — `agents`、`claude` 的 backend 差异、安装后使用和 source 变更后的 operator 决策
-6. `community/` — 外部社区推广文案与发布公告草案
+6. `community/` — 对外技术叙事、适用场景说明、社区推广文案与发布公告草案
 
 ## 从这里怎么进
 
@@ -37,5 +37,6 @@ last_verified: 2026-06-13
 - 新增/改名/删除 skill source：[usage-help/README.md](./usage-help/README.md)
 - 运行治理检查、`npx` smoke 或行为测试：[testing/README.md](./testing/README.md)
 - 确认 `agents`/`claude` 差异：[usage-help/README.md](./usage-help/README.md)
+- 维护外部社区文案、技术叙事和平台样例：[community/README.md](./community/README.md)
 
 AI 默认阅读顺序以 [AGENTS.md](../../AGENTS.md) 为准。本页只做入口导航。
