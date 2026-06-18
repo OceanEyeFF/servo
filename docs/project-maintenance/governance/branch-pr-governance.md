@@ -1,9 +1,9 @@
 ---
 title: "Branch / PR 治理规则"
 status: active
-updated: 2026-06-14
+updated: 2026-06-18
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-18
 ---
 # Branch / PR 治理规则
 
@@ -30,7 +30,7 @@ Decision time: 2026-04-25
 
 变更必须通过 PR 提交，target 由 Worktrack Contract 的 `baseline_branch` 决定（合同缺失时，用 `origin/HEAD` 解析结果补齐或阻断 closeout）；PR 必须包含变更摘要、验证结果与风险说明，默认遵循 `.github/pull_request_template.md`。
 
-发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 `v0.6.1-rc.4` 发布周期使用 `develop -> master`。发布型 PR 打开或更新前必须确认：
+发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 release development branch 是 `develop`；所有进入 `master` 的 release、post-publish docs sync 和发布事实修正 PR 都必须使用 `develop -> master`。发布型 PR 打开或更新前必须确认：
 
 - root `package.json`、`toolchain/scripts/deploy/package.json`、approval lock、CLI `--version` 和 PR 标题/正文中的版本一致
 - `v<package.version>` tag 不存在，npm registry 中 `servo-installer@<package.version>` 不存在
@@ -38,6 +38,16 @@ Decision time: 2026-04-25
 - PR head SHA 与本地 release-readiness 验证所用 SHA 一致
 - PR 正文必须区分本地已跑证据、远端 CI 证据、pending/skipped/not-run 项；未运行或被跳过的检查不得写成 passed
 - source-version 文档 freshness 同步已完成或已明确说明不适用；若 release channel governance、testing/usage docs 或 root README 仍指向旧 source tuple，PR 必须保持 draft
+
+`PR Branch Guard` GitHub Actions workflow 对 `master` 目标 PR 执行强制保护：base 为 `master` 时，head 必须是同一仓库的 `develop`。从 `wt-*`、`fix/*`、`docs/*`、fork branch 或其他开发分支直接开到 `master` 的 PR 必须失败；这些分支应先按批准路径合入 `develop`，再由 `develop -> master` 承接 release PR。
+
+### 2026-06-17 release path incident
+
+`v0.6.1` stable 发布内容已经核验有效，但 closeout 路径发生治理漂移：PR #81、#82、#83 分别从 `wt-20260617-v061-stable-release-pr-publish`、`wt-20260617-v061-stable-post-publish-sync`、`wt-20260617-v061-stable-post-publish-sync-doc-polish` 直接合入 `master`。恢复动作：
+
+- 2026-06-18 已将 `develop` fast-forward 到 `origin/master`，恢复 release development branch 与发布事实一致。
+- 2026-06-18 已删除上述三个已合入的 GitHub 远端 `wt-*` 分支。
+- 2026-06-18 新增 `PR Branch Guard` workflow 和本地可测 guard 脚本，防止后续 `wt-* -> master` 重复发生。
 
 ## 四、Review 规则
 
@@ -50,6 +60,8 @@ Decision time: 2026-04-25
 ## 五、CI 最小检查链
 
 PR 阶段必须通过：`folder_logic_check.py` + `path_governance_check.py` + `governance_semantic_check.py` + pytest（folder_logic + closeout_gate + agents_adapter_contract）。
+
+进入 `master` 的 PR 还必须通过 `PR Branch Guard`，确认 PR source 为同仓库 `develop`。
 
 ## 六、远端保护规则
 

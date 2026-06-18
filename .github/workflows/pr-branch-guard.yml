@@ -1,0 +1,52 @@
+name: PR Branch Guard
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "PR base ref to validate"
+        required: false
+        default: "master"
+      head_ref:
+        description: "PR head ref to validate"
+        required: false
+        default: "develop"
+      base_repo:
+        description: "PR base repository full name"
+        required: false
+        default: "OceanEyeFF/servo"
+      head_repo:
+        description: "PR head repository full name"
+        required: false
+        default: "OceanEyeFF/servo"
+
+permissions:
+  contents: read
+
+jobs:
+  protected-baseline-source:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GUARD_BASE_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.event.pull_request.base.ref }}
+      GUARD_HEAD_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.head_ref || github.event.pull_request.head.ref }}
+      GUARD_BASE_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.base_repo || github.event.pull_request.base.repo.full_name }}
+      GUARD_HEAD_REPO: ${{ github.event_name == 'workflow_dispatch' && inputs.head_repo || github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Checkout base guard implementation
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.pull_request.base.sha }}
+
+      - name: Validate PR branch policy
+        run: |
+          python toolchain/scripts/test/pr_branch_guard.py \
+            --base-ref "$GUARD_BASE_REF" \
+            --head-ref "$GUARD_HEAD_REF" \
+            --base-repo "$GUARD_BASE_REPO" \
+            --head-repo "$GUARD_HEAD_REPO" \
+            --protected-base master \
+            --allowed-head develop
