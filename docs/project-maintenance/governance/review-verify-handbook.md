@@ -1,9 +1,9 @@
 ---
 title: "Review / Verify 治理入口"
 status: active
-updated: 2026-06-02
+updated: 2026-06-18
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-18
 ---
 # Review / Verify 治理入口
 
@@ -51,7 +51,7 @@ last_verified: 2026-06-13
 - 新增、移动、拆分、重命名或删除 `docs/` 正文：`path_governance_check.py`，确认新正文可从 `docs/book.md` spine 到达、在 Full Reading Order 中有直接有序链接、最近章节入口已更新、旧路径引用已处理，且 `docs/book.md` 不使用不存在目录、未来规划、空目录或占位文档来满足 book
 - 默认阅读路径或 route contract 变更：`path_governance_check.py` + `governance_semantic_check.py`，确认 `AGENTS.md` 未恢复成固定长 Read First 清单
 - skills/templates 分层规则变更：`path_governance_check.py` + `governance_semantic_check.py`
-- branch/PR/baseline 或 hook 变更：`git symbolic-ref` + `bash -n pre-push` + dry-run
+- branch/PR/baseline、PR guard 或 hook 变更：`git symbolic-ref` + `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/pr_branch_guard.py ...` + `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test/test_pr_branch_guard.py` + `bash -n pre-push`（hook 变更时）
 - `.servo_template`/`.servo/` scaffold 变更：`path_governance_check.py` + `governance_semantic_check.py`
 - closeout/gate/backfill 变更：`closeout_acceptance_gate.py --json` + 对应最小 pytest；closeout 按 `scope_gate -> spec_gate -> static_gate -> cache_gate -> test_gate -> smoke_gate` 收口；`cache_gate` 扫描 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存；`scope_gate` 允许 root `README.md` 与 `product/.servo_template/`；`test_gate` 运行 closeout/folder/path/semantic/adapter 回归 + deploy package Node unit tests + npm packlist + publish dry-run + tarball smoke
 - deploy mapping/payload contract 变更：`test_agents_adapter_contract.py`；改 gate 链路再补 `closeout_acceptance_gate.py --json`

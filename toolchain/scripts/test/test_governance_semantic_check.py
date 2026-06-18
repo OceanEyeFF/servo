@@ -212,7 +212,7 @@ def test_check_pull_request_template_release_evidence_flags_missing_terms(tmp_pa
 def test_check_pull_request_template_release_evidence_accepts_guard_terms(tmp_path: Path) -> None:
     write_doc(
         tmp_path / ".github/pull_request_template.md",
-        "develop-main -> master\n"
+        "develop -> master\n"
         "## Release PR Evidence\n"
         "- PR head SHA:\n"
         "- Local release-readiness SHA:\n"

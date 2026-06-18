@@ -21,6 +21,7 @@
 | `check_cross_layer_sync.py` | 跨层同步检查 | cross-layer, sync |
 | `harness_scope_gate.py` | Harness scope 边界校验 | harness, scope, gate |
 | `cache_scan_policy.py` | 缓存扫描策略 | cache, scan, policy |
+| `pr_branch_guard.py` | 保护 `master` PR source，只允许同仓库 `develop -> master` | pull request, branch, guard, master, develop |
 
 ## 英文关键词中英对照表（English-Chinese Keyword Mapping）
 
