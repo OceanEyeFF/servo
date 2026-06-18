@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Standard Flow"
 status: active
-updated: 2026-06-07
+updated: 2026-06-18
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-18
 ---
 # servo-installer Release Standard Flow
 
@@ -17,7 +17,7 @@ Manages branch/merge sequence, GitHub Release creation, publish workflow observa
 
 Only start after passing Pre-Publish Governance, tuple still satisfies Channel Governance, root `package.json` has approved version+lock, and release notes are ready. If the release requires a version change, complete [Prepare Candidate Version](./servo-installer-pre-publish-governance.md#0-prepare-candidate-version) before opening or updating the release PR.
 
-For release PRs from the approved release development branch to `master`, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on the release development branch, rerun preflight, and push the correction to the PR. The current v0.6.1-rc.4 release cycle uses `develop` as the release development branch.
+For release PRs from the approved release development branch to `master`, confirm the PR title/body version, root package version, local scaffold version, approval lock, CLI `--version`, intended channel, and release marker all describe the same candidate. If they do not, stop before approval or merge, fix the tuple on the release development branch, rerun preflight, and push the correction to the PR. The current release development branch is `develop`; do not open release or post-publish docs PRs from `wt-*`, `fix/*`, `docs/*`, fork branches, or other non-`develop` heads directly to `master`.
 
 ## 1. Refresh Local State
 
@@ -45,7 +45,7 @@ git push origin <release-development-branch>
 gh pr create \
   --draft \
   --base master \
-  --head <release-development-branch> \
+  --head develop \
   --title "Release servo-installer v<package.version>" \
   --body "<summary, impact, and validation>"
 ```
@@ -54,6 +54,8 @@ gh pr create \
 gh pr checks <pr-number> --watch --interval 10 --fail-fast
 gh pr view <pr-number> --json number,url,isDraft,mergeable,reviewDecision,state,headRefName,baseRefName,headRefOid,statusCheckRollup
 ```
+
+`PR Branch Guard` must pass for every PR targeting `master`; it rejects direct `wt-* -> master` and other non-`develop` release paths. If the candidate is still on another branch, merge or fast-forward it into `develop` first, then open or update the `develop -> master` PR.
 
 If the authenticated GitHub account is also the PR author, do not attempt to self-approve. GitHub rejects author approvals even for repo owners. Record release readiness as a PR comment, then wait for an external review or an explicit owner/admin merge decision.
 

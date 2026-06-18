@@ -1144,7 +1144,7 @@ def check_pull_request_template_release_evidence(repo_root: Path, report: Semant
         return
     text = template_path.read_text(encoding="utf-8")
     required_terms = [
-        "develop-main -> master",
+        "develop -> master",
         "Release PR Evidence",
         "PR head SHA",
         "Local release-readiness SHA",
