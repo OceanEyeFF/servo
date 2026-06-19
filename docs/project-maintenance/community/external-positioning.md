@@ -101,7 +101,7 @@ npx servo-installer verify --backend agents
 
 ## Linux Do 文案关系
 
-[Linux Do v0.6.1 发布推广帖](./linuxdo-release-post-v061.md) 是首个社区文案样例。它可以作为语气、问题引入和技术叙事的参考，但后续维护时需要遵守两个边界：
+[Linux Do v0.6.1 发布推广帖](./对外发布整理/linuxdo-release-post-v061.md) 是首个社区文案样例。它可以作为语气、问题引入和技术叙事的参考，但后续维护时需要遵守两个边界：
 
 - 事实更新以 README、usage-help、servo-installer 文档、release governance 和已验证 evidence 为准。
 - 社区平台上的实际发布版本可以保留平台语气；仓内副本用于归档和后续校准，不反向改写 release 或 Harness truth。

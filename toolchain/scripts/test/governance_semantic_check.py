@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -27,6 +28,13 @@ REQUIRED_TEMPLATE_PATHS = [
     "docs/harness/artifact/worktrack/gate-evidence.md",
     "docs/harness/artifact/worktrack/debug-evidence.md",
 ]
+PROTECTED_DOC_COPIES = {
+    "docs/project-maintenance/community/对外发布整理/linuxdo-release-post-v061.md": {
+        "sidecar": "docs/project-maintenance/community/对外发布整理/linuxdo-release-post-v061_context-version.md",
+        "sha_field": "protected_copy_sha256",
+        "copy_field": "protected_copy",
+    },
+}
 REQUIRED_HANDOFF_LINKS = {
     "product/README.md": [
         "product/harness/README.md",
@@ -1130,6 +1138,21 @@ def markdown_headings_outside_code_fences(text: str) -> set[str]:
     return headings
 
 
+def parse_frontmatter(text: str) -> dict[str, str] | None:
+    if not text.startswith("---\n"):
+        return None
+
+    frontmatter: dict[str, str] = {}
+    for line in text.splitlines()[1:]:
+        if line.strip() == "---":
+            return frontmatter
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        frontmatter[key.strip()] = value.strip().strip('"')
+    return None
+
+
 def check_required_templates(repo_root: Path, report: SemanticReport) -> None:
     missing = [path for path in REQUIRED_TEMPLATE_PATHS if not (repo_root / path).exists()]
     for path in missing:
@@ -1223,6 +1246,47 @@ def check_retired_entrypoint_references(repo_root: Path, report: SemanticReport)
                     f"{relative_path} -> {retired_reference}"
                 )
     report.add_info(f"checked {checked} retired entrypoint references")
+
+
+def check_protected_doc_copies(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for protected_path, metadata in PROTECTED_DOC_COPIES.items():
+        checked += 1
+        protected_file = repo_root / protected_path
+        sidecar_path = repo_root / metadata["sidecar"]
+        if not protected_file.exists():
+            report.add_failure(f"missing protected docs copy: {protected_path}")
+            continue
+        if not sidecar_path.exists():
+            report.add_failure(
+                f"missing protected docs copy sidecar: {protected_path} -> {metadata['sidecar']}"
+            )
+            continue
+
+        sidecar_frontmatter = parse_frontmatter(sidecar_path.read_text(encoding="utf-8"))
+        if sidecar_frontmatter is None:
+            report.add_failure(f"protected docs copy sidecar missing frontmatter: {metadata['sidecar']}")
+            continue
+
+        expected_copy = sidecar_frontmatter.get(metadata["copy_field"], "")
+        if expected_copy != Path(protected_path).name:
+            report.add_failure(
+                "protected docs copy sidecar points at unexpected file: "
+                f"{metadata['sidecar']} -> {expected_copy or '<missing>'}"
+            )
+
+        expected_sha = sidecar_frontmatter.get(metadata["sha_field"], "")
+        actual_sha = hashlib.sha256(protected_file.read_bytes()).hexdigest()
+        if not expected_sha:
+            report.add_failure(
+                f"protected docs copy sidecar missing {metadata['sha_field']}: {metadata['sidecar']}"
+            )
+        elif actual_sha != expected_sha:
+            report.add_failure(
+                "protected docs copy hash mismatch; update requires explicit authorization "
+                f"and sidecar record: {protected_path} expected {expected_sha} actual {actual_sha}"
+            )
+    report.add_info(f"checked {checked} protected docs copies")
 
 
 def iter_adapter_skill_files(repo_root: Path) -> list[Path]:
@@ -3146,6 +3210,7 @@ def main() -> int:
     check_foundations_authority_shadows(repo_root, report)
     check_outdated_placeholder_phrases(repo_root, report)
     check_retired_entrypoint_references(repo_root, report)
+    check_protected_doc_copies(repo_root, report)
     check_canonical_skill_packages_are_minimal(repo_root, report)
     check_adapter_wrappers_are_thin(repo_root, report)
     check_append_request_contract_terms(repo_root, report)

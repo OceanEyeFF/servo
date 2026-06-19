@@ -21,13 +21,15 @@ last_verified: 2026-06-19
 |------|------|
 | [external-positioning.md](./external-positioning.md) | 先读：Servo 对外技术定位、适用场景、安装试用入口和基础表达边界 |
 | [external-technical-architecture.md](./external-technical-architecture.md) | 再读：系统工程方法、快慢 tick 架构、分层验收和平台适配骨架 |
-| [linuxdo-release-post-v061.md](./linuxdo-release-post-v061.md) | 样例：Linux Do v0.6.1 发布版仓内副本、发布语境和派生管理规则 |
+| [对外发布整理/linuxdo-release-post-v061_context-version.md](./对外发布整理/linuxdo-release-post-v061_context-version.md) | 管理上下文：Linux Do v0.6.1 发布帖的存放安排、hash guard、派生规则和授权记录 |
+| [对外发布整理/linuxdo-release-post-v061.md](./对外发布整理/linuxdo-release-post-v061.md) | 样例：Linux Do v0.6.1 发布版仓内正文副本，受 hash guard 保护 |
 
 ## 文件角色
 
 - `external-positioning.md` 是对外定位入口，回答 Servo 是什么、解决什么问题、适合谁用、不适合谁用，以及试用时链接到哪里。
 - `external-technical-architecture.md` 是技术和架构骨架，回答为什么用系统工程约束 LLM、为什么拆 Repo / Milestone / Worktrack、以及不同平台如何改写叙事节奏。
-- `linuxdo-release-post-v061.md` 是已发布平台文案的仓内管理副本。它保留 Linux Do 平台语气，不作为全平台模板，也不反向定义 release 或 Harness truth。
+- `对外发布整理/linuxdo-release-post-v061_context-version.md` 是 Linux Do 发布帖的仓内管理上下文，承接元数据、事实校准来源、派生规则、正文 hash guard 和修改授权记录。
+- `对外发布整理/linuxdo-release-post-v061.md` 是已发布平台文案的仓内正文副本。它保留 Linux Do 平台语气，不作为全平台模板，也不反向定义 release 或 Harness truth；没有明确授权不得修改正文。
 
 ## 平台派生路径
 
@@ -37,7 +39,7 @@ last_verified: 2026-06-19
 2. 再用 `external-positioning.md` 校准适用场景、安装入口和基础边界。
 3. 最后参考 Linux Do 样例的语气和案例，但按目标平台重写标题、节奏、例子密度和互动方式。
 
-平台正文草案可以新增到本目录；新增前先在目标文档 frontmatter 中明确平台、状态、owner、事实校准来源和是否已经发布。不要把某个平台的正文当成全平台模板。具体取材边界见 [external-technical-architecture.md](./external-technical-architecture.md) 和 [linuxdo-release-post-v061.md](./linuxdo-release-post-v061.md)。
+平台正文草案可以新增到本目录；新增前先在目标文档 frontmatter 中明确平台、状态、owner、事实校准来源和是否已经发布。已发布平台正文如果需要保持可复制原文，可以把仓内管理信息放到同名 sidecar 管理文档，并用 hash guard 保护正文。不要把某个平台的正文当成全平台模板。具体取材边界见 [external-technical-architecture.md](./external-technical-architecture.md) 和 [对外发布整理/linuxdo-release-post-v061_context-version.md](./对外发布整理/linuxdo-release-post-v061_context-version.md)。
 
 ## 边界
 
