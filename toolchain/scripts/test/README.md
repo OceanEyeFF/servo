@@ -22,6 +22,7 @@
 | `harness_scope_gate.py` | Harness scope 边界校验 | harness, scope, gate |
 | `cache_scan_policy.py` | 缓存扫描策略 | cache, scan, policy |
 | `pr_branch_guard.py` | 保护 `master` PR source，只允许同仓库 `develop -> master` | pull request, branch, guard, master, develop |
+| `test_servo_cleanup_control_state_compact.py` | cleanup skill control-state 压缩 helper、模板字段和 backup 排除回归 | cleanup, control-state, compact, template |
 
 ## 英文关键词中英对照表（English-Chinese Keyword Mapping）
 
@@ -77,6 +78,7 @@ Checher 输出中使用的英文关键词及其对应的中文语义：
 - `scope_gate_check.py`：按 contract 中的 `in_scope` / `out_of_scope` 规则校验本轮改动是否越界
 - `servo_installer_cli/`：覆盖 `servo-installer` CLI 命令面，包含 help/version/无参、agents 与 claude 的 diagnose / update dry-run / check_paths_exist / prune / install / verify / update apply，以及 GitHub source Node-owned / unsupported 边界和 TUI 非交互保护
 - `servo_installer_tui/`：通过 PTY 驱动 `servo-installer tui`，覆盖菜单 1-6、guided update cancel/apply、diagnose、verify、update dry-run、help、未知输入和退出别名
+- `test_servo_cleanup_control_state_compact.py`：覆盖 `servo-cleanup-skill` 的 control-state compact dry-run/apply、preserved-field 校验、generated history ref、`.servo/backup(s)` 排除，以及 `product/.servo_template/control-state.md` / `set-harness-goal-skill/assets/control-state.md` 对 compact preserved-field contract 的模板兼容性
 - `closeout_acceptance_gate.py`：按 closeout 顺序聚合 scope/spec/static/cache/test/smoke gates；其中 cache gate 会拒绝 `docs/`、`product/`、`toolchain/` 和 `tools/` 下的 Python / pytest 运行缓存，test gate 会运行 closeout、folder、path、semantic、complexity signal scanner、set-harness-goal e2e fixture、agents adapter、servo-installer CLI/TUI、deploy package Node unit、Repo Analysis contract 回归测试、本地 `servo-installer` npm deploy package与根 package envelope 的 packlist dry-run、根 package publish dry-run及其 `prepublishOnly` guard、临时 `.tgz` help/version/TUI non-interactive guard/diagnose/update dry-run/install/verify/update apply tarball smoke
 - `gate_status_backfill.py`：默认把 gate 结果回填到 `/tmp/servo-closeout/<repo>/state/` 和 closeout 摘要；可用 `--state-file` / `--closeout-root` 显式覆盖
 - `governance_assess.py`：对 `rule / folders / document / code` 四维输入做最小治理收口评估
@@ -88,6 +90,15 @@ Checher 输出中使用的英文关键词及其对应的中文语义：
 - foundations 合同刚更新过
 - 需要给 harness closeout 或 repo audit 生成结构化治理评估
 - 想快速确认 AI 的默认读取主线没有被新改动破坏
+
+`.servo` footprint / control-state compact 相关变更的最小复验入口：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test/test_servo_cleanup_control_state_compact.py toolchain/scripts/test/test_agents_adapter_contract.py -q
+PYTHONDONTWRITEBYTECODE=1 python3 -m pytest toolchain/scripts/test/test_governance_semantic_check.py toolchain/scripts/test/test_check_cross_layer_sync.py -q
+```
+
+全量 `governance_semantic_check.py` 仍是长期治理入口；若被受保护 community copy hash mismatch 阻断，应在 gate/closeout 证据中记录具体文件和 expected/actual hash，而不是修改无关受保护草稿。
 
 不要把下面这些东西放进这里：
 
