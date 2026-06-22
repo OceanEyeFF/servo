@@ -17,7 +17,7 @@ last_verified: 2026-06-13
 
 ## Non-Authority
 
-`discovery-input.md` 不是 goal truth,也不是 Harness 控制状态。不得:将推测性产品愿景写成已确认目标、将现有实现倒推为用户同意的长期方向、替代 `goal-charter.md` 或 `repo/snapshot-status.md`、直接驱动 worktrack 拆分、作为覆盖用户目标的依据。与用户确认冲突时以 `goal-charter.md` 为准;与后续观测冲突时以 `repo/snapshot-status.md` 为准。
+`discovery-input.md` 仅作为探索性输入。将推测性产品愿景写成已确认目标、将现有实现倒推为用户同意的长期方向、替代 `goal-charter.md` 或 `repo/snapshot-status.md`、直接驱动 worktrack 拆分、作为覆盖用户目标的依据的行为不得发生。与用户确认冲突时以 `goal-charter.md` 为准;与后续观测冲突时以 `repo/snapshot-status.md` 为准。
 
 ## Relationship To Other Repo Artifacts
 

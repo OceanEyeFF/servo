@@ -55,7 +55,7 @@ Decision time: 2026-04-25
 
 本仓库当前按单人维护模式运行：PR author 无需等待外部 reviewer 即可合并。GitHub 仍不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin 可在 CI 通过、PR 内容与本地验证证据一致、release tuple 无冲突时直接 self-merge。release PR 的 handoff 需记录已通过检查、PR head SHA、merge commit SHA 和后续 release/tag/publish 动作。
 
-`reviewDecision` 为空不等于审核失败；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
+`reviewDecision` 为空仅表示审核结论尚未产生；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
 
 ## 五、CI 最小检查链
 

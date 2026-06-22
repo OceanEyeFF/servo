@@ -151,7 +151,7 @@ $harness-skill            # 开始推进
 
 ## 写在最后
 
-从 v0.5 到 v0.6.1，Servo 走过了好几轮 Milestone 自开发（用 Servo 开发 Servo）。控制论那套理论在工程中能不能跑通、LLM 能不能吃住三层状态切换的复杂度、SubAgent 分派会不会把上下文炸飞——这些问题都在 dogfood 过程中一个个验证过来了。
+从 v0.5 到 v0.6.1，Servo 走过了好几轮 Milestone 自开发（用 Servo 开发 Servo）。控制论那套理论在工程中能不能跑通、LLM 能不能吃住三层状态切换的复杂度、SubAgent 分派分派表现有多大的提升，都做了一系列的测试.
 
 目前实测 CodeX + GPT-5.5 和 Pi + DeepSeek 都可以丝滑跑通完整闭环，Claude没测（不咋用了）。如果你测出了更好的模型配置，或者有新的想法，欢迎来提 issue 和 PR。
 

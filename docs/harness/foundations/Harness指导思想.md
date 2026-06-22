@@ -62,7 +62,7 @@ Harness 按三条正交轴组织：
 
 关键约束：
 
-- `Function` 不是 skill 名，而是状态转移算子。
+- `Function` 是状态转移算子。
 - `Skill` 是算子在 `Codex / Claude` 中的相对稳定实现。
 - `SubAgent` 或 human 是被 Harness 调度的执行载体。
 - `Control State` 只保存控制平面的当前定位，不承载业务真相。

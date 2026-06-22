@@ -25,7 +25,7 @@ Servo 主要面向 AI coding 中的过程失控问题：
 - 做完一个阶段后缺少证据、验收和下一步状态交接。
 - 不同模型/runtime 的执行行为不同，但项目需要稳定的工作合同。
 
-Servo 的回答不是“让模型更聪明”，而是给模型外面加一层控制回路：先固定目标和边界，再把工作拆成 Milestone / Worktrack，按证据和 gate 推进，遇到验收或风险边界时 handback 给 programmer。
+Servo 的回答是给模型外面加一层控制回路：先固定目标和边界，再把工作拆成 Milestone / Worktrack，按证据和 gate 推进，遇到验收或风险边界时 handback 给 programmer。
 
 ## 技术表达口径
 

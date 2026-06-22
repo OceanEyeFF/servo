@@ -156,7 +156,7 @@ acceptance:
 - window 内任务不得修改 RepoScope 目标、Milestone Pipeline 或 Worktrack list；需要新增/移除/重排 Worktrack 时，必须回到 RepoScope.Decide / programmer approval。
 - queue 完成只表示当前 Worktrack 的任务窗口完成；仍需 Verify、Judge、Close 和 RepoScope.Refresh 后，结果才可汇入 Milestone progress。
 
-该语义与 Milestone 方向选择分离：Milestone / RepoScope 的 Milestone-level scheduler 每轮一次只选择一个 `selected_worktrack_id` / current worktrack；Milestone 的 `worktrack_list` 不是 Plan / Task Queue、不是 task window，也不是 dispatch queue。Plan / Task Queue 只安排“当前 Worktrack 合同内接下来做什么”。
+Milestone 的 `worktrack_list` 是方向规划列表，不同于 Worktrack 内的 Plan / Task Queue、task window 或 dispatch queue。Plan / Task Queue 只安排“当前 Worktrack 合同内接下来做什么”。
 
 ### Task Window Control Fields
 

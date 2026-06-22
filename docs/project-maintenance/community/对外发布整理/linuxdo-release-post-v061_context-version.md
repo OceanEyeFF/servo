@@ -1,9 +1,9 @@
 ---
 title: "Linux Do v0.6.1 发布推广帖管理上下文"
 status: active
-updated: 2026-06-19
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-19
+last_verified: 2026-06-22
 source_platform: "Linux Do"
 source_url: "TBD"
 copy_status: "managed-platform-sample"
@@ -11,7 +11,7 @@ published_status: "published"
 canonical_copy: "platform-original"
 derivative_policy: "derive-by-platform-from-technical-architecture"
 protected_copy: "linuxdo-release-post-v061.md"
-protected_copy_sha256: "412f5e7c140b074f382c053f026cd465537eb5c5364ab66105043755a9546bbd"
+protected_copy_sha256: "1257b7f2a9df6d271f9f0ac4b82dd12edacfd246be44ab9344151e103b11436c"
 frontmatter_exemption: "literal-platform-copy"
 ---
 # Linux Do v0.6.1 发布推广帖管理上下文
@@ -51,3 +51,4 @@ frontmatter_exemption: "literal-platform-copy"
 ## 授权记录
 
 - 2026-06-19：使用者说明已移动 Linux Do 宣发文档，且该文档不允许更改；仓内补充 sidecar 管理上下文与 hash guard，不修改正文副本。
+- 2026-06-22：使用者明确授权将 `linuxdo-release-post-v061.md` 当前正文改动保存到受保护跟踪内容中；更新 `protected_copy_sha256` 为 `1257b7f2a9df6d271f9f0ac4b82dd12edacfd246be44ab9344151e103b11436c`，继续将正文作为 Linux Do 平台发布稿仓内副本管理。

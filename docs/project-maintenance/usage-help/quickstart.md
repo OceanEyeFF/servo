@@ -25,6 +25,7 @@ npx servo-installer diagnose --backend agents --json
 ```
 
 输出示例：
+
 ```json
 {"status":"not-installed","backend":"agents","target_root":"/path/to/repo"}
 ```
@@ -66,6 +67,7 @@ npx servo-installer verify --backend agents
 这一步会创建 `.servo/` 目录并生成 Goal Charter，定义仓库的长期目标、工程节点类型和系统不变量。
 
 初始化完成后，`.servo/` 下会生成：
+
 - `control-state.md` — Harness 控制面状态
 - `goal-charter.md` — 仓库目标与约束
 - `repo/` — Repo 级快照和 backlog
@@ -82,7 +84,7 @@ Worktrack 则是把 Milestone 根据项目实际情况落到实处的多个子�
 
 - **Milestone**：一组相关 Worktrack 的集合，有明确的 `purpose`（目的）、
   `completion_signals`（确认达成所有完成条件）和 `acceptance_criteria`（验收标准）。
-  Milestone 并非凭空产生——它来自对仓库目标的分析和规划。
+  Milestone 来自对仓库目标的分析和规划——在创建前需要经过 pre-milestone intake 确认范围与风险。
 - **Worktrack**：单个受约束的执行单元，有独立的 Git 分支、Contract、
   Plan/Task Queue 和 Gate Evidence。
 
@@ -139,6 +141,7 @@ Worktrack 则是把 Milestone 根据项目实际情况落到实处的多个子�
 ```
 
 **模板关键要素：**
+
 - `Worktrack额度`：本轮允许连续执行的 Worktrack 数量（如 30、15）
 - 权限声明：SubAgent 开关、低危险自动审批、连续工作、按需追加 Worktrack
 - 危险操作通知：文件删除、配置修改等需要 programmer 介入
@@ -166,12 +169,14 @@ Handback 后，**简单的"继续工作"或"继续"不构成有效的 Unlock 信
 > 这种设计的目的是要求 human 明确知晓每一轮 AI 做了什么。如果确认模型性能足够好，也可以通过调整全局行为模式变量使其自动验收（不推荐）。
 
 **有效的 unlock 信号示例：**
+
 - 对 Milestone 的明确验收决定（"接受 MS-xxx"或"拒绝，原因：..."）
 - 新的 Milestone brief 确认（"确认 Quickstart Tutorial 的 Milestone brief，请写入 pipeline"）
 - 新指令加具体范围（"请初始化 WT-xxx，范围是..."）
 - 权限变更声明（"批准 30 个 Worktrack 额度，允许 SubAgent"）
 
 **无效的 unlock 信号（会被 Harness 拒绝）：**
+
 - "继续工作"
 - "继续"
 - "重试"

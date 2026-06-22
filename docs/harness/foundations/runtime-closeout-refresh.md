@@ -49,7 +49,7 @@ Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量�
 
 ## Milestone Progress
 
-Milestone progress 只由已关闭 worktrack 的 closeout record、gate evidence、repo refresh 结果聚合而来。单个 worktrack 的 gate pass 不等于 milestone 完成。
+单个 worktrack 的 gate pass 只是 milestone 完成的必要条件之一。Milestone progress 只由已关闭 worktrack 的 closeout record、gate evidence、repo refresh 结果聚合而来。
 
 goal-driven milestone 需要：
 

@@ -291,10 +291,10 @@ Milestone artifact 保存已经创建、激活或完成的 milestone truth；候
 
 RepoScope 可以在 pre-milestone 场景输出 candidate milestone brief，但该 brief 必须与 live artifact 区分：
 
-- `candidate` 表示方向建议，不等于 `planned`、`active` 或 `completed`。
+- `candidate` 表示方向建议，不同于 `planned`、`active` 或 `completed`。
 - candidate brief 必须携带 `observed_facts`、`inferred_assumptions`、`unknowns`、`primary_contradiction`、`main_aspect_now`、acceptance signals、risk boundary 和 programmer confirmation requirement。
 - candidate brief 不得增加 `progress_counter`，不得占用 `worktrack_list`，不得触发 pipeline advancement。
-- candidate brief 中列出的 candidate worktracks 不是 Worktrack `Plan / Task Queue`、不是 task window，也不是 `.servo/worktrack/*` 的执行队列。
+- candidate brief 中列出的 candidate worktracks 是方向建议，不等同于 Worktrack Plan/Task Queue、task window 或执行队列。
 - programmer 确认后，candidate brief 才能进入 milestone create / upsert / activate 路径；仍必须满足 Milestone Review Gate、Complex Project Entry Gate 和对应 init skill 的字段约束。
 
 Milestone 是方向、目的、验收信号和聚合进度对象；Worktrack 是独立执行单元；Plan / Task Queue 是单个 Worktrack 内的任务窗口 / task window。三者不得互相替代。
