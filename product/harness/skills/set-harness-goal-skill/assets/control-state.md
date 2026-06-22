@@ -12,15 +12,44 @@
 
 - repo_scope: active
 - worktrack_scope: closed
+- current_function: Observe
 
 ## Active Worktrack
 
-- 
+- active_worktrack:
+- active_worktrack_branch:
+- active_worktrack_node_type:
+- latest_closed_worktrack_commit:
+
+## Milestone Pipeline
+
+- active_milestone:
+- milestone_status:
+- milestone_pipeline_path:
+- milestone_pipeline_summary:
+- active_milestone_branch:
+- active_milestone_branch_sync_state:
+- active_milestone_progress:
+- active_milestone_branch_head:
+- active_milestone_review_gate_status:
+- active_milestone_review_count:
+- active_milestone_review_checkpoint:
+- active_milestone_review_blockers:
+
+## Milestone Review Gate
+
+- milestone_review_gate_ready:
+- latest_review_status:
+- milestone_review_count:
+- latest_review_checkpoint:
+- effective_review_pass:
+- review_invalidated_by:
 
 ## Baseline Branch
 
 - baseline_branch:
 - baseline_ref:
+- current_checkout:
 
 ## Branch Environment Guard
 
@@ -34,7 +63,9 @@
 
 ## Current Next Action
 
-- 
+- recommended_next_route:
+- recommended_next_scope:
+- current_next_action:
 
 ## Linked Formal Documents
 
@@ -115,8 +146,11 @@
 - latest_observed_checkpoint:
 - last_doc_catch_up_checkpoint:
 - milestone_input_checkpoint:
+- milestone_review_gate_checkpoint:
 - checkpoint_type:
 - checkpoint_ref:
+- release_checkpoint_ref:
+- previous_observed_checkpoint:
 - verified_at:
 - if_no_commit_reason:
 - alternative_traceability:
