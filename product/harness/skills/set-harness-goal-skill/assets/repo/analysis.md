@@ -1,6 +1,6 @@
 # Repo Analysis
 
-> 这是 `.servo/repo/analysis.md` 的模板来源，用来记录 RepoScope 的阶段性分析与优先级判断。它是决策支撑 artifact，不是 goal truth，也不是 worktrack queue。
+> 这是 `.servo/repo/analysis.md` 的模板来源，用来记录 RepoScope 的阶段性分析与优先级判断。它是决策支撑 artifact，位于 goal truth 和 worktrack queue 之间的分析层。
 
 ## Metadata
 

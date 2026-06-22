@@ -26,7 +26,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 
 ## 何时使用
 
-当当前问题不是"milestone 进展如何"，而是"需要创建或注册一个 milestone"时，使用这个技能：
+当需要创建或注册一个 milestone 时，使用这个技能：
 
 - Programmer 显式声明一个新的 milestone 目标
 - Harness 在 `RepoScope.Decide` 阶段推理出需要创建新 milestone 来组织 worktrack
@@ -84,14 +84,16 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
      - `priority`：最低（取当前 pipeline 最大 priority + 1，确保不阻塞 goal-driven milestone）
      - `created_by`：`harness`
 10. 规范化完成判定字段：
-   - goal-driven milestone：若输入未提供 `completion_threshold_pct`，默认写入 `100`
-   - work-collection milestone：`completion_threshold_pct` 记为 `100` 但不参与完成判定；验收仍下沉到 worktrack gate
-   - 若本轮修改了 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct`，标记 `milestone_reevaluation_required = true`
-11. 输出结构化 `milestone brief` 并等待 programmer 确认：
-   - brief 至少包含：`milestone_id`、`title`、`purpose`、`milestone_kind`、`worktrack_list`、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`priority`、`depends_on_milestones`、`activation_intent`、`scope_boundary_note`
-   - 若本轮将 create / upsert / activate 任一 milestone，必须在 `milestone_brief_confirmed == true` 前停止，不得提前写入或激活
-   - 若调用方已携带明确 programmer 确认记录，可直接继续；否则返回 brief 并等待确认
-12. 追加 worktrack 时的信号覆盖判定（仅当向已有 goal-driven milestone 追加 worktrack 时执行）：
+
+- goal-driven milestone：若输入未提供 `completion_threshold_pct`，默认写入 `100`
+- work-collection milestone：`completion_threshold_pct` 记为 `100` 但不参与完成判定；验收仍下沉到 worktrack gate
+- 若本轮修改了 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct`，标记 `milestone_reevaluation_required = true`
+1. 输出结构化 `milestone brief` 并等待 programmer 确认：
+
+- brief 至少包含：`milestone_id`、`title`、`purpose`、`milestone_kind`、`worktrack_list`、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`priority`、`depends_on_milestones`、`activation_intent`、`scope_boundary_note`
+- 若本轮将 create / upsert / activate 任一 milestone，必须在 `milestone_brief_confirmed == true` 前停止，不得提前写入或激活
+- 若调用方已携带明确 programmer 确认记录，可直接继续；否则返回 brief 并等待确认
+1. 追加 worktrack 时的信号覆盖判定（仅当向已有 goal-driven milestone 追加 worktrack 时执行）：
    a. 读取已有 milestone 的 `completion_signals` 和 `acceptance_criteria`
    b. 对每个新 worktrack，AI 辅助判定其验收是否被已有 signals 覆盖
    c. 输出 `coverage_verdict` ∈ {`fully_covered`, `partially_covered`, `not_covered`}
@@ -106,26 +108,30 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
       - 仅追加 worktrack 且 programmer 已确认其归属当前 milestone，同时 `coverage_verdict == fully_covered` 且未修改 `completion_signals` / `acceptance_criteria` / `completion_threshold_pct` 时，`milestone_reevaluation_required = false`；该 worktrack 直接进入当前 milestone 的独立执行序列
       - 若 append 导致上述任一字段修改，必须重新评估 milestone；不得沿用旧的 milestone 完成结论
       - `not_covered` 不得通过“先追加再观察”静默扩大范围，应直接建议其他 milestone 路径
-13. 确定激活状态：
-   - work-collection milestone 创建后直接激活（`status = "active"`）
-   - goal-driven：若当前无 active milestone 且 `depends_on_milestones` 全部满足（所有前置为 `completed` 或 `superseded`）：设置为 `active`
-   - 若 `activation_rules` 非空且条件满足：设置为 `active`
-   - 否则：设置为 `planned`
-   - 任一 milestone 的 `active` 判定都要求 `milestone_brief_confirmed == true`
-   - 同一时刻仅允许一个 `active`：若设置当前 milestone 为 active 且已有 active milestone，先处理旧 active 的过渡（保持原状，标记冲突由 harness-skill 处理）
-14. 创建或更新 milestone artifact：
-   - 写入 `.servo/milestone/{milestone_id}.md`
-   - 使用 milestone 模板字段结构（milestone_id、title、purpose、status、worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、aggregated_evidence、release_version_consideration、developer_decision_boundary、depends_on_milestones、priority、activation_rules、created_by、updated、milestone_kind）
-   - upsert 时保留已有字段，仅更新变化字段
-15. 写入或更新 live milestone-backlog：
-   - 按 milestone_id upsert 到 `.servo/repo/milestone-backlog.md`
-   - 若 backlog 文件不存在则创建
-   - 条目包含：milestone_id、title、purpose、status、priority、depends_on_milestones、worktrack_list、created_by、created_at、updated、updated_by、activation_rules、milestone_kind
-16. 更新 control-state（若激活状态变化）：
-   - 若新 milestone 被设为 active：更新 `active_milestone` 和 `milestone_status`
-   - 若仅新增 planned milestone：不改变 `active_milestone`，仅更新 `milestone_pipeline_summary`
-17. 产出一份结构化的 Milestone 初始化结果。
-18. 如果没有命中正式停止条件，允许监督器直接进入下一个合法判定。
+2. 确定激活状态：
+
+- work-collection milestone 创建后直接激活（`status = "active"`）
+- goal-driven：若当前无 active milestone 且 `depends_on_milestones` 全部满足（所有前置为 `completed` 或 `superseded`）：设置为 `active`
+- 若 `activation_rules` 非空且条件满足：设置为 `active`
+- 否则：设置为 `planned`
+- 任一 milestone 的 `active` 判定都要求 `milestone_brief_confirmed == true`
+- 同一时刻仅允许一个 `active`：若设置当前 milestone 为 active 且已有 active milestone，先处理旧 active 的过渡（保持原状，标记冲突由 harness-skill 处理）
+1. 创建或更新 milestone artifact：
+
+- 写入 `.servo/milestone/{milestone_id}.md`
+- 使用 milestone 模板字段结构（milestone_id、title、purpose、status、worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、aggregated_evidence、release_version_consideration、developer_decision_boundary、depends_on_milestones、priority、activation_rules、created_by、updated、milestone_kind）
+- upsert 时保留已有字段，仅更新变化字段
+1. 写入或更新 live milestone-backlog：
+
+- 按 milestone_id upsert 到 `.servo/repo/milestone-backlog.md`
+- 若 backlog 文件不存在则创建
+- 条目包含：milestone_id、title、purpose、status、priority、depends_on_milestones、worktrack_list、created_by、created_at、updated、updated_by、activation_rules、milestone_kind
+1. 更新 control-state（若激活状态变化）：
+
+- 若新 milestone 被设为 active：更新 `active_milestone` 和 `milestone_status`
+- 若仅新增 planned milestone：不改变 `active_milestone`，仅更新 `milestone_pipeline_summary`
+1. 产出一份结构化的 Milestone 初始化结果。
+2. 如果没有命中正式停止条件，允许监督器直接进入下一个合法判定。
 
 ## 正式停止条件
 

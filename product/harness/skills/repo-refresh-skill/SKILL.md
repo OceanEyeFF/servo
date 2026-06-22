@@ -11,7 +11,7 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 
 它是 Worktrack 闭环的**终点和 Repo 闭环的起点**：在 Worktrack 关闭（merge → cleanup）后，必须回到 RepoScope 刷新 repo snapshot，才能让 Repo 的慢变量被真实更新。这是完整控制回路的关键闭合环节。
 
-它只从**已验证证据**刷新代码仓库级真相，而不是从工作追踪产物直接抄写。代码仓库真相产物的唯一合法写入前提是经过 `Gate` 验证；未经验证的结论写入代码仓库真相产物的行为必须返回 blocked。
+它从已验证证据刷新代码仓库级真相。代码仓库真相产物的写入前提是经过 `Gate` 验证；未经验证的结论不得写入代码仓库真相产物。
 
 它与 `close-worktrack-skill` 的关系：close-worktrack-skill 处理 WorktrackScope 的 Close（PR → merge → cleanup），而 repo-refresh-skill 处理回到 RepoScope 后的状态更新。
 
@@ -32,7 +32,7 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 
 ## 何时使用
 
-当当前问题不是"如何完成这个工作追踪"，而是"哪些代码仓库级真相现在需要根据那次已验证收尾来刷新"时，使用这个技能：
+当需要根据那次已验证收尾刷新代码仓库级真相时，使用这个技能：
 
 - 某个工作追踪已经进入收尾或合并完成状态
 - `关卡证据` 可用且已经建立了已验证结果

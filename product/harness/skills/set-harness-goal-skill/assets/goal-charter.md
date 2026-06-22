@@ -24,7 +24,7 @@
 ## Engineering Node Map
 
 > 本 Goal 涉及的工程节点类型规划，供 `init-worktrack-skill` 在拆分 worktrack 时参考。
-> 不是 worktrack 拆分本身，而是定义"这个 Goal 下会产生哪些类型的工程节点"及其约束。
+> 定义"这个 Goal 下会产生哪些类型的工程节点"及其约束。
 
 ### Node Type Registry
 

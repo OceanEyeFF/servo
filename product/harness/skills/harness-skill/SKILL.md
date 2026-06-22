@@ -11,7 +11,7 @@ description: 当需要运行 Harness 分层闭环控制系统时，使用这个�
 
 它在 `Repo` 级维护长期基线与系统不变量，在 `Worktrack` 级约束局部状态转移，并通过 `Evidence + Gate` 决定状态是否允许推进为新的基线。
 
-Harness 关注的不是"把任务做完"本身，而是：
+Harness 关注的是：
 
 - 给系统输入
 - 观察系统输出
@@ -71,6 +71,7 @@ Harness 作为控制系统，包含以下系统组件：
 **定义**：Harness 通过什么知道状态是真的？
 
 **示例**：
+
 - git / diff / branch metadata
 - release/package/VCS version facts（package version、git commit/tag/branch、SVN revision 如适用、registry dist-tag）
 - test results
@@ -87,6 +88,7 @@ Harness 作为控制系统，包含以下系统组件：
 **定义**：什么对象实际改变系统状态？
 
 **示例**：
+
 - human developer
 - coding agent（SubAgent）
 - review agent（SubAgent）
@@ -100,6 +102,7 @@ Harness 作为控制系统，包含以下系统组件：
 **定义**：什么会让系统偏离？
 
 **示例**：
+
 - 需求变化
 - agent 幻觉
 - 隐式依赖
@@ -114,6 +117,7 @@ Harness 作为控制系统，包含以下系统组件：
 **定义**：gate fail 之后如何恢复控制？
 
 **示例**：
+
 - 回滚
 - 重试
 - 拆分 worktrack
@@ -124,7 +128,7 @@ Harness 作为控制系统，包含以下系统组件：
 
 ## 四、被控变量
 
-Harness 控制的不是每一行代码，而是 **Repo 演进的偏差、风险、熵，以及状态转移的合法性**。
+Harness 控制的是 **Repo 演进的偏差、风险、熵，以及状态转移的合法性**。
 
 当前有 6 个被控变量：
 
@@ -144,6 +148,7 @@ Harness 控制的不是每一行代码，而是 **Repo 演进的偏差、风险�
 ### 控制平面（Harness 本体）
 
 负责：
+
 - 决定下一步做什么（选择算子）
 - 决定谁来执行（绑定技能 + 分派子代理）
 - 决定需要哪些证据（定义 Verify 维度）
@@ -155,12 +160,14 @@ Harness 控制的不是每一行代码，而是 **Repo 演进的偏差、风险�
 ### 执行平面（SubAgent / Human）
 
 负责：
+
 - 实际编码
 - 实际 review
 - 实际测试
 - 实际合并、回滚、清理
 
 因此，Harness 内部的动作应使用控制语义命名：
+
 - `dispatch-subtask`（分派子任务）
 - `execute-via-agent`（通过代理执行）
 
@@ -175,12 +182,14 @@ Harness 文档与控制逻辑应按 3 个正交维度组织：
 ### 6.1 Scope 轴
 
 回答"在什么层上控制"：
+
 - `RepoScope` —— 慢变量，长期基线
 - `WorktrackScope` —— 快变量，局部状态转移
 
 ### 6.2 Function 轴
 
 回答"控制器此刻在做什么"：
+
 - `Observe` —— 状态估计
 - `Decide` —— 选择算子
 - `Init` —— 初始化局部状态
@@ -192,11 +201,12 @@ Harness 文档与控制逻辑应按 3 个正交维度组织：
 - `ChangeGoal` —— 目标变更
 - `SetGoal` —— 初始化参考信号
 
-**约束**：`Function` 不是 skill 名字，而是状态转移算子。`Skill` 是这些算子在 `Codex / Claude` 里的相对稳定实现。`SubAgent` 是被 Harness 调度的执行载体。
+`Function` 是状态转移算子。`Skill` 是这些算子在 `Codex / Claude` 里的相对稳定实现。`SubAgent` 是被 Harness 调度的执行载体。
 
 ### 6.3 Artifact 轴
 
 回答"控制器依赖什么正式对象"：
+
 - `Goal / Charter` —— 长期目标，并承载 `Engineering Node Map`
 - `Snapshot / Status` —— 当前状态
 - `Contract` —— 局部状态转移合同，并绑定从 Goal 派生的 `Node Type`
@@ -298,7 +308,7 @@ RepoScope.SetGoal ──→ RepoScope.Observe ──→ RepoScope.Decide ──�
 
 其中 `Close` 绑定到 `close-worktrack-skill`，`Recover` 绑定到 `recover-worktrack-skill`。
 
-**关键约束**：`PR` 不是闭环终点。完整的 closeout 是 `merge → refresh repo snapshot → cleanup → return RepoScope`。只有这样，Repo 的慢变量才会被真实更新，而不是停留在"PR 已发出"的半闭环状态。
+`PR` 只是中间步骤。完整的 closeout 是 `merge → refresh repo snapshot → cleanup → return RepoScope`。只有这样，Repo 的慢变量才会被真实更新，从而完成从 PR 到刷新基线状态的全链推进。
 
 对于 active milestone，这个闭环以当前 worktrack 为单位反复运行：一个 worktrack 完成一次完整闭环，milestone 才聚合一次已验证进度；下一次派生从新的 current worktrack 重新开始，持续形成清晰的逐项执行轨迹。
 
@@ -329,7 +339,7 @@ Gate 应汇总**正交校验面**的裁决：
 
 ## 九、何时使用
 
-当任务不是"写代码"，而是"运行当前的 Harness 控制回路"时，使用这个技能：
+当任务是运行当前的 Harness 控制回路时，使用这个技能：
 
 - 判定当前处于哪个 `Scope` 和哪个 `Function`
 - 在控制平面上推进状态估计→算子选择→技能绑定→子代理分派→证据收集→裁决→状态更新
@@ -652,7 +662,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 1. **先完整生成，再做压缩**：每个 skill 先生成尽可能长且完整的原始内容，确保信息不丢失；然后通过压缩步骤提取 `Control Signal` 层。
 2. **控制结论优先**：影响下一动作决策的信息放在 `Control Signal` 层；完整证据、日志、原始输出放在 `Supporting Detail` 层。
 3. **禁止平铺重复**：已在其他 artifact 中记录的信息，使用引用（文件路径 + section）而不是内联全文复制。
-4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `- ` 或 `待填写`）。
+4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `-` 或 `待填写`）。
 5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.servo/worktrack/contract.md#Task Goal]`。
 6. **压缩不是省略**：`Supporting Detail` 层必须保留完整内容，只是不纳入传递/决策上下文；后续如需查阅细节，可直接读取。
 
@@ -690,6 +700,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。
 
 三轴参考：
+
 - `Scope` 回答"在什么层上控制"
 - `Function` 回答"控制器此刻在做什么"
 - `Artifact` 回答"控制器依赖什么正式对象"

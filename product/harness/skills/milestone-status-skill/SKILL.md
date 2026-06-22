@@ -11,7 +11,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 本技能实现 `RepoScope.Observe` 状态的 Milestone 维度传感器算子，对应 Harness 控制回路中状态估计阶段的 Milestone 专项分析。它是控制回路的 **Milestone 传感器/分析器**层：通过读取当前活跃 Milestone artifact、worktrack backlog、gate evidence 和 repo snapshot 等输入，执行 Milestone 完成判定链（`worktrack_list_finished` + `Milestone Gate` + `purpose_achieved`；其中正式完成模型仍保持 `worktrack_list_finished + purpose_achieved` 的 dual 验收口径），产出结构化的 Milestone 进度报告、验收判决和 developer 决策边界。
 
-它的角色是**分析 Milestone 状态**，而不是驱动 next action。它产出的是经过聚合计算的 Milestone 观测结果，供 `RepoScope.Decide` 算子（如 repo-whats-next-skill）和 `harness-skill` 的 continuous execution 判断使用。
+它的角色是分析 Milestone 状态。它产出的是经过聚合计算的 Milestone 观测结果，供 `RepoScope.Decide` 算子（如 repo-whats-next-skill）和 `harness-skill` 的 continuous execution 判断使用。
 
 它的主要观测依据是 Milestone 级产物和工作追踪边界证据：
 
@@ -24,7 +24,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 何时使用
 
-当当前问题不是"下一步该做什么"，而是"当前 Milestone 进展到哪一步、是否已达到验收边界"时，使用这个技能：
+当需要了解当前 Milestone 进展到哪一步、是否已达到验收边界时，使用这个技能：
 
 - 在 `RepoScope.Observe` 阶段，harness-skill 需要 Milestone 级别的状态估计
 - Worktrack closeout 后，repo-refresh 完成后需要检查 Milestone 进度是否推进
@@ -86,11 +86,13 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 在 Milestone 验收分析中，文档不完善作为 **warning**（非 blocking）项处理，不影响 `milestone_acceptance_verdict` 的判定，但必须在 `doc_freshness_warning` 字段中显式暴露。
 
 **检查维度**：
+
 1. **Stale frontmatter**：检查 `docs/` 下正文文档的 `last_verified` 是否逾期（与当前日期相差超过 90 天，或与 milestone 涉及的内容域明显不匹配）。
 2. **Broken cross-references**：检查 milestone scope 内涉及的文档是否存在死链（引用已被删除或重命名的文件/章节）。
 3. **Missing required docs**：检查 milestone 涉及的 skill/adapter/contract 变更是否在对应 `docs/harness/` 或 `docs/project-maintenance/` 中有匹配的文档记录。
 
 **输出规则**：
+
 - 若不存在文档问题：`doc_freshness_warning` 为 `N/A`
 - 若存在 warning 级问题：在 `doc_freshness_warning` 中逐条列出，格式 `[文件路径] 问题描述`
 - `doc_freshness_warning` 不得单独触发 `handback_required`，不得将 `milestone_acceptance_verdict` 从 `achieved` 降级，但应在 `recommendations` 中建议后续 worktrack 跟进
