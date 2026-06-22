@@ -41,7 +41,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
-  - [servo-cleanup-skill/](./servo-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理）
+  - [servo-cleanup-skill/](./servo-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
 - [init-milestone-skill/](./init-milestone-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
 - 已落地的 `WorktrackScope` 技能骨架：

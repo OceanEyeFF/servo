@@ -218,6 +218,14 @@ class AgentsAdapterContractTest(unittest.TestCase):
 
         for payload in (agents_payload, claude_payload):
             self.assertEqual(payload["skill_id"], "servo-cleanup-skill")
+            self.assertIn(
+                "product/harness/skills/servo-cleanup-skill/scripts/control_state_compact.py",
+                payload["canonical_paths"],
+            )
+            self.assertIn(
+                "scripts/control_state_compact.py",
+                payload["required_payload_files"],
+            )
             self.assertEqual(payload["canonical_dir"], "product/harness/skills/servo-cleanup-skill")
             self.assertEqual(payload["target_dir"], "servo-cleanup-skill")
             self.assertIn("cleanup-skill", payload["legacy_target_dirs"])
