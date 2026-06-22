@@ -30,6 +30,7 @@
 - `install --backend agents` 只写当前 source 声明的 live payload；若存在重复 `target_dir`、planned target path 冲突或其他 source 非法情形，必须在写入前失败且不调用 Python；无关用户内容不属于 planned path conflict
 - `diagnose` 用于输出 backend、target root、受管安装数量、issue code 与 unrecognized / conflict 摘要；发现 issue 时仍返回 0。`agents` package/local human/JSON 支持 `--agents-root`，`claude` package/local human/JSON 支持 `--claude-root`，这些当前 checkout/local package 路径均由 Node-owned wrapper 直接承接
 - `verify` 用于检查 source 合法性、target root 状态、live install 对齐，以及 conflict / unrecognized 情形。`agents` 与 `claude` package/local read-only verify 当前由 Node-owned wrapper 直接承接；TUI agents verify action 也复用对应 Node-owned路径
+- 当 source payload 新增随包文件但 live `.agents/` / `.claude/` 尚未重装时，`verify` 报 `missing-required-payload` 或 `target-payload-drift` 是预期 target drift 信号。先确认 source payload / adapter contract tests 通过，再按 `prune --all -> check_paths_exist -> install -> verify` 刷新目标；不要从 deploy target 反向生成 source truth
 - `reconcile-servo` 用于已有 `.servo/` runtime 与当前模板调和：默认 dry-run，`--json` 输出机器摘要，`--yes` apply，apply 后应再次 `--json` 确认 `changes` 为空。它不同于 legacy `.aw -> .servo` 的 `migrate-runtime`
 - 根目录 `package.json` 是 self-contained `servo-installer` package envelope，本地 package scaffold 只暴露 `servo-installer` bin，但不表示 npm release channel 已发布
 - 目标分发入口是 `npx servo-installer`，并应支持 CLI + TUI 双模式；当前提供 root package envelope、CLI surface 和 TUI guided flow。TUI `.servo` template reconcile action 必须先 dry-run、显式确认、apply、再二次 dry-run 验证，且只能作为同一 CLI 合同的交互式表达

@@ -7,6 +7,9 @@
 
 - updated:
 - owner:
+- rotation_count: 0
+- last_rotation_at:
+- handback_history_ref:
 
 ## Current Control Level
 
@@ -32,11 +35,16 @@
 - active_milestone_branch:
 - active_milestone_branch_sync_state:
 - active_milestone_progress:
+- active_milestone_branch_head:
 - active_milestone_review_gate_status:
 - active_milestone_review_count:
 - active_milestone_review_checkpoint:
 - active_milestone_review_blockers:
 - milestone_intake_confirmed:
+- planned_milestone:
+- planned_milestone_status:
+- planned_milestone_priority:
+- planned_milestone_dependency:
 
 ## Milestone Review Gate
 
@@ -53,6 +61,8 @@
 
 - baseline_branch:
 - baseline_ref:
+- current_checkout:
+- active_milestone_branch_head:
 
 ## Branch Environment Guard
 
@@ -66,7 +76,9 @@
 
 ## Current Next Action
 
-- 
+- recommended_next_route:
+- recommended_next_scope:
+- current_next_action:
 
 ## Linked Formal Documents
 
@@ -143,8 +155,12 @@
 - last_verified_checkpoint:
 - latest_observed_checkpoint:
 - last_doc_catch_up_checkpoint:
+- milestone_input_checkpoint:
+- milestone_review_gate_checkpoint:
 - checkpoint_type:
 - checkpoint_ref:
+- release_checkpoint_ref:
+- previous_observed_checkpoint:
 - verified_at:
 - if_no_commit_reason:
 - alternative_traceability:

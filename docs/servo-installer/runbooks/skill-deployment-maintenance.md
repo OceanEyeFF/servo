@@ -1,9 +1,9 @@
 ---
 title: "Skill Deployment 维护流"
 status: active
-updated: 2026-06-14
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-22
 ---
 # Skill Deployment 维护流
 
@@ -70,6 +70,8 @@ backend-specific target root override 见 [Codex Usage Help](../../project-maint
 | `target-payload-drift`/`missing-target-entry`/`missing-required-payload` | 默认完整重装，除非确认是更上游 source 问题 |
 | legacy `.aw/` runtime state exists | 不走 `prune --all`；先看 [Legacy `.aw` Runtime Upgrade Runbook](./aw-runtime-upgrade-runbook.md) |
 | `.servo/` runtime 缺少新模板 section/file | 先运行 `servo-installer reconcile-servo --json` 预览；确认后运行 `servo-installer reconcile-servo --yes`，再跑第二次 `--json` 验证 `changes` 为空 |
+
+当 canonical skill payload 在源码层新增随包文件（例如 skill-private `scripts/` helper）后，尚未刷新 live target 的 `.agents/` / `.claude/` 上运行 `verify` 会报告 `missing-required-payload` 或 `target-payload-drift`。这是 source payload 已更新但 target install 尚未重装的正常诊断信号，不表示 target 目录可以反向作为 source truth。确认 source payload 通过 governance / adapter contract tests 后，再按 deploy runbook 的三步重装刷新目标。
 
 已决定重装 -> [Deploy Runbook](./deploy-runbook.md)；字段/trust boundary -> [Mapping Spec](../contracts/deploy-mapping-spec.md) + [Payload Provenance](../contracts/payload-provenance-trust-boundary.md)；smoke/release -> [Testing](../../project-maintenance/testing/README.md) + [Governance](../../project-maintenance/governance/README.md)。
 

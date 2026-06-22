@@ -9,7 +9,7 @@
 
 | template 路径 | 写入它的 skill | 用途 | 审计状态 |
 |---|---|---|---|
-| `control-state.md` | `harness-skill`（状态更新阶段） | `.servo/control-state.md` 初始化模板 | ✅ 2026-06-13 — 23 missing/7 extra/4 naming deviations；synced: current_function, Milestone Pipeline, Review Gate |
+| `control-state.md` | `harness-skill`（状态更新阶段） | `.servo/control-state.md` 初始化模板 | ✅ 2026-06-22 — synced runtime footprint placeholders: rotation metadata, active milestone branch head, planned milestone summary, current checkout, checkpoint traceability; backup/update artifacts and runtime history rows intentionally not templated |
 | `goal-charter.md` | `set-harness-goal-skill` / `repo-change-goal-skill` | `.servo/goal-charter.md` 初始化模板 | ✅ 2026-06-13 — 12 missing (6 cross-artifact)/2 extra/1 naming deviation |
 | `repo/discovery-input.md` | `set-harness-goal-skill`（Existing Code Project Adoption） | `.servo/repo/discovery-input.md` 只读事实输入模板 | ✅ 2026-06-14 — restored for set-harness-goal adoption fixture and package smoke |
 | `repo/temporary-understanding.md` | `set-harness-goal-skill`（Weak-doc onboarding） | `.servo/repo/temporary-understanding.md` 临时理解模板 | ✅ 2026-06-14 — restored for weak-doc onboarding fixture |
