@@ -5,7 +5,8 @@
   "canonical_dir": "product/harness/skills/servo-cleanup-skill",
   "canonical_paths": [
     "product/harness/skills/servo-cleanup-skill/SKILL.md",
-    "product/harness/skills/servo-cleanup-skill/VERSION"
+    "product/harness/skills/servo-cleanup-skill/VERSION",
+    "product/harness/skills/servo-cleanup-skill/scripts/control_state_compact.py"
   ],
   "target_dir": "servo-cleanup-skill",
   "target_entry_name": "SKILL.md",
@@ -17,6 +18,7 @@
   "required_payload_files": [
     "SKILL.md",
     "VERSION",
+    "scripts/control_state_compact.py",
     "payload.json",
     "aw.marker"
   ],
