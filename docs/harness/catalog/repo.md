@@ -1,9 +1,9 @@
 ---
 title: "Harness Skill Catalog / RepoScope"
 status: active
-updated: 2026-06-14
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-22
 ---
 # RepoScope Skill Catalog
 

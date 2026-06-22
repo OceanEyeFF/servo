@@ -1,9 +1,9 @@
 ---
 title: "Skill Deployment 维护流"
 status: active
-updated: 2026-06-14
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-22
 ---
 # Skill Deployment 维护流
 
