@@ -317,7 +317,7 @@ canonical executable source：
 
 ### 7. servo-cleanup-skill
 
-职责：执行 Servo repo/runtime 管理空间的限定清理，包括已完成 backlog 条目归档和已闭环本地 `ms/*` / `wt/*` 分支的安全删除。它不是 Milestone/Worktrack 控制循环里的默认动作，也不是通用文件清理工具；使用前必须先 dry-run，且不得删除 remote、protected branch 或 `.servo/` artifact 文件。
+职责：执行 Servo repo/runtime 管理空间的限定清理，包括已完成 backlog 条目归档、已闭环本地 `ms/*` / `wt/*` 分支的安全删除，以及在 dry-run 和 hydration-critical 字段校验通过后的 `.servo/control-state.md` 安全压缩。它不是 Milestone/Worktrack 控制循环里的默认动作，也不是通用文件清理工具；使用前必须先 dry-run，且不得删除 remote、protected branch 或 `.servo/` artifact 文件。
 
 主要依赖：
 
