@@ -9,7 +9,7 @@
 - owner:
 - rotation_count: 0
 - last_rotation_at:
-- handback_history_ref: .servo/backups/control-state-history.md
+- handback_history_ref:
 
 ## Current Control Level
 
