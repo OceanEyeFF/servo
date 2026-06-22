@@ -19,6 +19,40 @@ Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，
 
 守则：保守运行时回填只能是 `forward-only`。It `must not grant permissions`, `must not infer programmer confirmation`, `must not increment counters`, and `must not enable Worktrack Init/Dispatch`。等价中文约束为：不得授予权限，不得推断 programmer 确认，不得递增计数器，不得启用 Worktrack Init/Dispatch。
 
+## Control State Compaction Contract
+
+`.servo/control-state.md` 可以被安全压缩，但压缩是控制面整理动作，不是权限、路由、历史真相或业务真相的重定义。压缩后的文件必须仍能支持 Harness 启动 hydration、Branch Environment Guard、Milestone/Worktrack 路由、authority 判断和 baseline traceability。
+
+压缩后必须保留的 hydration-critical 字段组：
+
+- Metadata：`updated`、`owner`、`rotation_count`、`last_rotation_at`、`handback_history_ref`。
+- Current Control Level：`repo_scope`、`worktrack_scope`、`current_function`。
+- Active Worktrack：`active_worktrack`、`active_worktrack_branch`、`active_worktrack_node_type`、`latest_closed_worktrack_commit`、`worktrack_autonomy_policy`。
+- Milestone Pipeline：`active_milestone`、`milestone_status`、`milestone_pipeline_path`、`milestone_pipeline_summary`、`active_milestone_branch`、`active_milestone_branch_sync_state`、`active_milestone_progress`、`active_milestone_branch_head`。
+- Milestone Review Gate：`milestone_review_gate_ready`、`latest_review_status`、`milestone_review_count`、`latest_review_checkpoint`、`effective_review_pass`、`review_invalidated_by`，以及 control-state 镜像字段 `active_milestone_review_gate_status`、`active_milestone_review_count`、`active_milestone_review_checkpoint`、`active_milestone_review_blockers`。
+- Baseline Branch 与 Branch Environment Guard：`baseline_branch`、`baseline_ref`、`current_checkout`、`current_branch_context`、`expected_branch_context`、`branch_context_guard_status`、`branch_context_required_ref`、`worktrack_branch`。
+- Current Next Action 与 Linked Formal Documents：下一路由、下一 scope、当前动作、`repo_snapshot`、`repo_analysis`、`worktrack_contract`、`plan_task_queue`、`gate_evidence`。
+- Approval Boundary、User-Defined Servo Controls、Continuation Authority、Handback Guard、Autonomy Ledger。
+- Baseline Traceability：`last_verified_checkpoint`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`milestone_input_checkpoint`、`milestone_review_gate_checkpoint`、`checkpoint_type`、`checkpoint_ref`、`release_checkpoint_ref`、`previous_observed_checkpoint`、`verified_at`、`if_no_commit_reason`、`alternative_traceability`。
+
+可压缩或折叠的内容仅限历史重复行和非当前路由所需的长列表，例如多条旧 `latest_closed_worktrack_commit`、旧 `verified_at`、旧 handback note、旧 closeout 摘要和重复 checkpoint 叙述。压缩时最多保留最近一条当前可路由记录，并用中性 history reference 指向 compaction history artifact。history reference 只能是由 compact 操作显式生成并验证的 artifact；installer-generated backup/update artifacts 不是 history source，不能作为模板默认值、清理输入或 `handback_history_ref` 的默认目标。
+
+压缩动作必须遵守以下事务边界：
+
+1. 先 dry-run，输出将保留、折叠、外部化和拒绝处理的字段列表。
+2. 校验所有 hydration-critical 字段存在；缺失字段只能按 Conservative Runtime Backfill 降级，不能静默补成 ready/allowed/pass。
+3. 写入前保存可恢复的 compaction history artifact；该 artifact 必须由本次 compact 操作生成，并记录 source checkpoint、created_at、tool/skill、preserved field summary 和 externalized sections。
+4. 写入后重新读取 `.servo/control-state.md`，验证 Branch Environment Guard、Milestone Review Gate、Continuation Authority、Handback Guard 和 Baseline Traceability 仍可解析。
+5. 验证失败时不得提交压缩结果；必须进入 Recover 或 handback，并保留原文件。
+
+停止条件：
+
+- 任一 hydration-critical 字段无法解析。
+- 压缩会改变 approval、autonomy、dispatch、review gate、branch guard 或 protected branch 语义。
+- history reference 需要依赖 installer-generated backup/update artifacts 才能承接。
+- 当前存在 active worktrack 但 Worktrack Contract、Plan / Task Queue 或 gate evidence 指针不可读。
+- dry-run 与 apply 后验证结果不一致。
+
 ## Linked Formal Documents
 
 Harness Control State 可保存标准 artifact 路径指针（`repo_snapshot`、`repo_analysis`、`worktrack_contract`、`plan_task_queue`、`gate_evidence`、`milestone`）供 supervisor 快速定位正式对象。这些只是路径指针，不含业务真相。若某 artifact 缺失或过期，Control State 不得自行补写业务内容，应通过对应 `Scope` 的 `Observe`/`Decide`/`Init`/`Verify` 路由刷新正式对象。
