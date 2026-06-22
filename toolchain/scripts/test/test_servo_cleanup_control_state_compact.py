@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,26 @@ SCRIPT = (
     / "scripts"
     / "control_state_compact.py"
 )
+SERVO_TEMPLATE_CONTROL_STATE = REPO_ROOT / "product" / ".servo_template" / "control-state.md"
+SET_GOAL_CONTROL_STATE_ASSET = (
+    REPO_ROOT
+    / "product"
+    / "harness"
+    / "skills"
+    / "set-harness-goal-skill"
+    / "assets"
+    / "control-state.md"
+)
+
+
+def load_helper_module():
+    spec = importlib.util.spec_from_file_location("control_state_compact", SCRIPT)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def sample_control_state(*, include_active_milestone: bool = True) -> str:
@@ -177,3 +198,31 @@ def test_backup_history_dir_is_rejected(tmp_path: Path) -> None:
     assert payload["post_verify_verdict"] == "blocked"
     assert "backup paths" in payload["errors"][0]
     assert control_state.read_text(encoding="utf-8") == original
+
+
+def test_control_state_templates_include_compaction_required_fields() -> None:
+    helper = load_helper_module()
+
+    for template_path in (SERVO_TEMPLATE_CONTROL_STATE, SET_GOAL_CONTROL_STATE_ASSET):
+        text = template_path.read_text(encoding="utf-8")
+        validation = helper.validate_control_state(text)
+        assert validation.missing_sections == [], template_path
+        assert validation.missing_fields == [], template_path
+        assert validation.missing_groups == [], template_path
+
+
+def test_servo_template_does_not_reference_installer_backup_artifacts() -> None:
+    text = SERVO_TEMPLATE_CONTROL_STATE.read_text(encoding="utf-8")
+    manifest_text = (REPO_ROOT / "product" / ".servo_template" / "MANIFEST.md").read_text(
+        encoding="utf-8"
+    )
+
+    disallowed_terms = (
+        ".servo/backup",
+        ".servo/backups",
+        "installer-generated backup/update artifacts",
+    )
+    for term in disallowed_terms:
+        assert term not in text
+
+    assert "backup/update artifacts and runtime history rows intentionally not templated" in manifest_text

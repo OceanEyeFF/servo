@@ -76,7 +76,9 @@
 
 ## Current Next Action
 
-- 
+- recommended_next_route:
+- recommended_next_scope:
+- current_next_action:
 
 ## Linked Formal Documents
 
