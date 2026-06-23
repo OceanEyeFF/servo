@@ -62,6 +62,20 @@
 - effective_review_pass:
 - review_invalidated_by:
 
+## Closeout Checklist
+
+> 列出本 worktrack 完成后必须更新/验证的 `.servo/` artifact 及对应字段。由 self-review 步骤消费。
+
+- milestone_progress_counter: # 是否更新 milestone artifact progress_counter
+- worktrack_backlog_entry: # 是否更新 worktrack-backlog 条目状态
+- control_state_active_worktrack: # 是否清理 control-state active_worktrack 指针
+- control_state_latest_commit: # 是否追加 latest_closed_worktrack_commit
+- control_state_route: # 是否更新 control-state 路由字段
+- milestone_backlog_entry: # 是否更新 milestone-backlog 条目
+- closeout_record: # 是否写入 closeout record
+- docs_navigation: # 是否更新 docs 入口导航
+- governance_checks: # 是否通过 governance 验证
+
 ## Execution Policy
 
 > Execution Policy canonical semantics are not repeated here. Use `execution_policy_contract_ref` as the authority reference.
@@ -74,40 +88,40 @@
 
 ## Task Goal
 
-- 
+-
 
 ## Scope
 
-- 
+-
 
 ## Non-Goals
 
-- 
+-
 
 ## Impacted Modules
 
-- 
+-
 
 ## Planned Next State
 
-- 
+-
 
 ## Acceptance Criteria
 
-- 
+-
 
 ## Constraints
 
-- 
+-
 
 ## Verification Requirements
 
-- 
+-
 
 ## Rollback Conditions
 
-- 
+-
 
 ## Notes
 
-- 
+-
