@@ -50,12 +50,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 读取 Milestone artifact 的 `milestone_kind` 字段，默认值 `goal-driven`
    - **goal-driven**：执行完整双重验收
      - **worktrack_list_finished**：声明的 worktrack 列表是否全部处理（已完成 / 被明确移出 / 阻塞有决策）
-     - **Milestone Gate**：仅在 `worktrack_list_finished == true` 后运行的独立集成验证层，位于所有 worktrack closeout 之后、`purpose_achieved` 判定之前。它必须同时检查：
-       - `black-box`：从 milestone 外部视角验证最终用户可见结果和跨 worktrack 集成行为
-       - `white-box`：从内部实现视角验证关键集成路径、接口拼接、状态传递和依赖关系
-       - `anti-cheat`：检查是否存在以 mock/stub、跳过真实验证、伪造 evidence、只验证局部而未验证集成等方式“压过验收”的信号
-       - `composite-acceptance`：消费 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes；每条 lane 必须记录 carrier、delegation/fallback、verdict、severity 和 evidence refs
-       - 判定规则：`Milestone Gate` 必须为 `pass` 才允许进入 `purpose_achieved`；任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或命中反作弊信号，均视为 Milestone 级阻断，不得替代或回写为 worktrack gate 通过
+     - **Milestone Gate**：仅在 `worktrack_list_finished == true` 后运行。按 `aggregation_rules` evaluator（见 §Milestone Gate 集成判定）执行 per-milestone 可配置的证据聚合。覆盖 weight/contradiction/composite_lane/degenerate 四个维度。判定规则：`Milestone Gate` 必须为 `pass` 才允许进入 `purpose_achieved`；任一 `soft-fail`、`hard-fail`、`blocked`、未解决的 contradiction、composite lane veto 或命中反作弊信号，均视为 Milestone 级阻断。
      - **purpose_achieved**：Milestone 原始目的是否经聚合 evidence 证明达成（对照 `completion_signals`、`acceptance_criteria` 和 `completion_threshold_pct`，按 `purpose_achieved 操作化判定` 章节逐条验证）
    - **work-collection**：执行单重验收
      - **worktrack_list_finished**：同上
@@ -185,7 +180,15 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - `completion_pct`：完成百分比
 - `worktrack_list_finished`：boolean
 - `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped
-- `milestone_gate_summary`：black-box / white-box / anti-cheat 的聚合摘要
+- `aggregation_rules_applied`：boolean — 是否应用了 per-milestone aggregation_rules
+- `aggregation_rules_missing`：boolean — 无 aggregation_rules 时标记
+- `per_worktrack_weights`：object — 每个 WT 的最终权重 `{ worktrack_id: { node_type, base_weight, final_weight, overridden, override_reason } }`
+- `contradiction_findings`：array — 已检测到的矛盾 `[{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }]`
+- `contradiction_blocked`：boolean
+- `composite_lane_verdicts`：object — 四轴聚合结论 `{ black_box, white_box, anti_cheat, composite }`
+- `degenerate_and_applied`：boolean
+- `degenerate_and_reason`：string | N/A
+- `milestone_gate_summary`：聚合摘要，包括 black-box/white-box/anti-cheat 结论、contradiction detection 结果、aggregation state
 - `composite_acceptance_verdict`：accepted / accepted_with_residual_risk / needs_followup_worktrack / blocked / skipped
 - `composite_acceptance_summary`：code-review / feature-completeness / related-influence / intent-completeness / operator-simulation / professional-review lanes 的 carrier、fallback、verdict、severity、evidence refs 和 residual risks
 - `purpose_achieved`：boolean
@@ -235,16 +238,110 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 若本轮 `Milestone Gate` 未 `pass`，不得把 `purpose_achieved` 视为可用于 closeout 的完成信号
 6. **记录明细**：在 `aggregated_evidence_summary` 中记录每条 signal/criterion 的判定结果、覆盖率、threshold 和依据，供 developer 复核。
 
-## `Milestone Gate` 集成判定
+## `Milestone Gate` 集成判定（aggregation_rules evaluator）
 
-`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效，用来回答“所有局部 closeout 之后，整体 milestone 是否真的成立”。
+`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效，用来回答"所有局部 closeout 之后，整体 milestone 是否真的成立"。
 
-1. **black-box**：从 milestone 外部视角检查最终行为、跨 worktrack 集成结果和用户可见产出是否成立。
-2. **white-box**：从内部实现视角检查关键依赖关系、接口契约、状态拼接和系统级回归风险是否成立。
-3. **anti-cheat**：检查是否存在伪造通过的信号，例如只跑局部测试、跳过真实集成路径、以 mock/stub 代替必要验证、复用过期 evidence、或只验证中间态而未验证里程碑目的。
-4. **composite acceptance**：goal-driven milestone 必须消费复合验收 lanes；deep review 在 release、installer/deploy、migration、authority、destructive operation、path governance、安全/隐私、跨 worktrack 集成或 release-prep 前置场景为 mandatory。SubAgent 不可用时可 fallback 到 current-carrier 或 human，但必须保留 lane、记录 fallback，并在证据不足时阻断。
-5. **通过规则**：black-box、white-box、anti-cheat 为可信 `pass`，且 composite acceptance 为 `accepted` 或已记录低风险 `accepted_with_residual_risk` 时，`milestone_gate_verdict = "pass"`；只要存在任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或反作弊命中，即 `milestone_gate_verdict != "pass"`。
-6. **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`，并把修复/回退/重新验证要求交还给 developer 或上游 supervisor。
+**此判定由 per-milestone 可配置的 aggregation_rules 驱动，不是简单布尔 AND。** 字段合同见 [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md)。
+
+### 1. aggregation_rules 读取
+
+从 Milestone artifact 读取 `aggregation_rules` 字段：
+
+- 若 `enabled == false` 或字段缺失：使用退化 AND（见 §6）
+- 若 `enabled == true` 但部分子段缺失：缺失子段按各自默认值处理
+- `aggregation_rules_missing == true` 时，标记 warning 但继续运行
+
+### 2. weight_rules 应用
+
+对每个已闭环 worktrack：
+
+1. 从 worktrack backlog 读取 `node_type`
+2. 查找 `node_type_weights` 映射表：`feature=4, release=4, critical=5, config=3, test=3, docs=2, demo=1`，未匹配取 `default_weight=2`
+3. 应用 `overrides`（如有）：按 worktrack_id 匹配，将权重替换为 override 值，记录 `weight_override_reason`
+4. 输出 `per_worktrack_weights`：`{ worktrack_id: { node_type, base_weight, final_weight, overridden, override_reason } }`
+
+### 3. contradiction_rules 执行
+
+对每一对已闭环 worktrack（A, B），检测矛盾：
+
+- 双方 `final_weight >= trigger_condition.weight_both_are_at_least`（默认 3）
+- `verdict_types` 不匹配（如 A=pass, B=hard-fail）→ 矛盾触发
+- `detection.scope == critical_only`（推荐）：仅双方权重≥3 时触发
+- `detection.scope == all`：不限制权重
+
+矛盾命中后：
+
+- `default_action = block`：标记 `contradiction_blocked = true`，不自动解除
+- 记录 `contradiction_finding`：`{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }`
+- `resolution_paths`：
+  - `new_verification_worktrack`：建议创建新验证 WT
+  - `programmer_resolution`：等待 programmer 事实核查
+
+部分矛盾（1 critical fail + 3 normal pass）：
+
+- `handling = record_as_risk`：不 block milestone，但在 `contradiction_findings` 中标记 `partial_contradiction` 风险
+
+### 4. composite_lane_rules 应用
+
+读取各 WT 的 composite acceptance lane 结论：
+
+- `consumption_mode = independent_axes_with_weight_modifier`（默认）：
+  - 四个 lane（black_box / white_box / anti_cheat / composite）分别聚合：`lane-level verdict = AND of all WT lane findings`
+  - `veto_power: true` 的 lane（black_box / white_box / anti_cheat）：lane fail → milestone gate blocked，无论 per-WT aggregation 结果
+  - `composite` lane veto_power=false：fail 只记录 risk，不自动 block
+- `weight_modifier.enabled = true` 时：
+  - anti-cheat 发现 high_severity → 该 WT 的 final_weight 清零（`target_wt_weight = 0`）
+  - black-box 发现 high_severity → 该 WT 的 final_weight 清零
+
+### 5. degenerate_and_rules 检查
+
+以下条件**全部**满足时，允许使用退化 AND：
+
+- `no_contradiction_detected == true`
+- `no_anti_cheat_high_severity == true`
+- `all_lanes_consistent == true`
+- `no_weight_override_applied == true`
+- `all_critical_wt_pass == true`（所有 final_weight ≥ 4 的 WT 均为 pass）
+
+退化 AND 必须显式记录：
+
+- `degenerate_and_applied = true`
+- `degenerate_and_reason = "No contradiction detected across {n} worktracks; all critical WTs pass; all lanes consistent."`
+- `degenerate_and_verified_at = timestamp`
+- `skipped_rules = [contradiction, composite_lane_weight_modifier]`
+
+退化 AND 不是静止跳过：如果将来退化条件不再满足，正常规则重新激活。
+
+### 6. milestone_gate_verdict 计算
+
+最终 verdict 按以下优先级判定：
+
+1. **composite lane veto**（最高优先级）：
+   - black_box / white_box / anti_cheat 任一 fail → `blocked`，立即返回
+2. **contradiction block**：
+   - 存在未解决的 contradiction → `blocked`
+3. **per-WT aggregation**：
+   - 所有 weight ≥ 3 的 WT 均为 pass（或 soft-fail 且已标记 residual risk）→ `pass`
+   - 任一 weight ≥ 3 的 WT hard-fail → `soft-fail`（记录 risk 但可继续）
+   - 任一 critical（weight ≥ 4）WT hard-fail → `hard-fail`
+4. **退化 AND**：
+   - 若触发退化条件：`verdict = pass`（等效简单 AND）+ 标记 `degenerate_and_applied`
+
+verdict 可能值：`pass / soft-fail / hard-fail / blocked`
+
+### 7. aggregation state 输出
+
+在 milestone 状态报告中追加以下字段：
+
+- `aggregation_rules_applied: true/false` — 是否应用了 aggregation_rules
+- `aggregation_rules_missing: true/false` — 向后兼容：无 aggregation_rules 的 milestone 标记此 flag
+- `per_worktrack_weights: object` — 每个 WT 的最终权重
+- `contradiction_findings: array` — 已检测到的矛盾
+- `contradiction_blocked: true/false`
+- `composite_lane_verdicts: object` — 四轴聚合结论 `{ black_box, white_box, anti_cheat, composite }`
+- `degenerate_and_applied: true/false`
+- `degenerate_and_reason: string | N/A`
 
 ## Writeback 指令
 
