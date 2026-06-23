@@ -470,6 +470,7 @@ Gate 应汇总**正交校验面**的裁决：
    - 此 hash 存储确保下次 Harness 轮次启动时能正确判断是否需要重新刷新
 3. 如果是 `失败/阻塞` → 进入 `Recover`
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
+5. **Milestone post-acceptance cleanup（servo-cleanup-skill）**：每次 goal-driven milestone 被 programmer 接受后，Harness 必须在 acceptance writeback 事务完成后绑定 `servo-cleanup-skill` 执行收尾清理。清理范围：删除当前 milestone 的本地 milestone branch（`ms/{milestone_id}-{slug}`）、删除所有已合并 worktrack 本地分支（`wt-{worktrack_id}`）、将 live backlog 中的 milestone 条目移入 history、将已闭环 worktrack 条目归一化为 `done`。安全约束：不碰 remote、不删除 unmerged 分支、不删除 baseline branch、不删除未确认 artifact。清理失败不阻断 acceptance（记录 evidence 并 handback 等待 programmer 决策）。清理完成后写入 `last_cleanup_checkpoint` 到 `.servo/control-state.md` 的 `Baseline Traceability`。
 5. **长期权限配置写回**：如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
    - 连续执行或低风险 Worktrack 自批必须同时满足 Control State 的 `Low-Risk Default-Flow Autonomy Policy`：`allowed` 命中、`forbidden` 未命中、`stop_condition` 未命中、`evidence_required` 已能满足或已安排。
    - `allowed` 仅覆盖已批准 milestone / worktrack 边界内的只读观察、artifact hydration、状态一致性检查、Worktrack 内队列调度、非破坏性 docs/template/test 编辑、匹配范围本地验证、通过 Gate 后 repo-refresh 写回、无外部副作用 scaffold validation。
@@ -508,7 +509,7 @@ Gate 应汇总**正交校验面**的裁决：
 8. 不要直接把子代理的返回结果当成状态更新的唯一依据；必须经过 Gate 裁决
 9. **项目基本面刷新触发**：以下条件任意满足时，必须在当前或下一轮 Harness 回路中触发项目基本面刷新（至少包含 repo snapshot/status 刷新、backlog hygiene 检查、control-state checkpoint 更新）：
    - **Worktrack closeout 后**：每次 Worktrack 完成 closeout（merge → cleanup）后，必须在返回到 RepoScope 时刷新 Repo 级慢变量（`repo-refresh-skill`），并更新 `latest_observed_checkpoint`。
-   - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后，必须刷新 milestone-backlog → milestone-history 迁移、worktrack-backlog 状态归一化、control-state active_milestone 清空和 pipeline 重新评估。Work-collection milestone 完成时自动推进 pipeline。
+   - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后，必须刷新 milestone-backlog → milestone-history 迁移、worktrack-backlog 状态归一化、control-state active_milestone 清空和 pipeline 重新评估。Work-collection milestone 完成时自动推进 pipeline。**Milestone final acceptance 后必须绑定 `servo-cleanup-skill` 执行收尾清理**：删除当前 milestone 的本地 milestone branch、删除所有已合并的 worktrack 本地分支、归一化 backlog 条目（已闭环 worktrack 标记为 done、milestone 移入 history）。清理失败不阻断 acceptance（记录 evidence 并 handback 等待 programmer 决策），但不碰 remote、不删 unmerged 分支、不删 baseline branch。清理完成后写入 `last_cleanup_checkpoint` 到 `Baseline Traceability`。
    - **Git hash 变更后**：每次 Harness 启动时，若 `latest_observed_checkpoint` 与当前 HEAD 不一致，必须在 Observe 阶段标记 `repo_baseline_changed: true`，并在当前回路中绑定 `repo-refresh-skill` 刷新 Repo 基线观察。
    - **Pipeline 不一致检测**：若 milestone-backlog、worktrack-backlog、control-state 的 active_milestone 或 milestone artifact 之间存在不一致（如指向不存在的 milestone、状态矛盾），必须触发 pipeline 恢复动作（见 §十二 恢复策略 → Milestone Pipeline 恢复）。
    - 以上触发条件是项目基本面刷新的最小必要时机；不得因为"未见明显变化"而跳过 closeout 后或 hash 变更后的刷新动作。
