@@ -50,7 +50,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 读取 Milestone artifact 的 `milestone_kind` 字段，默认值 `goal-driven`
    - **goal-driven**：执行完整双重验收
      - **worktrack_list_finished**：声明的 worktrack 列表是否全部处理（已完成 / 被明确移出 / 阻塞有决策）
-     - **Milestone Gate**（`worktrack_list_finished == true` 时）：按 `Milestone Gate 两层集成判定` 章节执行两层架构——Layer 1 分派 4 个隔离 SubAgent 轴技能（blackbox / whitebox / anticheat / composite），Layer 2 由本技能的聚合器消费四轴 verdicts + per-WT verdicts + milestone 的 `aggregation_rules`，经 weight → contradiction → composite_lane → degenerate 四步产出 `milestone_gate_verdict`。Gate 必须在 `purpose_achieved` 判定前完成
+     - **Milestone Gate**（`worktrack_list_finished == true` 时）：准备输入包并**调用 `servo-milestone-gate` skill**。Gate skill 内部执行两层架构——Layer 1 分派 4 个隔离 SubAgent 轴技能，Layer 2 按 milestone 的 `aggregation_rules` 运行聚合器，产出 `milestone_gate_verdict`。本技能消费 gate skill 返回的 verdict，纳入 `purpose_achieved` 判定。Gate 必须在 `purpose_achieved` 判定前完成。
      - **purpose_achieved**：Milestone 原始目的是否经聚合 evidence 证明达成（对照 `completion_signals`、`acceptance_criteria` 和 `completion_threshold_pct`，按 `purpose_achieved 操作化判定` 章节逐条验证）
    - **work-collection**：执行单重验收
      - **worktrack_list_finished**：同上
@@ -179,19 +179,17 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - `deferred`：被明确推迟的 worktrack 数
   - `completion_pct`：完成百分比
 - `worktrack_list_finished`：boolean
-- `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped
-- `milestone_gate_summary`：black-box / white-box / anti-cheat 的聚合摘要
-- `aggregation_rules_applied`：boolean — 是否成功读取并应用了 `aggregation_rules`
-- `aggregation_rules_missing`：boolean — milestone artifact 是否缺少 `aggregation_rules` 字段
-- `aggregation_rules_source`：string — `aggregation_rules` 来源路径或 `missing`
-- `per_worktrack_weights`：array — Step 1 weight_rules 产出。每项 `{ worktrack_id, node_type, base_weight, final_weight, overridden, override_reason }`
-- `contradiction_findings`：array — Step 2 矛盾检测发现。每项 `{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }`
-- `contradiction_blocked`：boolean — Step 2 是否因未解决矛盾而 block
-- `composite_lane_verdicts`：object — Step 3 四轴聚合结果。`{ blackbox: { verdict, severity, veto_power, veto_triggered, weight_modifier_applied }, whitebox: {...}, anticheat: {...}, composite: {...} }`
-- `degenerate_and_applied`：boolean — Step 4 退化 AND 是否触发
-- `degenerate_and_reason`：string — 退化理由（触发时必填，否则 `N/A`）
-- `carrier_isolation_broken`：boolean — Layer 1 分派中是否因 SubAgent 不可用导致隔离破坏
-- `isolation_note`：string — Layer 1 轴间隔离状态摘要
+- `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped — 来自 `servo-milestone-gate` 输出
+- `milestone_gate_summary`：来自 `servo-milestone-gate` 输出的聚合摘要
+- `aggregation_rules_applied`：boolean — 来自 `servo-milestone-gate` 输出
+- `aggregation_rules_missing`：boolean — 来自 `servo-milestone-gate` 输出
+- `per_worktrack_weights`：array — 来自 `servo-milestone-gate` 输出
+- `contradiction_findings`：array — 来自 `servo-milestone-gate` 输出
+- `contradiction_blocked`：boolean — 来自 `servo-milestone-gate` 输出
+- `composite_lane_verdicts`：object — 来自 `servo-milestone-gate` 输出
+- `degenerate_and_applied`：boolean — 来自 `servo-milestone-gate` 输出
+- `degenerate_and_reason`：string | N/A — 来自 `servo-milestone-gate` 输出
+- `carrier_isolation_broken`：boolean — 来自 `servo-milestone-gate` 输出
 - `composite_acceptance_verdict`：accepted / accepted_with_residual_risk / needs_followup_worktrack / blocked / skipped
 - `composite_acceptance_summary`：code-review / feature-completeness / related-influence / intent-completeness / operator-simulation / professional-review lanes 的 carrier、fallback、verdict、severity、evidence refs 和 residual risks
 - `purpose_achieved`：boolean
@@ -241,225 +239,28 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 若本轮 `Milestone Gate` 未 `pass`，不得把 `purpose_achieved` 视为可用于 closeout 的完成信号
 6. **记录明细**：在 `aggregated_evidence_summary` 中记录每条 signal/criterion 的判定结果、覆盖率、threshold 和依据，供 developer 复核。
 
-## `Milestone Gate` 两层集成判定
+## `Milestone Gate` 调用
 
-`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效，用来回答"所有局部 closeout 之后，整体 milestone 是否真的成立"。
+`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效。
 
-本技能实现 **Layer 2 编排器（Orchestrator）** 角色：当 worktrack 列表确认 finished 后，分派 4 个隔离 SubAgent 轴技能（Layer 1），消费各轴产出后经 per-milestone 可配置 `aggregation_rules` 聚合，最终产出 `milestone_gate_verdict`。聚合规则合同定义于 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
+**本技能不直接运行 Milestone Gate**。当 `worktrack_list_finished == true` 时，本技能负责：
 
-### 架构
+1. 准备输入包：`milestone_id` + `closed_worktrack_list`（每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`）+ `aggregation_rules`（来自 milestone artifact）
+2. **调用** `servo-milestone-gate` skill（推荐 SubAgent delegated）
+3. **消费** gate skill 返回的 `milestone_gate_verdict` 和聚合状态字段
+4. 将 gate verdict 纳入 `purpose_achieved` 判定和 milestone 状态报告
 
-```
-milestone-status-skill (Orchestrator / Layer 2)
-  │
-  ├─ worktrack_list_finished? ── no ──→ 返回 not_ready（不执行 Gate）
-  │
-  └─ yes
-      │
-      ├─ Layer 1: 分派 4 个隔离 SubAgent（并行，轴间不可见）
-      │   ├─ servo-milestone-blackbox-check  → blackbox_verdict
-      │   ├─ servo-milestone-whitebox-check  → whitebox_verdict
-      │   ├─ servo-milestone-anticheat-check → anticheat_verdict
-      │   └─ servo-milestone-composite-check → composite_verdict
-      │
-      ├─ Layer 2: Aggregator（本技能内执行）
-      │   ├─ 读取 per-WT single-acceptance verdicts
-      │   ├─ 读取 4 轴 verdicts（Layer 1 输出）
-      │   ├─ 读取 milestone 的 aggregation_rules
-      │   ├─ 执行: weight → contradiction → composite_lane → degenerate
-      │   └─ → milestone_gate_verdict
-      │
-      └─ 产出 milestone 状态报告（含完整聚合状态）
-```
+Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2 运行 aggregator。详见 `product/harness/skills/servo-milestone-gate/SKILL.md` 和 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
 
-### Layer 1：四轴独立 SubAgent 分派
+**阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`。
 
-本层将 milestone 级集成验收分解为 4 个**隔离轴检查**，每个轴由独立 SubAgent 承载、并行执行、轴间不可见。
+### Gate 相关字段
 
-#### 轴定义
+以下字段由 `servo-milestone-gate` skill 产出，本技能透传到 milestone 状态报告中：
 
-| 轴 | Skill | 视角 | 检查范围 |
-|----|-------|------|---------|
-| **blackbox** | `servo-milestone-blackbox-check` | 外部用户视角 | 跨 WT 集成一致性、用户承诺兑现、回归风险、路径约定合规、完整性缺口（B1-B5）。**不阅读实现代码。** |
-| **whitebox** | `servo-milestone-whitebox-check` | 内部实现视角 | 接口契约一致性、状态流转完整性、依赖图（循环/未声明/幽灵）、架构分层合规、关键集成路径实现质量（W1-W5）。**阅读完整实现代码。** |
-| **anticheat** | `servo-milestone-anticheat-check` | 证据可信度视角 | Mock abuse、evidence 复用、局部验证、gate bypass、过期 evidence、self-review bias、false positive risk（A1-A7）。**不评判代码正确性，只评判证据可信度。** |
-| **composite** | `servo-milestone-composite-check` | 复合验收视角 | 消费 per-WT lane 报告（code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review）并聚合成 milestone 级复合验收结论（C1-C6）。**不生成新代码检查。** |
+- `milestone_gate_verdict`、`aggregation_rules_applied`、`aggregation_rules_missing`、`per_worktrack_weights`、`contradiction_findings`、`contradiction_blocked`、`composite_lane_verdicts`、`degenerate_and_applied`、`degenerate_and_reason`、`carrier_isolation_broken`
 
-#### 分派规则
-
-1. **并行 SubAgent 分派**：若运行时支持 SubAgent dispatch，4 个轴作为 SubAgent **并行分派**。每个 SubAgent 的任务包只包含该轴独享的输入材料（milestone artifact、该 milestone 下所有已闭环 WT 的 closeout record / single-acceptance verdict / gate evidence / diff summary / contract 等），**不得包含其他轴的 verdict 或检查结果**。
-2. **超时处理**：若任一轴 SubAgent 失败或超时，该轴标记 `verdict: blocked` 并记录失败原因。已完成的轴 verdict 正常收集，不因部分轴 blocked 而丢弃其他轴的产物。
-3. **SubAgent 不可用降级**：若运行时完全不支持 SubAgent dispatch，降级为 current-carrier **顺序执行** 4 个轴技能。此时必须标记 `carrier_isolation_broken: true`（因为 current-carrier 可能在同一进程中接触到其他轴的输出），并在 `isolation_guarantee` 中记录降级原因。顺序执行时，每个轴的检查必须在完全独立的上下文中进行——已检查过的轴的 verdict 不得传递给后续轴。
-4. **隔离约束**：每个轴技能的 SKILL.md 已声明轴间隔离硬约束（`isolation_guarantee`、`carrier_isolation_broken`、泄露检测与记录）。本技能（Orchestrator）在分派 SubAgent 时必须保证输入包隔离；收到各轴输出后，若任一侧标记 `isolation_guarantee: false`，记录到聚合状态但继续聚合（隔离破坏本身不自动阻断——由裁决逻辑决定影响）。
-
-#### 各轴输出格式
-
-每个轴技能产出结构化 YAML verdict，格式为：
-
-```yaml
-{axis}_verdict:
-  axis: blackbox | whitebox | anticheat | composite
-  verdict: pass | soft_fail | hard_fail | blocked
-  severity: low | medium | high
-  checklist_results:
-    - check_id: B1 | W1 | A1 | C1  # 等
-      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
-      evidence_refs: [...]
-      finding: "..."
-  carrier: subagent | current-carrier
-  isolation_guarantee: true | false
-  carrier_isolation_broken: true | false
-  isolation_note: "..." | N/A
-```
-
-各轴的完整 checklist（B1-B5、W1-W5、A1-A7、C1-C6）和 verdict 推导规则定义在各自 SKILL.md 中。Orchestrator 只消费 `verdict`、`severity`、`checklist_results` 和隔离状态字段，不解析各轴内部 checklist 的具体语义。
-
-### Layer 2：可配置聚合器（Aggregator）
-
-本层由 milestone-status-skill 在收集齐全 4 轴 verdict 后执行。聚合器消费三类输入：
-
-1. **per-WT single-acceptance verdicts**：当前 milestone 下每个已闭环 WT 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`node_type`、`critical_failure` 标记。格式见 `docs/harness/artifact/worktrack/single-acceptance-contract.md`。
-2. **4 轴 verdicts**：Layer 1 产出的 `blackbox_verdict`、`whitebox_verdict`、`anticheat_verdict`、`composite_verdict`。
-3. **aggregation_rules**：来自 milestone artifact（`.servo/milestone/{milestone_id}.md`）的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），并标记 `aggregation_rules_missing: true` 作为 warning。
-
-聚合分四步执行，顺序不可颠倒——前一步的结果是后一步的输入。
-
-#### Step 1：weight_rules（证据权重计算）
-
-从每个已闭环 WT 的 `node_type` 出发，映射到基础权重，再叠加 per-WT `overrides`（如有），最终产出的 `final_weight` 将影响后续矛盾检测和最终裁决。
-
-**默认权重映射**（`aggregation_rules.weight_rules.node_type_weights`）：
-
-| node_type | 默认 weight | 语义 |
-|-----------|------------|------|
-| critical | 5 | 不可有任何 hard-fail。fail 则 milestone blocked |
-| feature | 4 | 重大影响。fail 需 explicit programmer review |
-| release | 4 | 发布/部署。fail 影响交付完整性 |
-| config | 3 | 配置变更。参与加权聚合 |
-| test | 3 | 测试变更。增强验证信心 |
-| docs | 2 | 文档变更。soft-fail 不阻断 milestone |
-| demo | 1 | 演示/探索。影响最小 |
-| 未声明 | 2 | default_weight |
-
-**overrides 处理**：
-
-- 若 `aggregation_rules.weight_rules.overrides` 非空，匹配 `worktrack_id`，将该 WT 的 `final_weight` 替换为覆盖值。
-- 覆盖必须附带 `reason`，无理由的覆盖视为无效，使用默认权重。
-- 记录 `overridden: true/false` 和 `override_reason`。
-
-**权重计算顺序**：先取 `node_type_weights` 默认值 → 再应用 `overrides` → 后续 `weight_modifier`（见 Step 3）可清零特定 WT 的 `final_weight`。
-
-**输出**：`per_worktrack_weights` 列表，每项包含 `worktrack_id`、`node_type`、`base_weight`、`final_weight`、`overridden`、`override_reason`。
-
-#### Step 2：contradiction_rules（矛盾检测与处理）
-
-检测两个 critical WT 的 verdict 是否互相矛盾（如一个 pass 一个 hard-fail）。矛盾不允许静默取多数或平均。
-
-**触发条件**（来自 `aggregation_rules.contradiction_rules`）：
-
-- `detection.scope`：`critical_only`（推荐默认）或 `all`
-- `trigger_condition.weight_both_are_at_least`：双方 `final_weight` 均 ≥ 此值（默认 3）才触发
-- `trigger_condition.verdict_types`：定义哪些 verdict 组合算矛盾（默认 `[pass, hard-fail]`、`[pass, blocked]`、`[hard-fail, pass]`）
-
-**检测方法**：对所有已闭环 WT 两两配对，若双方权重均 ≥ 阈值且 verdict 组合命中 trigger_condition，记录矛盾。
-
-**矛盾输出**：每对矛盾记录 `contradiction_finding`：
-
-```yaml
-contradiction_finding:
-  wt_a_id: "WT-xxx"
-  verdict_a: pass
-  wt_b_id: "WT-yyy"
-  verdict_b: hard_fail
-  severity: high | medium | low
-  recommended_resolution: new_verification_worktrack | programmer_resolution
-```
-
-**矛盾处理**：
-
-- 任一矛盾未解决 → `contradiction_blocked: true`，milestone gate 判定为 `blocked`
-- 合法解除路径（来自 `aggregation_rules.contradiction_rules.resolution.resolution_paths`）：
-  1. `new_verification_worktrack`：创建专用 verification WT，重新验证矛盾点。新 WT 的 evidence 替代冲突 evidence。block lift 条件：新 WT 通过 gate。
-  2. `programmer_resolution`：programmer 人工事实核查后明确记录决策（`retain_wt_a | retain_wt_b | invalidate_both`）和理由。block lift 条件：programmer 显式记录 resolution。
-- 矛盾 block 不可自动解除：aggregator 检测到之前的 resolution（新 verification WT 的 closeout）后自动重算，但仍保留 block，直到 resolution 的 evidence 满足 `block_lift_condition`。
-
-**部分矛盾**（`partial_contradiction`）：1 个 critical WT hard-fail + 3 个 normal WT pass 时，标记 `partial_contradiction` risk（记录但不 block），建议 programmer review。
-
-#### Step 3：composite_lane_rules（四轴 verdict 聚合）
-
-将 4 个轴的 Layer 1 verdict 聚合为 milestone 级的 composite lane 判定。消费模式由 `aggregation_rules.composite_lane_rules` 控制。
-
-**默认消费模式**：`independent_axes_with_weight_modifier`
-
-- **独立消费**：各轴（blackbox / whitebox / anticheat / composite）的 verdict 独立消费，不与 per-WT verdict 混合加权。
-- **Veto power**：
-  - `blackbox: veto_power = true`（默认）：blackbox 轴 `hard_fail` 或 `blocked` → milestone 直接 blocked，无论其他轴或 per-WT aggregation 结果如何
-  - `whitebox: veto_power = true`（默认）：whitebox 轴 `hard_fail` 或 `blocked` → milestone 直接 blocked
-  - `anticheat: veto_power = true`（默认）：anticheat 轴 `hard_fail` 或 `blocked` → milestone 直接 blocked。anti-cheat 的 veto 不可被其他轴覆盖
-  - `composite: veto_power = false`（默认）：composite 轴 fail 记录风险，不自动 block——但若 composite 轴为 `hard_fail`，在最终裁决中仍作为 risk 参与判定
-- **per-milestone 可配置**：不同 milestone 类型可调整各轴 veto_power（如 docs milestone 可将 blackbox 和 anticheat 的 veto_power 设为 false，仅 whitebox 保留 veto）。
-
-**Weight modifier**（`aggregation_rules.composite_lane_rules.weight_modifier`）：
-
-- 若 `enabled: true`：特定轴发现的高严重度信号可将对应 WT 的 `final_weight` 清零（从 Step 1 计算的 `final_weight` 设为 0）。
-- 规则：
-  - anticheat 轴发现 `high` severity → 该轴 `finding` 中涉及的 WT 的 `final_weight = 0`
-  - blackbox 轴发现 `high` severity → 该轴 `finding` 中涉及的 WT 的 `final_weight = 0`
-- 目的：被检测到 cheat / 严重外部缺陷的 WT，其对 milestone verdict 的贡献权重清零，防止作弊 WT 的 pass 拉高聚合分数。
-
-**输出**：`composite_lane_verdicts`，每轴记录 `verdict`、`severity`、`veto_power`、`veto_triggered`、`weight_modifier_applied`。
-
-#### Step 4：degenerate_and_rules（退化 AND 判定）
-
-当前 evidence 状态简单到不需要聚合规则时，触发退化 AND。退化 AND 不是"关闭规则"（`enabled: false`），而是规则正常运行但未发现需要干预的情况。
-
-**触发条件（全部满足）**：
-
-- `no_contradiction_detected == true`：Step 2 未检测到任何矛盾
-- `no_anti_cheat_high_severity == true`：anticheat 轴无 high severity 发现
-- `all_lanes_consistent == true`：4 轴 verdict 之间无矛盾（如 blackbox=pass、whitebox=hard_fail 不算 consistent）
-- `no_weight_override_applied == true`：Step 1 未应用任何 weight overrides
-- `all_critical_wt_pass == true`：所有 `final_weight >= 4` 的 WT 的 single-acceptance verdict 均为 pass
-
-**触发后**：
-
-- 必须显式记录：`degenerate_and_applied: true`
-- 记录退化理由：`degenerate_and_reason`，格式为 `"No contradiction detected across {n} worktracks; all critical WTs pass; all lanes consistent."`
-- 退化 AND 判定 = 简单 AND：所有已闭环 WT 的 single-acceptance verdict 均为 pass → pass；任一 hard-fail → hard-fail
-- 退化 AND 不是永久的：将来任何退化条件不再满足时（如新 WT 引入矛盾），退化解锁，恢复正常聚合
-
-#### 最终裁决（milestone_gate_verdict）
-
-按以下优先级顺序判定，高优先级条件满足后立即返回，不继续执行低优先级：
-
-| 优先级 | 条件 | verdict |
-|--------|------|---------|
-| 1 | 任一 veto-power 轴 `hard_fail` 或 `blocked`（blackbox / whitebox / anticheat 的 veto_power=true 且 verdict ∈ {hard_fail, blocked}） | `blocked` |
-| 2 | `contradiction_blocked == true`（Step 2 检测到矛盾且未解决） | `blocked` |
-| 3a | 所有 `final_weight >= 3` 的 WT 均为 pass（或 soft-fail 且已记录 residual risk） | `pass` |
-| 3b | 任一 `final_weight >= 3` 的 WT 为 hard-fail，但无 `final_weight >= 4` 的 WT hard-fail | `soft-fail` |
-| 3c | 任一 `final_weight >= 4`（critical）的 WT 为 hard-fail | `hard-fail` |
-| 4 | 退化 AND 触发（Step 4） | `pass`（标记 `degenerate_and_applied: true`） |
-
-**可用的 verdic値**：`pass` / `soft-fail` / `hard-fail` / `blocked`
-
-**阻断语义**（与旧版一致）：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`，并把修复/回退/重新验证要求交还给 developer 或上游 supervisor。
-
-### 聚合相关输出字段
-
-以下字段为 Layer 2 聚合器的内部状态，需在 milestone 状态报告的输出中暴露，供 developer 和 upstream supervisor 审查聚合过程的可追溯性：
-
-- `aggregation_rules_applied`：boolean — 是否成功读取并应用了 `aggregation_rules`
-- `aggregation_rules_missing`：boolean — milestone artifact 是否缺少 `aggregation_rules` 字段（`true` 时等同于 `enabled: false`，触发退化 AND）
-- `aggregation_rules_source`：string — `aggregation_rules` 的来源路径（如 `.servo/milestone/{milestone_id}.md#aggregation_rules`）或 `missing`
-- `per_worktrack_weights`：array — Step 1 产出。每项 `{ worktrack_id, node_type, base_weight, final_weight, overridden, override_reason }`
-- `contradiction_findings`：array — Step 2 检测到的矛盾列表。每项 `{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }`
-- `contradiction_blocked`：boolean — Step 2 是否因未解决矛盾而 block
-- `composite_lane_verdicts`：object — Step 3 四轴聚合结果。`{ blackbox: { verdict, severity, veto_power, veto_triggered, weight_modifier_applied }, whitebox: {...}, anticheat: {...}, composite: {...} }`
-- `degenerate_and_applied`：boolean — Step 4 退化 AND 是否触发
-- `degenerate_and_reason`：string — 退化理由（触发时必填，否则 `N/A`）
-- `carrier_isolation_broken`：boolean — Layer 1 分派中是否因 SubAgent 不可用导致隔离破坏
-- `isolation_note`：string — 隔离状态摘要（包括哪些轴 isolation_guarantee 为 false 及原因）
+详细格式见 `product/harness/skills/servo-milestone-gate/SKILL.md#预期输出`。
 
 ## Writeback 指令
 
@@ -469,12 +270,12 @@ contradiction_finding:
   - 将 `progress_counter` 更新为本技能计算的当前值
   - 仅当 `milestone_acceptance_verdict == "achieved"` 且 `milestone_gate_verdict == "pass"` 时：将 `status` 更新为 `completed`
   - 更新 `updated` 时间戳
-  - 写入 `milestone_gate_verdict` 和 `milestone_gate_summary`
-  - 若 `aggregation_rules_applied == true`：写入 `aggregation_rules_applied`、`per_worktrack_weights`、`contradiction_findings`、`contradiction_blocked`、`composite_lane_verdicts`、`degenerate_and_applied`、`degenerate_and_reason` 到 milestone artifact 的聚合状态段
+  - 写入 `milestone_gate_verdict` 和 `milestone_gate_summary`（来自 `servo-milestone-gate` 输出）
+  - 若 `aggregation_rules_applied == true`：透传 `servo-milestone-gate` 输出的聚合状态字段到 milestone artifact
 - **Control State**（`.servo/control-state.md`）：
   - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
   - 更新 `milestone_status`（若发生变化）
-  - 写入 `milestone_gate_verdict`、`aggregation_rules_applied`、`contradiction_blocked`、`degenerate_and_applied` 到 control state 的 milestone gate 段
+  - 写入 `milestone_gate_verdict` 和关键聚合字段（来自 `servo-milestone-gate` 输出）到 control state 的 milestone gate 段
 - **Milestone Backlog / History**（`.servo/repo/milestone-backlog.md` / `.servo/repo/milestone-history.md`）：
   - live backlog 只保留 `planned` / `active` 条目
   - completed / superseded 条目应写入 milestone-history
