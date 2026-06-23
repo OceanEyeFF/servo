@@ -282,39 +282,27 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 - `handling = record_as_risk`：不 block milestone，但在 `contradiction_findings` 中标记 `partial_contradiction` 风险
 
-### 4. composite_lane_rules 应用（两层模型）
+### 4. composite_lane_rules 应用
 
-Composite lanes 在 milestone 级同时运行两层检查：
+读取各 WT 的 composite acceptance lane 结论：
 
-**Layer 1 — 消费 per-WT lane 结论**：读取每个已闭环 WT 在自己的 gate evidence 或 closeout record 中记录的 lane 结论（black-box/white-box/anti-cheat/composite），按 AND 聚合成 milestone 级 lane verdict。
-
-**Layer 2 — Milestone 级独立复查**：不依赖 per-WT 的自报结论。在 milestone 集成视角下，重新执行以下检查：
-
-- **black-box**：从 milestone 外部视角验证跨 worktrack 的最终用户可见结果和集成行为是否成立。不应只信任 per-WT 的局部测试结论。
-- **white-box**：从内部实现视角验证跨 worktrack 的关键集成路径、接口契约、状态拼接和系统级回归风险是否成立。不应只信任单个 WT 的代码审查结论。
-- **anti-cheat**：检查是否存在伪造通过的信号——例如只跑局部测试而跳过真实集成、以 mock/stub 代替必要验证、复用过期 evidence、或 per-WT 的 evidence 互相矛盾但都声称 pass。
-- **composite acceptance**：必须消费 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes。每条 lane 必须记录 carrier、delegation/fallback、verdict、severity 和 evidence refs。
-
-两层结果合并为每条 lane 的最终结论：
-- Layer 1 AND Layer 2 均为 pass → lane pass
-- 任一层 fail 且该 lane 有 veto_power → milestone blocked
-- 任一层 fail 且该 lane 无 veto_power → 记录 risk，不 block
-
-`veto_power` 默认配置：black_box=true, white_box=true, anti_cheat=true, composite=false
-
-`weight_modifier.enabled = true` 时：
-- anti-cheat Layer 2 发现 high_severity → 该 WT 的 final_weight 清零（`target_wt_weight = 0`）
-- black-box Layer 2 发现 high_severity → 该 WT 的 final_weight 清零
+- `consumption_mode = independent_axes_with_weight_modifier`（默认）：
+  - 四个 lane（black_box / white_box / anti_cheat / composite）分别聚合：`lane-level verdict = AND of all WT lane findings`
+  - `veto_power: true` 的 lane（black_box / white_box / anti_cheat）：lane fail → milestone gate blocked，无论 per-WT aggregation 结果
+  - `composite` lane veto_power=false：fail 只记录 risk，不自动 block
+- `weight_modifier.enabled = true` 时：
+  - anti-cheat 发现 high_severity → 该 WT 的 final_weight 清零（`target_wt_weight = 0`）
+  - black-box 发现 high_severity → 该 WT 的 final_weight 清零
 
 ### 5. degenerate_and_rules 检查
 
 以下条件**全部**满足时，允许使用退化 AND：
 
 - `no_contradiction_detected == true`
-- `no_anti_cheat_high_severity == true`（Layer 2 无 high-severity finding）
-- `all_lanes_consistent == true`（Layer 1 聚合结论与 Layer 2 独立复查一致）
+- `no_anti_cheat_high_severity == true`
+- `all_lanes_consistent == true`
 - `no_weight_override_applied == true`
-- `all_critical_wt_pass == true`（所有 final_weight ≥ 4 的 WT 在 aggregation 中均为 pass）
+- `all_critical_wt_pass == true`（所有 final_weight ≥ 4 的 WT 均为 pass）
 
 退化 AND 必须显式记录：
 
