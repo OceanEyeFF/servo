@@ -542,8 +542,7 @@ CLEANUP_CONTRACT_PATHS = [
 ]
 CLEANUP_CONTRACT_REQUIRED_TERMS = [
     "servo-cleanup-skill",
-    "merge → refresh",
-    "cleanup",
+    # Closeout pipeline terms: only checked in harness-skill (closeout pipeline authority)
 ]
 REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS = [
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
