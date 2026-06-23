@@ -213,7 +213,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `pipeline_advancement`：若当前 milestone `achieved`，推荐激活的下一个 milestone_id（从 live milestone-backlog 中按 priority 选取满足前置条件的 planned milestone；前置依赖可由 milestone-history 中 completed/superseded 条目满足）
 - `pipeline_state`：Pipeline aggregate 快照（planned/active 来自 live milestone-backlog，completed/superseded 来自 milestone-history）
 - `writeback_required`：boolean — 是否需要 harness-skill 执行写回
-- `writeback_instructions`：object — 包含 `milestone_artifact_updates`（需更新的 milestone artifact 字段）、`control_state_updates`（需写入 control-state 的字段）、`backlog_updates`（需 upsert 到 milestone-backlog 的条目）、`pipeline_advancement_action`（若有下一 milestone 待激活，包含激活指令）
+- `writeback_instructions`：object — 包含 `milestone_artifact_updates`（需更新的 milestone artifact 字段）、`control_state_updates`（需写入 control-state 的字段，含 `aggregation_rules_missing` flag）、`backlog_updates`（需 upsert 到 milestone-backlog 的条目）、`pipeline_advancement_action`（若有下一 milestone 待激活，包含激活指令）
 
 ## 资源
 
