@@ -11,7 +11,7 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
 
 与其他三轴不同，本轴**不生成新的代码检查**。它消费每个已闭环 worktrack 上已经产出的 composite acceptance lane 报告，聚合并审查其完整性和可信度，最终形成 milestone 级的复合验收结论。
 
-本技能在隔离的 SubAgent 上运行，接收限定范围输入包，不得读取其他轴的 verdict。架构位置见 [design-four-axis-skills.md](../../../../../.servo/repo/design-four-axis-skills.md)。
+本技能在隔离的 SubAgent 上运行，接收限定范围输入包，不得读取其他轴的 verdict。架构位置定义见 [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) Layer 1 / composite_lane_rules。
 
 ## 何时使用
 
@@ -328,6 +328,6 @@ composite_verdict:
 
 - [Milestone Gate 证据聚合合同](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — §五 composite_lane_rules：composite acceptance lanes 在 milestone 级的消费规则和 veto power 定义。
 - [Composite Milestone Acceptance](../../../../docs/harness/artifact/control/composite-milestone-acceptance.md) — composite acceptance 的 lane 定义、verdict model 和 fallback 规则。
-- [Milestone Gate 四轴检查 Skills 设计稿](../../../../.servo/repo/design-four-axis-skills.md) — Layer 1 四轴 SubAgent skill 的架构定义、轴间隔离规则和编排设计。
-- [composite-acceptance-report.template.md](../../milestone-status-skill/templates/composite-acceptance-report.template.md) — per-milestone composite acceptance report 的字段合同和模板格式。
+- [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — Milestone Gate 聚合合同，定义 composite_lane_rules 和 Layer 2 聚合逻辑。本技能（composite lane check）是 Layer 2 的输入之一。
+- [milestone.md](../../../../docs/harness/artifact/control/milestone.md) — Milestone artifact 合同，定义 aggregation_rules 字段和 composite_acceptance 配置。
 - [Skill 公共约束](../../../../docs/harness/foundations/skill-common-constraints.md) — C-1 至 C-8 公共约束定义。
