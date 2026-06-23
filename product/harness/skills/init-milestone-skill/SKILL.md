@@ -47,6 +47,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - `intake_status == "questions_required"` 时，必须返回 blocked 并带回 `continuation_state` 和 `next_required_question`，建议回到 `pre-milestone-intake-skill` 继续 one-question-at-a-time；不得创建、upsert 或激活 milestone。
    - `intake_status == "blocked"` 时，必须返回 blocked 并建议回到 `pre-milestone-intake-skill` 或 programmer 决策；不得创建、upsert 或激活 milestone。
    - intake review 缺失、字段不全、状态矛盾（例如 skipped 同时 ready）、或未 ready 时，返回 blocked，建议先调用 `pre-milestone-intake-skill`，不得把薄弱的 milestone brief 伪装成已确认。
+- intake review 中的 `milestone_task_complexity_assessment` 必须完整（goal-driven 所有字段必选，work-collection 至少包含 `overall_complexity`、`worktrack_count_estimate`、`recommended_route`）；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。`discovery_or_reinforcement_needed = true` 时阻断实现型 Milestone 的 create/activate/derive。字段合同见 `docs/harness/artifact/control/milestone.md#milestone-task-complexity-assessment`。
 4. 检查 `complex_project_entry_gate`：
    - 当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，必须存在 `complex_project_entry_gate`。
    - gate 必须包含 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation`。

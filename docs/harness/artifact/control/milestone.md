@@ -47,6 +47,50 @@ last_verified: 2026-06-13
 | `created_by` | enum | `programmer` / `harness` — 创建来源 |
 | `milestone_kind` | enum | `goal-driven` / `work-collection` — milestone 类型，默认 `goal-driven` |
 | `completion_threshold_pct` | integer | goal-driven milestone 的完成阈值百分比，默认 `100`；仅当 `signal_satisfaction_pct` 与 `criteria_pass_pct` 均达到该阈值时，`purpose_achieved == true` |
+| `milestone_task_complexity_assessment` | object | 任务复杂度评估结构化字段，由 pre-milestone-intake-skill 产出；缺失时等同于 blocked |
+
+## Milestone Task Complexity Assessment
+
+`milestone_task_complexity_assessment` 是 pre-milestone-intake-skill 产出的结构化复杂度评估，写入 Milestone artifact 并被 downstream consumers（harness-skill、init-milestone-skill、milestone-status-skill）消费。它以固定字段集量化 Milestone 的风险、范围和不确定度，为入口守卫和阻断决策提供结构化依据。
+
+### 字段定义
+
+| 字段 | 类型 | 必选 | 说明 |
+|------|------|------|------|
+| `assessment_required` | boolean | yes | 本轮是否需要复杂度评估；`false` 仅用于 intake_skipped 场景 |
+| `overall_complexity` | enum | yes | `low` / `medium` / `high` / `very-high` |
+| `scope_clarity` | enum | yes | `low` / `medium` / `high` — 需求和边界的清晰度 |
+| `worktrack_count_estimate` | integer | yes | 预估 worktrack 数量 |
+| `worktrack_split_confidence` | enum | yes | `low` / `medium` / `high` — 拆分可信度 |
+| `unknowns_level` | enum | yes | `low` / `medium` / `high` — 未知项程度 |
+| `integration_risk` | enum | yes | `low` / `medium` / `high` — 集成风险 |
+| `validation_cost` | enum | yes | `low` / `medium` / `high` — 验证成本 |
+| `permission_or_external_side_effect_risk` | enum | yes | `low` / `medium` / `high` — 权限/外部副作用风险 |
+| `documentation_governance_cost` | enum | yes | `low` / `medium` / `high` — 文档与治理成本 |
+| `recommended_route` | enum | yes | `normal_milestone_with_required_intake` / `lightweight_intake_only` / `complex_project_entry_gate_required` / `discovery_or_reinforcement_needed` |
+| `discovery_or_reinforcement_needed` | boolean | yes | 是否需要先执行发现/强化 milestone |
+| `rationale` | array[string] | yes | 复杂度评级的理由说明 |
+
+### Lightweight vs Full 评估
+
+| 维度 | Full（goal-driven） | Lightweight（work-collection） |
+|------|---------------------|-------------------------------|
+| 触发条件 | 所有 goal-driven milestone 必须 full | work-collection milestone 可使用 lightweight |
+| 必选字段 | 全部字段必选 | 仅 `overall_complexity`、`worktrack_count_estimate`、`recommended_route` 必选；其余标记为 `N/A` |
+| 阻断行为 | 缺失必选字段 → blocked | 缺失必选字段 → blocked（lightweight 也有最低字段集） |
+| `discovery_or_reinforcement_needed` | 必须判定；true 时阻断实现型 Milestone create/activate/derive worktrack | 不适用，默认 `false` |
+
+### 阻断语义（Blocking Semantics）
+
+本字段合同是所有 downstream consumer 的统一阻断依据。以下情况均视为 blocked，不得创建/激活/派生 worktrack：
+
+1. **缺失 assessment**：milestone artifact 不含 `milestone_task_complexity_assessment` → blocked（不得推断为 ready）
+2. **required 字段不全**：任一必选字段缺失或空值 → 等同于缺失 assessment（blocked）
+3. **discovery_or_reinforcement_needed = true**：必须路由到 reinforcement documentation / project-understanding milestone，不得 create/activate implementation-oriented milestone
+4. **recommended_route 与其他字段矛盾**：如 overall_complexity=very-high 但 recommended_route=lightweight → blocked，需 programmer 审查
+5. **保守运行时回填**：旧 `.servo/milestone/*.md` 缺少该字段时，backfill 为 `assessment_required: false`（intake_skipped 默认值），其他字段按 `missing` / `blocked` / `N/A` 处理，不得解释为 ready
+
+Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
 
 ## Milestone 类型分化
 
