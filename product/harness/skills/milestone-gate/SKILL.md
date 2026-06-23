@@ -1,5 +1,5 @@
 ---
-name: servo-milestone-gate
+name: milestone-gate
 description: 当 worktrack_list_finished 后需要运行 Milestone Gate 两层集成验收时使用这个技能。它是 Gate Orchestrator：Layer 1 分派 4 个隔离 SubAgent 轴技能（blackbox/whitebox/anticheat/composite），Layer 2 按 per-milestone 可配置 aggregation_rules 运行聚合器→milestone_gate_verdict。由 milestone-status-skill 在确认 worktrack 列表 finished 后调用。
 ---
 
