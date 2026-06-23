@@ -96,6 +96,24 @@ Execution Policy 控制本 worktrack 的执行载体选择，不替代 `ControlS
 
 语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能分派就分派"。`delegated` 必须分派否则返回 gap/block。`current-carrier` 关闭分派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口或 `dispatch package unsafe` 不能分派，须记录 fallback reason，并使用 `runtime fallback` 标记运行时回退。
 
+## Closeout Checklist
+
+列出本 worktrack 完成后必须更新/验证的 `.servo/` artifact 及对应字段。由 [self-review-contract.md](./self-review-contract.md) 定义的 self-review 步骤消费。
+
+Contract 模板中 `closeout_checklist` 字段清单（参见 [product/.servo_template/worktrack/contract.md](../../../../product/.servo_template/worktrack/contract.md)）：
+
+- `milestone_progress_counter` — 是否更新 milestone artifact 的 progress_counter
+- `worktrack_backlog_entry` — 是否更新 worktrack-backlog 条目状态
+- `control_state_active_worktrack` — 是否清理 control-state 的 active_worktrack 指针
+- `control_state_latest_commit` — 是否追加 latest_closed_worktrack_commit
+- `control_state_route` — 是否更新 control-state 路由字段
+- `milestone_backlog_entry` — 是否更新 milestone-backlog 条目
+- `closeout_record` — 是否写入 closeout record
+- `docs_navigation` — 是否更新 docs 入口导航
+- `governance_checks` — 是否通过 governance 验证
+
+每个 checklist 项在该 worktrack 的 contract 实例中应填写具体说明（如 `milestone_progress_counter: increment completed from 2 to 3`），而不是留空。
+
 ## Worktrack Intake Review
 
 本节记录 RepoScope.Decide 在进入 WorktrackScope.Init 前形成的 intake gate 结论。它回答“这条 worktrack 现在是否仍应初始化并执行”，不替代 Worktrack Contract 的目标、范围或验收标准。
