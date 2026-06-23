@@ -17,7 +17,11 @@ try:
     from cache_scan_policy import CACHE_SCAN_ROOTS
 except ModuleNotFoundError:
     from toolchain.scripts.test.cache_scan_policy import CACHE_SCAN_ROOTS
-from path_governance_check import REQUIRED_GITIGNORE_ENTRIES, iter_relative_markdown_targets, resolve_markdown_target
+from path_governance_check import (
+    REQUIRED_GITIGNORE_ENTRIES,
+    iter_relative_markdown_targets,
+    resolve_markdown_target,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -130,8 +134,12 @@ APPEND_REQUEST_CONTRACT_PATHS = [
     "product/harness/skills/repo-append-request-skill/SKILL.md",
     "product/harness/skills/repo-append-request-skill/templates/append-request.template.md",
 ]
-PATH_GOVERNANCE_CHECKS_DOC = "docs/project-maintenance/governance/path-governance-checks.md"
-REVIEW_VERIFY_HANDBOOK_DOC = "docs/project-maintenance/governance/review-verify-handbook.md"
+PATH_GOVERNANCE_CHECKS_DOC = (
+    "docs/project-maintenance/governance/path-governance-checks.md"
+)
+REVIEW_VERIFY_HANDBOOK_DOC = (
+    "docs/project-maintenance/governance/review-verify-handbook.md"
+)
 TOOLCHAIN_TEST_README_DOC = "toolchain/scripts/test/README.md"
 PULL_REQUEST_TEMPLATE_PATH = ".github/pull_request_template.md"
 CODEX_HARNESS_MANUAL_RUNBOOK_DOC = (
@@ -868,9 +876,7 @@ COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS = [
     "must not be treated as clear",
     "must not be interpreted as clear",
 ]
-COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = (
-    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
-)
+COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
 COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
@@ -878,7 +884,9 @@ COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
     "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
 ]
-COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH = "toolchain/scripts/test/complexity_signal_scanner.py"
+COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH = (
+    "toolchain/scripts/test/complexity_signal_scanner.py"
+)
 COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
     "complexity_signal_scanner.py",
     "scanner output is evidence",
@@ -937,9 +945,7 @@ WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS = [
     "verified evidence",
     "not Goal Charter truth",
 ]
-WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = (
-    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
-)
+WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
 WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
 REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS = [
     "product/harness/skills/set-harness-goal-skill/SKILL.md",
@@ -970,9 +976,7 @@ REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
     "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
     "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
 ]
-REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = (
-    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
-)
+REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
 REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE = "assets/repo/complex-project-entry-gate.md"
 REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE = "scripts/complexity_signal_scanner.py"
 REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
@@ -989,11 +993,11 @@ REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
 ]
 REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS = [
     "args.weakDocOnboarding",
-    "needed: weakDocReinforcementNeeded ? \"true\" : \"false\"",
+    'needed: weakDocReinforcementNeeded ? "true" : "false"',
     "recommendation_status: weakDocReinforcementNeeded",
-    "? \"pending_operator_review\"",
-    ": \"not_needed\"",
-    "blocks_implementation_until_resolved: weakDocReinforcementNeeded ? \"true\" : \"false\"",
+    '? "pending_operator_review"',
+    ': "not_needed"',
+    'blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false"',
 ]
 REPO_INIT_COMPLEX_GATE_FORBIDDEN_TEMPLATE_LINES = [
     "    - normal",
@@ -1108,7 +1112,9 @@ class SemanticReport:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate minimal semantic governance handoffs.")
+    parser = argparse.ArgumentParser(
+        description="Validate minimal semantic governance handoffs."
+    )
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--json", action="store_true", help="Emit JSON only.")
     return parser.parse_args()
@@ -1118,7 +1124,9 @@ def to_relative_posix(path: Path, repo_root: Path) -> str:
     return path.relative_to(repo_root).as_posix()
 
 
-def collect_repo_relative_markdown_links(repo_root: Path, relative_path: str) -> set[str]:
+def collect_repo_relative_markdown_links(
+    repo_root: Path, relative_path: str
+) -> set[str]:
     markdown_file = repo_root / relative_path
     text = markdown_file.read_text(encoding="utf-8")
     resolved_targets: set[str] = set()
@@ -1164,16 +1172,24 @@ def parse_frontmatter(text: str) -> dict[str, str] | None:
 
 
 def check_required_templates(repo_root: Path, report: SemanticReport) -> None:
-    missing = [path for path in REQUIRED_TEMPLATE_PATHS if not (repo_root / path).exists()]
+    missing = [
+        path for path in REQUIRED_TEMPLATE_PATHS if not (repo_root / path).exists()
+    ]
     for path in missing:
         report.add_failure(f"missing required governance template: {path}")
-    report.add_info(f"checked {len(REQUIRED_TEMPLATE_PATHS)} required governance templates")
+    report.add_info(
+        f"checked {len(REQUIRED_TEMPLATE_PATHS)} required governance templates"
+    )
 
 
-def check_pull_request_template_release_evidence(repo_root: Path, report: SemanticReport) -> None:
+def check_pull_request_template_release_evidence(
+    repo_root: Path, report: SemanticReport
+) -> None:
     template_path = repo_root / PULL_REQUEST_TEMPLATE_PATH
     if not template_path.exists():
-        report.add_failure(f"missing pull request template: {PULL_REQUEST_TEMPLATE_PATH}")
+        report.add_failure(
+            f"missing pull request template: {PULL_REQUEST_TEMPLATE_PATH}"
+        )
         return
     text = template_path.read_text(encoding="utf-8")
     required_terms = [
@@ -1205,11 +1221,15 @@ def check_required_handoffs(repo_root: Path, report: SemanticReport) -> None:
         for target in expected_targets:
             checked += 1
             if target not in resolved_targets:
-                report.add_failure(f"missing semantic handoff link: {source} -> {target}")
+                report.add_failure(
+                    f"missing semantic handoff link: {source} -> {target}"
+                )
     report.add_info(f"checked {checked} semantic handoff links")
 
 
-def check_foundations_authority_shadows(repo_root: Path, report: SemanticReport) -> None:
+def check_foundations_authority_shadows(
+    repo_root: Path, report: SemanticReport
+) -> None:
     foundations_dir = repo_root / FOUNDATIONS_DIR
     checked = 0
     for stem in FOUNDATIONS_AUTHORITY_STEMS:
@@ -1218,7 +1238,9 @@ def check_foundations_authority_shadows(repo_root: Path, report: SemanticReport)
         canonical_name = f"{stem}.md"
         extras = [name for name in matches if name != canonical_name]
         if canonical_name not in matches:
-            report.add_failure(f"missing foundations authority document: {FOUNDATIONS_DIR}/{canonical_name}")
+            report.add_failure(
+                f"missing foundations authority document: {FOUNDATIONS_DIR}/{canonical_name}"
+            )
         if extras:
             report.add_failure(
                 f"shadow authority documents found for {canonical_name}: {', '.join(extras)}"
@@ -1230,22 +1252,30 @@ def check_outdated_placeholder_phrases(repo_root: Path, report: SemanticReport) 
     checked = 0
     for relative_path, phrases in OUTDATED_PLACEHOLDER_PHRASES.items():
         if not (repo_root / relative_path).exists():
-            report.add_failure(f"missing semantic phrase source document: {relative_path}")
+            report.add_failure(
+                f"missing semantic phrase source document: {relative_path}"
+            )
             continue
         text = (repo_root / relative_path).read_text(encoding="utf-8")
         for phrase in phrases:
             checked += 1
             if phrase in text:
-                report.add_failure(f"outdated placeholder wording still present in {relative_path}")
+                report.add_failure(
+                    f"outdated placeholder wording still present in {relative_path}"
+                )
     report.add_info(f"checked {checked} outdated placeholder phrases")
 
 
-def check_retired_entrypoint_references(repo_root: Path, report: SemanticReport) -> None:
+def check_retired_entrypoint_references(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path, retired_references in RETIRED_ENTRYPOINT_REFERENCES.items():
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing retired entrypoint scan source: {relative_path}")
+            report.add_failure(
+                f"missing retired entrypoint scan source: {relative_path}"
+            )
             continue
         text = path.read_text(encoding="utf-8")
         for retired_reference in retired_references:
@@ -1273,9 +1303,13 @@ def check_protected_doc_copies(repo_root: Path, report: SemanticReport) -> None:
             )
             continue
 
-        sidecar_frontmatter = parse_frontmatter(sidecar_path.read_text(encoding="utf-8"))
+        sidecar_frontmatter = parse_frontmatter(
+            sidecar_path.read_text(encoding="utf-8")
+        )
         if sidecar_frontmatter is None:
-            report.add_failure(f"protected docs copy sidecar missing frontmatter: {metadata['sidecar']}")
+            report.add_failure(
+                f"protected docs copy sidecar missing frontmatter: {metadata['sidecar']}"
+            )
             continue
 
         expected_copy = sidecar_frontmatter.get(metadata["copy_field"], "")
@@ -1321,10 +1355,14 @@ def iter_canonical_skill_files(repo_root: Path) -> list[Path]:
     return canonical_files
 
 
-def check_canonical_skill_packages_are_minimal(repo_root: Path, report: SemanticReport) -> None:
+def check_canonical_skill_packages_are_minimal(
+    repo_root: Path, report: SemanticReport
+) -> None:
     canonical_files = iter_canonical_skill_files(repo_root)
     if not canonical_files:
-        report.add_failure("missing canonical skill packages under product/*/skills/*/SKILL.md")
+        report.add_failure(
+            "missing canonical skill packages under product/*/skills/*/SKILL.md"
+        )
         return
 
     checked = 0
@@ -1334,7 +1372,9 @@ def check_canonical_skill_packages_are_minimal(repo_root: Path, report: Semantic
         text = canonical_file.read_text(encoding="utf-8")
 
         if not text.lstrip().startswith("---"):
-            report.add_failure(f"canonical skill missing frontmatter block: {relative_path}")
+            report.add_failure(
+                f"canonical skill missing frontmatter block: {relative_path}"
+            )
         if "\n# " not in text and not text.lstrip().startswith("# "):
             report.add_failure(f"canonical skill missing H1 title: {relative_path}")
 
@@ -1356,7 +1396,9 @@ def check_canonical_skill_packages_are_minimal(repo_root: Path, report: Semantic
                 f"canonical skill still contains deprecated references/entrypoints.md file: {relative_path}"
             )
 
-    report.add_info(f"checked {checked} canonical skill packages for minimal executable shape")
+    report.add_info(
+        f"checked {checked} canonical skill packages for minimal executable shape"
+    )
 
 
 def check_adapter_wrappers_are_thin(repo_root: Path, report: SemanticReport) -> None:
@@ -1384,12 +1426,16 @@ def check_adapter_wrappers_are_thin(repo_root: Path, report: SemanticReport) -> 
     report.add_info(f"checked {checked} adapter wrappers for thin-shell structure")
 
 
-def check_append_request_contract_terms(repo_root: Path, report: SemanticReport) -> None:
+def check_append_request_contract_terms(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in APPEND_REQUEST_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing append request contract source: {relative_path}")
+            report.add_failure(
+                f"missing append request contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1430,17 +1476,24 @@ def iter_bytecode_free_command_files(repo_root: Path) -> list[Path]:
 
 
 def is_bytecode_free_command_excluded(relative_path: str) -> bool:
-    return any(pattern.fullmatch(relative_path) for pattern in BYTECODE_FREE_COMMAND_EXCLUDED_PATTERNS)
+    return any(
+        pattern.fullmatch(relative_path)
+        for pattern in BYTECODE_FREE_COMMAND_EXCLUDED_PATTERNS
+    )
 
 
-def check_repo_python_commands_are_bytecode_free(repo_root: Path, report: SemanticReport) -> None:
+def check_repo_python_commands_are_bytecode_free(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for command_file in iter_bytecode_free_command_files(repo_root):
         relative_path = to_relative_posix(command_file, repo_root)
         if is_bytecode_free_command_excluded(relative_path):
             continue
 
-        for line_number, line in enumerate(command_file.read_text(encoding="utf-8").splitlines(), 1):
+        for line_number, line in enumerate(
+            command_file.read_text(encoding="utf-8").splitlines(), 1
+        ):
             for match in REPO_PYTHON_COMMAND_RE.finditer(line):
                 checked += 1
                 prefix_window = line[max(0, match.start() - 48) : match.start()]
@@ -1449,10 +1502,14 @@ def check_repo_python_commands_are_bytecode_free(repo_root: Path, report: Semant
                         "repo Python command must set PYTHONDONTWRITEBYTECODE=1: "
                         f"{relative_path}:{line_number}"
                     )
-    report.add_info(f"checked {checked} repo Python command examples for bytecode-free invocation")
+    report.add_info(
+        f"checked {checked} repo Python command examples for bytecode-free invocation"
+    )
 
 
-def check_root_tool_shims_disable_bytecode(repo_root: Path, report: SemanticReport) -> None:
+def check_root_tool_shims_disable_bytecode(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for shim_path in sorted(repo_root.glob(ROOT_TOOL_SHIM_GLOB)):
         if not shim_path.is_file():
@@ -1472,10 +1529,14 @@ def check_root_tool_shims_disable_bytecode(repo_root: Path, report: SemanticRepo
     report.add_info(f"checked {checked} root tool shims for bytecode guard ordering")
 
 
-def check_agents_route_slimming_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_agents_route_slimming_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     agents_path = repo_root / AGENTS_ROUTE_CONTRACT_PATH
     if not agents_path.exists():
-        report.add_failure(f"missing AGENTS route contract: {AGENTS_ROUTE_CONTRACT_PATH}")
+        report.add_failure(
+            f"missing AGENTS route contract: {AGENTS_ROUTE_CONTRACT_PATH}"
+        )
         return
 
     text = agents_path.read_text(encoding="utf-8")
@@ -1494,7 +1555,9 @@ def check_agents_route_slimming_contract(repo_root: Path, report: SemanticReport
     report.add_info("checked AGENTS route slimming contract")
 
 
-def _json_scalar_paths(value: object, path: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], object]]:
+def _json_scalar_paths(
+    value: object, path: tuple[str, ...] = ()
+) -> list[tuple[tuple[str, ...], object]]:
     if isinstance(value, dict):
         result: list[tuple[tuple[str, ...], object]] = []
         for key, child in value.items():
@@ -1512,7 +1575,9 @@ def _json_path_label(path: tuple[str, ...]) -> str:
     return ".".join(path) if path else "<root>"
 
 
-def check_aw_residue_classification_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_aw_residue_classification_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     contract_path = repo_root / AW_RESIDUE_CLASSIFICATION_CONTRACT
     if not contract_path.exists():
         report.add_failure(
@@ -1550,11 +1615,16 @@ def check_aw_residue_classification_contract(repo_root: Path, report: SemanticRe
         try:
             payload = json.loads(payload_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            report.add_failure(f"adapter payload JSON is invalid: {relative_path}:{exc.lineno}")
+            report.add_failure(
+                f"adapter payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
             continue
 
         required_payload_files = payload.get("required_payload_files")
-        if not isinstance(required_payload_files, list) or "aw.marker" not in required_payload_files:
+        if (
+            not isinstance(required_payload_files, list)
+            or "aw.marker" not in required_payload_files
+        ):
             report.add_failure(
                 "aw-residue marker-identity-contract drift: adapter payload must declare "
                 f"runtime-generated aw.marker in required_payload_files: {relative_path}"
@@ -1563,13 +1633,20 @@ def check_aw_residue_classification_contract(repo_root: Path, report: SemanticRe
         for json_path, scalar in _json_scalar_paths(payload):
             if not isinstance(scalar, str):
                 continue
-            leaf_key = json_path[-2] if json_path and json_path[-1].isdigit() and len(json_path) >= 2 else json_path[-1]
+            leaf_key = (
+                json_path[-2]
+                if json_path and json_path[-1].isdigit() and len(json_path) >= 2
+                else json_path[-1]
+            )
             if scalar == "aw.marker" and leaf_key not in AW_MARKER_COMPATIBILITY_KEYS:
                 report.add_failure(
                     "unclassified-aw-residue: aw.marker is only allowed in adapter "
                     f"required_payload_files: {relative_path}:{_json_path_label(json_path)}"
                 )
-            if re.search(r"\baw-[A-Za-z0-9_.-]+", scalar) and leaf_key not in AW_LEGACY_COMPATIBILITY_KEYS:
+            if (
+                re.search(r"\baw-[A-Za-z0-9_.-]+", scalar)
+                and leaf_key not in AW_LEGACY_COMPATIBILITY_KEYS
+            ):
                 report.add_failure(
                     "unclassified-aw-residue: legacy aw-* adapter value is only allowed in "
                     f"legacy_target_dirs or legacy_skill_ids: {relative_path}:{_json_path_label(json_path)}"
@@ -1597,7 +1674,9 @@ def line_has_source_trace(line: str) -> bool:
     return any(marker in line for marker in SOURCE_TRACE_MARKERS)
 
 
-def check_distributed_skill_packages_are_self_contained(repo_root: Path, report: SemanticReport) -> None:
+def check_distributed_skill_packages_are_self_contained(
+    repo_root: Path, report: SemanticReport
+) -> None:
     skills_root = repo_root / CANONICAL_DISTRIBUTED_SKILLS_DIR
     if not skills_root.is_dir():
         report.add_failure(
@@ -1613,7 +1692,9 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
 
         skill_entry = package_dir / "SKILL.md"
         if not skill_entry.is_file():
-            report.add_failure(f"distributed skill package missing SKILL.md: {relative_package_dir}")
+            report.add_failure(
+                f"distributed skill package missing SKILL.md: {relative_package_dir}"
+            )
 
         for path in sorted(package_dir.rglob("*")):
             if path.is_symlink():
@@ -1648,7 +1729,9 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
         try:
             payload = json.loads(payload_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            report.add_failure(f"adapter payload JSON is invalid: {relative_payload_path}:{exc.lineno}")
+            report.add_failure(
+                f"adapter payload JSON is invalid: {relative_payload_path}:{exc.lineno}"
+            )
             continue
 
         canonical_dir_value = payload.get("canonical_dir")
@@ -1657,7 +1740,9 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
         target_dir = payload.get("target_dir")
 
         if not isinstance(canonical_dir_value, str):
-            report.add_failure(f"adapter payload missing string canonical_dir: {relative_payload_path}")
+            report.add_failure(
+                f"adapter payload missing string canonical_dir: {relative_payload_path}"
+            )
             continue
         canonical_dir = repo_root / canonical_dir_value
         if not canonical_dir.is_dir():
@@ -1672,8 +1757,12 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
                 f"adapter payload canonical_dir escapes distributed skill root: {relative_payload_path}"
             )
 
-        if not isinstance(canonical_paths, list) or not all(isinstance(path, str) for path in canonical_paths):
-            report.add_failure(f"adapter payload missing string canonical_paths list: {relative_payload_path}")
+        if not isinstance(canonical_paths, list) or not all(
+            isinstance(path, str) for path in canonical_paths
+        ):
+            report.add_failure(
+                f"adapter payload missing string canonical_paths list: {relative_payload_path}"
+            )
             continue
         if not isinstance(required_payload_files, list) or not all(
             isinstance(path, str) for path in required_payload_files
@@ -1682,8 +1771,14 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
                 f"adapter payload missing string required_payload_files list: {relative_payload_path}"
             )
             continue
-        if not isinstance(target_dir, str) or "/" in target_dir or target_dir in {"", ".", ".."}:
-            report.add_failure(f"adapter payload target_dir must be one package directory name: {relative_payload_path}")
+        if (
+            not isinstance(target_dir, str)
+            or "/" in target_dir
+            or target_dir in {"", ".", ".."}
+        ):
+            report.add_failure(
+                f"adapter payload target_dir must be one package directory name: {relative_payload_path}"
+            )
 
         canonical_set = set(canonical_paths)
         for canonical_path in canonical_set:
@@ -1750,10 +1845,14 @@ def check_distributed_skill_packages_are_self_contained(repo_root: Path, report:
     )
 
 
-def check_path_governance_docs_list_gitignore_entries(repo_root: Path, report: SemanticReport) -> None:
+def check_path_governance_docs_list_gitignore_entries(
+    repo_root: Path, report: SemanticReport
+) -> None:
     doc_path = repo_root / PATH_GOVERNANCE_CHECKS_DOC
     if not doc_path.exists():
-        report.add_failure(f"missing path governance checks document: {PATH_GOVERNANCE_CHECKS_DOC}")
+        report.add_failure(
+            f"missing path governance checks document: {PATH_GOVERNANCE_CHECKS_DOC}"
+        )
         return
 
     text = doc_path.read_text(encoding="utf-8")
@@ -1768,10 +1867,14 @@ def check_path_governance_docs_list_gitignore_entries(repo_root: Path, report: S
     report.add_info(f"checked {checked} documented .gitignore governance entries")
 
 
-def check_review_verify_docs_list_closeout_steps(repo_root: Path, report: SemanticReport) -> None:
+def check_review_verify_docs_list_closeout_steps(
+    repo_root: Path, report: SemanticReport
+) -> None:
     doc_path = repo_root / REVIEW_VERIFY_HANDBOOK_DOC
     if not doc_path.exists():
-        report.add_failure(f"missing review/verify handbook: {REVIEW_VERIFY_HANDBOOK_DOC}")
+        report.add_failure(
+            f"missing review/verify handbook: {REVIEW_VERIFY_HANDBOOK_DOC}"
+        )
         return
 
     text = doc_path.read_text(encoding="utf-8")
@@ -1786,7 +1889,9 @@ def check_review_verify_docs_list_closeout_steps(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} documented closeout gate steps")
 
 
-def check_docs_list_closeout_cache_roots(repo_root: Path, report: SemanticReport) -> None:
+def check_docs_list_closeout_cache_roots(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in (REVIEW_VERIFY_HANDBOOK_DOC, TOOLCHAIN_TEST_README_DOC):
         doc_path = repo_root / relative_path
@@ -1797,14 +1902,20 @@ def check_docs_list_closeout_cache_roots(repo_root: Path, report: SemanticReport
         for root in CACHE_SCAN_ROOTS:
             checked += 1
             if f"`{root}/`" not in text:
-                report.add_failure(f"document missing closeout cache root {root!r}: {relative_path}")
+                report.add_failure(
+                    f"document missing closeout cache root {root!r}: {relative_path}"
+                )
     report.add_info(f"checked {checked} documented closeout cache roots")
 
 
-def count_agents_adapter_payload_skills(repo_root: Path, report: SemanticReport) -> int | None:
+def count_agents_adapter_payload_skills(
+    repo_root: Path, report: SemanticReport
+) -> int | None:
     skills_dir = repo_root / AGENTS_ADAPTER_SKILLS_DIR
     if not skills_dir.is_dir():
-        report.add_failure(f"missing agents adapter skills directory: {AGENTS_ADAPTER_SKILLS_DIR}")
+        report.add_failure(
+            f"missing agents adapter skills directory: {AGENTS_ADAPTER_SKILLS_DIR}"
+        )
         return None
 
     count = 0
@@ -1815,16 +1926,22 @@ def count_agents_adapter_payload_skills(repo_root: Path, report: SemanticReport)
         if payload_path.is_file():
             count += 1
     if count == 0:
-        report.add_failure(f"agents adapter skills directory has no payload sources: {AGENTS_ADAPTER_SKILLS_DIR}")
+        report.add_failure(
+            f"agents adapter skills directory has no payload sources: {AGENTS_ADAPTER_SKILLS_DIR}"
+        )
         return None
     return count
 
 
-def check_manual_runbook_agents_skill_count(repo_root: Path, report: SemanticReport) -> None:
+def check_manual_runbook_agents_skill_count(
+    repo_root: Path, report: SemanticReport
+) -> None:
     expected_count = count_agents_adapter_payload_skills(repo_root, report)
     doc_path = repo_root / CODEX_HARNESS_MANUAL_RUNBOOK_DOC
     if not doc_path.exists():
-        report.add_failure(f"missing Codex Harness manual runbook: {CODEX_HARNESS_MANUAL_RUNBOOK_DOC}")
+        report.add_failure(
+            f"missing Codex Harness manual runbook: {CODEX_HARNESS_MANUAL_RUNBOOK_DOC}"
+        )
         return
 
     text = doc_path.read_text(encoding="utf-8")
@@ -1846,7 +1963,9 @@ def check_manual_runbook_agents_skill_count(repo_root: Path, report: SemanticRep
     report.add_info("checked Codex Harness manual runbook agents skill count")
 
 
-def check_skill_deployment_maintenance_checklist(repo_root: Path, report: SemanticReport) -> None:
+def check_skill_deployment_maintenance_checklist(
+    repo_root: Path, report: SemanticReport
+) -> None:
     path = repo_root / SKILL_DEPLOYMENT_MAINTENANCE_RUNBOOK_DOC
     if not path.is_file():
         report.add_failure(
@@ -1863,12 +1982,16 @@ def check_skill_deployment_maintenance_checklist(repo_root: Path, report: Semant
     report.add_info("checked skill deployment maintenance checklist")
 
 
-def check_subagent_dispatch_default_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_subagent_dispatch_default_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in SUBAGENT_DEFAULT_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing SubAgent default contract source: {relative_path}")
+            report.add_failure(
+                f"missing SubAgent default contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1880,7 +2003,9 @@ def check_subagent_dispatch_default_contract(repo_root: Path, report: SemanticRe
     for relative_path in EXECUTION_POLICY_TEMPLATE_REFERENCE_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing execution policy template reference source: {relative_path}")
+            report.add_failure(
+                f"missing execution policy template reference source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1902,7 +2027,9 @@ def check_dispatch_context_contract(repo_root: Path, report: SemanticReport) -> 
     for relative_path in DISPATCH_CONTEXT_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing dispatch context contract source: {relative_path}")
+            report.add_failure(
+                f"missing dispatch context contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1914,12 +2041,16 @@ def check_dispatch_context_contract(repo_root: Path, report: SemanticReport) -> 
     report.add_info(f"checked {checked} dispatch context contract sources")
 
 
-def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_runtime_dispatch_profile_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing runtime dispatch profile source: {relative_path}")
+            report.add_failure(
+                f"missing runtime dispatch profile source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1944,12 +2075,16 @@ def check_runtime_dispatch_profile_contract(repo_root: Path, report: SemanticRep
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
-def check_user_defined_servo_controls_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_user_defined_servo_controls_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in USER_DEFINED_SERVO_CONTROLS_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing user-defined Servo controls source: {relative_path}")
+            report.add_failure(
+                f"missing user-defined Servo controls source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1968,12 +2103,16 @@ def check_user_defined_servo_controls_contract(repo_root: Path, report: Semantic
     report.add_info(f"checked {checked} user-defined Servo controls contract sources")
 
 
-def check_low_risk_autonomy_policy_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_low_risk_autonomy_policy_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in LOW_RISK_AUTONOMY_POLICY_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing low-risk autonomy policy source: {relative_path}")
+            report.add_failure(
+                f"missing low-risk autonomy policy source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -1999,7 +2138,9 @@ def check_harness_entry_profile_route_hint_contract(
     for relative_path in HARNESS_ENTRY_PROFILE_ROUTE_HINT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing harness entry profile route-hint source: {relative_path}")
+            report.add_failure(
+                f"missing harness entry profile route-hint source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2051,10 +2192,14 @@ def check_milestone_worktrack_planning_separation_contract(
                     "milestone/worktrack planning separation contract missing term "
                     f"{term!r}: {relative_path}"
                 )
-    report.add_info(f"checked {checked} milestone/worktrack planning separation sources")
+    report.add_info(
+        f"checked {checked} milestone/worktrack planning separation sources"
+    )
 
 
-def check_worktrack_task_window_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_worktrack_task_window_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in WORKTRACK_TASK_WINDOW_CONTRACT_PATHS:
         path = repo_root / relative_path
@@ -2071,12 +2216,16 @@ def check_worktrack_task_window_contract(repo_root: Path, report: SemanticReport
     report.add_info(f"checked {checked} worktrack task window sources")
 
 
-def check_review_evidence_four_lane_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_review_evidence_four_lane_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing review evidence four-lane contract source: {relative_path}")
+            report.add_failure(
+                f"missing review evidence four-lane contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2093,7 +2242,9 @@ def check_debug_evidence_contract(repo_root: Path, report: SemanticReport) -> No
     for relative_path in DEBUG_EVIDENCE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing debug evidence contract source: {relative_path}")
+            report.add_failure(
+                f"missing debug evidence contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2105,7 +2256,9 @@ def check_debug_evidence_contract(repo_root: Path, report: SemanticReport) -> No
     report.add_info(f"checked {checked} debug evidence contract sources")
 
 
-def check_decision_traceability_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_decision_traceability_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     decision_log_path = repo_root / DECISION_TRACEABILITY_CONTRACT_PATHS[0]
     if not decision_log_path.exists():
@@ -2144,7 +2297,9 @@ def check_closeout_record_contract(repo_root: Path, report: SemanticReport) -> N
     for relative_path in CLOSEOUT_RECORD_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing closeout record contract source: {relative_path}")
+            report.add_failure(
+                f"missing closeout record contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2180,7 +2335,9 @@ def check_repo_whats_next_overview_fallback_contract(
     for relative_path in REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing repo whats-next overview fallback source: {relative_path}")
+            report.add_failure(
+                f"missing repo whats-next overview fallback source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2192,12 +2349,16 @@ def check_repo_whats_next_overview_fallback_contract(
     report.add_info(f"checked {checked} repo whats-next overview fallback sources")
 
 
-def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_worktrack_intake_review_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing worktrack intake review contract source: {relative_path}")
+            report.add_failure(
+                f"missing worktrack intake review contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2215,7 +2376,9 @@ def check_worktrack_intake_review_contract(repo_root: Path, report: SemanticRepo
     for relative_path in WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing worktrack intake review template source: {relative_path}")
+            report.add_failure(
+                f"missing worktrack intake review template source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2232,7 +2395,9 @@ def check_branch_policy_contract(repo_root: Path, report: SemanticReport) -> Non
     for relative_path in BRANCH_POLICY_FIELD_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing Branch Policy contract source: {relative_path}")
+            report.add_failure(
+                f"missing Branch Policy contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2266,7 +2431,9 @@ def check_branch_policy_contract(repo_root: Path, report: SemanticReport) -> Non
     for relative_path in BRANCH_CONTEXT_GUARD_SEMANTIC_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing branch context guard semantic source: {relative_path}")
+            report.add_failure(
+                f"missing branch context guard semantic source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2293,12 +2460,16 @@ def check_branch_policy_contract(repo_root: Path, report: SemanticReport) -> Non
     report.add_info(f"checked {checked} Branch Policy / branch context guard sources")
 
 
-def check_pre_milestone_intake_template_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_pre_milestone_intake_template_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in PRE_MILESTONE_INTAKE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing pre-milestone intake contract source: {relative_path}")
+            report.add_failure(
+                f"missing pre-milestone intake contract source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2311,13 +2482,17 @@ def check_pre_milestone_intake_template_contract(repo_root: Path, report: Semant
     for relative_path in PRE_MILESTONE_INTAKE_PAYLOAD_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing pre-milestone intake payload source: {relative_path}")
+            report.add_failure(
+                f"missing pre-milestone intake payload source: {relative_path}"
+            )
             continue
         checked += 1
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            report.add_failure(f"pre-milestone intake payload JSON is invalid: {relative_path}:{exc.lineno}")
+            report.add_failure(
+                f"pre-milestone intake payload JSON is invalid: {relative_path}:{exc.lineno}"
+            )
             continue
         canonical_paths = payload.get("canonical_paths")
         required_payload_files = payload.get("required_payload_files")
@@ -2341,12 +2516,16 @@ def check_pre_milestone_intake_template_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} pre-milestone intake template contract sources")
 
 
-def check_init_milestone_intake_handoff_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_init_milestone_intake_handoff_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing init-milestone intake handoff source: {relative_path}")
+            report.add_failure(
+                f"missing init-milestone intake handoff source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2358,7 +2537,9 @@ def check_init_milestone_intake_handoff_contract(repo_root: Path, report: Semant
     report.add_info(f"checked {checked} init-milestone intake handoff sources")
 
 
-def check_milestone_review_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_milestone_review_gate_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in MILESTONE_REVIEW_GATE_CONTRACT_PATHS:
         path = repo_root / relative_path
@@ -2375,12 +2556,16 @@ def check_milestone_review_gate_contract(repo_root: Path, report: SemanticReport
     report.add_info(f"checked {checked} milestone review gate contract sources")
 
 
-def check_milestone_review_route_guard_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_milestone_review_route_guard_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing milestone review route guard source: {relative_path}")
+            report.add_failure(
+                f"missing milestone review route guard source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2392,7 +2577,9 @@ def check_milestone_review_route_guard_contract(repo_root: Path, report: Semanti
     report.add_info(f"checked {checked} milestone review route guard sources")
 
 
-def check_conservative_backfill_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_conservative_backfill_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in CONSERVATIVE_BACKFILL_CONTRACT_PATHS:
         path = repo_root / relative_path
@@ -2409,12 +2596,16 @@ def check_conservative_backfill_contract(repo_root: Path, report: SemanticReport
     report.add_info(f"checked {checked} conservative backfill contract sources")
 
 
-def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_complex_project_entry_gate_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing complex-project entry gate source: {relative_path}")
+            report.add_failure(
+                f"missing complex-project entry gate source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2444,7 +2635,9 @@ def check_complex_project_entry_gate_contract(repo_root: Path, report: SemanticR
                         f"{term!r}: {relative_path}"
                     )
         if relative_path == COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH:
-            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
+            _check_pre_intake_complex_gate_template_safe_defaults(
+                relative_path, text, report
+            )
     report.add_info(f"checked {checked} complex-project entry gate sources")
 
 
@@ -2476,7 +2669,9 @@ def _check_pre_intake_complex_gate_template_safe_defaults(
                 break
 
 
-def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_complexity_signal_scanner_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     wrapper_path = repo_root / COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH
     if not wrapper_path.exists():
@@ -2485,7 +2680,10 @@ def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticRe
         )
     else:
         wrapper_text = wrapper_path.read_text(encoding="utf-8")
-        if "CANONICAL_SCANNER" not in wrapper_text or "set-harness-goal-skill" not in wrapper_text:
+        if (
+            "CANONICAL_SCANNER" not in wrapper_text
+            or "set-harness-goal-skill" not in wrapper_text
+        ):
             report.add_failure(
                 "complexity signal scanner wrapper must delegate to canonical distributable scanner: "
                 f"{COMPLEXITY_SIGNAL_SCANNER_WRAPPER_PATH}"
@@ -2493,7 +2691,9 @@ def check_complexity_signal_scanner_contract(repo_root: Path, report: SemanticRe
     for relative_path in COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing complexity signal scanner source: {relative_path}")
+            report.add_failure(
+                f"missing complexity signal scanner source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2522,7 +2722,9 @@ def check_weak_doc_temporary_understanding_contract(
     for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing weak-doc temporary understanding source: {relative_path}")
+            report.add_failure(
+                f"missing weak-doc temporary understanding source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2535,7 +2737,9 @@ def check_weak_doc_temporary_understanding_contract(
     for relative_path in WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing weak-doc temporary understanding payload source: {relative_path}")
+            report.add_failure(
+                f"missing weak-doc temporary understanding payload source: {relative_path}"
+            )
             continue
         checked += 1
         try:
@@ -2563,15 +2767,21 @@ def check_weak_doc_temporary_understanding_contract(
                 "weak-doc temporary understanding payload missing required template file: "
                 f"{relative_path}"
             )
-    report.add_info(f"checked {checked} weak-doc temporary understanding contract sources")
+    report.add_info(
+        f"checked {checked} weak-doc temporary understanding contract sources"
+    )
 
 
-def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticReport) -> None:
+def check_repo_init_complex_gate_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
     checked = 0
     for relative_path in REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing repo-init complex gate source: {relative_path}")
+            report.add_failure(
+                f"missing repo-init complex gate source: {relative_path}"
+            )
             continue
         checked += 1
         text = path.read_text(encoding="utf-8")
@@ -2600,7 +2810,9 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
                         "repo-init complex gate template must not pre-authorize "
                         f"high-risk command mode line {line.strip()!r}: {relative_path}"
                     )
-            _check_pre_intake_complex_gate_template_safe_defaults(relative_path, text, report)
+            _check_pre_intake_complex_gate_template_safe_defaults(
+                relative_path, text, report
+            )
         if relative_path.endswith("scripts/deploy_servo.js"):
             for term in REPO_INIT_COMPLEX_GATE_WEAK_DOC_OVERRIDE_TERMS:
                 if term not in text:
@@ -2612,7 +2824,9 @@ def check_repo_init_complex_gate_contract(repo_root: Path, report: SemanticRepor
     for relative_path in REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS:
         path = repo_root / relative_path
         if not path.exists():
-            report.add_failure(f"missing repo-init complex gate payload source: {relative_path}")
+            report.add_failure(
+                f"missing repo-init complex gate payload source: {relative_path}"
+            )
             continue
         checked += 1
         try:
@@ -2673,7 +2887,9 @@ def check_artifact_skill_alignment(repo_root: Path, report: SemanticReport) -> N
 
         skill_file = repo_root / skill_path
         if not skill_file.exists():
-            report.add_failure(f"artifact skill alignment: missing skill file: {skill_path}")
+            report.add_failure(
+                f"artifact skill alignment: missing skill file: {skill_path}"
+            )
             continue
 
         checked += 1
@@ -2688,7 +2904,9 @@ def check_artifact_skill_alignment(repo_root: Path, report: SemanticReport) -> N
 
         if missing:
             for field in missing:
-                report.add_warning(f"artifact skill alignment: {label}: {contract_path} defines '{field}' but {skill_path} does not reference it (may use Chinese equivalent)")
+                report.add_warning(
+                    f"artifact skill alignment: {label}: {contract_path} defines '{field}' but {skill_path} does not reference it (may use Chinese equivalent)"
+                )
         report.add_info(f"  {label}: {aligned}/{len(fields)} fields aligned")
 
     report.add_info(f"checked {checked} artifact contracts for skill alignment")
@@ -2810,11 +3028,22 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
         if stripped.startswith("status:") and not milestone["status"]:
             milestone["status"] = stripped.split(":", 1)[1].strip().strip('"')
             continue
-        if stripped.startswith("continuation_state:") and not milestone["continuation_state"]:
-            milestone["continuation_state"] = stripped.split(":", 1)[1].strip().strip('"')
+        if (
+            stripped.startswith("continuation_state:")
+            and not milestone["continuation_state"]
+        ):
+            milestone["continuation_state"] = (
+                stripped.split(":", 1)[1].strip().strip('"')
+            )
             continue
-        if in_milestone_branch and stripped.startswith("name:") and not milestone["milestone_branch_name"]:
-            milestone["milestone_branch_name"] = stripped.split(":", 1)[1].strip().strip('"')
+        if (
+            in_milestone_branch
+            and stripped.startswith("name:")
+            and not milestone["milestone_branch_name"]
+        ):
+            milestone["milestone_branch_name"] = (
+                stripped.split(":", 1)[1].strip().strip('"')
+            )
             continue
 
         if in_worktrack_list:
@@ -2825,14 +3054,17 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
                 worktrack_statuses.setdefault(current_worktrack_id, "")
                 continue
             if current_worktrack_id and (
-                stripped.startswith("status:") or stripped.startswith("expected_status:")
+                stripped.startswith("status:")
+                or stripped.startswith("expected_status:")
             ):
                 key = stripped.split(":", 1)[0].strip()
                 worktrack_statuses = milestone["worktrack_statuses"]
                 worktrack_status_sources = milestone["worktrack_status_sources"]
                 assert isinstance(worktrack_statuses, dict)
                 assert isinstance(worktrack_status_sources, dict)
-                worktrack_statuses[current_worktrack_id] = stripped.split(":", 1)[1].strip().strip('"')
+                worktrack_statuses[current_worktrack_id] = (
+                    stripped.split(":", 1)[1].strip().strip('"')
+                )
                 worktrack_status_sources[current_worktrack_id] = key
                 continue
 
@@ -2844,7 +3076,9 @@ def _parse_milestone_artifact(text: str) -> dict[str, object]:
                     milestone["progress_total"] = None
             elif stripped.startswith("completed:"):
                 try:
-                    milestone["progress_completed"] = int(stripped.split(":", 1)[1].strip())
+                    milestone["progress_completed"] = int(
+                        stripped.split(":", 1)[1].strip()
+                    )
                 except ValueError:
                     milestone["progress_completed"] = None
 
@@ -2898,7 +3132,9 @@ def _runtime_milestone_counts(
 def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) -> None:
     aw_dir = repo_root / ".servo"
     if not aw_dir.exists():
-        report.add_info("checked 0 runtime artifacts for consistency, .servo/ directory missing")
+        report.add_info(
+            "checked 0 runtime artifacts for consistency, .servo/ directory missing"
+        )
         return
 
     control_path = aw_dir / "control-state.md"
@@ -2906,17 +3142,25 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
     milestone_backlog_path = aw_dir / "repo/milestone-backlog.md"
     milestone_history_path = aw_dir / "repo/milestone-history.md"
     if not control_path.exists() or not milestone_backlog_path.exists():
-        report.add_info("checked 0 runtime artifacts for consistency, control-state or milestone backlog missing")
+        report.add_info(
+            "checked 0 runtime artifacts for consistency, control-state or milestone backlog missing"
+        )
         return
 
     control_text = control_path.read_text(encoding="utf-8")
     backlog_text = milestone_backlog_path.read_text(encoding="utf-8")
-    history_text = milestone_history_path.read_text(encoding="utf-8") if milestone_history_path.exists() else ""
+    history_text = (
+        milestone_history_path.read_text(encoding="utf-8")
+        if milestone_history_path.exists()
+        else ""
+    )
     control = _parse_control_state(control_text)
     live_entries = _parse_milestone_backlog(backlog_text)
     history_entries = _parse_milestone_backlog(history_text) if history_text else []
     if not live_entries and not history_entries:
-        report.add_failure("runtime artifact consistency: milestone backlog has no parseable entries")
+        report.add_failure(
+            "runtime artifact consistency: milestone backlog has no parseable entries"
+        )
         return
 
     active_entries: list[dict[str, object]] = []
@@ -2976,7 +3220,9 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
         for milestone_path in sorted(milestone_dir.glob("MS-*.md")):
             if milestone_path.name.endswith("-composite-acceptance-report.md"):
                 continue
-            milestone = _parse_milestone_artifact(milestone_path.read_text(encoding="utf-8"))
+            milestone = _parse_milestone_artifact(
+                milestone_path.read_text(encoding="utf-8")
+            )
             milestone_id = str(milestone.get("milestone_id") or milestone_path.stem)
             if not milestone_id:
                 continue
@@ -2984,32 +3230,50 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             artifact_status = str(milestone.get("status", ""))
             entry = by_id.get(milestone_id)
             entry_status = str(entry.get("status", "")) if entry else ""
-            if artifact_status and artifact_status not in {"planned", "active", "completed", "superseded"}:
+            if artifact_status and artifact_status not in {
+                "planned",
+                "active",
+                "completed",
+                "superseded",
+            }:
                 report.add_failure(
                     "runtime artifact consistency: milestone artifact "
                     f"{milestone_id} has invalid primary status {artifact_status!r}; use continuation_state for waiting/paused semantics"
                 )
             if artifact_status in {"completed", "superseded"}:
-                if entry is not None and entry_status not in {"completed", "superseded"}:
+                if entry is not None and entry_status not in {
+                    "completed",
+                    "superseded",
+                }:
                     report.add_failure(
                         "runtime artifact consistency: completed/superseded milestone artifact "
                         f"{milestone_id} remains live as status {entry_status!r}; move accepted writeback to milestone-history and clear active backlog"
                     )
                 total = milestone.get("progress_total")
                 completed = milestone.get("progress_completed")
-                if isinstance(total, int) and isinstance(completed, int) and completed < total:
+                if (
+                    isinstance(total, int)
+                    and isinstance(completed, int)
+                    and completed < total
+                ):
                     report.add_failure(
                         "runtime artifact consistency: completed milestone artifact "
                         f"{milestone_id} has incomplete progress {completed}/{total}"
                     )
-            elif artifact_status and entry and entry_status in {"completed", "superseded"}:
+            elif (
+                artifact_status
+                and entry
+                and entry_status in {"completed", "superseded"}
+            ):
                 report.add_failure(
                     "runtime artifact consistency: milestone artifact "
                     f"{milestone_id} status {artifact_status!r} disagrees with history status {entry_status!r}"
                 )
 
     if len(active_entries) > 1:
-        report.add_failure("runtime artifact consistency: milestone backlog has multiple active milestones")
+        report.add_failure(
+            "runtime artifact consistency: milestone backlog has multiple active milestones"
+        )
 
     active_milestone = control.get("active_milestone", "")
     milestone_status = control.get("milestone_status", "")
@@ -3044,7 +3308,9 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
     active_worktrack = control.get("active_worktrack", "")
     if active_worktrack and active_worktrack != "none":
         active_entry = by_id.get(active_milestone) if active_milestone else None
-        active_artifact = milestone_artifacts.get(active_milestone) if active_milestone else None
+        active_artifact = (
+            milestone_artifacts.get(active_milestone) if active_milestone else None
+        )
         continuation_state = ""
         if active_artifact:
             continuation_state = str(active_artifact.get("continuation_state", ""))
@@ -3052,7 +3318,11 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
             continuation_state = str(active_entry.get("continuation_state", ""))
         if not continuation_state:
             continuation_state = control.get("active_milestone_continuation_state", "")
-        if continuation_state in {"waiting_external", "paused_by_programmer", "blocked"}:
+        if continuation_state in {
+            "waiting_external",
+            "paused_by_programmer",
+            "blocked",
+        }:
             report.add_failure(
                 "runtime artifact consistency: paused/waiting active milestone "
                 f"{active_milestone} continuation_state {continuation_state} retains "
@@ -3061,7 +3331,10 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
 
         for milestone_id, artifact in milestone_artifacts.items():
             worktrack_statuses = artifact.get("worktrack_statuses", {})
-            if not isinstance(worktrack_statuses, dict) or active_worktrack not in worktrack_statuses:
+            if (
+                not isinstance(worktrack_statuses, dict)
+                or active_worktrack not in worktrack_statuses
+            ):
                 continue
             artifact_status = str(artifact.get("status", ""))
             worktrack_status = str(worktrack_statuses.get(active_worktrack, ""))
@@ -3088,7 +3361,10 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
         worktrack_contract = _parse_worktrack_contract(
             worktrack_contract_path.read_text(encoding="utf-8")
         )
-        if worktrack_contract.get("derived_from_milestone", "").lower() in {"true", "yes"}:
+        if worktrack_contract.get("derived_from_milestone", "").lower() in {
+            "true",
+            "yes",
+        }:
             milestone_id = worktrack_contract.get("milestone_id", "")
             milestone_artifact = milestone_artifacts.get(milestone_id, {})
             milestone_entry = by_id.get(milestone_id, {})
@@ -3121,7 +3397,9 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
 
     summary = _parse_pipeline_summary(control.get("milestone_pipeline_summary", ""))
     if summary is None:
-        report.add_failure("runtime artifact consistency: control-state milestone_pipeline_summary is missing or malformed")
+        report.add_failure(
+            "runtime artifact consistency: control-state milestone_pipeline_summary is missing or malformed"
+        )
     elif summary != counts:
         report.add_failure(
             "runtime artifact consistency: milestone_pipeline_summary mismatch: "
@@ -3130,7 +3408,9 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
 
     checked_entries = len(live_entries) + len(history_entries)
     source_note = "live+history" if milestone_history_path.exists() else "live-only"
-    report.add_info(f"checked {checked_entries} runtime milestone entries for consistency ({source_note})")
+    report.add_info(
+        f"checked {checked_entries} runtime milestone entries for consistency ({source_note})"
+    )
 
 
 def _is_readme_or_excluded(rel_path: str) -> bool:
@@ -3224,7 +3504,9 @@ def check_orphan_docs(repo_root: Path, report: SemanticReport) -> None:
         report.add_failure(f"{len(orphans)} orphan docs found:")
         for doc_rel in orphans:
             report.add_failure(f"  {doc_rel} (0 references)")
-    report.add_info(f"checked {len(all_docs)} docs for orphan status, {len(orphans)} orphans found")
+    report.add_info(
+        f"checked {len(all_docs)} docs for orphan status, {len(orphans)} orphans found"
+    )
 
 
 def main() -> int:

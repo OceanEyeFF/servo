@@ -108,6 +108,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [gate-skill/](./gate-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 | [recover-worktrack-skill/](./recover-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 | [close-worktrack-skill/](./close-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [servo-writeback-skill/](./servo-writeback-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 
 This table is the source-side backlink to the docs/catalog owner surface. Keep it synchronized when adding, renaming, retiring, or moving canonical skill source. Do not replace these links with deploy target paths.
 

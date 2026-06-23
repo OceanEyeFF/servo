@@ -301,3 +301,21 @@ canonical executable source：
 当前状态：
 
 - `initial canonical executable skeleton landed`
+
+### 12. servo-writeback-skill
+
+职责：通用 .servo artifact 写回算子。接收结构化 writeback_instruction，执行文件级事务（预校验→重写→后校验）。替代 harness-skill 和 close-worktrack-skill 中分散的 ad-hoc 写回逻辑。覆盖 milestone artifact / backlog / history / control-state / worktrack-backlog 的写回模式。
+
+事务模型：预校验字段合法性 → 一次性重写目标文件 → 后校验完整性。任一步骤失败标记 writeback_incomplete，不继续后续步骤。transaction writeback 的最小写入集合按 harness-skill §10.7.6 定义执行。
+
+主要依赖：
+
+- `writeback_instruction` (结构化写回指令)
+
+canonical executable source：
+
+- [../../../product/harness/skills/servo-writeback-skill/SKILL.md](../../../product/harness/skills/servo-writeback-skill/SKILL.md)
+
+当前状态：
+
+- `initial canonical executable skeleton landed`
