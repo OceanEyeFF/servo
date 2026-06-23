@@ -1,14 +1,14 @@
 ---
 title: "Milestone Status Skill"
 status: active
-updated: 2026-05-27
+updated: 2026-06-23
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-23
 ---
 
 # Milestone Status Skill
 
-> 独立 Milestone 分析 skill。它是 RepoScope 下的聚合观测/验收分析器，不选择下一 Worktrack、不初始化 worktrack、不修改 version/release 状态。
+> 独立 Milestone Sensor/Analyzer skill。它是 RepoScope 下的聚合观测/验收分析器，不选择下一 Worktrack、不初始化 worktrack、不修改 version/release 状态。Milestone Gate 判定已拆分到独立 `milestone-gate` skill。
 
 ## 定位
 
@@ -25,7 +25,8 @@ canonical executable source：
 
 - 读取 Milestone artifact 和关联的 worktrack 状态
 - 计算 progress counter
-- 对 goal-driven milestone 执行 `Milestone Gate`（黑盒/白盒/反作弊/composite acceptance lanes）并在其后判定 `purpose_achieved`
+- 对 goal-driven milestone，在 `worktrack_list_finished == true` 时**调用 `milestone-gate` skill**（两层架构：Layer 1 四轴 SubAgent + Layer 2 aggregator），消费返回的 `milestone_gate_verdict`
+- 在 Milestone Gate 通过后判定 `purpose_achieved`
 - 消费 composite acceptance report，覆盖 code review、feature completeness、related influence、intent completeness、operator simulation 和 professional review lanes
 - 按 `completion_threshold_pct` 计算 `signal_satisfaction_pct` / `criteria_pass_pct`
 - 执行双重验收检查（worktrack_list_finished + purpose_achieved）
@@ -95,7 +96,7 @@ canonical executable source：
 
 - `RepoScope.Observe` 阶段（harness-skill 在状态估计时调用）
 - Worktrack closeout 后（repo-refresh 完成后检查 Milestone 进度）
-- goal-driven milestone 的所有声明 worktrack 关闭后（先跑包含 composite acceptance lanes 的 `Milestone Gate`，再判定 `purpose_achieved`）
+- goal-driven milestone 的所有声明 worktrack 关闭后（调用 `milestone-gate` skill，再判定 `purpose_achieved`）
 - Milestone 验收边界触发时（判定 handback 或 pipeline 推进）
 - programmer 显式请求 Milestone 状态检查
 

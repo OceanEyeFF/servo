@@ -104,10 +104,11 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 21. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
 22. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
 23. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
-24. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
-25. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
-26. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
-27. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
+24. [harness/artifact/control/milestone-gate-aggregation.md](./harness/artifact/control/milestone-gate-aggregation.md)
+25. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
+26. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
+27. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
+28. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
 
 #### 2.4 技能目录（Catalog）
 

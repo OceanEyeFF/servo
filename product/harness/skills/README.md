@@ -44,6 +44,12 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [servo-cleanup-skill/](./servo-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
 - [init-milestone-skill/](./init-milestone-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
+- [milestone-gate/](./milestone-gate/) — Milestone Gate 两层集成验收编排器（Layer 1 四轴 SubAgent 分派 + Layer 2 aggregation_rules 聚合）
+  - Milestone Gate 四轴检查（Layer 1 独立 SubAgent skills）：
+    - [milestone-blackbox-check/](./milestone-blackbox-check/) — 外部视角检查（跨 WT 集成、用户承诺、回归风险、外部一致性、覆盖缺口）
+    - [milestone-whitebox-check/](./milestone-whitebox-check/) — 内部实现视角检查（接口契约、状态流转、依赖图、架构对齐、实现质量）
+    - [milestone-anticheat-check/](./milestone-anticheat-check/) — 反作弊检查（mock abuse、证据复用、部分验证、gate 绕过、过期证据、自审偏见、假阳性风险）
+    - [milestone-composite-check/](./milestone-composite-check/) — 复合验收检查（code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes）
 - 已落地的 `WorktrackScope` 技能骨架：
   - [worktrack-status-skill/](./worktrack-status-skill/) — 工作追踪状态观察
   - [init-worktrack-skill/](./init-worktrack-skill/) — 初始化工作追踪
@@ -96,6 +102,11 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [servo-cleanup-skill/](./servo-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [init-milestone-skill/](./init-milestone-skill/) | [docs/harness/catalog/milestone/init-milestone-skill.md](../../../docs/harness/catalog/milestone/init-milestone-skill.md) |
 | [milestone-status-skill/](./milestone-status-skill/) | [docs/harness/catalog/milestone/milestone-status-skill.md](../../../docs/harness/catalog/milestone/milestone-status-skill.md) |
+| [milestone-gate/](./milestone-gate/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
+| [milestone-blackbox-check/](./milestone-blackbox-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
+| [milestone-whitebox-check/](./milestone-whitebox-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
+| [milestone-anticheat-check/](./milestone-anticheat-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
+| [milestone-composite-check/](./milestone-composite-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [worktrack-status-skill/](./worktrack-status-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 | [init-worktrack-skill/](./init-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 | [schedule-worktrack-skill/](./schedule-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |

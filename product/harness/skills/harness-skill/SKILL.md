@@ -270,7 +270,9 @@ WorktrackScope 控制回路（局部状态转移）：               Init (init-
 
 其中 `Close` 绑定到 `close-worktrack-skill`，`Recover` 绑定到 `recover-worktrack-skill`。
 
-`Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。若无活跃 Milestone，跳过此额外绑定。
+`Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
+
+当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段**追加绑定 `milestone-gate` skill**（推荐 SubAgent delegated），接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。Sensor skill 负责准备 gate skill 的输入包。Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法委派 gate skill（SubAgent 不可用），降级为 current-carrier 并标记 `carrier_isolation_broken: true`。若无活跃 Milestone，跳过此额外绑定。
 
 当存在活跃 goal-driven milestone 且仍有待执行 worktrack 时，Harness 以逐 worktrack 推进的方式运行当前 milestone：每次只派生一个当前 worktrack，为其建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪；完成当前 worktrack 的闭环后，再回到 RepoScope 选择下一个 current worktrack。
 
@@ -340,7 +342,14 @@ Gate 应汇总**正交校验面**的裁决：
 
 最后由汇总 `gate-skill` 生成最终 verdict。
 
-对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于“全部 worktrack 关闭”之后、“`purpose_achieved` 判定”之前；必须同时覆盖 black-box、white-box、anti-cheat 和 composite acceptance lanes。`Milestone Gate` 以每个已闭环 worktrack 的 closeout record、gate evidence、repo-refresh 结果和 composite acceptance report 为聚合输入，在逐 worktrack 可追溯基础上形成 milestone 级集成放行条件。
+对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
+
+Milestone Gate 拆分为两层，由 `milestone-gate` skill 统一承载：
+
+- **Layer 1（四轴隔离检查）**：`milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check`，在隔离 SubAgent 上并行执行、轴间不可见。
+- **Layer 2（可配置聚合器）**：按 milestone 的 `aggregation_rules` 执行 weight → contradiction → composite_lane → degenerate 四步，产出 `milestone_gate_verdict`。
+
+Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate` skill（推荐 SubAgent delegated）；milestone-status-skill 负责准备输入包。详见 `product/harness/skills/milestone-gate/SKILL.md` 和 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
 
 ---
 
@@ -448,6 +457,7 @@ Gate 应汇总**正交校验面**的裁决：
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
 9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与 `fallback_reason`。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
+10. **Milestone Gate 分派偏好**：当绑定 `milestone-gate` skill 时，Harness 推荐使用 `delegated`（SubAgent 委派），因为 gate skill 内部还要并行分派 4 个轴 SubAgent——重型操作在隔离载体上运行更安全。若运行时不支持 SubAgent，降级为 current-carrier 并标记 `carrier_isolation_broken: true`。分派决策记录在 `runtime_dispatch_profile.delegation_attempted` 中。
 
 ### 10.5 证据收集阶段
 
@@ -486,6 +496,9 @@ Gate 应汇总**正交校验面**的裁决：
    - `stop_condition` 包括 evidence missing or conflicting、branch mismatch、Gate soft-fail / hard-fail / blocked、context noise / prompt forgetting、需要 programmer 判断、权限边界不清、Worktrack Contract 外扩、protected branch policy 命中、destructive operation 命中、release-sensitive 信号命中、Milestone final acceptance 边界命中。
    - `evidence_required` 至少包括 route decision、Worktrack Contract / scope boundary、selected task / dispatch packet、runtime dispatch profile、validation / governance / policy evidence、Gate verdict、closeout record、repo-refresh checkpoint。任一 forbidden 或 stop_condition 命中时，不得静默推进，必须 handback、审批或 recover。
 6. **Milestone 状态写回**：收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
+
+   **Gate 状态透传**：`milestone-status-skill` 输出中的 gate 特定字段（`milestone_gate_verdict`、`aggregation_rules_applied`、`per_worktrack_weights`、`contradiction_findings` 等）来自 `milestone-gate` skill 产出，由 sensor skill 透传到 writeback_instructions。Harness 按 writeback_instructions 逐字段写入，不自行解释 gate 语义。
+
    - **Final Acceptance 事务边界**：
      - `milestone_acceptance_verdict == "achieved"` 与 `milestone_gate_verdict == "pass"` 只表示 milestone 达到可交接验收状态；goal-driven milestone 的最终验收仍由 programmer 决定。
      - goal-driven milestone handback 前必须存在 composite acceptance report，或存在逐 lane 记录的合法 fallback evidence。报告必须覆盖 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation 和 professional-review。任一 lane 为 `blocked`、任一 high severity finding、或未被 programmer 接受为后续范围的 `needs_followup_worktrack`，均不得进入 final acceptance ready。

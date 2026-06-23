@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-05
+updated: 2026-06-23
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-23
 ---
 
 # Milestone Artifact
@@ -41,6 +41,7 @@ last_verified: 2026-06-13
 | release_version_consideration | string | 对 version/release 的提示（不接管 decision） |
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
 | depends_on_milestones | array | 前置 Milestone 列表 |
+| aggregation_rules | object | Per-milestone 可配置的证据聚合规则；字段合同见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md)。未声明时默认使用退化 AND 并在 milestone gate evidence 中标记 `aggregation_rules_missing: true` |
 | updated | date | 最后更新时间 |
 | `priority` | integer | Pipeline 中的优先级（数值越小优先级越高） |
 | `activation_rules` | string | 自动激活条件（optional，harness-inferred）；描述 harness 可自动激活的前提，空值表示仅 manual |
@@ -294,7 +295,8 @@ goal-driven milestone 完成判定必须满足以下顺序约束：
 
 - Worktrack Gate 位于 `WorktrackScope`，负责单个 worktrack 的 closeout 裁决。
 - Milestone Gate 位于 `RepoScope` 的 milestone 验收路径中，只在相关 worktrack 全部关闭后运行，验证跨 worktrack 的集成结果。
-- Milestone Gate 不回溯替代 Worktrack Gate；它消费各 worktrack Gate 产出的 evidence，并补充 milestone 级黑盒/白盒/反作弊检查和复合验收 lanes。
+- Milestone Gate 不回溯替代 Worktrack Gate；它消费各 worktrack Gate 产出的 evidence，并按 [Milestone Gate 证据聚合合同](./milestone-gate-aggregation.md) 中定义的 per-milestone 可配置 aggregation_rules 进行聚合——不是简单布尔 AND。
+- 聚合规则覆盖证据权重（按 node_type 预设）、矛盾检测与 resolution protocol、composite acceptance lane 消费模式和退化 AND 的显式记录。
 - 该分层仍属于既有 `RepoScope` / `WorktrackScope` 结构，不创建第三 Scope。
 
 ### 复合验收与 Final Acceptance
