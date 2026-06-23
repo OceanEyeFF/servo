@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-05
+updated: 2026-06-23
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-23
 ---
 
 # Milestone Artifact
