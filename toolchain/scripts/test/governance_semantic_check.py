@@ -678,6 +678,7 @@ PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
     "accepted_residual_risk",
     "handoff_to_init_milestone",
     "template_contract_ref",
+    "milestone_task_complexity_assessment",
 ]
 PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE = (
     "templates/pre-milestone-intake-review.template.md"

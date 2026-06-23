@@ -126,6 +126,7 @@ canonical executable source：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+- `milestone_task_complexity_assessment`
 
 状态语义：
 

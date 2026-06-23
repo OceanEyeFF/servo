@@ -155,6 +155,7 @@ preferred handoff fields：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+- `milestone_task_complexity_assessment`
 
 Milestone Review Gate 交接记录了 pre-milestone intake 是否在 Worktrack Init/Dispatch 前产出了 `effective_pass`。交接包必须携带 `milestone_review_gate`、`milestone_review_gate_handoff`、`milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`effective_review_pass` 以及 `review_invalidated_by`。非通过状态（`questions_required`、`blocked`、`skipped`、`missing`、`stale`、`invalidated`）不是通过状态。`questions_required` 状态的复核必须逐题继续，不得递增 `milestone_review_count`。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变更会使 checkpoint 失效，需要重新复核。
 

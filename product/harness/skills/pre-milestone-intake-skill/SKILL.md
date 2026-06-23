@@ -92,6 +92,7 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 - unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, pending, or incomplete `complex_project_entry_gate` 不得被视为 clear 或 `not_applicable`；默认阻断 create/upsert/activate/derive-worktrack，直到 programmer confirmation 或 verified evidence 存在。
 - scanner output is evidence, not verdict；不得把 scanner 阈值或启发式结果直接写成 `entry_verdict` 或 milestone truth。
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode。小型低风险请求可以记录 `entry_verdict = not_applicable`，但不能因此跳过已命中的高风险安全策略必填项。
+- `milestone_task_complexity_assessment` 是所有 goal-driven milestone intake review 的必产字段；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。`discovery_or_reinforcement_needed = true` 阻断实现型 milestone。work-collection 使用 lightweight 评估（仅 `overall_complexity`、`worktrack_count_estimate`、`recommended_route` 必填）。字段合同见 `docs/harness/artifact/control/milestone.md`。
 - temporary understanding 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence，不得把 inferred purpose、owner boundary、maintenance rule 或 acceptance rule 升格为 milestone truth、Goal Charter truth 或 docs truth。
 - `suggested_milestone_brief` 必须保持草案身份，直到 `init-milestone-skill` 消费已确认的 intake review 后再写入正式 milestone artifact。
 - 本技能输出的 milestone brief 是草案；只有 `init-milestone-skill` 可以写入 artifact 和 backlog。
