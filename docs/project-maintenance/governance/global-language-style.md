@@ -70,3 +70,89 @@ last_verified: 2026-06-13
 
 - [Review / Verify 治理入口](./review-verify-handbook.md)
 - [Branch / PR 治理规则](./branch-pr-governance.md)
+
+## 七、中英混排文档去机翻味润色模式（附录）
+
+> 来源：WT-20260614-doc-language-polish 工作追踪的逐条对校 pass。以下 8 类模式来自实际润色案例，供后续文档作者参考。
+
+### A. 去除节标题中的英文注释 / 双语括号
+
+将 `中文标题（English Parenthetical）` 改为纯中文标题。英文注释若有必要保留，放入正文首句。
+
+| Before | After |
+|--------|-------|
+| `## 测试分层（Test Lane Taxonomy）` | `## 测试分层` |
+| `### In-Gate Lanes（在 closeout gate 内运行）` | `### 关内通道（纳入 closeout 关）` |
+
+### B. 英文表头/概念标签中文化
+
+表格表头、概念标签从中英混排替换为纯中文，消解拼接感。
+
+| Before | After |
+|--------|-------|
+| `| Lane \| 用途 \| Gate |` | `| 通道 \| 用途 \| 所属 Gate |` |
+| `| Profile \| 运行 Gates \| 适用场景 |` | `| 策略 \| 执行关卡 \| 适用场景 |` |
+
+### C. 英文术语系统性中文化
+
+散布在正文中的英文专有名词消化为中文自然表达，用中文读者的概念习惯重新命名，而非逐词翻译。
+
+| Before | After |
+|--------|-------|
+| `dogfood` | `真机验证` |
+| `package-smoke` | `包体冒烟` |
+| `canonical skill source` | `技能源码` |
+| `operator-facing installer behavior` | `运维侧安装器行为` |
+
+### D. 拆解英文缩写/中英混成词
+
+将 `in-gate`、`dry-run/apply/idempotency` 等英文名词串消化为完整中文短语。
+
+| Before | After |
+|--------|-------|
+| `5 个 in-gate lane + 5 个 independent lane 分层` | `5 个关内通道 + 5 个独立通道分层组织` |
+| `补 dry-run/apply/idempotency 证据` | `补上预览/执行/幂等性证据` |
+
+### E. 英式语序/句式调整为中文自然语序
+
+将受英文 SVO 结构或从句影响的句子重写为流畅中文。
+
+| Before | After |
+|--------|-------|
+| `Pre-release，Human 触发或规范化脚本` | `发布前，由人工触发或用规范化脚本执行` |
+| `声明式调和。它封装 ...` | `做声明式同步。它封装 ...` |
+
+### F. 直译/机翻句式修正
+
+将"英文逐词翻译塞进中文句子"的痕迹重写为地道中文。
+
+| Before | After |
+|--------|-------|
+| `docs-only、配置修改、小范围 analysis WT` | `纯文档、配置修改、小范围分析任务` |
+| `已有 runtime field 的值保持不变` | `已有运行时字段的值保持不变` |
+| `仅基于 section/field 名称匹配` | `仅基于节/字段名称匹配，不依赖版本号` |
+
+### G. 导航链接/引用文字中文化
+
+文档底部的导航链接文字从英文替换为中文描述。
+
+| Before | After |
+|--------|-------|
+| `[Mapping Spec]` | `[映射规格]` |
+| `[Legacy .aw Runtime Upgrade Runbook]` | `[旧版 .aw 运行时升级手册]` |
+| `drift/conflict/unrecognized 见...` | `漂移/冲突/未识别项见...` |
+
+### H. 运行时输出中文化
+
+面向终端用户的 stderr/stdout 提示从英文改写为中文。
+
+| Before | After |
+|--------|-------|
+| `WARNING: lightweight gate profile skips test_gate and smoke_gate.` | `WARNING: 轻量关卡策略跳过了 test_gate 和 smoke_gate。` |
+
+### 使用优先级
+
+- **文档正文**：所有 8 类均适用
+- **代码注释/README**：A、B、C、D、G 优先
+- **Python stderr/stdout**：H 适用
+- **不适用**：代码标识符、API 名称、git 命令、YAML 键名等技术符号（保留原文）
