@@ -48,6 +48,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
    - 只有在确认合并后才安全的清理项
    - 应交给 `代码仓库刷新技能` 的已验证材料
 7. 在一轮限定范围收尾后停止，并返回一份固定格式的 `关闭工作追踪报告` 与一份 `代码仓库刷新交接`。
+8. 写回动作（progress_counter、latest_closed_worktrack_commit、control-state route 等）使用 [servo-writeback-skill](../servo-writeback-skill/SKILL.md) 执行，不再使用 ad-hoc 字段写入。
 
 ## 收尾约定
 
