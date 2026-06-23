@@ -9,6 +9,11 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 
 本技能实现 `WorktrackScope.Judge` 状态转移算子，对应 Harness 控制回路中的**裁决**阶段。它负责基于三个正交校验面（implementation/validation/policy）的证据，判断"当前状态是否允许推进"，生成 verdict 并决定允许的下一路由。
 
+除三个校验面的传统证据外，gate 还消费以下 pre-closeout 产物作为裁决输入：
+
+- **Self-Review Record**：由 [close-worktrack-skill](../close-worktrack-skill/SKILL.md) 在 pre-closeout checks 阶段产出，定义见 [self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md)。
+- **Single-Acceptance Verdict**：由 close-worktrack-skill 在 pre-closeout checks 阶段产出，定义见 [single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。
+
 当 `Harness` 已经掌握当前轮次的证据，并需要在 `WorktrackScope.judging` 内完成一轮限定范围判定时，使用这个技能。
 
 这个技能会为一轮 `通用高能力模型` `SubAgent` 打包最小关卡上下文，评估当前证据维度，推导当前 `实现/验证/策略` 判定层面，吸收限定范围的低严重度噪声，并返回结构化判定结果与允许的下一步路由。

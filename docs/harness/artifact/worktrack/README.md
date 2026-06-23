@@ -12,6 +12,8 @@ last_verified: 2026-06-13
 当前入口：
 
 - [contract.md](./contract.md)
+- [self-review-contract.md](./self-review-contract.md)
+- [single-acceptance-contract.md](./single-acceptance-contract.md)
 - [plan-task-queue.md](./plan-task-queue.md)
 - [dispatch-packet.md](./dispatch-packet.md)
 - [gate-evidence.md](./gate-evidence.md)

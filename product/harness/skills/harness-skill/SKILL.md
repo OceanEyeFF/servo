@@ -308,7 +308,14 @@ RepoScope.SetGoal ──→ RepoScope.Observe ──→ RepoScope.Decide ──�
 
 其中 `Close` 绑定到 `close-worktrack-skill`，`Recover` 绑定到 `recover-worktrack-skill`。
 
-`PR` 只是中间步骤。完整的 closeout 是 `merge → refresh repo snapshot → cleanup → return RepoScope`。只有这样，Repo 的慢变量才会被真实更新，从而完成从 PR 到刷新基线状态的全链推进。
+`PR` 只是中间步骤。完整的 closeout pipeline 为：
+
+```text
+Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
+    → Closeout Gate → PR → Merge → Cleanup (servo-cleanup-skill) → Repo Refresh
+```
+
+Self-Review 和 Single-Acceptance 的合约定义分别见 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 和 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。写回动作使用 [servo-writeback-skill](../servo-writeback-skill/SKILL.md) 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
 
 对于 active milestone，这个闭环以当前 worktrack 为单位反复运行：一个 worktrack 完成一次完整闭环，milestone 才聚合一次已验证进度；下一次派生从新的 current worktrack 重新开始，持续形成清晰的逐项执行轨迹。
 
@@ -467,6 +474,7 @@ Gate 应汇总**正交校验面**的裁决：
 2. 如果是 `通过` → 进入 `Close` → 然后 `RepoScope.Refresh`：
    - **显式绑定 `repo-refresh-skill`**，从已验证 `关卡证据` 刷新 `Repo Snapshot/Status`
    - 刷新完成后，执行 `git rev-parse HEAD` 获取当前 HEAD hash，将其写入 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint` 字段，作为下次状态估计时 git hash 对比的锚点
+   - 写回动作使用 [servo-writeback-skill](../servo-writeback-skill/SKILL.md) 执行，不再使用 ad-hoc 字段写入
    - 此 hash 存储确保下次 Harness 轮次启动时能正确判断是否需要重新刷新
 3. 如果是 `失败/阻塞` → 进入 `Recover`
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`；版本事实场景使用 `version fact sync`，并记录 source version、published version、VCS tracking facts 与未更新文档理由。如果 `doc-catch-up` 成功执行，将当前 git hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.last_doc_catch_up_checkpoint`，作为下次文档 freshness 检查的对比锚点
