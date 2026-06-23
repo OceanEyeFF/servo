@@ -7,7 +7,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 
 ## 概览
 
-本技能是 Harness 执行平面的 repo 清理 worker。它负责执行两类安全的清理操作：
+本技能是 Harness 执行平面的 repo 清理 worker，在 Harness closeout pipeline 中定位为 `merge → refresh → cleanup` 的最后一环，由 `harness-skill` 在 Milestone final acceptance 后绑定调用。它负责执行以下安全的清理操作：
 
 1. **backlog 过期引用清理**：将 worktrack-backlog 中已完成条目归档到 worktrack-history，保持 backlog 精简。
 2. **已完成 milestone/worktrack 的本地分支清理**：删除已闭环的 `ms/*` 和 `wt/*` 本地分支。

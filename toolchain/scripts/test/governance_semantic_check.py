@@ -528,6 +528,15 @@ CLOSEOUT_RECORD_REQUIRED_TERMS = [
     "remaining_risks",
     "next_repo_scope_action",
 ]
+CLEANUP_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/servo-cleanup-skill/SKILL.md",
+]
+CLEANUP_CONTRACT_REQUIRED_TERMS = [
+    "servo-cleanup-skill",
+    "merge → refresh",
+    "cleanup",
+]
 REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS = [
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/references/overview-fallback-mode.md",
@@ -2147,6 +2156,23 @@ def check_closeout_record_contract(repo_root: Path, report: SemanticReport) -> N
     report.add_info(f"checked {checked} closeout record contract sources")
 
 
+def check_cleanup_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in CLEANUP_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(f"missing cleanup contract source: {relative_path}")
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in CLEANUP_CONTRACT_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"cleanup contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} cleanup contract sources")
+
+
 def check_repo_whats_next_overview_fallback_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -3238,6 +3264,7 @@ def main() -> int:
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)
     check_closeout_record_contract(repo_root, report)
+    check_cleanup_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_worktrack_intake_review_contract(repo_root, report)
     check_pre_milestone_intake_template_contract(repo_root, report)
