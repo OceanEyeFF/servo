@@ -1,5 +1,5 @@
 ---
-name: servo-milestone-anticheat-check
+name: milestone-anticheat-check
 description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 milestone 所有已闭环 WT 执行反作弊轴检查，以检测证据伪造、复用、绕过或偏倚信号时，使用这个技能。它是 Milestone Gate 四轴中的 anti-cheat lane，不评判代码正确性，只评判证据可信度。
 ---
 

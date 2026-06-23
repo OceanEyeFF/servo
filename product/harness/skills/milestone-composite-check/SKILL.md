@@ -1,5 +1,5 @@
 ---
-name: servo-milestone-composite-check
+name: milestone-composite-check
 description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-review / feature-completeness / related-influence / intent-completeness / operator-simulation / professional-review），聚合并审查现有的 per-WT lane 报告以产出 milestone 级复合验收结论时，使用这个技能。它聚合已有 lane 报告，不生成新的代码检查。与其他三轴（blackbox / whitebox / anticheat）不同，本轴不主动检查代码。
 ---
 
@@ -7,7 +7,7 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
 
 ## 概览
 
-本技能实现 `Milestone Gate` 四轴检查中的 **composite acceptance** 轴。它是 Layer 1 四个独立 SubAgent skill 中的一个，与其他三轴（[servo-milestone-blackbox-check](../servo-milestone-blackbox-check/SKILL.md)、[servo-milestone-whitebox-check](../servo-milestone-whitebox-check/SKILL.md)、[servo-milestone-anticheat-check](../servo-milestone-anticheat-check/SKILL.md)）并行运行、轴间不可见、各自产出独立的 `composite_verdict`。
+本技能实现 `Milestone Gate` 四轴检查中的 **composite acceptance** 轴。它是 Layer 1 四个独立 SubAgent skill 中的一个，与其他三轴（[milestone-blackbox-check](../milestone-blackbox-check/SKILL.md)、[milestone-whitebox-check](../milestone-whitebox-check/SKILL.md)、[milestone-anticheat-check](../milestone-anticheat-check/SKILL.md)）并行运行、轴间不可见、各自产出独立的 `composite_verdict`。
 
 与其他三轴不同，本轴**不生成新的代码检查**。它消费每个已闭环 worktrack 上已经产出的 composite acceptance lane 报告，聚合并审查其完整性和可信度，最终形成 milestone 级的复合验收结论。
 

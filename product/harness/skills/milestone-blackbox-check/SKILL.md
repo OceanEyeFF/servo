@@ -1,5 +1,5 @@
 ---
-name: servo-milestone-blackbox-check
+name: milestone-blackbox-check
 description: 当 milestoone gate 需要从外部视角（用户可观察行为、跨 WT 集成、回归风险）对 milestone 做隔离检查，且不得阅读完整实现代码时，使用这个技能。它是 Milestone Gate 四轴架构中 Layer 1 的 blackbox 轴，运行在隔离 SubAgent 中。
 ---
 
@@ -9,9 +9,9 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 
 本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 [Milestone Gate 四轴 Skills 与两层编排设计](../../../../.servo/repo/design-four-axis-skills.md) 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
 
-核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary 和 diff summary（文件变更摘要），不做代码级审查。代码级审查由 whitebox 轴（`servo-milestone-whitebox-check`）负责。
+核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary 和 diff summary（文件变更摘要），不做代码级审查。代码级审查由 whitebox 轴（`milestone-whitebox-check`）负责。
 
-本技能与 `servo-milestone-whitebox-check`、`servo-milestone-anticheat-check`、`servo-milestone-composite-check` 共同构成 Milestone Gate 的四轴检查层。四轴之间**严格隔离**——每个轴的 SubAgent 任务包不得包含其他轴的 verdict。
+本技能与 `milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check` 共同构成 Milestone Gate 的四轴检查层。四轴之间**严格隔离**——每个轴的 SubAgent 任务包不得包含其他轴的 verdict。
 
 当 `milestone-status-skill`（Layer 2 orchestrator）需要在 milestone 所有 WT 闭环后，从外部集成视角检查 milestone 的交付质量时，使用这个技能。它产出一份结构化的 `blackbox_verdict`，供 Layer 2 aggregator 聚合到 milestone_gate_verdict。
 
@@ -28,9 +28,9 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 以下情况不适用：
 
 - Milestone 下还有 active WT 未闭环 → 应返回 `not_ready`，由 orchestrator 等待
-- 需要逐行代码审查 → 应使用 `servo-milestone-whitebox-check`
-- 需要检测证据伪造（mock abuse / self-review bias 等）→ 应使用 `servo-milestone-anticheat-check`
-- 需要复合验收 lane 评估（code-review / feature-completeness 等）→ 应使用 `servo-milestone-composite-check`
+- 需要逐行代码审查 → 应使用 `milestone-whitebox-check`
+- 需要检测证据伪造（mock abuse / self-review bias 等）→ 应使用 `milestone-anticheat-check`
+- 需要复合验收 lane 评估（code-review / feature-completeness 等）→ 应使用 `milestone-composite-check`
 - 需要对单个 WT 做 gate 判定 → 应使用 `gate-skill`
 - 当前处于 worktrack scope 而非 milestone scope → 不适用
 

@@ -1,5 +1,5 @@
 ---
-name: servo-milestone-whitebox-check
+name: milestone-whitebox-check
 description: 当 Milestone Gate 需要从内部实现视角检查跨 WT 集成路径、接口拼接、状态传递、依赖关系和架构对齐时，使用这个技能。它运行在隔离 SubAgent 中，可以阅读完整实现代码，但不能读取其他轴（blackbox/anticheat/composite）的 verdict。
 ---
 

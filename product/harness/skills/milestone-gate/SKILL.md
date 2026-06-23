@@ -60,10 +60,10 @@ milestone-status-skill（sensor）
 
 | 轴 | Skill | 视角 | 检查范围 |
 |----|-------|------|---------|
-| **blackbox** | `servo-milestone-blackbox-check` | 外部用户视角 | 跨 WT 集成一致性、用户承诺兑现、回归风险、路径约定合规、完整性缺口（B1-B5）。**不阅读实现代码。** |
-| **whitebox** | `servo-milestone-whitebox-check` | 内部实现视角 | 接口契约一致性、状态流转完整性、依赖图、架构分层合规、关键集成路径实现质量（W1-W5）。**阅读完整实现代码。** |
-| **anticheat** | `servo-milestone-anticheat-check` | 证据可信度视角 | Mock abuse、evidence 复用、局部验证、gate bypass、过期 evidence、self-review bias、false positive risk（A1-A7）。**不评判代码正确性，只评判证据可信度。** |
-| **composite** | `servo-milestone-composite-check` | 复合验收视角 | 消费 per-WT lane 报告（code-review 等 C1-C6）并聚合成 milestone 级复合验收结论。**不生成新代码检查。** |
+| **blackbox** | `milestone-blackbox-check` | 外部用户视角 | 跨 WT 集成一致性、用户承诺兑现、回归风险、路径约定合规、完整性缺口（B1-B5）。**不阅读实现代码。** |
+| **whitebox** | `milestone-whitebox-check` | 内部实现视角 | 接口契约一致性、状态流转完整性、依赖图、架构分层合规、关键集成路径实现质量（W1-W5）。**阅读完整实现代码。** |
+| **anticheat** | `milestone-anticheat-check` | 证据可信度视角 | Mock abuse、evidence 复用、局部验证、gate bypass、过期 evidence、self-review bias、false positive risk（A1-A7）。**不评判代码正确性，只评判证据可信度。** |
+| **composite** | `milestone-composite-check` | 复合验收视角 | 消费 per-WT lane 报告（code-review 等 C1-C6）并聚合成 milestone 级复合验收结论。**不生成新代码检查。** |
 
 ### 分派规则
 
@@ -205,9 +205,9 @@ milestone-status-skill（sensor）
 
 - [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — aggregation_rules 合同
 - [milestone-status-skill](../milestone-status-skill/SKILL.md) — 调用方 sensor skill
-- [servo-milestone-blackbox-check](../servo-milestone-blackbox-check/SKILL.md) — 轴技能 1
-- [servo-milestone-whitebox-check](../servo-milestone-whitebox-check/SKILL.md) — 轴技能 2
-- [servo-milestone-anticheat-check](../servo-milestone-anticheat-check/SKILL.md) — 轴技能 3
-- [servo-milestone-composite-check](../servo-milestone-composite-check/SKILL.md) — 轴技能 4
+- [milestone-blackbox-check](../milestone-blackbox-check/SKILL.md) — 轴技能 1
+- [milestone-whitebox-check](../milestone-whitebox-check/SKILL.md) — 轴技能 2
+- [milestone-anticheat-check](../milestone-anticheat-check/SKILL.md) — 轴技能 3
+- [milestone-composite-check](../milestone-composite-check/SKILL.md) — 轴技能 4
 - [single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — WT verdict 格式
 - [skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) — C-1 至 C-8
