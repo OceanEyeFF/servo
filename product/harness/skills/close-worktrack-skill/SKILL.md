@@ -29,8 +29,8 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 2. 为一轮限定范围的 `通用高能力模型` `SubAgent` 构建一份 `关闭工作追踪任务简报` 和一份 `关闭工作追踪信息包`。
 3. 从 `Worktrack Contract` 读取 closeout target 与 checkpoint 对比基准。`baseline_branch` 是 servo-managed final baseline；`branch_source_ref` 是本 Worktrack 分支来源；`integration_target_ref` / `closeout_target_ref` 是本轮 PR target、merge target 与 checkpoint 基准的唯一合法来源。Milestone-derived worktrack 默认合回 active Milestone branch，而不是直接合回 servo-managed baseline。PR target、merge target 和 checkpoint 基准不得从当前分支名或写死默认分支名推断。
 4. **Pre-Closeout Checks**（在确定收尾阶段之前）：
-   - **Self-Review**：执行 [docs/harness/artifact/worktrack/self-review-contract.md](../../../docs/harness/artifact/worktrack/self-review-contract.md) 定义的结构化自查，覆盖 artifact 更新完整性、scope 合规、docs 一致性三个维度。产出 structured self-review record。若 `overall_verdict = blocked`，handback 修复后重试，不进入收尾阶段。
-   - **Single-Acceptance**：执行 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) 定义的单体验收，对照 worktrack contract 的 `completion_signals` 逐条验证。产出 structured single-acceptance verdict。`accepted` / `accepted_with_notes` 允许继续；`blocked` 触发 critical failure 升级阻断。
+   - **Self-Review**：执行 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 定义的结构化自查，覆盖 artifact 更新完整性、scope 合规、docs 一致性三个维度。产出 structured self-review record。若 `overall_verdict = blocked`，handback 修复后重试，不进入收尾阶段。
+   - **Single-Acceptance**：执行 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) 定义的单体验收，对照 worktrack contract 的 `completion_signals` 逐条验证。产出 structured single-acceptance verdict。`accepted` / `accepted_with_notes` 允许继续；`blocked` 触发 critical failure 升级阻断。
    - 两步均 clear 后，进入收尾阶段判定。
    - 更新后的 closeout pipeline 顺序：`Self-Review → Single-Acceptance → Closeout Gate → 准备合并请求 → PR → Merge → Cleanup → Repo Refresh`
 5. 判断当前收尾阶段：
