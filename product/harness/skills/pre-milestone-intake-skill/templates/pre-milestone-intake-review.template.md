@@ -71,6 +71,34 @@ risk_flags:
     description: ""
 ```
 
+## Milestone Task Complexity Assessment
+
+Use this section to produce a structured complexity assessment for the proposed Milestone. Goal-driven milestones require full assessment (all fields required); work-collection milestones may use lightweight assessment (only starred fields). Missing assessment or incomplete required fields blocks Milestone creation/activation/Worktrack derivation. Field contract: `docs/harness/artifact/control/milestone.md#milestone-task-complexity-assessment`.
+
+```yaml
+milestone_task_complexity_assessment:
+  assessment_required: true
+  # === Full fields (all required for goal-driven) ===
+  overall_complexity: "low | medium | high | very-high"
+  scope_clarity: "low | medium | high"
+  worktrack_count_estimate: 0
+  worktrack_split_confidence: "low | medium | high"
+  unknowns_level: "low | medium | high"
+  integration_risk: "low | medium | high"
+  validation_cost: "low | medium | high"
+  permission_or_external_side_effect_risk: "low | medium | high"
+  documentation_governance_cost: "low | medium | high"
+  # === Lightweight fields (required for work-collection) ===
+  recommended_route: "normal_milestone_with_required_intake | lightweight_intake_only | complex_project_entry_gate_required | discovery_or_reinforcement_needed"
+  # === Decision field (required for goal-driven) ===
+  discovery_or_reinforcement_needed: false
+  # === Rationale (required for goal-driven) ===
+  rationale:
+    - ""
+```
+
+Blocking rules: missing assessment → blocked. `discovery_or_reinforcement_needed = true` → blocked for implementation-oriented Milestones. Work-collection lightweight must still populate `overall_complexity`, `worktrack_count_estimate`, and `recommended_route`. Conservative runtime backfill defaults to `assessment_required: false` for old artifacts; all other fields default to `missing`/`blocked`/`N/A`.
+
 ## Complex Project Entry Gate
 
 Use this section when complex-project, weak-doc, multi-system, migration, deploy, security, data, destructive, or authority-sensitive signals affect Milestone entry. This is a Milestone-side blocking gate, not fixed heavy mode. Scanner output is evidence, not verdict. Canonical guard term: scanner output is evidence.
