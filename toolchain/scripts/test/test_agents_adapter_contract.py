@@ -45,14 +45,15 @@ EXPECTED_AGENTS_SKILLS = {
 EXPECTED_CLAUDE_SKILLS = {
     *EXPECTED_AGENTS_SKILLS,
 }
-AGENTS_TARGET_DIR_OVERRIDES = {
-}
-CLAUDE_TARGET_DIR_OVERRIDES = {
-}
+AGENTS_TARGET_DIR_OVERRIDES = {}
+CLAUDE_TARGET_DIR_OVERRIDES = {}
 AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     "harness-set-goal-skill": ["set-harness-goal-skill", "aw-set-harness-goal-skill"],
     "milestone-init-skill": ["init-milestone-skill", "aw-init-milestone-skill"],
-    "milestone-pre-intake-skill": ["pre-milestone-intake-skill", "aw-pre-milestone-intake-skill"],
+    "milestone-pre-intake-skill": [
+        "pre-milestone-intake-skill",
+        "aw-pre-milestone-intake-skill",
+    ],
     "repo-change-goal-skill": [
         "goal-change-control-skill",
         "servo-repo-change-goal-skill",
@@ -61,14 +62,29 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     "worktrack-cleanup-skill": ["cleanup-skill", "aw-cleanup-skill"],
     "worktrack-close-skill": ["close-worktrack-skill", "aw-close-worktrack-skill"],
     "worktrack-dispatch-skill": ["dispatch-skills", "aw-dispatch-skills"],
-    "worktrack-doc-catch-up-skill": ["doc-catch-up-worker-skill", "aw-doc-catch-up-worker-skill"],
+    "worktrack-doc-catch-up-skill": [
+        "doc-catch-up-worker-skill",
+        "aw-doc-catch-up-worker-skill",
+    ],
     "worktrack-gate-skill": ["gate-skill", "aw-gate-skill"],
-    "worktrack-generic-worker-skill": ["generic-worker-skill", "aw-generic-worker-skill"],
+    "worktrack-generic-worker-skill": [
+        "generic-worker-skill",
+        "aw-generic-worker-skill",
+    ],
     "worktrack-init-skill": ["init-worktrack-skill", "aw-init-worktrack-skill"],
-    "worktrack-recover-skill": ["recover-worktrack-skill", "aw-recover-worktrack-skill"],
-    "worktrack-review-evidence-skill": ["review-evidence-skill", "aw-review-evidence-skill"],
+    "worktrack-recover-skill": [
+        "recover-worktrack-skill",
+        "aw-recover-worktrack-skill",
+    ],
+    "worktrack-review-evidence-skill": [
+        "review-evidence-skill",
+        "aw-review-evidence-skill",
+    ],
     "worktrack-rule-check-skill": ["rule-check-skill", "aw-rule-check-skill"],
-    "worktrack-schedule-skill": ["schedule-worktrack-skill", "aw-schedule-worktrack-skill"],
+    "worktrack-schedule-skill": [
+        "schedule-worktrack-skill",
+        "aw-schedule-worktrack-skill",
+    ],
     "worktrack-test-evidence-skill": ["test-evidence-skill", "aw-test-evidence-skill"],
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
