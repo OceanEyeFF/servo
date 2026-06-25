@@ -29,20 +29,20 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 当前阶段：
 
 - 已落地的顶层入口是 [harness-skill/](./harness-skill/)：顶层监督入口
-- 已落地的分派入口是 [dispatch-skills/](./dispatch-skills/)：`WorktrackScope` 下的限定范围分派与后备执行载体
+- 已落地的分派入口是 [worktrack-dispatch-skill/](./worktrack-dispatch-skill/)：`WorktrackScope` 下的限定范围分派与后备执行载体
 - 已落地的通用执行载体：
-  - [generic-worker-skill/](./generic-worker-skill/) — 接收限定范围 Prompt 的通用执行 worker
-  - [doc-catch-up-worker-skill/](./doc-catch-up-worker-skill/) — 将已验证实现事实追平到正确文档层
+  - [worktrack-generic-worker-skill/](./worktrack-generic-worker-skill/) — 接收限定范围 Prompt 的通用执行 worker
+  - [worktrack-doc-catch-up-skill/](./worktrack-doc-catch-up-skill/) — 将已验证实现事实追平到正确文档层
 - 已落地的 `RepoScope` 技能骨架：
-  - [set-harness-goal-skill/](./set-harness-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
-  - [pre-milestone-intake-skill/](./pre-milestone-intake-skill/) — Milestone 写入/激活前的需求核实、追问和确认 review
+  - [harness-set-goal-skill/](./harness-set-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
+  - [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) — Milestone 写入/激活前的需求核实、追问和确认 review
   - [repo-status-skill/](./repo-status-skill/) — 代码仓库状态观察
   - [repo-whats-next-skill/](./repo-whats-next-skill/) — 代码仓库下一步判断
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
-  - [servo-cleanup-skill/](./servo-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
-- [init-milestone-skill/](./init-milestone-skill/) — Milestone 初始化/注册到 Pipeline
+  - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
+- [milestone-init-skill/](./milestone-init-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
 - [milestone-gate/](./milestone-gate/) — Milestone Gate 两层集成验收编排器（Layer 1 四轴 SubAgent 分派 + Layer 2 aggregation_rules 聚合）
   - Milestone Gate 四轴检查（Layer 1 独立 SubAgent skills）：
@@ -52,14 +52,14 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
     - [milestone-composite-check/](./milestone-composite-check/) — 复合验收检查（code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes）
 - 已落地的 `WorktrackScope` 技能骨架：
   - [worktrack-status-skill/](./worktrack-status-skill/) — 工作追踪状态观察
-  - [init-worktrack-skill/](./init-worktrack-skill/) — 初始化工作追踪
-  - [schedule-worktrack-skill/](./schedule-worktrack-skill/) — 调度工作追踪
-  - [review-evidence-skill/](./review-evidence-skill/) — 审查证据
-  - [test-evidence-skill/](./test-evidence-skill/) — 测试证据
-  - [rule-check-skill/](./rule-check-skill/) — 规则检查
-  - [gate-skill/](./gate-skill/) — 关卡判定
-  - [recover-worktrack-skill/](./recover-worktrack-skill/) — 恢复工作追踪
-  - [close-worktrack-skill/](./close-worktrack-skill/) — 关闭工作追踪
+  - [worktrack-init-skill/](./worktrack-init-skill/) — 初始化工作追踪
+  - [worktrack-schedule-skill/](./worktrack-schedule-skill/) — 调度工作追踪
+  - [worktrack-review-evidence-skill/](./worktrack-review-evidence-skill/) — 审查证据
+  - [worktrack-test-evidence-skill/](./worktrack-test-evidence-skill/) — 测试证据
+  - [worktrack-rule-check-skill/](./worktrack-rule-check-skill/) — 规则检查
+  - [worktrack-gate-skill/](./worktrack-gate-skill/) — 关卡判定
+  - [worktrack-recover-skill/](./worktrack-recover-skill/) — 恢复工作追踪
+  - [worktrack-close-skill/](./worktrack-close-skill/) — 关闭工作追踪
 - 上游技能目录见 [../../../docs/harness/catalog/README.md](../../../docs/harness/catalog/README.md)
 - 后续新增内容应从 `docs/harness/` 的操作员定义、工作流程与治理规则推导而来
 - 不应先复制局部提示词，再反向让它生长出本体论
@@ -92,15 +92,15 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | Canonical source | Docs/catalog owner |
 |------------------|--------------------|
 | [harness-skill/](./harness-skill/) | [docs/harness/catalog/supervisor.md](../../../docs/harness/catalog/supervisor.md) |
-| [set-harness-goal-skill/](./set-harness-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
-| [pre-milestone-intake-skill/](./pre-milestone-intake-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [harness-set-goal-skill/](./harness-set-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-status-skill/](./repo-status-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-whats-next-skill/](./repo-whats-next-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-append-request-skill/](./repo-append-request-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-change-goal-skill/](./repo-change-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-refresh-skill/](./repo-refresh-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
-| [servo-cleanup-skill/](./servo-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
-| [init-milestone-skill/](./init-milestone-skill/) | [docs/harness/catalog/milestone/init-milestone-skill.md](../../../docs/harness/catalog/milestone/init-milestone-skill.md) |
+| [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [milestone-init-skill/](./milestone-init-skill/) | [docs/harness/catalog/milestone/milestone-init-skill.md](../../../docs/harness/catalog/milestone/milestone-init-skill.md) |
 | [milestone-status-skill/](./milestone-status-skill/) | [docs/harness/catalog/milestone/milestone-status-skill.md](../../../docs/harness/catalog/milestone/milestone-status-skill.md) |
 | [milestone-gate/](./milestone-gate/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [milestone-blackbox-check/](./milestone-blackbox-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
@@ -108,18 +108,18 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [milestone-anticheat-check/](./milestone-anticheat-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [milestone-composite-check/](./milestone-composite-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [worktrack-status-skill/](./worktrack-status-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [init-worktrack-skill/](./init-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [schedule-worktrack-skill/](./schedule-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [dispatch-skills/](./dispatch-skills/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [generic-worker-skill/](./generic-worker-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [doc-catch-up-worker-skill/](./doc-catch-up-worker-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [review-evidence-skill/](./review-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [test-evidence-skill/](./test-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [rule-check-skill/](./rule-check-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [gate-skill/](./gate-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [recover-worktrack-skill/](./recover-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [close-worktrack-skill/](./close-worktrack-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [servo-writeback-skill/](./servo-writeback-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-init-skill/](./worktrack-init-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-schedule-skill/](./worktrack-schedule-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-dispatch-skill/](./worktrack-dispatch-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-generic-worker-skill/](./worktrack-generic-worker-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-doc-catch-up-skill/](./worktrack-doc-catch-up-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-review-evidence-skill/](./worktrack-review-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-test-evidence-skill/](./worktrack-test-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-rule-check-skill/](./worktrack-rule-check-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-gate-skill/](./worktrack-gate-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-recover-skill/](./worktrack-recover-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [worktrack-close-skill/](./worktrack-close-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [repo-writeback-skill/](./repo-writeback-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
 
 This table is the source-side backlink to the docs/catalog owner surface. Keep it synchronized when adding, renaming, retiring, or moving canonical skill source. Do not replace these links with deploy target paths.
 

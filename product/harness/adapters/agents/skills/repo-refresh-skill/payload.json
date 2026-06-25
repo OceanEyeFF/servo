@@ -6,7 +6,7 @@
   "canonical_paths": [
     "product/harness/skills/repo-refresh-skill/SKILL.md"
   ],
-  "target_dir": "servo-repo-refresh-skill",
+  "target_dir": "repo-refresh-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [

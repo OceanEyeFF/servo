@@ -8,7 +8,7 @@
     "product/harness/skills/repo-whats-next-skill/references/overview-fallback-mode.md",
     "product/harness/skills/repo-whats-next-skill/references/priority-reframe-mode.md"
   ],
-  "target_dir": "servo-repo-whats-next-skill",
+  "target_dir": "repo-whats-next-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [

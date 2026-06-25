@@ -251,16 +251,16 @@ Layer 2: RepoScope / Milestone（慢变量控制）
     ↓ 派生 Worktrack ↓
 
 Layer 3: WorktrackScope（快变量控制）
-  ├─ Init: init-worktrack-skill（建立分支、基准、合同）
+  ├─ Init: worktrack-init-skill（建立分支、基准、合同）
   ├─ Observe: worktrack-status-skill（状态估计）
-  ├─ Decide: schedule-worktrack-skill（调度任务队列）
-  ├─ Dispatch: dispatch-skills（选择执行载体）
-  ├─ Verify: review-evidence-skill + test-evidence-skill + rule-check-skill
-  ├─ Judge: gate-skill（三轴裁决）
+  ├─ Decide: worktrack-schedule-skill（调度任务队列）
+  ├─ Dispatch: worktrack-dispatch-skill（选择执行载体）
+  ├─ Verify: worktrack-review-evidence-skill + worktrack-test-evidence-skill + worktrack-rule-check-skill
+  ├─ Judge: worktrack-gate-skill（三轴裁决）
   │   ├─ 通过 → Close → clean up → 回到 Layer 2
-  │   ├─ 失败/阻塞 → Recover（recover-worktrack-skill）
+  │   ├─ 失败/阻塞 → Recover（worktrack-recover-skill）
   │   └─ 恢复 → 回到 Observe/Decide 或回到 Layer 2
-  └─ Close: close-worktrack-skill（收尾、合并、清理）
+  └─ Close: worktrack-close-skill（收尾、合并、清理）
 
     ↓ 任务分解 ↓
 
@@ -271,7 +271,7 @@ Layer 4: Task Matrix（任务执行矩阵）
   └─ Evidence 产出 → gate-evidence.md
 ```
 
-其中 `Close` 绑定到 `close-worktrack-skill`，`Recover` 绑定到 `recover-worktrack-skill`。
+其中 `Close` 绑定到 `worktrack-close-skill`，`Recover` 绑定到 `worktrack-recover-skill`。
 
 `Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
 
@@ -285,10 +285,10 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 ```text
 Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
-    → Closeout Gate → PR → Merge → Cleanup (servo-cleanup-skill) → Repo Refresh
+    → Closeout Gate → PR → Merge → Cleanup (worktrack-cleanup-skill) → Repo Refresh
 ```
 
-Self-Review 和 Single-Acceptance 的合约定义分别见 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 和 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。写回动作使用 [servo-writeback-skill](../servo-writeback-skill/SKILL.md) 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
+Self-Review 和 Single-Acceptance 的合约定义分别见 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 和 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。写回动作使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
 
 对于 active milestone，这个闭环以当前 worktrack 为单位反复运行：一个 worktrack 完成一次完整闭环，milestone 才聚合一次已验证进度；下一次派生从新的 current worktrack 重新开始，持续形成清晰的逐项执行轨迹。
 
@@ -309,11 +309,11 @@ Gate 应汇总**正交校验面**的裁决：
 
 | 校验面 | 判定内容 | 对应 Verify 技能 |
 |--------|---------|----------------|
-| `implementation-gate` | 代码正确性、结构合理性 | review-evidence-skill |
-| `validation-gate` | 测试、验收条件、运行结果 | test-evidence-skill |
-| `policy-gate` | 规则、边界、不变量、治理要求 | rule-check-skill |
+| `implementation-gate` | 代码正确性、结构合理性 | worktrack-review-evidence-skill |
+| `validation-gate` | 测试、验收条件、运行结果 | worktrack-test-evidence-skill |
+| `policy-gate` | 规则、边界、不变量、治理要求 | worktrack-rule-check-skill |
 
-最后由汇总 `gate-skill` 生成最终 verdict。
+最后由汇总 `worktrack-gate-skill` 生成最终 verdict。
 
 ### 8.2 Milestone 级 Gate
 
@@ -346,7 +346,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
 ### 10.1 状态估计阶段
 
 1. **现有 `.servo` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.servo/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
-   - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `set-harness-goal-skill`，不得凭当前对话临时假设长期配置。
+   - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `harness-set-goal-skill`，不得凭当前对话临时假设长期配置。
    - 必读控制配置段包括 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 和 `Autonomy Ledger`。
    - 缺失控制字段按最保守默认值解释：权限/自动性为未授权，状态为 `unknown` / `missing` / `blocked` / `not ready`，列表为空，布尔值为 `false`；同时在状态估计中记录 `config_hydration_gaps`。缺失不能静默扩大权限或自动性。Source-side authoring trace: `docs/harness/artifact/control/control-state.md`。
    - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 source-side control-state contract 与初始化模板。
@@ -384,7 +384,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - 脚本输出 JSON 包含 `status`、`current_head`、`checkpoint`、`repo_baseline_unchanged`、`repo_baseline_changed`。
    - 若 `repo_baseline_unchanged == true`，跳过 `repo-refresh-skill` 绑定。
    - 若 `repo_baseline_changed == true`（或 checkpoint 缺失），必须在本轮合适阶段绑定 `repo-refresh-skill`。
-6. **文档 Freshness 基线对比**：如果发现本轮涉及 release、deploy、adapter、package、VCS baseline、CLI 版本或 operator-facing docs，且文档版本事实可能落后于代码/registry/VCS 证据，应标记 `doc_catch_up_needed: true`，并在合适阶段绑定 `doc-catch-up-worker-skill`；如果上次 `doc-catch-up` 执行时的 git hash 与当前 HEAD 一致且无新的文档变更，可跳过重复追平
+6. **文档 Freshness 基线对比**：如果发现本轮涉及 release、deploy、adapter、package、VCS baseline、CLI 版本或 operator-facing docs，且文档版本事实可能落后于代码/registry/VCS 证据，应标记 `doc_catch_up_needed: true`，并在合适阶段绑定 `worktrack-doc-catch-up-skill`；如果上次 `doc-catch-up` 执行时的 git hash 与当前 HEAD 一致且无新的文档变更，可跳过重复追平
 7. 如果标准快照缺失、过期或明显不足，只收集解释缺口所需的最小探查证据
 8. 产出结构化状态估计结果，而不是文字摘要
 
@@ -442,7 +442,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
        --intake-review .servo/repo/worktrack-intake-{id}.md
      ```
 
-     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许绑定 `init-worktrack-skill`。
+     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许绑定 `worktrack-init-skill`。
    - **Guard 7: `ChangeGoal`** — 不由常规 Decide 选择。目标变更由外部请求触发，完成后系统重新进入 Observe。
    - **Guard 8: `milestone_brief`** — 当 `repo-whats-next-skill` 建议 create/activate/append_worktracks 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认。
 
@@ -552,8 +552,8 @@ _已合并入 §10.5。_
    | `refresh_baseline` | 更新 `Baseline Traceability.latest_observed_checkpoint` | 上游真相变化使分支比较失效 |
    | `replan` | scope → `RepoScope`, function → `Observe` | 当前路径整体不可行 |
 
-   恢复动作由 `recover-worktrack-skill` 执行。恢复成功后的收尾由 `close-worktrack-skill` 负责。
-4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `doc-catch-up-worker-skill`。
+   恢复动作由 `worktrack-recover-skill` 执行。恢复成功后的收尾由 `worktrack-close-skill` 负责。
+4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `worktrack-doc-catch-up-skill`。
    调用 `checkpoint_writeback.py` 写入 doc-catch-up checkpoint：
 
    ```bash
@@ -577,7 +577,7 @@ _已合并入 §10.5。_
    - 连续执行或低风险 Worktrack 自批必须同时满足：`allowed` 命中、`forbidden` 未命中、`stop_condition` 未命中、`evidence_required` 已能满足或已安排。
    - 如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：
-   - 调用 `writeback_bridge.py` 桥接 milestone-status-skill 输出到 servo-writeback-skill 期望格式：
+   - 调用 `writeback_bridge.py` 桥接 milestone-status-skill 输出到 repo-writeback-skill 期望格式：
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/writeback_bridge.py \
@@ -585,8 +585,8 @@ _已合并入 §10.5。_
        --instructions-json '<json>'
      ```
 
-   - `writeback_bridge.py` 将 `writeback_instructions` 翻译为 `servo-writeback-skill` 可消费的多步指令格式。
-   - 写回动作使用 [servo-writeback-skill](../servo-writeback-skill/SKILL.md) 作为 orchestrator 执行，不再使用 ad-hoc 字段写入。
+   - `writeback_bridge.py` 将 `writeback_instructions` 翻译为 `repo-writeback-skill` 可消费的多步指令格式。
+   - 写回动作使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 作为 orchestrator 执行，不再使用 ad-hoc 字段写入。
    - 收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
 
    **Gate 状态透传**：`milestone-status-skill` 输出中的 gate 特定字段来自 `milestone-gate` skill 产出，由 sensor skill 透传到 writeback_instructions。Harness 按 writeback_instructions 逐字段写入，不自行解释 gate 语义。
@@ -618,7 +618,7 @@ _（保留）_
 
 ### 10.9 Git Commit Hash 幂等性守卫
 
-Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `doc-catch-up-worker-skill`。
+Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill`。
 
 **存储位置**：`.servo/control-state.md` 的 `Baseline Traceability` 段。
 
@@ -627,7 +627,7 @@ Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基�
 | 字段 | 含义 | 更新时机 |
 |------|------|---------|
 | `latest_observed_checkpoint` | 上次 `repo-refresh-skill` 执行后记录的 git HEAD hash | `RepoScope.Refresh` 完成后由 `checkpoint_writeback.py --checkpoint-type observed` 写入 |
-| `last_doc_catch_up_checkpoint` | 上次 `doc-catch-up-worker-skill` 执行后记录的 git HEAD hash | 文档追平完成后由 `checkpoint_writeback.py --checkpoint-type doc-catch-up` 写入 |
+| `last_doc_catch_up_checkpoint` | 上次 `worktrack-doc-catch-up-skill` 执行后记录的 git HEAD hash | 文档追平完成后由 `checkpoint_writeback.py --checkpoint-type doc-catch-up` 写入 |
 | `verified_at_history` | 最近一次 checkpoint 验证时间列表 | 每次 `checkpoint_writeback.py` 调用自动追加 |
 
 **工作逻辑**：
@@ -639,8 +639,8 @@ Harness 启动 → 状态估计阶段
   │   ├─ hash 一致 → repo_baseline_unchanged: true → 跳过 repo-refresh-skill
   │   └─ hash 不一致/缺失 → repo_baseline_changed: true → 绑定 repo-refresh-skill
   ├─ 读取 last_doc_catch_up_checkpoint
-  │   ├─ hash 一致且本轮无文档变更 → 跳过 doc-catch-up-worker-skill
-  │   └─ hash 不一致或有文档变更 → doc_catch_up_needed: true → 绑定 doc-catch-up-worker-skill
+  │   ├─ hash 一致且本轮无文档变更 → 跳过 worktrack-doc-catch-up-skill
+  │   └─ hash 不一致或有文档变更 → doc_catch_up_needed: true → 绑定 worktrack-doc-catch-up-skill
   └─ 继续正常控制回路
 
 Close/Refresh 完成 → 状态更新阶段
@@ -696,7 +696,7 @@ Close/Refresh 完成 → 状态更新阶段
 | `刷新基准` | 上游真相变化使当前分支比较失效 | 不得改写 Repo Snapshot/Status 或目标/章程 | `refresh_baseline` |
 | `重新规划` | 当前路径整体不可行 | 必须回到 RepoScope 重新 Decide | `replan` |
 
-恢复策略由 `recover-worktrack-skill` 实现。Gate 裁决为失败或阻塞时，应绑定 `recover-worktrack-skill` 执行恢复动作；恢复成功后的收尾由 `close-worktrack-skill` 负责。
+恢复策略由 `worktrack-recover-skill` 实现。Gate 裁决为失败或阻塞时，应绑定 `worktrack-recover-skill` 执行恢复动作；恢复成功后的收尾由 `worktrack-close-skill` 负责。
 
 ### Milestone Pipeline 恢复
 

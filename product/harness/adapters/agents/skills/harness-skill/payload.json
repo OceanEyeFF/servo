@@ -7,7 +7,7 @@
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/harness-skill/VERSION"
   ],
-  "target_dir": "servo-harness-skill",
+  "target_dir": "harness-skill",
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
