@@ -115,7 +115,7 @@ const TEMPLATE_SPECS = {
 	"control-state-repo": templateSpec({
 		templateId: "control-state-repo",
 		sourceRelpath: "assets/repo/control-state-repo.md",
-		outputRelpath: "repo/control-state-repo.md",
+		outputRelpath: "control-state-repo.md",
 		artifactType: "control-state-repo",
 		title: "Harness Control State — Repo Level",
 		instanceNote:
@@ -130,17 +130,9 @@ const TEMPLATE_SPECS = {
 		],
 		requiredKeyedFieldsBySection: {
 			Metadata: ["updated", "owner"],
-			"Repo Metadata": [
-				"rotation_count",
-				"last_rotation_at",
-			],
-			"Repo Control Level": [
-				"repo_scope",
-				"repo_next_action",
-			],
-			"Active Worktrack Registry": [
-				"closed_worktrack_commits",
-			],
+			"Repo Metadata": ["rotation_count", "last_rotation_at"],
+			"Repo Control Level": ["repo_scope", "repo_next_action"],
+			"Active Worktrack Registry": ["closed_worktrack_commits"],
 			"Milestone Pipeline — Active Milestone": [
 				"active_milestone",
 				"milestone_status",
@@ -161,16 +153,12 @@ const TEMPLATE_SPECS = {
 	"control-state-wt": templateSpec({
 		templateId: "control-state-wt",
 		sourceRelpath: "assets/worktrack/control-state-wt.md",
-		outputRelpath: "worktrack/control-state-wt.md",
+		outputRelpath: "control-state-wt.md",
 		artifactType: "control-state-wt",
 		title: "Harness Control State — Worktrack Level",
 		instanceNote:
 			"这是 `.servo/control-state-wt.md` 的运行样例，承载 Worktrack 级的快变量控制状态。与 `.servo/control-state.md`（跨 scope 记忆）和 `.servo/control-state-repo.md`（Repo + Milestone 级）协同工作。`control_state_version: split` 是必填 frontmatter 字段。",
-		requiredSections: [
-			"Metadata",
-			"Worktrack Current",
-			"Current Next Action",
-		],
+		requiredSections: ["Metadata", "Worktrack Current", "Current Next Action"],
 		requiredKeyedFieldsBySection: {
 			Metadata: ["updated", "owner"],
 			"Worktrack Current": [
@@ -182,10 +170,7 @@ const TEMPLATE_SPECS = {
 				"plan_task_queue",
 				"gate_evidence",
 			],
-			"Current Next Action": [
-				"repo_next_action",
-				"worktrack_next_action",
-			],
+			"Current Next Action": ["repo_next_action", "worktrack_next_action"],
 		},
 	}),
 	"goal-charter": templateSpec({
