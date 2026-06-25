@@ -14,7 +14,7 @@ last_verified: 2026-06-13
 ## 当前 package/runtime surface
 
 - bin surface 是 `servo-installer`，当前支持 `agents`、`claude` 与聚合值 `bundle`；未支持 backend 或命令变体显式失败
-- `bundle` 是 `--backend` 枚举的第三个合法值；它不是新的 distribution，而是"在 `agents` 与 `claude` 两个 distribution 上同时执行同一 verb"的 dispatcher 别名
+- `bundle` 是 `--backend` 枚举的第三个合法值；它在 `agents` 与 `claude` 两个 distribution 上同时执行同一 verb，是 dispatcher 别名。
 - CLI 是稳定的 AI、CI 和脚本接口；TUI 是推荐的人类 operator 交互路径，两者共享同一命令面合同，TUI 不引入独立的 mutating 语义。TUI/CLI 职责分离详见 [tui/human-cli-contract.md](../tui/human-cli-contract.md)
 
 ## 命令面合同
@@ -36,7 +36,7 @@ wrapper 可以改变启动方式，不能改变这些 deploy 语义。
 
 ## Aggregate Backend (`--backend bundle`)
 
-`bundle` 是 `--backend` 枚举的第三个合法值。它不是新的 distribution，而是 dispatcher 触发器：在 `agents` 与 `claude` 两个 distribution 上同时执行同一 verb，编排服从下面三条专属合同。`bundle` 不在合同条款层放宽 §"命令面合同" 任意一条 backend-invariant 条款。
+`bundle` 是 `--backend` 枚举的第三个合法值。它在 `agents` 与 `claude` 两个 distribution 上同时执行同一 verb，作为 dispatcher 触发器，编排服从下面三条专属合同。`bundle` 不在合同条款层放宽 §"命令面合同" 任意一条 backend-invariant 条款。
 
 ### Dispatch Surface
 

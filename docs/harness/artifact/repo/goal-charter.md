@@ -8,7 +8,7 @@ last_verified: 2026-06-13
 
 # Goal / Charter
 
-定义 repo 的长期目标和方向，作为 Harness 控制循环的基准参照信号（reference signal）。由 `set-harness-goal-skill` 生成，`repo-change-goal-skill` 变更，所有下游 skill 以此为事实源对齐。
+定义 repo 的长期目标和方向，作为 Harness 控制循环的基准参照信号（reference signal）。由 `harness-set-goal-skill` 生成，`repo-change-goal-skill` 变更，所有下游 skill 以此为事实源对齐。
 
 ## 结构化字段表
 
@@ -50,13 +50,13 @@ last_verified: 2026-06-13
 
 | 消费者 | 读取字段 | 用途 |
 |--------|---------|------|
-| `set-harness-goal-skill` | 全部 | 生成 Charter |
+| `harness-set-goal-skill` | 全部 | 生成 Charter |
 | `repo-change-goal-skill` | 全部 | 目标变更时更新 Charter |
 | `repo-status-skill` | `project_vision`, `success_criteria`, `system_invariants` | Repo 状态快照中对齐 Goal |
-| `init-worktrack-skill` | `engineering_node_map`, `core_product_goals` | 初始化 worktrack 时绑定节点类型与基线策略 |
+| `worktrack-init-skill` | `engineering_node_map`, `core_product_goals` | 初始化 worktrack 时绑定节点类型与基线策略 |
 
 ## 跨引用
 
 - Engineering Node Map 的 canonical 类型定义见 `docs/harness/artifact/control/node-type-registry.md`
 - Worktrack contract 中的 `Node Type` 字段必须与 Goal Charter 的 `engineering_node_map` 一致，见 `docs/harness/artifact/worktrack/contract.md`
-- Goal 层的写入与回写流程见 `product/harness/skills/set-harness-goal-skill/SKILL.md`
+- Goal 层的写入与回写流程见 `product/harness/skills/harness-set-goal-skill/SKILL.md`

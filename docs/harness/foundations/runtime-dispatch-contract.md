@@ -71,7 +71,7 @@ Harness 本体属于控制平面。
 - `permission_allows_delegation`: `yes | no | unknown`
 - `dispatch_package_safety`: `safe | unsafe | unknown`
 - `delegation_attempted`: `yes | no`
-- `attempted_carrier`: `SubAgent | generic-worker-skill | doc-catch-up-worker-skill | current-carrier | none`
+- `attempted_carrier`: `SubAgent | worktrack-generic-worker-skill | worktrack-doc-catch-up-skill | current-carrier | none`
 - `carrier_decision`
 - `fallback_reason`
 
@@ -96,7 +96,7 @@ ClaudeCodeCLI / Deepseek compatibility lane 的关键规则：如果 `backend_ru
 
 ## Fallback Rules
 
-没有匹配专用 skill 时，`dispatch-skills` 可生成一次性任务指令并绑定通用执行载体。不得将此类指令写成新的 canonical skill。
+没有匹配专用 skill 时，`worktrack-dispatch-skill` 可生成一次性任务指令并绑定通用执行载体。不得将此类指令写成新的 canonical skill。
 
 只有以下情况允许 current-carrier fallback：
 

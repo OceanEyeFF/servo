@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime State Hydration
 status: active
-updated: 2026-06-05
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-22
 ---
 
 # Harness Runtime State Hydration
@@ -60,6 +60,18 @@ Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基�
 | `verified_at` | 最近一次 checkpoint 验证时间 |
 
 git hash 一致只授权跳过重复 refresh 或重复 doc catch-up；首次验证、worktrack gate 和 milestone gate 不可跳过。
+
+## Compacted Control State Hydration
+
+`control-state.md` 允许被压缩，但 hydration 不能因为文件更短就降低读取要求。压缩后的 control-state 必须仍提供 artifact contract 中定义的 hydration-critical 字段组，并保留足够的 routing metadata 来判断当前 Scope / Function、Branch Environment Guard、Milestone Review Gate、Continuation Authority、Handback Guard 和 Baseline Traceability。
+
+当 Harness 读取到 compacted control-state 时：
+
+1. 先按 [Control State Compaction Contract](../artifact/control/control-state.md#control-state-compaction-contract) 校验必备字段。
+2. 若缺少新增字段，只能使用 Conservative Runtime Backfill；不得推断 programmer confirmation，不得扩大权限，不得启用 Worktrack Init/Dispatch。
+3. 若存在 `handback_history_ref` 或等价 history reference，仅将其作为审计/恢复辅助；当前路由必须来自 control-state 当前字段和正式 worktrack/milestone artifact。
+4. 不得把 installer-generated backup/update artifacts 当作 history source。它们只证明 installer/update 曾经生成过备份，不承接 Harness compaction history。
+5. history reference 不可读时，若当前 hydration-critical 字段完整，允许继续观察并记录风险；若当前字段不完整，则进入 blocked / Recover。
 
 ## Re-entry Decision
 

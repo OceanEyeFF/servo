@@ -9,7 +9,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 本技能实现 `RepoScope.Decide` 状态转移算子，对应 Harness 控制回路中的**算子选择**阶段。
 
-这个技能消费上游 `RepoScope.Observe` 算子（如 `repo-status-skill`）产出的结构化状态估计，在合法的状态转移算子集合中（`Observe`、`Init`/进入工作追踪、`Close`/`refresh-repo-state`、`保持并观察`）选择一个算子。它的决策必须投影成显式路由、阻塞项集合与审批状态，供 Harness 消费，而不是文字摘要。本技能的唯一合法行为是返回建议；直接变更 `Harness 控制状态` 的行为必须返回 blocked。
+这个技能消费上游 `RepoScope.Observe` 算子（如 `repo-status-skill`）产出的结构化状态估计，在合法的状态转移算子集合中（`Observe`、`Init`/进入工作追踪、`Close`/`refresh-repo-state`、`保持并观察`）选择一个算子。它的决策必须投影成显式路由、阻塞项集合与审批状态，供 Harness 消费。本技能输出的是建议；直接变更 `Harness 控制状态` 的行为必须返回 blocked。
 
 当 `Harness` 已经处于 `代码仓库范围`，并需要对代码仓库最合适的下一步演进方向做一轮限定范围判断时，使用这个技能。
 
@@ -17,7 +17,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 它实现一轮限定范围的 `代码仓库范围.决策`，采用 **Milestone-First** 推理策略：先在 Milestone 层级锚定（是否需要创建/激活/关闭 milestone），再下沉到 Worktrack 层级派生执行单元。它的工作是选出一个代码仓库动作，然后把这个决策投影成显式的继续路由、审批状态与阻塞项集合，让 `Harness` 无需重新解释文字就能消费。
 
-当本轮是 pre-milestone 讨论、任务点归纳或“还有什么可推进”查询时，本技能可以输出 candidate milestone recommendation。该 recommendation 是 RepoScope.Decide 的建议，不是已获批准的 milestone，也不是 Worktrack task queue。推荐必须先列 `observed_facts`、`inferred_assumptions`、`unknowns`，再给出 `primary_contradiction` 与 `main_aspect_now`；candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer confirmation requirement。通常只给 1 到 3 个候选；证据不足时应输出调研问题或保持观察，而不是创建 Milestone。
+当本轮是 pre-milestone 讨论、任务点归纳或“还有什么可推进”查询时，本技能可以输出 candidate milestone recommendation。该 recommendation 是 RepoScope.Decide 的建议，须经 programmer 批准后才能成为正式 milestone，也不等同于 Worktrack task queue。推荐必须先列 `observed_facts`、`inferred_assumptions`、`unknowns`，再给出 `primary_contradiction` 与 `main_aspect_now`；candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer confirmation requirement。通常只给 1 到 3 个候选；证据不足时应输出调研问题或保持观察。
 
 当已有新鲜的 `代码仓库状态摘要`，或者 `Harness` 明确希望先拿到稳定观察包时，这个技能可以消费该摘要。但在没有现成 `代码仓库状态技能` 输出时，它仍必须能直接基于代码仓库真相运行。
 
@@ -30,7 +30,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 `工作追踪约定` 和 `计划/任务队列` / `Plan / Task Queue` 不是代码仓库级任务来源。它们只能作为关于当前活动中或刚关闭工作追踪的边界证据被查询，例如前一个切片是否完成、继续权限是否受限、或某个交接包是否仍在生效。一个关闭的队列不代表代码仓库没有下一步，只代表那个工作追踪的本地执行序列或 task window 已经结束。本技能对 `.servo/worktrack/*` 的唯一合法行为是将其读取为边界证据；更新或重写 `.servo/worktrack/*` 的行为必须返回 blocked。
 
-这个技能有一条默认决策路径、一个内嵌的 `优先级重构/矛盾分析` 模式，以及一个只在完全找不到可更新内容时启用的 `overview fallback` 模式。这些模式都属于这个 `代码仓库范围` 技能本身，不是独立技能，不是 `工作追踪范围` 技能，也不是产出长篇战略报告的许可。
+这些模式都属于这个 `代码仓库范围` 技能本身。它们共享同一个 scope 和 function 边界，仅改变分析深度和输出密度。
 
 这个文档是标准可执行骨架。它定义了该模式的限定范围操作格式与输出约定，但并不声称已经存在一套完全自动化的规划器或监督器实现。
 
@@ -51,7 +51,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 ## 何时使用
 
-当当前问题不是"谁来执行某个工作项"，而是"代码仓库在 `代码仓库范围` 下下一步应该做什么"时，使用这个技能：
+当需要判断 RepoScope 下代码仓库下一步应该做什么时，使用这个技能：
 
 - 判断下一方向是否应该是：
   - 进入一个新的 `工作追踪范围`
@@ -98,16 +98,18 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
    - `doc_catch_up_needed == true`：文档追平 checkpoint 落后于代码基线 => 在 `继续阻塞项` 中记录 `doc_catch_up_needed`，建议在合适的阶段绑定 `doc-catch-up-worker-skill`。不阻断其他动作，但必须显式暴露。
    - 若刷新信号同时伴随已批准的 worktrack 等待执行，刷新与执行可并行评估；但 `repo_baseline_changed` 信号必须优先于 `进入工作追踪`（先刷新基线再派生 worktrack）。
 10. 评估允许的候选代码仓库动作：
-   - `进入工作追踪`
-   - `刷新代码仓库状态`
-   - `保持并观察`
-10. 把标准动作集合与当前活动路由边界取交集。如果边界比标准集合更窄，就只把不受支持的动作保留为阻塞或范围外上下文。
-11. 如果前一个工作追踪刚关闭，且 `约定后自动性：最小委派` 正在生效，那么任何自动 `进入工作追踪` 建议都必须被限制在已批准的低风险类别中的一个同目标限定范围切片。
-12. 执行 Milestone-First 判定：
+
+- `进入工作追踪`
+- `刷新代码仓库状态`
+- `保持并观察`
+
+1. 把标准动作集合与当前活动路由边界取交集。如果边界比标准集合更窄，就只把不受支持的动作保留为阻塞或范围外上下文。
+2. 如果前一个工作追踪刚关闭，且 `约定后自动性：最小委派` 正在生效，那么任何自动 `进入工作追踪` 建议都必须被限制在已批准的低风险类别中的一个同目标限定范围切片。
+3. 执行 Milestone-First 判定：
     若 `active_milestone` 为空（无活跃 Milestone）：
       a. 读取 milestone-backlog，检查所有 planned/active milestone
       b. 语义匹配：将当前待处理的工作与已有 milestone 的 purpose/worktrack_list 进行语义匹配
-         - 全部匹配某个 milestone → `suggested_milestone_action = "append_worktracks"`，输出 `suggested_milestone_id`，并要求下游 `init-milestone-skill` 执行 `coverage_verdict` 检查
+         - 全部匹配某个 milestone → `suggested_milestone_action = "append_worktracks"`，输出 `suggested_milestone_id`，并要求下游 `milestone-init-skill` 执行 `coverage_verdict` 检查
          - 拆分匹配（分别归入不同 milestone）→ 分别输出匹配结果，建议 programmer 确认
          - 无匹配 → 进入步骤 c
       c. 内聚性判断：评估待处理工作之间是否存在语义内聚（是否服务于同一可表述的目的）
@@ -115,10 +117,10 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
          - 无内聚 → `suggested_milestone_action = "create"`，路由到 work-collection 路径：harness 自动创建 work-collection milestone（`milestone_kind = "work-collection"`，名称 = `工作集合 MS-YYYYMMDD-NNN`，priority = 最低，直接激活）
       d. 读取 milestone-backlog，检查是否存在满足激活条件的 planned milestone
          - 若存在：`suggested_milestone_action = "activate"`，输出 `suggested_milestone_id`
-      e. `suggested_next_scope = "RepoScope"`，绑定 `init-milestone-skill`
+      e. `suggested_next_scope = "RepoScope"`，绑定 `milestone-init-skill`
       f. 若本轮建议 `create` / `activate` / `append_worktracks`，必须同时输出结构化 `milestone_brief`，并将 `需要审批 = true`、`审批理由 = "milestone brief 待 programmer 确认"`
-      f1. 当输出 candidate milestone recommendation 时，必须显式标记 `candidate_only = true`，并区分 `observed_facts` / `inferred_assumptions` / `unknowns`。candidate brief 不得写入 live milestone-backlog，不得增加 progress counter，不得把 candidate worktracks 写入 `.servo/worktrack/*`。只有 programmer confirmation 后，才可把该 brief 交给 `init-milestone-skill`。
-      f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定 `init-milestone-skill` 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement documentation / project-understanding Milestone brief，且不能把 implementation-oriented create / activate / append_worktracks 投影为可绑定路由。若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把 create / activate / append_worktracks 建议投影成可绑定的 `init-milestone-skill` 路由。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
+      f1. 当输出 candidate milestone recommendation 时，必须显式标记 `candidate_only = true`，并区分 `observed_facts` / `inferred_assumptions` / `unknowns`。candidate brief 不得写入 live milestone-backlog，不得增加 progress counter，不得把 candidate worktracks 写入 `.servo/worktrack/*`。只有 programmer confirmation 后，才可把该 brief 交给 `milestone-init-skill`。
+      f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定 `milestone-init-skill` 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement documentation / project-understanding Milestone brief，且不能把 implementation-oriented create / activate / append_worktracks 投影为可绑定路由。若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把 create / activate / append_worktracks 建议投影成可绑定的 `milestone-init-skill` 路由。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
       g. **禁止在此分支建议"进入工作追踪"**（work-collection 路径是合法例外：work-collection milestone 激活后可直接进入 WorktrackScope）
       h. 输出 `milestone_kind` 字段，供下游 skill 分派
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `not_achieved`（未完成）：
@@ -144,11 +146,11 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
         - `add_remove_worktrack_recommendations`：是否需要新增、移除或重排 worktrack；若不需要必须显式写 `none`
         - `intake_review_verdict`：`ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`
         - `ready_for_worktrack_init`：布尔值，只能在 verdict 为 `ready_for_worktrack_init` 且无阻塞时为 true
-      - 若 `intake_review_verdict == "refresh_required"`：`suggested_next_scope = "RepoScope"`，推荐刷新/观察，不得绑定 `init-worktrack-skill`
+      - 若 `intake_review_verdict == "refresh_required"`：`suggested_next_scope = "RepoScope"`，推荐刷新/观察，不得绑定 `worktrack-init-skill`
       - 若 `intake_review_verdict == "adjust_worktracks"`：返回 `suggested_milestone_action = "append_worktracks"` 或结构化调整建议；需要 programmer 确认的范围变更必须设置 `需要审批 = true`
       - 若 `intake_review_verdict == "blocked"`：推荐 `保持并观察`，在继续阻塞项中写明原因，不得进入 WorktrackScope.Init
-      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`suggested_next_scope = "WorktrackScope"`，绑定 `init-worktrack-skill`
-      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`derived_from_milestone = true`，`target_milestone_id = <active_milestone>`，并把完整 `worktrack_intake_review` 交给 `init-worktrack-skill`
+      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`suggested_next_scope = "WorktrackScope"`，绑定 `worktrack-init-skill`
+      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`derived_from_milestone = true`，`target_milestone_id = <active_milestone>`，并把完整 `worktrack_intake_review` 交给 `worktrack-init-skill`
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `achieved`（已完成）：
       - `suggested_milestone_action = "closeout"`
       - `recommended_repo_action = "保持并观察"`
@@ -160,15 +162,15 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
       - `recommended_repo_action = "保持并观察"`
       - 阻止自动 `进入工作追踪`（即使存在剩余 autonomy budget）
       - 返回控制权等待 developer 决策
-13. 当建议 `进入工作追踪` 且 `derived_from_milestone == true` 时，从活跃 Milestone 的上下文推导 `suggested_node_type`：
+4. 当建议 `进入工作追踪` 且 `derived_from_milestone == true` 时，从活跃 Milestone 的上下文推导 `suggested_node_type`：
     - 优先使用 Milestone 的 `worktrack_list` 中该 worktrack 声明的 node_type
     - Fallback 到 Goal Charter 的 `Engineering Node Map` 匹配
-    - 在输出中携带 `target_milestone_id` 和 `derived_from_milestone`，供 `init-worktrack-skill` 绑定 milestone 关联
-    - 在输出中携带当前 worktrack 的独立执行语义，供 `init-worktrack-skill` 建立专属 branch / contract / queue / closeout traceability
+    - 在输出中携带 `target_milestone_id` 和 `derived_from_milestone`，供 `worktrack-init-skill` 绑定 milestone 关联
+    - 在输出中携带当前 worktrack 的独立执行语义，供 `worktrack-init-skill` 建立专属 branch / contract / queue / closeout traceability
     - 如果无法建议节点类型，应把缺口暴露为初始化风险
-14. 只推荐一个代码仓库动作，解释为什么它是当前最高优先级，并把该决策投影成显式继续路由、阻塞项集合与审批状态。
-15. 向 `Harness` 返回一份固定格式的 `代码仓库下一步判定`。
-16. 如果选中的路由已经获批，且没有命中正式停止条件，就允许监督器直接继续进入相应的下一范围。
+5. 只推荐一个代码仓库动作，解释为什么它是当前最高优先级，并把该决策投影成显式继续路由、阻塞项集合与审批状态。
+6. 向 `Harness` 返回一份固定格式的 `代码仓库下一步判定`。
+7. 如果选中的路由已经获批，且没有命中正式停止条件，就允许监督器直接继续进入相应的下一范围。
 
 ## 正式停止条件
 
@@ -245,7 +247,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 - 建议 `create` / `activate` / `append_worktracks` 时必须附带结构化 `milestone brief`；在 programmer 确认前不得把该建议伪装成已获准的自动路由。
 - Candidate milestone recommendation 必须是 fact-first / field-research：先 `observed_facts`，再 `inferred_assumptions`，再 `unknowns`，再 `primary_contradiction` 与 `main_aspect_now`。候选 brief 是 recommendation，不是 live backlog truth；不得自动 create / activate / append。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
-- 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `init-worktrack-skill` 绑定。
+- 从 milestone 派生 worktrack 时必须携带 `target_milestone_id` 供 `worktrack-init-skill` 绑定。
 - 从 active milestone 派生 worktrack 时必须携带唯一 `selected_worktrack_id` / current worktrack。一次 RepoScope.Decide 不得选择多个 worktrack；若需要新增、移除、重排或批量调整 worktrack，必须返回 RepoScope.Decide / append-worktrack 路由和必要的 programmer approval。
 - 从 active milestone 派生 worktrack 时必须携带 `worktrack_intake_review`，且只有 `intake_review_verdict = ready_for_worktrack_init` 与 `ready_for_worktrack_init = true` 才能进入 WorktrackScope.Init。缺失 `repo_fundamentals`、`snapshot_freshness`、`milestone_purpose_alignment`、`historical_conflict_risk`、`worktrack_adjustment_recommendations` 或 `add_remove_worktrack_recommendations` 任一字段时，推荐 Init 的行为必须返回 blocked。
 - 从 active goal-driven milestone 派生 worktrack 时还必须满足 Milestone Review Gate route guard：`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 blocked，不得当成 ready。

@@ -7,9 +7,9 @@
     "product/harness/skills/milestone-status-skill/SKILL.md",
     "product/harness/skills/milestone-status-skill/templates/composite-acceptance-report.template.md"
   ],
-  "target_dir": "servo-milestone-status-skill",
+  "target_dir": "milestone-status-skill",
   "legacy_target_dirs": [
-    "milestone-status-skill",
+    "servo-milestone-status-skill",
     "aw-milestone-status-skill"
   ],
   "target_entry_name": "SKILL.md",

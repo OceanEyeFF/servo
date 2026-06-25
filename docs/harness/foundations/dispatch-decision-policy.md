@@ -30,7 +30,7 @@ last_verified: 2026-06-13
 | repo analysis | `SubAgent` 可用 | 适合独立读取和结构化回传 |
 | code review | 按 `review_profile` 选择 SubAgent lanes | 由 Gate Evidence 的风险档位决定 |
 | debug log 提取 | `log-extract worker` 或 current-carrier fallback | 原始日志不直接进入主上下文，先产出 Debug Evidence 摘要 |
-| 文档追平 | `doc-catch-up-worker-skill` | 已验证事实写回长期文档层 |
+| 文档追平 | `worktrack-doc-catch-up-skill` | 已验证事实写回长期文档层 |
 | 大范围实现 | 先 `split-worktrack` | 不通过单次 dispatch 吞入大批次 |
 
 ## Decision Inputs
@@ -51,7 +51,7 @@ last_verified: 2026-06-13
 - `subagent_permission_state`: `allowed | blocked | unknown`
 - `dispatch_package_safety`: `safe | unsafe | unknown`
 - `delegation_attempted`: `yes | no`
-- `attempted_carrier`: `SubAgent | generic-worker-skill | doc-catch-up-worker-skill | current-carrier | none`
+- `attempted_carrier`: `SubAgent | worktrack-generic-worker-skill | worktrack-doc-catch-up-skill | current-carrier | none`
 
 `ClaudeCodeCLI` / `Deepseek` 这类兼容 lane 不应被静默解释为 `current-carrier`。如果宿主运行时无法证明存在真实 SubAgent dispatch shell，必须把 `subagent_dispatch_shell = unavailable | unknown` 写入 `runtime_dispatch_profile`，并在 `delegation_attempted`、`attempted_carrier` 和 `fallback_reason` 中说明没有分派或分派失败的原因。
 

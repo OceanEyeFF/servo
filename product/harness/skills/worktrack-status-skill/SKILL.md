@@ -9,17 +9,17 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 
 把这个技能作为 `Codex` 中专门的 `工作追踪范围` 状态观察器使用。
 
-本技能实现 `WorktrackScope.Observe` 状态转移算子，对应 Harness 控制回路中的**状态估计**阶段。它是 `WorktrackScope` 控制回路的**传感器**层，负责通过读取当前工作追踪的正式产物形成结构化状态估计，为后续的 `Decide`（`schedule-worktrack-skill`）、`Dispatch`（`dispatch-skills`）、`Verify`（`review-evidence-skill` / `test-evidence-skill` / `rule-check-skill`）等算子提供输入。
+本技能实现 `WorktrackScope.Observe` 状态转移算子，对应 Harness 控制回路中的**状态估计**阶段。它是 `WorktrackScope` 控制回路的**传感器**层，负责通过读取当前工作追踪的正式产物形成结构化状态估计，为后续的 `Decide`（`schedule-worktrack-skill`）、`Dispatch`（`worktrack-dispatch-skill`）、`Verify`（`worktrack-review-evidence-skill` / `worktrack-test-evidence-skill` / `worktrack-rule-check-skill`）等算子提供输入。
 
 它实现一轮限定范围的 `工作追踪范围.观察中`，读取回答当前问题所需的最小标准产物，并向 `Harness` 返回结构化的 `WorktrackStateEstimate` 和一份观察交接结果。
 
-这个技能首先是给 `Harness` 使用的稳定格式观察载体。当监督器希望在决策轮之前先拿到一份字段可重复的狭窄工作追踪状态包时，它很有价值；但它不是工作追踪的规划器，也不是每次运行 `调度工作追踪技能` 都必须满足的前置条件。
+这个技能首先是给 `Harness` 使用的稳定格式观察载体。当监督器希望在决策轮之前先拿到一份字段可重复的狭窄工作追踪状态包时，它很有价值。它专注于观察层，不承担工作追踪规划或文档维护的职责。
 
 它的主要观察依据是工作追踪级真相：
 
 - `Worktrack Contract`
 - `Plan / Task Queue`
-- 当前 evidence（`review-evidence-skill`、`test-evidence-skill`、`rule-check-skill` 产出的结构化证据）
+- 当前 evidence（`worktrack-review-evidence-skill`、`worktrack-test-evidence-skill`、`worktrack-rule-check-skill` 产出的结构化证据）
 - 当前 branch 与 baseline 的差异状态
 - 当前 `Harness Control State`
 
@@ -27,7 +27,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 
 ## 何时使用
 
-当当前问题不是"下一步该做什么"，而是"当前工作追踪处于什么状态"时，使用这个技能：
+当需要了解当前工作追踪处于什么状态时，使用这个技能：
 
 - 在进入 `schedule-worktrack-skill` 之前需要状态估计
 - 在 `recover-worktrack-skill` 之前需要评估失败路径上下文

@@ -35,7 +35,7 @@ last_verified: 2026-06-13
 
 ### 0. Repo-local deploy targets
 
-`.agents/skills/`、`.claude/skills/` 只承接 repo-local deploy 结果与 operator runtime 挂载；必须 ignored，不得入库；既不是 canonical truth，也不是业务源码的正式存放位置；fresh checkout 不携带其镜像；需要分发或回归验证的 skill 内容从 `product/`、`toolchain/` 或正式文档入口承接。
+`.agents/skills/`、`.claude/skills/` 只承接 repo-local deploy 结果与 operator runtime 挂载。它们必须 ignored，不得入库；canonical truth 与业务源码的正式存放位置在 `product/`、`toolchain/` 中。Fresh checkout 不携带其镜像；需要分发或回归验证的 skill 内容从 `product/`、`toolchain/` 或正式文档入口承接。
 
 ### 1. `tools/`
 

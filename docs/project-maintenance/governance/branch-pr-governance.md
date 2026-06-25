@@ -55,7 +55,7 @@ Decision time: 2026-04-25
 
 本仓库当前按单人维护模式运行：PR author 无需等待外部 reviewer 即可合并。GitHub 仍不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin 可在 CI 通过、PR 内容与本地验证证据一致、release tuple 无冲突时直接 self-merge。release PR 的 handoff 需记录已通过检查、PR head SHA、merge commit SHA 和后续 release/tag/publish 动作。
 
-`reviewDecision` 为空不等于审核失败；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
+`reviewDecision` 为空仅表示审核结论尚未产生；draft 状态、required check failure、pending check、skipped required check 或 release-readiness 证据缺失才是 release PR 的阻断信号。任何阻断信号存在时，不能把 PR 标成 ready for review，不能 merge，也不能创建 release tag。
 
 ## 五、CI 最小检查链
 
@@ -84,7 +84,7 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 
 ## 九、发布后分支同步
 
-发布后若 `doc-catch-up-worker-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
+发布后若 `worktrack-doc-catch-up-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
 
 ## 十、相关文档
 

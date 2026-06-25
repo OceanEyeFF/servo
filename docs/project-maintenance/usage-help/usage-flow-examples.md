@@ -21,7 +21,7 @@ last_verified: 2026-06-13
 |---|---|---|
 | 本仓库（`vibecoding_autoworkflow` / Servo） | Servo 对自身的反复迭代管理：Harness artifact contracts、canonical skills、installer packaging、release governance、Milestone / Worktrack 执行、Append Request routing、backlog / history hygiene，以及 pre-release documentation gates。 | 这是长期、可追溯 Servo operation 的主要公开展示。它是 dogfooding reference，不是独立第三方产品案例。 |
 
-本仓库是目前最强的公开证据，因为 Servo control layer、product source、governance docs、installer flow 和 milestone history 都在这里共同演进。它展示的不是一次性初始化，而是跨多轮迭代的 worktrack execution、gate evidence、release preparation 和 runtime-state writeback。
+本仓库是目前最强的公开证据，因为 Servo control layer、product source、governance docs、installer flow 和 milestone history 都在这里共同演进。它展示的是跨多轮迭代的 worktrack execution、gate evidence、release preparation 和 runtime-state writeback。
 
 ## 公开轻量示例
 

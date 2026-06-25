@@ -34,8 +34,7 @@ last_verified: 2026-06-13
 
 - **不是 npm package version 的替代品**：`package.json` version 仍是 npm registry 的权威版本字段
 - **不是 git tag 或 release tag**：git tag 是 VCS 维度的版本事实，与版本标记互补
-- **不是 deploy target 版本**：`.agents/`、`.claude/` 下的任何文件都不是版本真相；它们是 canonical source 的派生副本
-- **不是安装证明**：deploy target 中是否存在 `VERSION` 文件不能替代 `verify` 命令的严格复验
+- deploy target 中的文件不能替代 canonical source 版本和 `verify` 命令作为版本事实。
 - **不是 channel 或 dist-tag**：`latest`/`next` 等发布频道语义不由版本标记定义
 
 ## 版本事实边界

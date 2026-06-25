@@ -11,7 +11,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 本技能实现 `RepoScope.Observe` 状态的 Milestone 维度传感器算子，对应 Harness 控制回路中状态估计阶段的 Milestone 专项分析。它是控制回路的 **Milestone 传感器/分析器**层：通过读取当前活跃 Milestone artifact、worktrack backlog、gate evidence 和 repo snapshot 等输入，执行 Milestone 完成判定链（`worktrack_list_finished` + `Milestone Gate` + `purpose_achieved`；其中正式完成模型仍保持 `worktrack_list_finished + purpose_achieved` 的 dual 验收口径），产出结构化的 Milestone 进度报告、验收判决和 developer 决策边界。
 
-它的角色是**分析 Milestone 状态**，而不是驱动 next action。它产出的是经过聚合计算的 Milestone 观测结果，供 `RepoScope.Decide` 算子（如 repo-whats-next-skill）和 `harness-skill` 的 continuous execution 判断使用。
+它的角色是分析 Milestone 状态。它产出的是经过聚合计算的 Milestone 观测结果，供 `RepoScope.Decide` 算子（如 repo-whats-next-skill）和 `harness-skill` 的 continuous execution 判断使用。
 
 它的主要观测依据是 Milestone 级产物和工作追踪边界证据：
 
@@ -24,7 +24,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 何时使用
 
-当当前问题不是"下一步该做什么"，而是"当前 Milestone 进展到哪一步、是否已达到验收边界"时，使用这个技能：
+当需要了解当前 Milestone 进展到哪一步、是否已达到验收边界时，使用这个技能：
 
 - 在 `RepoScope.Observe` 阶段，harness-skill 需要 Milestone 级别的状态估计
 - Worktrack closeout 后，repo-refresh 完成后需要检查 Milestone 进度是否推进
@@ -50,12 +50,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 读取 Milestone artifact 的 `milestone_kind` 字段，默认值 `goal-driven`
    - **goal-driven**：执行完整双重验收
      - **worktrack_list_finished**：声明的 worktrack 列表是否全部处理（已完成 / 被明确移出 / 阻塞有决策）
-     - **Milestone Gate**：仅在 `worktrack_list_finished == true` 后运行的独立集成验证层，位于所有 worktrack closeout 之后、`purpose_achieved` 判定之前。它必须同时检查：
-       - `black-box`：从 milestone 外部视角验证最终用户可见结果和跨 worktrack 集成行为
-       - `white-box`：从内部实现视角验证关键集成路径、接口拼接、状态传递和依赖关系
-       - `anti-cheat`：检查是否存在以 mock/stub、跳过真实验证、伪造 evidence、只验证局部而未验证集成等方式“压过验收”的信号
-       - `composite-acceptance`：消费 code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes；每条 lane 必须记录 carrier、delegation/fallback、verdict、severity 和 evidence refs
-       - 判定规则：`Milestone Gate` 必须为 `pass` 才允许进入 `purpose_achieved`；任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或命中反作弊信号，均视为 Milestone 级阻断，不得替代或回写为 worktrack gate 通过
+     - **Milestone Gate**（`worktrack_list_finished == true` 时）：准备输入包并**调用 `milestone-gate` skill**。Gate skill 内部执行两层架构——Layer 1 分派 4 个隔离 SubAgent 轴技能，Layer 2 按 milestone 的 `aggregation_rules` 运行聚合器，产出 `milestone_gate_verdict`。本技能消费 gate skill 返回的 verdict，纳入 `purpose_achieved` 判定。Gate 必须在 `purpose_achieved` 判定前完成。
      - **purpose_achieved**：Milestone 原始目的是否经聚合 evidence 证明达成（对照 `completion_signals`、`acceptance_criteria` 和 `completion_threshold_pct`，按 `purpose_achieved 操作化判定` 章节逐条验证）
    - **work-collection**：执行单重验收
      - **worktrack_list_finished**：同上
@@ -86,11 +81,13 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 在 Milestone 验收分析中，文档不完善作为 **warning**（非 blocking）项处理，不影响 `milestone_acceptance_verdict` 的判定，但必须在 `doc_freshness_warning` 字段中显式暴露。
 
 **检查维度**：
+
 1. **Stale frontmatter**：检查 `docs/` 下正文文档的 `last_verified` 是否逾期（与当前日期相差超过 90 天，或与 milestone 涉及的内容域明显不匹配）。
 2. **Broken cross-references**：检查 milestone scope 内涉及的文档是否存在死链（引用已被删除或重命名的文件/章节）。
 3. **Missing required docs**：检查 milestone 涉及的 skill/adapter/contract 变更是否在对应 `docs/harness/` 或 `docs/project-maintenance/` 中有匹配的文档记录。
 
 **输出规则**：
+
 - 若不存在文档问题：`doc_freshness_warning` 为 `N/A`
 - 若存在 warning 级问题：在 `doc_freshness_warning` 中逐条列出，格式 `[文件路径] 问题描述`
 - `doc_freshness_warning` 不得单独触发 `handback_required`，不得将 `milestone_acceptance_verdict` 从 `achieved` 降级，但应在 `recommendations` 中建议后续 worktrack 跟进
@@ -182,8 +179,17 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - `deferred`：被明确推迟的 worktrack 数
   - `completion_pct`：完成百分比
 - `worktrack_list_finished`：boolean
-- `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped
-- `milestone_gate_summary`：black-box / white-box / anti-cheat 的聚合摘要
+- `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked / skipped — 来自 `milestone-gate` 输出
+- `milestone_gate_summary`：来自 `milestone-gate` 输出的聚合摘要
+- `aggregation_rules_applied`：boolean — 来自 `milestone-gate` 输出
+- `aggregation_rules_missing`：boolean — 来自 `milestone-gate` 输出
+- `per_worktrack_weights`：array — 来自 `milestone-gate` 输出
+- `contradiction_findings`：array — 来自 `milestone-gate` 输出
+- `contradiction_blocked`：boolean — 来自 `milestone-gate` 输出
+- `composite_lane_verdicts`：object — 来自 `milestone-gate` 输出
+- `degenerate_and_applied`：boolean — 来自 `milestone-gate` 输出
+- `degenerate_and_reason`：string | N/A — 来自 `milestone-gate` 输出
+- `carrier_isolation_broken`：boolean — 来自 `milestone-gate` 输出
 - `composite_acceptance_verdict`：accepted / accepted_with_residual_risk / needs_followup_worktrack / blocked / skipped
 - `composite_acceptance_summary`：code-review / feature-completeness / related-influence / intent-completeness / operator-simulation / professional-review lanes 的 carrier、fallback、verdict、severity、evidence refs 和 residual risks
 - `purpose_achieved`：boolean
@@ -233,16 +239,28 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 若本轮 `Milestone Gate` 未 `pass`，不得把 `purpose_achieved` 视为可用于 closeout 的完成信号
 6. **记录明细**：在 `aggregated_evidence_summary` 中记录每条 signal/criterion 的判定结果、覆盖率、threshold 和依据，供 developer 复核。
 
-## `Milestone Gate` 集成判定
+## `Milestone Gate` 调用
 
-`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效，用来回答“所有局部 closeout 之后，整体 milestone 是否真的成立”。
+`Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效。
 
-1. **black-box**：从 milestone 外部视角检查最终行为、跨 worktrack 集成结果和用户可见产出是否成立。
-2. **white-box**：从内部实现视角检查关键依赖关系、接口契约、状态拼接和系统级回归风险是否成立。
-3. **anti-cheat**：检查是否存在伪造通过的信号，例如只跑局部测试、跳过真实集成路径、以 mock/stub 代替必要验证、复用过期 evidence、或只验证中间态而未验证里程碑目的。
-4. **composite acceptance**：goal-driven milestone 必须消费复合验收 lanes；deep review 在 release、installer/deploy、migration、authority、destructive operation、path governance、安全/隐私、跨 worktrack 集成或 release-prep 前置场景为 mandatory。SubAgent 不可用时可 fallback 到 current-carrier 或 human，但必须保留 lane、记录 fallback，并在证据不足时阻断。
-5. **通过规则**：black-box、white-box、anti-cheat 为可信 `pass`，且 composite acceptance 为 `accepted` 或已记录低风险 `accepted_with_residual_risk` 时，`milestone_gate_verdict = "pass"`；只要存在任一 `soft-fail`、`hard-fail`、`blocked`、未接受的 `needs_followup_worktrack` 或反作弊命中，即 `milestone_gate_verdict != "pass"`。
-6. **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`，并把修复/回退/重新验证要求交还给 developer 或上游 supervisor。
+**本技能不直接运行 Milestone Gate**。当 `worktrack_list_finished == true` 时，本技能负责：
+
+1. 准备输入包：`milestone_id` + `closed_worktrack_list`（每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`）+ `aggregation_rules`（来自 milestone artifact）
+2. **调用** `milestone-gate` skill（推荐 SubAgent delegated）
+3. **消费** gate skill 返回的 `milestone_gate_verdict` 和聚合状态字段
+4. 将 gate verdict 纳入 `purpose_achieved` 判定和 milestone 状态报告
+
+Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2 运行 aggregator。详见 `product/harness/skills/milestone-gate/SKILL.md` 和 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
+
+**阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`。
+
+### Gate 相关字段
+
+以下字段由 `milestone-gate` skill 产出，本技能透传到 milestone 状态报告中：
+
+- `milestone_gate_verdict`、`aggregation_rules_applied`、`aggregation_rules_missing`、`per_worktrack_weights`、`contradiction_findings`、`contradiction_blocked`、`composite_lane_verdicts`、`degenerate_and_applied`、`degenerate_and_reason`、`carrier_isolation_broken`
+
+详细格式见 `product/harness/skills/milestone-gate/SKILL.md#预期输出`。
 
 ## Writeback 指令
 
@@ -252,9 +270,12 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - 将 `progress_counter` 更新为本技能计算的当前值
   - 仅当 `milestone_acceptance_verdict == "achieved"` 且 `milestone_gate_verdict == "pass"` 时：将 `status` 更新为 `completed`
   - 更新 `updated` 时间戳
+  - 写入 `milestone_gate_verdict` 和 `milestone_gate_summary`（来自 `milestone-gate` 输出）
+  - 若 `aggregation_rules_applied == true`：透传 `milestone-gate` 输出的聚合状态字段到 milestone artifact
 - **Control State**（`.servo/control-state.md`）：
   - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
   - 更新 `milestone_status`（若发生变化）
+  - 写入 `milestone_gate_verdict` 和关键聚合字段（来自 `milestone-gate` 输出）到 control state 的 milestone gate 段
 - **Milestone Backlog / History**（`.servo/repo/milestone-backlog.md` / `.servo/repo/milestone-history.md`）：
   - live backlog 只保留 `planned` / `active` 条目
   - completed / superseded 条目应写入 milestone-history

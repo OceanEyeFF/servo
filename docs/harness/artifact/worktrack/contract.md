@@ -63,7 +63,7 @@ last_verified: 2026-06-13
 - `branch_source_ref`: 创建本 Worktrack branch 的来源 ref。普通非 Milestone worktrack 通常等于 `baseline_branch@HEAD`；Milestone-derived worktrack 通常等于 active Milestone branch head。
 - `worktrack_branch`: 本 Worktrack 的执行分支。
 - `integration_target_ref`: 本 Worktrack closeout 的直接集成目标。Milestone-derived worktrack 默认是 active Milestone branch；非 Milestone worktrack 可为 `baseline_branch`。
-- `closeout_target_ref`: close-worktrack-skill 实际用于 PR/merge/checkpoint 的目标 ref。默认等于 `integration_target_ref`。
+- `closeout_target_ref`: worktrack-close-skill 实际用于 PR/merge/checkpoint 的目标 ref。默认等于 `integration_target_ref`。
 - `final_baseline_branch`: Milestone final acceptance 后的最终主线目标；通常等于 `baseline_branch`。
 - `checkpoint_base_ref`: closeout/refreshed checkpoint 与哪一个 ref 比较；Worktrack closeout 默认比较 `closeout_target_ref`，Repo/Milestone final acceptance 再比较 `baseline_branch`。
 
@@ -80,7 +80,7 @@ branch_policy:
   checkpoint_base_ref: "ms/MS-20260605-004-branch-model@<hash>"
 ```
 
-若 active Milestone 尚未创建 `milestone_branch`，`init-worktrack-skill` 必须按当前批准的 Milestone branch policy 创建或同步它，或返回 blocked；不得静默从另一个 Milestone branch、随机当前分支或 stale branch 创建 Worktrack。
+若 active Milestone 尚未创建 `milestone_branch`，`worktrack-init-skill` 必须按当前批准的 Milestone branch policy 创建或同步它，或返回 blocked；不得静默从另一个 Milestone branch、随机当前分支或 stale branch 创建 Worktrack。
 
 `branch_source_ref`、`integration_target_ref` 与 `closeout_target_ref` 都是 contract-controlled 字段。调度、分派、验证、closeout 和 repo-refresh 只能消费这些字段，不得从当前分支名反推。若实际分支来源、PR target、merge target 或 checkpoint target 与合同不一致，必须标记 `checkpoint_policy_match: no` 并进入审批或 Recover。
 
@@ -95,6 +95,24 @@ Execution Policy 控制本 worktrack 的执行载体选择，不替代 `ControlS
 - `fallback_reason_required`: 默认 `yes`。
 
 语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能分派就分派"。`delegated` 必须分派否则返回 gap/block。`current-carrier` 关闭分派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口或 `dispatch package unsafe` 不能分派，须记录 fallback reason，并使用 `runtime fallback` 标记运行时回退。
+
+## Closeout Checklist
+
+列出本 worktrack 完成后必须更新/验证的 `.servo/` artifact 及对应字段。由 [self-review-contract.md](./self-review-contract.md) 定义的 self-review 步骤消费。
+
+Contract 模板中 `closeout_checklist` 字段清单（参见 [product/.servo_template/worktrack/contract.md](../../../../product/.servo_template/worktrack/contract.md)）：
+
+- `milestone_progress_counter` — 是否更新 milestone artifact 的 progress_counter
+- `worktrack_backlog_entry` — 是否更新 worktrack-backlog 条目状态
+- `control_state_active_worktrack` — 是否清理 control-state 的 active_worktrack 指针
+- `control_state_latest_commit` — 是否追加 latest_closed_worktrack_commit
+- `control_state_route` — 是否更新 control-state 路由字段
+- `milestone_backlog_entry` — 是否更新 milestone-backlog 条目
+- `closeout_record` — 是否写入 closeout record
+- `docs_navigation` — 是否更新 docs 入口导航
+- `governance_checks` — 是否通过 governance 验证
+
+每个 checklist 项在该 worktrack 的 contract 实例中应填写具体说明（如 `milestone_progress_counter: increment completed from 2 to 3`），而不是留空。
 
 ## Worktrack Intake Review
 
@@ -114,4 +132,4 @@ Execution Policy 控制本 worktrack 的执行载体选择，不替代 `ControlS
 - `intake_review_verdict`: `ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`。
 - `ready_for_worktrack_init`: 布尔值，只能在 verdict 为 `ready_for_worktrack_init` 且无阻塞时为 true。
 
-若 verdict 不是 `ready_for_worktrack_init`，`init-worktrack-skill` 不得创建分支、播种队列或交给执行载体；必须把控制权路由回 RepoScope 的观察、刷新、worktrack 调整或 handback 路径。
+若 verdict 不是 `ready_for_worktrack_init`，`worktrack-init-skill` 不得创建分支、播种队列或交给执行载体；必须把控制权路由回 RepoScope 的观察、刷新、worktrack 调整或 handback 路径。

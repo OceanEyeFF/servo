@@ -224,6 +224,12 @@ FRONTMATTER_REQUIRED_KEYS = [
     "owner",
     "last_verified",
 ]
+FRONTMATTER_EXEMPTIONS = {
+    "docs/project-maintenance/community/对外发布整理/linuxdo-release-post-v061.md": {
+        "sidecar": "docs/project-maintenance/community/对外发布整理/linuxdo-release-post-v061_context-version.md",
+        "reason": "literal-platform-copy",
+    },
+}
 STATUS_RULES = [
     ("docs/project-maintenance/", {"active", "draft", "superseded"}),
     ("docs/harness/", {"active", "draft", "superseded"}),
@@ -870,6 +876,28 @@ def check_docs_frontmatter(repo_root: Path, report: CheckReport) -> None:
         frontmatter = parse_frontmatter(text)
 
         if frontmatter is None:
+            exemption = FRONTMATTER_EXEMPTIONS.get(relative_path)
+            if exemption is not None:
+                sidecar_path = repo_root / exemption["sidecar"]
+                if not sidecar_path.exists():
+                    report.add_failure(
+                        "frontmatter-exempt docs copy missing sidecar: "
+                        f"{relative_path} -> {exemption['sidecar']}"
+                    )
+                    continue
+                sidecar_frontmatter = parse_frontmatter(
+                    sidecar_path.read_text(encoding="utf-8")
+                )
+                if (
+                    sidecar_frontmatter is None
+                    or sidecar_frontmatter.get("protected_copy") != Path(relative_path).name
+                    or sidecar_frontmatter.get("frontmatter_exemption") != exemption["reason"]
+                ):
+                    report.add_failure(
+                        "frontmatter-exempt docs copy has invalid sidecar metadata: "
+                        f"{relative_path} -> {exemption['sidecar']}"
+                    )
+                continue
             report.add_failure(f"missing frontmatter: {relative_path}")
             continue
 

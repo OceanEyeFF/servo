@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-06-13
+updated: 2026-06-19
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-19
 ---
 # Docs Book Spine
 
@@ -95,17 +95,20 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 12. [harness/artifact/repo/milestone-history.md](./harness/artifact/repo/milestone-history.md)
 13. [harness/artifact/worktrack/README.md](./harness/artifact/worktrack/README.md)
 14. [harness/artifact/worktrack/contract.md](./harness/artifact/worktrack/contract.md)
-15. [harness/artifact/worktrack/plan-task-queue.md](./harness/artifact/worktrack/plan-task-queue.md)
-16. [harness/artifact/worktrack/dispatch-packet.md](./harness/artifact/worktrack/dispatch-packet.md)
-16. [harness/artifact/worktrack/gate-evidence.md](./harness/artifact/worktrack/gate-evidence.md)
-17. [harness/artifact/worktrack/debug-evidence.md](./harness/artifact/worktrack/debug-evidence.md)
-18. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
-19. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
-20. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
-21. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
-22. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
-23. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
-24. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
+15. [harness/artifact/worktrack/self-review-contract.md](./harness/artifact/worktrack/self-review-contract.md)
+16. [harness/artifact/worktrack/single-acceptance-contract.md](./harness/artifact/worktrack/single-acceptance-contract.md)
+17. [harness/artifact/worktrack/plan-task-queue.md](./harness/artifact/worktrack/plan-task-queue.md)
+18. [harness/artifact/worktrack/dispatch-packet.md](./harness/artifact/worktrack/dispatch-packet.md)
+19. [harness/artifact/worktrack/gate-evidence.md](./harness/artifact/worktrack/gate-evidence.md)
+20. [harness/artifact/worktrack/debug-evidence.md](./harness/artifact/worktrack/debug-evidence.md)
+21. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
+22. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
+23. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
+24. [harness/artifact/control/milestone-gate-aggregation.md](./harness/artifact/control/milestone-gate-aggregation.md)
+25. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
+26. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
+27. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
+28. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
 
 #### 2.4 技能目录（Catalog）
 
@@ -114,7 +117,7 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 3. [harness/catalog/repo.md](./harness/catalog/repo.md)
 4. [harness/catalog/worktrack.md](./harness/catalog/worktrack.md)
 5. [harness/catalog/milestone/README.md](./harness/catalog/milestone/README.md)
-6. [harness/catalog/milestone/init-milestone-skill.md](./harness/catalog/milestone/init-milestone-skill.md)
+6. [harness/catalog/milestone/milestone-init-skill.md](./harness/catalog/milestone/milestone-init-skill.md)
 7. [harness/catalog/milestone/milestone-status-skill.md](./harness/catalog/milestone/milestone-status-skill.md)
 
 #### 2.5 工作流族（Workflow Families）
@@ -153,10 +156,13 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 6. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
 7. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
 
-#### 3.3 社区推广
+#### 3.3 社区推广与对外技术叙事
 
 1. [project-maintenance/community/README.md](./project-maintenance/community/README.md)
-2. [project-maintenance/community/linuxdo-release-post-v061.md](./project-maintenance/community/linuxdo-release-post-v061.md)
+2. [project-maintenance/community/external-positioning.md](./project-maintenance/community/external-positioning.md)
+3. [project-maintenance/community/external-technical-architecture.md](./project-maintenance/community/external-technical-architecture.md)
+4. [project-maintenance/community/对外发布整理/linuxdo-release-post-v061_context-version.md](./project-maintenance/community/对外发布整理/linuxdo-release-post-v061_context-version.md)
+5. [project-maintenance/community/对外发布整理/linuxdo-release-post-v061.md](./project-maintenance/community/对外发布整理/linuxdo-release-post-v061.md)
 
 ---
 

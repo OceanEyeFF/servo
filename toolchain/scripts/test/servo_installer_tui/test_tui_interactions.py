@@ -372,7 +372,7 @@ def test_tui_guided_update_apply_runs_install_and_verify(repo_root: Path, tmp_pa
     assert "[claude] ok" in output
     assert "[bundle] install complete for both backends" in output
     assert "All stages completed successfully." in output
-    assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+    assert (target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md").is_file()
     assert ".logs/" in (target_repo / ".gitignore").read_text(encoding="utf-8")
 
 
@@ -403,7 +403,7 @@ def test_tui_guided_install_update_migrates_legacy_aw_runtime(
     )
 
     assert code == 0, output
-    assert (target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md").is_file()
+    assert (target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md").is_file()
     assert (target_repo / ".claude" / "skills" / "harness-skill" / "SKILL.md").is_file()
     assert (target_repo / ".servo" / "control-state.md").is_file()
     assert ".servo/control-state.md" in (target_repo / ".servo" / "control-state.md").read_text(

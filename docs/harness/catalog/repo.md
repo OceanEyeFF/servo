@@ -1,9 +1,9 @@
 ---
 title: "Harness Skill Catalog / RepoScope"
 status: active
-updated: 2026-06-14
+updated: 2026-06-22
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-22
 ---
 # RepoScope Skill Catalog
 
@@ -17,7 +17,7 @@ last_verified: 2026-06-14
 
 ## Catalog
 
-### 0. set-harness-goal-skill
+### 0. harness-set-goal-skill
 
 职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制平面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
 
@@ -31,8 +31,8 @@ last_verified: 2026-06-14
 
 canonical executable source：
 
-- [../../../product/harness/skills/set-harness-goal-skill/SKILL.md](../../../product/harness/skills/set-harness-goal-skill/SKILL.md)
-- [../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md)
+- [../../../product/harness/skills/harness-set-goal-skill/SKILL.md](../../../product/harness/skills/harness-set-goal-skill/SKILL.md)
+- [../../../product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md)
 
 当前状态：
 
@@ -79,13 +79,13 @@ preferred handoff fields：
 
 Complex-project 入场交接是 Milestone 侧阻断关卡（`Milestone-side blocking gate`），非固定 heavy mode（规范术语：not fixed heavy mode）。`scanner output is evidence`，scanner 输出是证据（evidence），非裁决（verdict）。Worktrack 执行模式 `normal`、`autoreview`、`yolo` 属于用户自有策略选择，不绕过 `milestone_blocking_decision`。弱文档强化路由使用结构化 `reinforcement_milestone_recommendation`；`needed = true` 或 `blocks_implementation_until_resolved = true` 时，先路由到强化文档/项目理解 Milestone（reinforcement documentation / project-understanding），再进入实现。缺失、空白（`blank`）或未解析 gate 不得视为通过。
 
-### 1. pre-milestone-intake-skill
+### 1. milestone-pre-intake-skill
 
-职责：在 `init-milestone-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
+职责：在 `milestone-init-skill` 写入或激活 Milestone 前，执行一轮限定范围需求核实、追问、挑战和推荐，产出 `pre_milestone_intake_review`。它不创建 milestone、不创建 worktrack、不修改代码，只决定 milestone brief 是否足够进入初始化。
 
 连续 intake 模式可跨多轮 assistant 交互。若一轮内无法安全通过复核，skill 返回 `questions_required`，记录 `continuation_state`，每次只提一个 `next_required_question` 并等待 programmer 输入；规范术语为 `one-question-at-a-time`。此逐题推进的 checkpoint 是延续交接（continuation handoff），不是 Milestone Review Gate 通过。
 
-下游 `init-milestone-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
+下游 `milestone-init-skill` 必须按 ready / skipped / questions_required / blocked / missing intake 分支消费该 review；skipped intake 只能表达 programmer 接受风险，不能伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。字段不全或状态矛盾时，不得把薄弱的 milestone brief 伪装成已确认。
 
 主要依赖：
 
@@ -98,8 +98,8 @@ Complex-project 入场交接是 Milestone 侧阻断关卡（`Milestone-side bloc
 
 canonical executable source：
 
-- [../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md](../../../product/harness/skills/pre-milestone-intake-skill/SKILL.md)
-- [../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md](../../../product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md)
+- [../../../product/harness/skills/milestone-pre-intake-skill/SKILL.md](../../../product/harness/skills/milestone-pre-intake-skill/SKILL.md)
+- [../../../product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md](../../../product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md)
 
 当前状态：
 
@@ -155,6 +155,7 @@ preferred handoff fields：
 - `dialog_review_questions`
 - `milestone_blocking_decision`
 - `reinforcement_milestone_recommendation`
+- `milestone_task_complexity_assessment`
 
 Milestone Review Gate 交接记录了 pre-milestone intake 是否在 Worktrack Init/Dispatch 前产出了 `effective_pass`。交接包必须携带 `milestone_review_gate`、`milestone_review_gate_handoff`、`milestone_review_count`、`latest_review_status`、`latest_review_checkpoint`、`effective_review_pass` 以及 `review_invalidated_by`。非通过状态（`questions_required`、`blocked`、`skipped`、`missing`、`stale`、`invalidated`）不是通过状态。`questions_required` 状态的复核必须逐题继续，不得递增 `milestone_review_count`。`worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变更会使 checkpoint 失效，需要重新复核。
 
@@ -315,9 +316,9 @@ canonical executable source：
 
 - `initial canonical executable skeleton landed`
 
-### 7. servo-cleanup-skill
+### 7. worktrack-cleanup-skill
 
-职责：执行 Servo repo/runtime 管理空间的限定清理，包括已完成 backlog 条目归档和已闭环本地 `ms/*` / `wt/*` 分支的安全删除。它不是 Milestone/Worktrack 控制循环里的默认动作，也不是通用文件清理工具；使用前必须先 dry-run，且不得删除 remote、protected branch 或 `.servo/` artifact 文件。
+职责：执行 Servo repo/runtime 管理空间的限定清理，包括已完成 backlog 条目归档、已闭环本地 `ms/*` / `wt/*` 分支的安全删除，以及在 dry-run 和 hydration-critical 字段校验通过后的 `.servo/control-state.md` 安全压缩。它不是 Milestone/Worktrack 控制循环里的默认动作，也不是通用文件清理工具；使用前必须先 dry-run，且不得删除 remote、protected branch 或 `.servo/` artifact 文件。
 
 主要依赖：
 
@@ -329,10 +330,12 @@ canonical executable source：
 
 canonical executable source：
 
-- [../../../product/harness/skills/servo-cleanup-skill/SKILL.md](../../../product/harness/skills/servo-cleanup-skill/SKILL.md)
+- [../../../product/harness/skills/worktrack-cleanup-skill/SKILL.md](../../../product/harness/skills/worktrack-cleanup-skill/SKILL.md)
 
 当前状态：
 
 - `canonical executable skeleton landed`
-- `active distributed identity is servo-cleanup-skill`
+- `active distributed identity is worktrack-cleanup-skill`
 - `cleanup-skill is legacy alias only`
+- `control-state compact helper distributed as scripts/control_state_compact.py`
+- `compact history must be generated by the helper; installer-generated backup/update artifacts are not canonical history source`

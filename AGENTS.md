@@ -15,7 +15,7 @@ last_verified: 2026-06-13
 - 当前仓库以 AI coding 的 repo-side contract layer 形态承接这个目标。
 - `docs/` 负责 truth boundary，`product/` 负责 canonical skills 与 adapters，`toolchain/` 负责部署、评测与治理脚本。
 - `Harness` 现在是一级认知与文档域；已批准输入、执行边界、路由和写回规则由 `AGENTS.md`、`docs/harness/artifact/` 与 `docs/project-maintenance/governance/` 承接，不再保留独立 adjacent-system 文档域。
-- `.agents/`、`.claude/` 只是 deploy target，不是源码层。
+- `.agents/`、`.claude/` 是 deploy target，源码层在 `product/` 中。
 - 如果一个新目录说不清 owner 和层级，不要直接加到根目录。
 
 ## Default Boot
