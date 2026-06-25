@@ -5858,12 +5858,29 @@ function checkAwHealth() {
 		checks.push({ item: "milestones", ok: false, detail: "missing" });
 	}
 
-	// control-state
-	const cs = path.join(awDir, "control-state.md");
+	// control-state (4-file split architecture)
+	// control_state_version: split → 4 files at .servo/ root
+	const controlStateFiles = [
+		{ path: "control-state.md", label: "control-state" },
+		{ path: "operator-config.md", label: "operator-config" },
+		{ path: "control-state-repo.md", label: "control-state-repo" },
+		{ path: "control-state-wt.md", label: "control-state-wt" },
+	];
+	for (const csf of controlStateFiles) {
+		const exists = fs.existsSync(path.join(awDir, csf.path));
+		checks.push({
+			item: csf.label,
+			ok: exists,
+			detail: exists ? "present" : "missing",
+		});
+	}
+
+	// goal-charter
+	const gc = path.join(awDir, "goal-charter.md");
 	checks.push({
-		item: "control-state",
-		ok: fs.existsSync(cs),
-		detail: fs.existsSync(cs) ? "present" : "missing",
+		item: "goal-charter",
+		ok: fs.existsSync(gc),
+		detail: fs.existsSync(gc) ? "present" : "missing",
 	});
 
 	// worktrack dir
