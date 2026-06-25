@@ -1350,9 +1350,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 			? "temporary-understanding.md"
 			: "N/A",
 		confirmation_required: weakDocReinforcementNeeded ? "true" : "false",
-		blocks_implementation_until_resolved: weakDocReinforcementNeeded
-			? "true"
-			: "false",
+		blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false",
 		promotion_allowed: "false",
 		repository_path: args.deployPath || placeholder("repository_path"),
 		baseline_branch: args.baselineBranch || placeholder("baseline_branch"),

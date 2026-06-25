@@ -435,7 +435,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
        --gate-source .servo/repo/pre-milestone-intake-{id}.md
      ```
 
-     canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。
+     canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。这是一个 Milestone-side blocking gate；若 `reinforcement_milestone_recommendation.needed == true`，必须建议 reinforcement milestone 并阻断实现型 milestone 的 create/activate。gate 缺失、blank、placeholder、pending、incomplete 时，unresolved gate blocking default 强制返回 blocked，不得当作 not_applicable。Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
    - **Guard 4: `milestone_review_gate_check`** — 进入 WorktrackScope.Init 前，调用 `milestone_review_gate_check.py`。
 
      ```bash

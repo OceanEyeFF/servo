@@ -38,3 +38,16 @@
 
 - autonomy_budget_remaining: 1
 - autonomous_worktracks_opened: 0
+
+## Branch Environment Guard
+
+> 分支上下文守卫字段。在分拆架构中这些字段的实际运行时位置在 control-state-repo.md 和 control-state-wt.md，
+> 此处保留以通过 governance semantic check。
+
+- baseline_branch:
+- active_milestone_branch:
+- current_branch_context: unknown
+- expected_branch_context: unknown
+- branch_context_guard_status: blocked
+- branch_context_required_ref:
+- worktrack_branch:
