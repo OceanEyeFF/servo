@@ -71,7 +71,7 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - 不得创建、更新或激活 milestone。
 - 不得创建 worktrack 或执行实现。
@@ -92,7 +92,7 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 - unresolved gate blocking default: missing, blank, placeholder, `pending_programmer_confirmation`, pending, or incomplete `complex_project_entry_gate` 不得被视为 clear 或 `not_applicable`；默认阻断 create/upsert/activate/derive-worktrack，直到 programmer confirmation 或 verified evidence 存在。
 - scanner output is evidence, not verdict；不得把 scanner 阈值或启发式结果直接写成 `entry_verdict` 或 milestone truth。
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode。小型低风险请求可以记录 `entry_verdict = not_applicable`，但不能因此跳过已命中的高风险安全策略必填项。
-- `milestone_task_complexity_assessment` 是所有 goal-driven milestone intake review 的必产字段；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。`discovery_or_reinforcement_needed = true` 阻断实现型 milestone。work-collection 使用 lightweight 评估（仅 `overall_complexity`、`worktrack_count_estimate`、`recommended_route` 必填）。字段合同见 `docs/harness/artifact/control/milestone.md`。
+- `milestone_task_complexity_assessment` 是所有 goal-driven milestone intake review 的必产字段；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。
 - temporary understanding 是 runtime evidence, not Goal Charter truth；未经 programmer confirmation 或 verified evidence，不得把 inferred purpose、owner boundary、maintenance rule 或 acceptance rule 升格为 milestone truth、Goal Charter truth 或 docs truth。
 - `suggested_milestone_brief` 必须保持草案身份，直到 `milestone-init-skill` 消费已确认的 intake review 后再写入正式 milestone artifact。
 - 本技能输出的 milestone brief 是草案；只有 `milestone-init-skill` 可以写入 artifact 和 backlog。
@@ -166,4 +166,4 @@ Continuous intake mode is allowed and expected when one assistant turn is not en
 
 ## 资源
 
-使用当前需求、`.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md`、`.servo/repo/milestone-backlog.md`，以及本轮核实所需的最小 repo context。对大型无文档 repo，运行时按 weak-doc / large-repo intake 规则处理：先收集只读事实，区分 observed facts 与 inferred assumptions，必要时建议 discovery / reinforcement milestone，不把未确认推断写入长期 truth。对多 repo 项目，运行时必须分别记录每个 repo 的目标、状态、边界、验证路径与是否允许 mutation；不得把一个 repo 的发现自动推广到另一个 repo。Source-side authoring traces: `docs/harness/workflow-families/large-undocumented-repo-onboarding.md`, `docs/harness/workflow-families/multi-repo-project-workflow.md`。
+使用当前需求、`.servo/goal-charter.md`、`.servo/repo/snapshot-status.md`、`.servo/control-state.md`、`.servo/repo/milestone-backlog.md`，以及本轮核实所需的最小 repo context。对大型无文档 repo，运行时按 weak-doc / large-repo intake 规则处理：先收集只读事实，区分 observed facts 与 inferred assumptions，必要时建议 discovery / reinforcement milestone，不把未确认推断写入长期 truth。对多 repo 项目，运行时必须分别记录每个 repo 的目标、状态、边界、验证路径与是否允许 mutation；不得把一个 repo 的发现自动推广到另一个 repo。

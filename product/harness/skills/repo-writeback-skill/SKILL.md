@@ -421,5 +421,5 @@ writeback_result:
 
 ## 资源
 
-- 写回指令格式参考：`docs/harness/artifact/control/control-state.md`、`docs/harness/artifact/control/milestone.md`
-- 事务模型参考：`docs/harness/artifact/worktrack/self-review-contract.md`
+- 写回指令格式与字段定义已详述于本技能 §Writeback Instruction Format
+- 事务模型已详述于本技能 §事务模型

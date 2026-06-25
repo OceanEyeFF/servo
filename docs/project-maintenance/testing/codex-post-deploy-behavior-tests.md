@@ -49,7 +49,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js install --backend agents --
 node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
 ```
 
-当前 `agents` install 已包含全部 23 个 skills（RepoScope/WorktrackScope/验证/裁决/恢复/收尾/通用执行/Milestone/pre-milestone intake/清理）；`harness-set-goal-skill` 自带 `.servo/` 初始化资产。
+当前 `agents` install 已包含全部 29 个 skills（含 Milestone Gate 四轴检查 + repo-writeback-skill）；`harness-set-goal-skill` 自带 `.servo/` 初始化资产。
 
 ## 五、选择观察策略
 

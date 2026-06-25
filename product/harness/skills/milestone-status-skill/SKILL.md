@@ -84,7 +84,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 1. **Stale frontmatter**：检查 `docs/` 下正文文档的 `last_verified` 是否逾期（与当前日期相差超过 90 天，或与 milestone 涉及的内容域明显不匹配）。
 2. **Broken cross-references**：检查 milestone scope 内涉及的文档是否存在死链（引用已被删除或重命名的文件/章节）。
-3. **Missing required docs**：检查 milestone 涉及的 skill/adapter/contract 变更是否在对应 `docs/harness/` 或 `docs/project-maintenance/` 中有匹配的文档记录。
+3. **Missing required docs**：检查 milestone 涉及的 skill/adapter/contract 变更是否有匹配的文档记录。
 
 **输出规则**：
 
@@ -133,7 +133,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - 不膨胀 harness-skill：harness-skill 继续只做 supervisor，本技能是独立的 Milestone 分析器，由 harness-skill 在需要时调用。
 - Milestone 完成判定必须通过双重验收模型（worktrack_list_finished + purpose_achieved）：goal-driven milestone 两者缺一时不得自动判定完成。work-collection milestone 仅需 worktrack_list_finished，purpose_achieved 声明跳过，验收下沉到各 worktrack Gate。
@@ -220,7 +220,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 使用当前活跃 Milestone artifact（`.servo/milestone/{milestone_id}.md`）、当前 worktrack backlog（`.servo/repo/worktrack-backlog.md`）、gate evidence（`.servo/worktrack/gate-evidence.md`）、composite acceptance report（若存在）和 repo snapshot（`.servo/repo/snapshot-status.md`）作为主要输入。只有当工作追踪本地产物会实质影响 Milestone 进度计数或目的达成判定时才读取额外的 worktrack 细节文件；仅允许将它们作为辅助边界证据使用，禁止将它们当作 Milestone 真相的替代品。
 
-当需要整理 composite acceptance report 时，使用 `templates/composite-acceptance-report.template.md` 作为格式参考。模板是随包分发的运行时字段合同。Composite lanes 必须覆盖 `code-review`、`feature-completeness`、`related-influence`、`intent-completeness`、`operator-simulation` 和 `professional-review`；lane verdict 只能是 `accepted`、`accepted_with_residual_risk`、`needs_followup_worktrack` 或 `blocked`；任一 high severity、blocked lane、缺失 mandatory deep evidence，或未获 programmer 接受的 follow-up requirement 都不得进入 final acceptance ready。Source-side authoring trace: `docs/harness/artifact/control/composite-milestone-acceptance.md`。
+当需要整理 composite acceptance report 时，使用 `templates/composite-acceptance-report.template.md` 作为格式参考。模板是随包分发的运行时字段合同。Composite lanes 必须覆盖 `code-review`、`feature-completeness`、`related-influence`、`intent-completeness`、`operator-simulation` 和 `professional-review`；lane verdict 只能是 `accepted`、`accepted_with_residual_risk`、`needs_followup_worktrack` 或 `blocked`；任一 high severity、blocked lane、缺失 mandatory deep evidence，或未获 programmer 接受的 follow-up requirement 都不得进入 final acceptance ready。
 
 结果应保持聚焦于 Milestone 级别的聚合分析，而不是扩张成单个 worktrack 的逐条审查或下一 worktrack 的选择规划。输出应可直接作为 `RepoScope.Decide` 和 `harness-skill` continuous execution 流程中的 handback 判断依据。
 
@@ -250,7 +250,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 3. **消费** gate skill 返回的 `milestone_gate_verdict` 和聚合状态字段
 4. 将 gate verdict 纳入 `purpose_achieved` 判定和 milestone 状态报告
 
-Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2 运行 aggregator。详见 `product/harness/skills/milestone-gate/SKILL.md` 和 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
+Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2 运行 aggregator。详见 milestone-gate skill。
 
 **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`。
 

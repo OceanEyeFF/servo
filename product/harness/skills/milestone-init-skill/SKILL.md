@@ -47,8 +47,9 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - `intake_status == "questions_required"` 时，必须返回 blocked 并带回 `continuation_state` 和 `next_required_question`，建议回到 `milestone-pre-intake-skill` 继续 one-question-at-a-time；不得创建、upsert 或激活 milestone。
    - `intake_status == "blocked"` 时，必须返回 blocked 并建议回到 `milestone-pre-intake-skill` 或 programmer 决策；不得创建、upsert 或激活 milestone。
    - intake review 缺失、字段不全、状态矛盾（例如 skipped 同时 ready）、或未 ready 时，返回 blocked，建议先调用 `milestone-pre-intake-skill`，不得把薄弱的 milestone brief 伪装成已确认。
-- intake review 中的 `milestone_task_complexity_assessment` 必须完整（goal-driven 所有字段必选，work-collection 至少包含 `overall_complexity`、`worktrack_count_estimate`、`recommended_route`）；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。`discovery_or_reinforcement_needed = true` 时阻断实现型 Milestone 的 create/activate/derive。字段合同见 `docs/harness/artifact/control/milestone.md#milestone-task-complexity-assessment`。
-4. 检查 `complex_project_entry_gate`：
+
+- intake review 中的 `milestone_task_complexity_assessment` 必须完整（goal-driven 所有字段必选，work-collection 至少包含 `overall_complexity`、`worktrack_count_estimate`、`recommended_route`）；缺失或字段不全等同于 intake review 缺失，按 blocked 处理。
+1. 检查 `complex_project_entry_gate`：
    - 当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，必须存在 `complex_project_entry_gate`。
    - gate 必须包含 `scanner_evidence_ref`、`complexity_signals`、`operator_safety_policy`、`dialog_review_questions`、`milestone_blocking_decision` 和 `reinforcement_milestone_recommendation`。
    - scanner output is evidence, not verdict；不得把 scanner 阈值直接当成 ready 结论。
@@ -58,22 +59,22 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    - 若 `entry_verdict = blocked`，或 `milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate`，必须返回 blocked，不得 create / upsert / activate implementation-oriented milestone。
    - 若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`reinforcement_milestone_recommendation.recommendation_status = recommended|required|pending_operator_review` 或 `reinforcement_milestone_recommendation.blocks_implementation_until_resolved = true`，必须建议 reinforcement documentation / project-understanding Milestone，并不得 create/upsert/activate implementation-oriented milestone，也不得把弱文档推断升格为当前 milestone truth。
    - `reinforcement_milestone_recommendation` 必须是结构化 handoff，至少包含 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；缺失或 placeholder 的 recommendation 不能被当作 implementation clearance。
-5. 解析输入来源：
+2. 解析输入来源：
    - 若来自 programmer：直接使用提供的 milestone 规格
    - 若来自 harness 推理：验证规格完整性（至少包含 title、purpose），缺失关键字段时标记为规格不完整并停止
    - 若两者同时存在：programmer 规格优先，harness 推理作为补充建议
-6. 确定 milestone_id：
+3. 确定 milestone_id：
    - 若输入提供了 milestone_id：检查是否与已有 milestone 冲突
    - 若未提供：自动生成，格式 `MS-YYYYMMDD-NNN`（如 `MS-20260510-001`）
    - 若 milestone_id 已存在：进入 upsert 模式（latest-override）
-7. 验证依赖合法性：
+4. 验证依赖合法性：
    - 若 `depends_on_milestones` 非空，逐一检查是否存在于 live milestone-backlog 或 milestone-history 中
    - 引用的 milestone 不存在时标记为 `unknown_dependency` 并停止
    - 检查是否存在循环依赖（遍历 depends_on 链）
-8. 确定 priority：
+5. 确定 priority：
    - 输入提供的 priority 直接使用
    - 未提供时自动分配：取当前 pipeline 中最大 priority + 1
-9. 确定 `milestone_kind`：
+6. 确定 `milestone_kind`：
    - 若输入来自 programmer 且提供了 `milestone_kind`：直接使用
    - 若输入来自 programmer 但未提供 `milestone_kind`：默认 `goal-driven`
    - 若输入来自 harness（work-collection 路径）：`milestone_kind = "work-collection"`
@@ -84,7 +85,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
      - `acceptance_criteria`：空（不适用）
      - `priority`：最低（取当前 pipeline 最大 priority + 1，确保不阻塞 goal-driven milestone）
      - `created_by`：`harness`
-10. 规范化完成判定字段：
+7. 规范化完成判定字段：
 
 - goal-driven milestone：若输入未提供 `completion_threshold_pct`，默认写入 `100`
 - work-collection milestone：`completion_threshold_pct` 记为 `100` 但不参与完成判定；验收仍下沉到 worktrack gate
@@ -157,7 +158,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - 同一时刻仅允许一个 active milestone：设为 active 前必须检查 pipeline 状态
 - latest-override 以 `updated` 时间戳为准；同时间戳 programmer 优先
