@@ -101,7 +101,11 @@ class ValidationResult:
 
     @property
     def ok(self) -> bool:
-        return not self.missing_sections and not self.missing_fields and not self.missing_groups
+        return (
+            not self.missing_sections
+            and not self.missing_fields
+            and not self.missing_groups
+        )
 
     def errors(self) -> list[str]:
         errors: list[str] = []
@@ -112,7 +116,8 @@ class ValidationResult:
             )
         if self.missing_fields:
             errors.append(
-                "missing required control-state fields: " + ", ".join(self.missing_fields)
+                "missing required control-state fields: "
+                + ", ".join(self.missing_fields)
             )
         if self.missing_groups:
             errors.append(
@@ -263,7 +268,9 @@ def build_compaction_plan(text: str, history_ref: str | None) -> CompactionPlan:
 
     trailing_newline = "\n" if text.endswith("\n") else ""
     compacted_text = "\n".join(kept) + trailing_newline
-    return CompactionPlan(compacted_text, externalized, history_ref if externalized else None)
+    return CompactionPlan(
+        compacted_text, externalized, history_ref if externalized else None
+    )
 
 
 def report_payload(
@@ -390,7 +397,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             externalized_lines=[],
             history_ref=None,
             verdict="blocked",
-            errors=["history-dir must not point at installer-generated .servo backup paths"],
+            errors=[
+                "history-dir must not point at installer-generated .servo backup paths"
+            ],
             recommendations=[
                 "Use a generated compaction history path such as .servo/history/control-state."
             ],
@@ -410,7 +419,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             history_ref=None,
             verdict="blocked",
             errors=[f"control-state file does not exist: {control_state.as_posix()}"],
-            recommendations=["Run this helper from a repo with an initialized .servo runtime."],
+            recommendations=[
+                "Run this helper from a repo with an initialized .servo runtime."
+            ],
         )
         emit_report(payload, as_json=args.json)
         return 2
@@ -476,7 +487,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             encoding="utf-8",
         )
         control_state.write_text(plan.compacted_text, encoding="utf-8")
-        reread_validation = validate_control_state(control_state.read_text(encoding="utf-8"))
+        reread_validation = validate_control_state(
+            control_state.read_text(encoding="utf-8")
+        )
         if not reread_validation.ok:
             control_state.write_text(original_text, encoding="utf-8")
             history_path.unlink(missing_ok=True)
@@ -493,7 +506,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     *reread_validation.errors(),
                     "post-write verification failed; original control-state restored",
                 ],
-                recommendations=["Inspect the generated history artifact before retrying."],
+                recommendations=[
+                    "Inspect the generated history artifact before retrying."
+                ],
             )
             emit_report(payload, as_json=args.json)
             return 2
@@ -501,9 +516,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     recommendations: list[str] = []
     if not plan.would_change:
-        recommendations.append("No duplicate compactable control-state lines were found.")
+        recommendations.append(
+            "No duplicate compactable control-state lines were found."
+        )
     elif not apply_changes:
-        recommendations.append("Review dry-run output, then rerun with --apply if approved.")
+        recommendations.append(
+            "Review dry-run output, then rerun with --apply if approved."
+        )
     else:
         recommendations.append("Review the generated compaction history artifact.")
 

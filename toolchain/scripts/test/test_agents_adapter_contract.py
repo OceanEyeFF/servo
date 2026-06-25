@@ -8,9 +8,15 @@ from pathlib import Path, PurePosixPath
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills"
-CLAUDE_ADAPTER_SKILLS_DIR = REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
-AW_INSTALLER_SCRIPT = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
+ADAPTER_SKILLS_DIR = (
+    REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills"
+)
+CLAUDE_ADAPTER_SKILLS_DIR = (
+    REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills"
+)
+AW_INSTALLER_SCRIPT = (
+    REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
+)
 EXPECTED_AGENTS_SKILLS = {
     "worktrack-close-skill",
     "worktrack-dispatch-skill",
@@ -78,7 +84,9 @@ def included_paths_from_payload(payload: dict[str, object]) -> list[str]:
     included_paths: list[str] = []
     for canonical_path in canonical_paths:
         assert isinstance(canonical_path, str)
-        included_paths.append(PurePosixPath(canonical_path).relative_to(canonical_dir_path).as_posix())
+        included_paths.append(
+            PurePosixPath(canonical_path).relative_to(canonical_dir_path).as_posix()
+        )
     return included_paths
 
 
@@ -94,7 +102,11 @@ class AgentsAdapterContractTest(unittest.TestCase):
 
             self.assertTrue(payload_path.is_file(), payload_path)
             self.assertEqual(
-                sorted(path.name for path in (ADAPTER_SKILLS_DIR / skill_id).iterdir() if path.is_file()),
+                sorted(
+                    path.name
+                    for path in (ADAPTER_SKILLS_DIR / skill_id).iterdir()
+                    if path.is_file()
+                ),
                 ["payload.json"],
             )
 
@@ -106,8 +118,13 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["payload_version"], "agents-skill-payload.v1")
             self.assertEqual(payload["backend"], "agents")
             self.assertEqual(payload["skill_id"], skill_id)
-            self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
-            self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
+            self.assertEqual(
+                payload["canonical_dir"], f"product/harness/skills/{skill_id}"
+            )
+            self.assertEqual(
+                payload["canonical_paths"],
+                [f"{canonical_dir}/{path}" for path in included_paths],
+            )
             expected_target_dir = AGENTS_TARGET_DIR_OVERRIDES.get(skill_id)
             if expected_target_dir is None:
                 self.assertEqual(payload["target_dir"], f"servo-{skill_id}")
@@ -115,12 +132,16 @@ class AgentsAdapterContractTest(unittest.TestCase):
                 self.assertEqual(payload["target_dir"], expected_target_dir)
             self.assertEqual(
                 payload["legacy_target_dirs"],
-                AGENTS_LEGACY_TARGET_DIR_OVERRIDES.get(skill_id, [skill_id, f"aw-{skill_id}"]),
+                AGENTS_LEGACY_TARGET_DIR_OVERRIDES.get(
+                    skill_id, [skill_id, f"aw-{skill_id}"]
+                ),
             )
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])
-            self.assertEqual(payload["reference_distribution"], "copy-listed-canonical-paths")
+            self.assertEqual(
+                payload["reference_distribution"], "copy-listed-canonical-paths"
+            )
             self.assertEqual(
                 payload["required_payload_files"],
                 [*included_paths, "payload.json", "aw.marker"],
@@ -160,8 +181,13 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["payload_version"], "claude-skill-payload.v1")
             self.assertEqual(payload["backend"], "claude")
             self.assertEqual(payload["skill_id"], skill_id)
-            self.assertEqual(payload["canonical_dir"], f"product/harness/skills/{skill_id}")
-            self.assertEqual(payload["canonical_paths"], [f"{canonical_dir}/{path}" for path in included_paths])
+            self.assertEqual(
+                payload["canonical_dir"], f"product/harness/skills/{skill_id}"
+            )
+            self.assertEqual(
+                payload["canonical_paths"],
+                [f"{canonical_dir}/{path}" for path in included_paths],
+            )
             self.assertEqual(
                 payload["target_dir"],
                 CLAUDE_TARGET_DIR_OVERRIDES.get(skill_id, skill_id),
@@ -173,7 +199,9 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["target_entry_name"], "SKILL.md")
             self.assertEqual(payload["payload_policy"], "canonical-copy")
             self.assertEqual(payload["supported_target_scopes"], ["local"])
-            self.assertEqual(payload["reference_distribution"], "copy-listed-canonical-paths")
+            self.assertEqual(
+                payload["reference_distribution"], "copy-listed-canonical-paths"
+            )
             self.assertEqual(
                 payload["required_payload_files"],
                 [*included_paths, "payload.json", "aw.marker"],
@@ -186,7 +214,9 @@ class AgentsAdapterContractTest(unittest.TestCase):
     def test_agents_adapter_target_dirs_are_unique(self) -> None:
         target_dir_to_skills: dict[str, list[str]] = {}
 
-        for skill_dir in sorted(path for path in ADAPTER_SKILLS_DIR.iterdir() if path.is_dir()):
+        for skill_dir in sorted(
+            path for path in ADAPTER_SKILLS_DIR.iterdir() if path.is_dir()
+        ):
             skill_id = skill_dir.name
             payload_path = ADAPTER_SKILLS_DIR / skill_id / "payload.json"
 
@@ -213,8 +243,12 @@ class AgentsAdapterContractTest(unittest.TestCase):
         self.assertFalse((ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
         self.assertFalse((CLAUDE_ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
 
-        agents_payload = load_json(ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json")
-        claude_payload = load_json(CLAUDE_ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json")
+        agents_payload = load_json(
+            ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+        )
+        claude_payload = load_json(
+            CLAUDE_ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+        )
 
         for payload in (agents_payload, claude_payload):
             self.assertEqual(payload["skill_id"], "worktrack-cleanup-skill")
@@ -226,12 +260,17 @@ class AgentsAdapterContractTest(unittest.TestCase):
                 "scripts/control_state_compact.py",
                 payload["required_payload_files"],
             )
-            self.assertEqual(payload["canonical_dir"], "product/harness/skills/worktrack-cleanup-skill")
+            self.assertEqual(
+                payload["canonical_dir"],
+                "product/harness/skills/worktrack-cleanup-skill",
+            )
             self.assertEqual(payload["target_dir"], "worktrack-cleanup-skill")
             self.assertIn("cleanup-skill", payload["legacy_target_dirs"])
             self.assertIn("aw-cleanup-skill", payload["legacy_target_dirs"])
 
-    def test_set_harness_goal_agents_payload_includes_default_repo_analysis_template(self) -> None:
+    def test_set_harness_goal_agents_payload_includes_default_repo_analysis_template(
+        self,
+    ) -> None:
         payload = load_json(
             ADAPTER_SKILLS_DIR / "harness-set-goal-skill" / "payload.json"
         )
@@ -283,7 +322,9 @@ class AgentsAdapterContractTest(unittest.TestCase):
         )
         self.assertIn("references/overview-fallback-mode.md", required_payload_files)
 
-    def test_agents_installer_diagnose_json_reports_missing_root_without_failure(self) -> None:
+    def test_agents_installer_diagnose_json_reports_missing_root_without_failure(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target_root = Path(temp_dir) / "missing-agents-skills"
             completed = subprocess.run(
@@ -316,11 +357,15 @@ class AgentsAdapterContractTest(unittest.TestCase):
         self.assertEqual(summary["issue_codes"], ["missing-target-root"])
         self.assertEqual(summary["issues"][0]["code"], "missing-target-root")
 
-    def test_agents_installer_diagnose_json_reports_wrong_type_target_as_conflict(self) -> None:
+    def test_agents_installer_diagnose_json_reports_wrong_type_target_as_conflict(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target_root = Path(temp_dir) / "agents-skills"
             target_root.mkdir()
-            (target_root / "servo-harness-skill").write_text("not a directory\n", encoding="utf-8")
+            (target_root / "servo-harness-skill").write_text(
+                "not a directory\n", encoding="utf-8"
+            )
 
             completed = subprocess.run(
                 [
@@ -346,9 +391,13 @@ class AgentsAdapterContractTest(unittest.TestCase):
         self.assertIn("wrong-target-entry-type", summary["issue_codes"])
         self.assertGreater(summary["conflict_count"], 0)
         self.assertTrue(
-            any(issue["code"] == "wrong-target-entry-type" for issue in summary["conflicts"]),
+            any(
+                issue["code"] == "wrong-target-entry-type"
+                for issue in summary["conflicts"]
+            ),
             summary["conflicts"],
         )
+
 
 if __name__ == "__main__":
     unittest.main()
