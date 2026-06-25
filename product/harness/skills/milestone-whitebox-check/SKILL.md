@@ -7,13 +7,13 @@ description: 当 Milestone Gate 需要从内部实现视角检查跨 WT 集成�
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴检查架构中的 **whitebox 轴**（Layer 1 独立检查层），对应 [design-four-axis-skills.md](../../../../.servo/repo/design-four-axis-skills.md) 中定义的 Skill 2。它从 milestone 的**内部实现视角**出发，检查跨 worktrack 的关键集成路径、接口拼接、状态传递、依赖关系和架构对齐。它是四个轴检查中的实现深度审查者——不同于 blackbox 轴的外部视角（只看合约和用户可见产出），whitebox 轴可以并且必须阅读完整实现代码来完成分析。
+本技能实现 Milestone Gate 四轴检查架构中的 **whitebox 轴**（Layer 1 独立检查层），对应 design-four-axis-skills.md 中定义的 Skill 2。它从 milestone 的**内部实现视角**出发，检查跨 worktrack 的关键集成路径、接口拼接、状态传递、依赖关系和架构对齐。它是四个轴检查中的实现深度审查者——不同于 blackbox 轴的外部视角（只看合约和用户可见产出），whitebox 轴可以并且必须阅读完整实现代码来完成分析。
 
 当 Milestone Gate orchestrator（`milestone-status-skill`）确认所有 worktrack 已闭环、需要收集 whitebox 轴证据以输入 Layer 2 aggregator 时，使用这个技能。
 
 这个技能设计为在**隔离 SubAgent** 中运行。轴间隔离是架构上的硬约束：whitebox SubAgent 只能接收 whitebox 轴独享的输入材料，不能接收、看到或读取其他轴（blackbox / anticheat / composite）的 verdict。如果因为运行时限制必须在当前载体内执行，必须显式标记 `carrier_isolation_broken: true`。
 
-它负责产出结构化的 `whitebox_verdict`，作为 milestone gate aggregator（[milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) 定义的 composite_lane_rules）的输入之一。
+它负责产出结构化的 `whitebox_verdict`，作为 milestone gate aggregator（milestone-gate-aggregation.md 定义的 composite_lane_rules）的输入之一。
 
 ## 何时使用
 
@@ -50,7 +50,7 @@ description: 当 Milestone Gate 需要从内部实现视角检查跨 WT 集成�
 | W1 | **Interface contract consistency**：跨 WT 的共享接口是否一致？ | 接口定义（类型声明、函数签名、API schema、配置文件格式）与消费代码之间是否对齐。若 WT-A 定义了接口/合约、WT-B 消费了该接口，则检查 B 的消费代码是否符合 A 的合约。 | 1. 从 WT contracts 和 diffs 中提取接口定义和消费点；2. 对每个声明-消费对，对比参数类型、返回值、错误语义、前置条件；3. 对配置文件格式变更，检查写入方和读取方是否使用一致的结构。 |
 | W2 | **State transition integrity**：跨 WT 的状态流转是否正确？ | 若多个 WT 共同操作或消费一个状态机（如 milestone pipeline 状态、worktrack lifecycle、deploy target 状态），检查：1) 各 WT 对状态的定义是否一致；2) 状态转移是否闭合（不会卡死在未定义状态）；3) WT 之间的交接点是否覆盖所有合法状态。 | 1. 从代码中提取状态机定义（enum、state machine table、lifecycle hook）；2. 为每个状态机构建跨 WT 转移图；3. 检测不可达状态、缺失转移、不一致的状态命名。 |
 | W3 | **Dependency graph**：WT 之间是否有循环依赖或未声明的依赖？ | 基于代码中的实际 import/reference/require/include 构建有向图。合法依赖：已在 WT contract 中声明的依赖。违规：1) 循环依赖（有向环）；2) 未声明依赖（边存在但 contract 中无对应声明）；3) 幽灵声明（contract 声明了但代码中无实际引用）。 | 1. 解析每个 WT diff 中的 import 语句；2. 将 import 的目标文件映射到所属 WT（通过 impacted_modules）；3. 构建邻接矩阵并检测环；4. 与 WT contract 中的 `dependencies` 声明对比。 |
-| W4 | **Architecture alignment**：实现是否符合声明的架构分层？ | 新增或修改的文件是否放在正确的目录层级。判据来源：repo 的路径分层规则（如 `docs/project-maintenance/foundations/root-directory-layering.md`）、Engineering Node Map、`docs/harness/` 中的架构约定。违规示例：业务逻辑文件出现在 `toolchain/`、文档正文出现在 `.agents/`、源码出现在 `.servo/`（非 runtime artifact）。 | 1. 提取每个 WT diff 中的新增文件和跨目录移动；2. 对每个文件，匹配其路径到声明的分层规则；3. 标记归属不清的文件（文件出现在未在分层规则中声明的目录）。 |
+| W4 | **Architecture alignment**：实现是否符合声明的架构分层？ | 新增或修改的文件是否放在正确的目录层级。判据来源：repo 声明的路径分层规则、Engineering Node Map（见 Goal Charter）、声明的架构约定。违规示例：业务逻辑文件出现在 `toolchain/`、文档正文出现在 `.agents/`、源码出现在 `.servo/`（非 runtime artifact）。 | 1. 提取每个 WT diff 中的新增文件和跨目录移动；2. 对每个文件，匹配其路径到声明的分层规则；3. 标记归属不清的文件（文件出现在未在分层规则中声明的目录）。 |
 | W5 | **Implementation quality**：关键路径的实现质量是否可接受？ | 对跨 WT 的集成关键路径（W1-W4 中识别的高风险接口、状态转移、依赖边和架构边界点）执行代码审查。使用标准代码审查维度：错误处理、恢复路径、operator-facing 语义、资源管理、可维护性。注意：W5 不替代 per-WT 的 review-evidence（那是 WT 级 gate 的职责），而是只审查**跨 WT 的集成点**——两个 WT 的代码在集成处是否安全、正确、可恢复。 | 1. 从 W1-W4 结果中识别 critical 集成点（接口定义+消费、状态转移关键边、高权重依赖边、架构边界跨越点）；2. 对每个 critical 点阅读相关代码段；3. 按标准审查维度评估。 |
 
 ### 检查执行优先级
@@ -168,7 +168,7 @@ whitebox_verdict:
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: `docs/harness/foundations/skill-common-constraints.md`。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 本技能特有约束：
 
@@ -232,10 +232,6 @@ whitebox_verdict:
 
 ## 资源
 
-- 设计文档：`.servo/repo/design-four-axis-skills.md` — 四轴检查架构总设计，Skill 2（whitebox）的定义
-- 聚合合同：`docs/harness/artifact/control/milestone-gate-aggregation.md` — composite_lane_rules 中 whitebox 轴的 veto_power 和消费规则
-- 公共约束：`docs/harness/foundations/skill-common-constraints.md` — 所有 Skill 的 C-1 至 C-7 公共约束
-- 架构分层：`docs/project-maintenance/foundations/root-directory-layering.md` — 路径分层规则，用于 W4 架构对齐检查
-- 运行协议：`docs/harness/foundations/Harness运行协议.md` — Harness 控制回路中 Milestone Gate 阶段的位置
-- 编排者入口：`product/harness/skills/milestone-status-skill/SKILL.md` — Layer 2 orchestrator（消费本轴输出）
-- 输出模板参考：`docs/harness/artifact/control/milestone-gate-aggregation.md` §五 composite_lane_rules — whitebox 轴在聚合中的 veto_power 和 weight_modifier 角色
+- Milestone Gate 聚合合同 — 四轴检查架构总设计与 whitebox 轴定义
+- 路径分层规则 — 用于 W4 架构对齐检查
+- milestone-status-skill — Layer 2 orchestrator（消费本轴输出）

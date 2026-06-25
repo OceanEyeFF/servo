@@ -7,7 +7,7 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 [Milestone Gate 四轴 Skills 与两层编排设计](../../../../.servo/repo/design-four-axis-skills.md) 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
+本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 Milestone Gate 四轴 Skills 与两层编排设计 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
 
 核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary 和 diff summary（文件变更摘要），不做代码级审查。代码级审查由 whitebox 轴（`milestone-whitebox-check`）负责。
 
@@ -127,7 +127,7 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 - 所有 WT 的 closeout record（`changed_files`）
 - 所有 WT 的 diff summary（文件变更摘要）
 - WT contract（`impacted_modules`、`dependencies`）
-- Repo 路径分层规则（`docs/project-maintenance/foundations/root-directory-layering.md`）
+- Repo 路径分层规则（见 Goal Charter 的 Engineering Node Map 与路径分层定义）
 
 **分项 verdict 规则**：
 
@@ -222,7 +222,7 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现；C-8 每个 canonical skill package 必须自洽，不依赖包外路径进行运行时语义。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现；C-8 每个 canonical skill package 必须自洽，不依赖包外路径进行运行时语义。
 
 本技能特有约束：
 
@@ -282,7 +282,7 @@ blackbox_verdict:
       verdict: pass | soft_fail | hard_fail | blocked
       evidence_refs:
         - "path/to/wt-xxx-closeout.md#new_files"
-        - "docs/project-maintenance/foundations/root-directory-layering.md"
+        - 路径分层规则文档
       finding: "具体发现描述。WT-003 新增文件 .servo/custom-config.yaml——.servo/ 为 state layer，业务代码产出不应落在此目录。"
     - check_id: B5
       verdict: pass | soft_fail | hard_fail | blocked
@@ -318,11 +318,11 @@ blackbox_verdict:
 
 ## 资源
 
-- 本技能的设计依据：[Milestone Gate 四轴 Skills 与两层编排设计稿](../../../../.servo/repo/design-four-axis-skills.md) — 定义四轴架构、Skill 层级、输入/输出合同
-- Milestone Gate 聚合合同：[docs/harness/artifact/control/milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — 定义 aggregation_rules 和 Layer 2 输入格式（本技能是 Layer 2 的输入来源之一）
-- Single-Acceptance Contract：[docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — 定义被消费的 WT verdict 格式
-- Worktrack Contract：[docs/harness/artifact/worktrack/contract.md](../../../../docs/harness/artifact/worktrack/contract.md) — 定义 WT 的 scope、node_type、completion_signals_trace 等字段
-- 公共约束：[docs/harness/foundations/skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) — 所有 Skill 必须遵守的 C-1 至 C-8 约束
-- 路径分层规则：[docs/project-maintenance/foundations/root-directory-layering.md](../../../../docs/project-maintenance/foundations/root-directory-layering.md) — B4 检查所需的 repo 目录分层定义
+- 本技能的设计依据：Milestone Gate 四轴 Skills 与两层编排设计稿 — 定义四轴架构、Skill 层级、输入/输出合同
+- Milestone Gate 聚合合同 — 定义 aggregation_rules 和 Layer 2 输入格式（本技能是 Layer 2 的输入来源之一）
+- Single-Acceptance Contract — 定义被消费的 WT verdict 格式
+- Worktrack Contract — 定义 WT 的 scope、node_type、completion_signals_trace 等字段
+- Skill 公共约束 C-1 至 C-8（已内联于 §硬约束）
+- 路径分层规则 — B4 检查所需的 repo 目录分层定义
 
 以上 docs 引用为源侧 authoring trace。本技能作为 canonical skill package 自洽分发时，不依赖这些路径的运行时可用性（C-8）。

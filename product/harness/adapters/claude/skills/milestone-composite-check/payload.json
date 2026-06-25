@@ -1,0 +1,22 @@
+{
+  "payload_version": "claude-skill-payload.v1",
+  "backend": "claude",
+  "skill_id": "milestone-composite-check",
+  "canonical_dir": "product/harness/skills/milestone-composite-check",
+  "canonical_paths": [
+    "product/harness/skills/milestone-composite-check/SKILL.md"
+  ],
+  "target_dir": "milestone-composite-check",
+  "legacy_target_dirs": [],
+  "target_entry_name": "SKILL.md",
+  "payload_policy": "canonical-copy",
+  "supported_target_scopes": [
+    "local"
+  ],
+  "reference_distribution": "copy-listed-canonical-paths",
+  "required_payload_files": [
+    "SKILL.md",
+    "payload.json",
+    "aw.marker"
+  ]
+}

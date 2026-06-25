@@ -20,7 +20,7 @@ milestone-status-skill（sensor）
        └─ Layer 2: aggregator → milestone_gate_verdict
 ```
 
-聚合规则合同定义于 `docs/harness/artifact/control/milestone-gate-aggregation.md`。本技能不替代各 worktrack 自己的 gate，也不把上层集成失败回写成单个 worktrack gate 的通过。
+聚合规则合同（已详述于本技能 §Layer 2 聚合器）。本技能不替代各 worktrack 自己的 gate，也不把上层集成失败回写成单个 worktrack gate 的通过。
 
 ## 何时使用
 
@@ -188,8 +188,6 @@ milestone-status-skill（sensor）
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-8。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
-
 本技能特有约束：
 
 1. **只读**：不修改任何代码、evidence、artifact。只产出结构化 verdict。
@@ -203,11 +201,11 @@ milestone-status-skill（sensor）
 
 ## 资源
 
-- [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — aggregation_rules 合同
-- [milestone-status-skill](../milestone-status-skill/SKILL.md) — 调用方 sensor skill
-- [milestone-blackbox-check](../milestone-blackbox-check/SKILL.md) — 轴技能 1
-- [milestone-whitebox-check](../milestone-whitebox-check/SKILL.md) — 轴技能 2
-- [milestone-anticheat-check](../milestone-anticheat-check/SKILL.md) — 轴技能 3
-- [milestone-composite-check](../milestone-composite-check/SKILL.md) — 轴技能 4
-- [single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — WT verdict 格式
-- [skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) — C-1 至 C-8
+- milestone-gate-aggregation.md — aggregation_rules 合同
+- milestone-status-skill — 调用方 sensor skill
+- milestone-blackbox-check — 轴技能 1
+- milestone-whitebox-check — 轴技能 2
+- milestone-anticheat-check — 轴技能 3
+- milestone-composite-check — 轴技能 4
+- single-acceptance-contract.md — WT verdict 格式
+- Skill 公共约束已内联于 §硬约束

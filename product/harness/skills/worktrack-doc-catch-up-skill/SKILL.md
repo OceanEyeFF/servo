@@ -55,8 +55,8 @@ description: 当工作追踪需要把已验证实现事实追平到正确文档�
 
 默认 truth layer：
 
-- 项目维护规则、governance、deploy、usage-help 写入 `docs/project-maintenance/`
-- Harness doctrine、workflow family、artifact 与 adjacent-system 合同写入 `docs/harness/`
+- 项目维护规则、governance、deploy、usage-help 写入项目维护文档层
+- Harness doctrine、workflow family、artifact 与 adjacent-system 合同写入正式文档层
 - 可执行合同写入 `product/` 或 `toolchain/`
 - 长期事实的写入目标仅限 `docs/`、`product/` 和 `toolchain/`；长期事实写入 `.agents/`、`.claude/`、`.nav/` 的行为必须返回 blocked
 
@@ -96,13 +96,13 @@ node toolchain/scripts/deploy/bin/servo-installer.js --version
 
 同步目标通常包括：
 
-- `docs/project-maintenance/governance/servo-installer-release-channel-governance.md`
-- `docs/project-maintenance/governance/servo-installer-pre-publish-governance.md`
-- `docs/project-maintenance/governance/servo-installer-release-standard-flow.md`
-- `docs/project-maintenance/testing/npx-command-test-execution.md`
-- `docs/project-maintenance/usage-help/codex.md`
-- `docs/project-maintenance/usage-help/claude.md`
-- root `README.md`，仅当根入口 selector、试用路径或成熟度口径确实变化
+- release channel governance 文档
+- pre-publish governance 文档
+- release standard flow 文档
+- npx command test execution 文档
+- Codex usage help 文档
+- Claude usage help 文档
+- root README.md，仅当根入口 selector、试用路径或成熟度口径确实变化
 
 ## Document Quality Review（文档质量审查）
 
@@ -156,7 +156,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js --version
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - docs 的输出只能是经过验证的长期记录；把 docs 当成临时 scratchpad 的行为禁止出现在文档追平的输出中。
 - 长期事实的唯一合法写入目标是 `docs/`、`product/` 和 `toolchain/`；在 `.agents/`、`.claude/` 或 `.nav/` 写入长期事实的行为必须返回 blocked。

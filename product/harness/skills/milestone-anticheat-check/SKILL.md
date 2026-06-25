@@ -298,8 +298,6 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) 中定义的公共约束 C-1 至 C-8。
-
 本技能特有约束：
 
 1. **Permission boundary**：Read-only。可读取 evidence metadata、dispatch profiles、closeout records 和 aggregation_rules。MUST NOT 修改任何代码、evidence 或 control state。
@@ -315,9 +313,9 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ## 资源
 
-- [Milestone Gate 证据聚合合同](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — 本技能消费的 aggregation_rules 与 composite_lane_rules 定义
-- [Worktrack Self-Review Contract](../../../../docs/harness/artifact/worktrack/self-review-contract.md) — self_review_record 格式（A4 / A6 输入）
-- [Worktrack Single-Acceptance Contract](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — single_acceptance_verdict 格式（per-WT 输入）
-- [Gate Evidence](../../../../docs/harness/artifact/worktrack/gate-evidence.md) — gate_evidence 格式与时效性标签定义（A1 / A2 / A5 输入）
-- [Skill 公共约束](../../../../docs/harness/foundations/skill-common-constraints.md) — C-1 至 C-8 公共约束定义
-- [Runtime Dispatch Contract](../../../../docs/harness/foundations/runtime-dispatch-contract.md) — dispatch_profile 字段定义（A6 输入）
+- Milestone Gate 证据聚合合同 — 本技能消费的 aggregation_rules 与 composite_lane_rules 定义
+- Worktrack Self-Review Contract — self_review_record 格式（A4 / A6 输入）
+- Worktrack Single-Acceptance Contract — single_acceptance_verdict 格式（per-WT 输入）
+- Gate Evidence — gate_evidence 格式与时效性标签定义（A1 / A2 / A5 输入）
+- Skill 公共约束 — C-1 至 C-8 公共约束定义
+- Runtime Dispatch Contract — dispatch_profile 字段定义（A6 输入）

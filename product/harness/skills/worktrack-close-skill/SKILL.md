@@ -30,8 +30,8 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 2. 为一轮限定范围的 `通用高能力模型` `SubAgent` 构建一份 `关闭工作追踪任务简报` 和一份 `关闭工作追踪信息包`。
 3. 从 `Worktrack Contract` 读取 closeout target 与 checkpoint 对比基准。`baseline_branch` 是 servo-managed final baseline；`branch_source_ref` 是本 Worktrack 分支来源；`integration_target_ref` / `closeout_target_ref` 是本轮 PR target、merge target 与 checkpoint 基准的唯一合法来源。Milestone-derived worktrack 默认合回 active Milestone branch，而不是直接合回 servo-managed baseline。PR target、merge target 和 checkpoint 基准不得从当前分支名或写死默认分支名推断。
 4. **Pre-Closeout Checks**（在确定收尾阶段之前）：
-   - **Self-Review**：执行 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 定义的结构化自查，覆盖 artifact 更新完整性、scope 合规、docs 一致性三个维度。产出 structured self-review record。若 `overall_verdict = blocked`，handback 修复后重试，不进入收尾阶段。
-   - **Single-Acceptance**：执行 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) 定义的单体验收，对照 worktrack contract 的 `completion_signals` 逐条验证。产出 structured single-acceptance verdict。`accepted` / `accepted_with_notes` 允许继续；`blocked` 触发 critical failure 升级阻断，需区分以下子路径：
+   - **Self-Review**：执行 Self-Review Contract 定义的结构化自查，覆盖 artifact 更新完整性、scope 合规、docs 一致性三个维度。产出 structured self-review record。若 `overall_verdict = blocked`，handback 修复后重试，不进入收尾阶段。
+   - **Single-Acceptance**：执行 Single-Acceptance Contract 定义的单体验收，对照 worktrack contract 的 `completion_signals` 逐条验证。产出 structured single-acceptance verdict。`accepted` / `accepted_with_notes` 允许继续；`blocked` 触发 critical failure 升级阻断，需区分以下子路径：
      - `critical_failure (own WT)`：blocking 原因源于当前 WT 自身（如 completion_signals 未通过、证据缺失）→ 必须修复后才可重试收尾，不得绕过。
      - `critical_failure (upstream)`：blocking 原因源于上游依赖（如上游 WT 未合并、milestone baseline 未就绪、外部 contract 不满足）→ 记录阻断来源，可选 defer 到上游解决后重试（非本 WT 的责任范围）。
    - 两步均 clear 后，进入收尾阶段判定。
@@ -52,7 +52,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
    - 只有在确认合并后才安全的清理项
    - 应交给 `代码仓库刷新技能` 的已验证材料
 7. 在一轮限定范围收尾后停止，并返回一份固定格式的 `关闭工作追踪报告` 与一份 `代码仓库刷新交接`。
-8. 写回动作（progress_counter、latest_closed_worktrack_commit、control-state route 等）使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 执行，不再使用 ad-hoc 字段写入。
+8. 写回动作（progress_counter、latest_closed_worktrack_commit、control-state route 等）使用 repo-writeback-skill 执行，不再使用 ad-hoc 字段写入。
 
 ## 收尾约定
 
@@ -157,7 +157,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - `关卡通过` 的唯一合法含义是允许进入收尾阶段。合并、删除分支或更新代码仓库真相的授权必须通过显式审批获得，`关卡通过` 不是这些操作的隐式授权。
 - 仅当审批和状态确认已完整获得时，执行 `合并`、`清理分支` 或代码仓库回写才合法；否则必须保持等待并暴露缺失的审批项。
