@@ -32,7 +32,7 @@ description: 当需要修改 Repo 级目标（Goal Charter）时，使用这个�
 **不**使用的情况：
 
 - 普通任务重排、局部实现细节变更，或不会改变 repo 目标的工作范围调整（用 `schedule-worktrack-skill`）
-- 完全新建 repo 目标（用 `set-harness-goal-skill`）
+- 完全新建 repo 目标（用 `harness-set-goal-skill`）
 - 已有活跃 worktrack 且需要判断下一步（用 `repo-status-skill` + `repo-whats-next-skill`）
 - 只需要刷新 repo 快照（用 `repo-refresh-skill`）
 

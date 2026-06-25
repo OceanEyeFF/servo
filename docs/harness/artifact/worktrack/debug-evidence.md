@@ -15,7 +15,7 @@ last_verified: 2026-06-13
 - Scope: `WorktrackScope`
 - Function: `Verify` / `Recover`
 - 上游输入: 原始日志、命令输出、复现步骤、失败截图或外部错误报告
-- 下游消费: `review-evidence-skill`、`test-evidence-skill`、`recover-worktrack-skill`、`gate-skill`
+- 下游消费: `worktrack-review-evidence-skill`、`worktrack-test-evidence-skill`、`worktrack-recover-skill`、`worktrack-gate-skill`
 
 Debug Evidence 不替代 Gate Evidence。它只回答"调试观察到什么、哪些事实已确认、哪些假设被排除"。
 
@@ -52,4 +52,4 @@ Gate 消费 Debug Evidence 时应检查：
 - remaining unknowns 是否阻塞 verdict
 - next_debug_action 是否仍在当前 Worktrack Contract 范围内
 
-Debug Evidence 不足时，Gate verdict 应为 `blocked` 或路由到 `recover-worktrack-skill`，不得把未确认根因当成已验证事实写回长期文档层。
+Debug Evidence 不足时，Gate verdict 应为 `blocked` 或路由到 `worktrack-recover-skill`，不得把未确认根因当成已验证事实写回长期文档层。

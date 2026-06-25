@@ -13,7 +13,7 @@ last_verified: 2026-06-23
 
 | 文档 | Skill | Scope | Function |
 |------|-------|-------|----------|
-| [init-milestone-skill.md](./init-milestone-skill.md) | Init Milestone Skill | RepoScope | Milestone 初始化/注册算子 |
+| [milestone-init-skill.md](./milestone-init-skill.md) | Init Milestone Skill | RepoScope | Milestone 初始化/注册算子 |
 | [milestone-status-skill.md](./milestone-status-skill.md) | Milestone Status Skill | RepoScope | Milestone 聚合观测/验收分析器（Sensor） |
 | — | milestone-gate | RepoScope | Milestone Gate 两层集成验收（Orchestrator） |
 | — | milestone-blackbox-check | RepoScope | Gate Layer 1 — blackbox 轴检查 |
@@ -24,7 +24,7 @@ last_verified: 2026-06-23
 ## Skill 关系
 
 ```
-init-milestone-skill                    milestone-status-skill (Sensor)
+milestone-init-skill                    milestone-status-skill (Sensor)
 ┌──────────────────────┐              ┌──────────────────────┐
 │ 创建/注册 Milestone   │              │ 观测进度 + handback   │
 │ 处理 latest-override  │   创建后     │ worktrack_list_finished?│
@@ -50,7 +50,7 @@ init-milestone-skill                    milestone-status-skill (Sensor)
                           └──────────────────────────┘
 ```
 
-- **init-milestone-skill**：写操作，创建和激活 milestone
+- **milestone-init-skill**：写操作，创建和激活 milestone
 - **milestone-status-skill**：读操作，观测和分析 milestone 状态（Sensor）
 - **milestone-gate**：Gate orchestrator，仅在 worktrack_list_finished 时触发
 - **4 轴检查**：Layer 1 隔离 SubAgent，并行执行、轴间不可见
@@ -59,7 +59,7 @@ init-milestone-skill                    milestone-status-skill (Sensor)
 
 canonical executable source：
 
-- [../../../../product/harness/skills/init-milestone-skill/SKILL.md](../../../../product/harness/skills/init-milestone-skill/SKILL.md)
+- [../../../../product/harness/skills/milestone-init-skill/SKILL.md](../../../../product/harness/skills/milestone-init-skill/SKILL.md)
 - [../../../../product/harness/skills/milestone-status-skill/SKILL.md](../../../../product/harness/skills/milestone-status-skill/SKILL.md)
 - [../../../../product/harness/skills/milestone-gate/SKILL.md](../../../../product/harness/skills/milestone-gate/SKILL.md)
 - [../../../../product/harness/skills/milestone-blackbox-check/SKILL.md](../../../../product/harness/skills/milestone-blackbox-check/SKILL.md)
@@ -78,7 +78,7 @@ canonical executable source：
 
 | 时机 | 绑定 Skill |
 |------|-----------|
-| RepoScope.Decide 建议 create/activate milestone | `init-milestone-skill` |
+| RepoScope.Decide 建议 create/activate milestone | `milestone-init-skill` |
 | RepoScope.Observe 有 active milestone | `milestone-status-skill` |
 | worktrack_list_finished → Gate 触发 | `milestone-gate`（SubAgent delegated 推荐） |
 | Worktrack closeout 后检查 milestone 进度 | `milestone-status-skill` |

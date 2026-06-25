@@ -60,14 +60,17 @@ target repo root/
 | 属性 | 值 |
 |------|-----|
 | 路径 | `<targetRepoRoot>/.servo/` |
-| 创建者 | Harness 初始化流程（`set-harness-goal-skill`） |
+| 创建者 | Harness 初始化流程（`harness-set-goal-skill`） |
 | 管理方式 | Harness 控制回路在运行时读写 |
 | 是否受 installer 管理 | **否**——`prune --all` 不删除 `.servo/` |
 | 生命周期 | 独立于 installer payload；可手动删除以重置 Harness 状态 |
 
 `.servo/` 目录包含：
 
-- `control-state.md` — Harness 控制面配置与状态
+- `control-state.md` — Harness 跨 scope 控制记忆（Handback Guard, Approval Boundary, Linked Formal Documents, Autonomy Ledger）
+- `operator-config.md` — 人类可调控制配置（SubAgent 模式、自动性、分支策略）
+- `control-state-repo.md` — Repo + Milestone 级控制状态
+- `control-state-wt.md` — Worktrack 级控制状态
 - `goal-charter.md` — Repo 目标章程
 - `repo/` — 仓库级快照与 backlog
 - `worktrack/` — 当前 worktrack 合同、任务队列与证据
@@ -148,18 +151,21 @@ servo/           ← 用户自有（target repo 本身）
 │
 ├── .agents/skills/                ← deploy target（installer 管理）
 │   ├── servo-harness-skill/          ← 受管 skill payload
-│   ├── servo-close-worktrack-skill/  ← 受管 skill payload
-│   ├── servo-gate-skill/             ← 受管 skill payload
+│   ├── servo-worktrack-close-skill/  ← 受管 skill payload
+│   ├── worktrack-gate-skill/             ← 受管 skill payload
 │   └── servo-*                       ← 当前 agents 受管 skill payload
 │
 ├── .claude/skills/                ← deploy target（installer 管理）
 │   ├── harness-skill/             ← 受管 skill payload
-│   ├── close-worktrack-skill/     ← 受管 skill payload
-│   ├── gate-skill/                ← 受管 skill payload
+│   ├── worktrack-close-skill/     ← 受管 skill payload
+│   ├── worktrack-gate-skill/                ← 受管 skill payload
 │   └── *                          ← 所有目录均为受管
 │
 ├── .servo/                           ← 运行时控制状态（非 installer payload）
-│   ├── control-state.md           ← Harness 控制面配置
+│   ├── control-state.md           ← Harness 跨 scope 控制记忆
+│   ├── operator-config.md         ← 人类可调控制配置
+│   ├── control-state-repo.md      ← Repo + Milestone 级控制状态
+│   ├── control-state-wt.md        ← Worktrack 级控制状态
 │   ├── goal-charter.md            ← Repo 目标章程
 │   ├── repo/                      ← 仓库级快照与 backlog
 │   ├── worktrack/                 ← 当前 worktrack artifacts
@@ -181,7 +187,7 @@ servo/           ← 用户自有（target repo 本身）
 | 重置所有受管 skill 到当前版本 | `servo-installer install --backend bundle` | 仅 `.agents/skills/` 和 `.claude/skills/` |
 | 完全清理 installer 部署产物 | `servo-installer prune --all --backend bundle` | 仅上述两个 skills 目录 |
 | 将旧 `aw-*` agents skill 目录收敛到 `servo-*` | `servo-installer update --backend agents --yes` 或 runtime 迁移时加 `--reinstall` | 仅 `.agents/skills/` 受管目录 |
-| 重置 Harness 控制状态 | `rm -rf .servo/` 然后重新 `set-harness-goal-skill` | 仅 `.servo/`，不影响源码和文档 |
+| 重置 Harness 控制状态 | `rm -rf .servo/` 然后重新 `harness-set-goal-skill` | 仅 `.servo/`，不影响源码和文档 |
 | 升级旧版 control state | 按 [`.aw` Runtime Upgrade Contract](../contracts/aw-runtime-upgrade-contract.md) 先 dry-run，再显式确认 | `.aw/` 作为源；`.servo/` 作为目标 |
 | 修改 skill 行为 | 编辑 `product/harness/skills/` 下的 canonical source | 下次 install 时生效 |
 | 修改文档 | 编辑 `docs/` 下的文件 | 正常的 git 工作流 |

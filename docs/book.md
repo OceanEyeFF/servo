@@ -117,7 +117,7 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 3. [harness/catalog/repo.md](./harness/catalog/repo.md)
 4. [harness/catalog/worktrack.md](./harness/catalog/worktrack.md)
 5. [harness/catalog/milestone/README.md](./harness/catalog/milestone/README.md)
-6. [harness/catalog/milestone/init-milestone-skill.md](./harness/catalog/milestone/init-milestone-skill.md)
+6. [harness/catalog/milestone/milestone-init-skill.md](./harness/catalog/milestone/milestone-init-skill.md)
 7. [harness/catalog/milestone/milestone-status-skill.md](./harness/catalog/milestone/milestone-status-skill.md)
 
 #### 2.5 工作流族（Workflow Families）

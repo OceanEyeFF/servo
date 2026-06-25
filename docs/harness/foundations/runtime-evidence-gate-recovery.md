@@ -52,6 +52,8 @@ Recover 只在 gate、状态估计或 authority boundary 阻断时触发。
 - `return RepoScope`
 - `wait-for-approval`
 
+> 注：`return RepoScope` 与 `replan` 语义等价（replan 设置 scope → RepoScope, function → Observe）；`wait-for-approval` 是权限边界模型的元动作，非独立 recovery mode。操作文档（harness-skill §12, worktrack-recover-skill）统一使用 5 种模式：retry, rollback, split_worktrack, refresh_baseline, replan。
+
 恢复动作说明必须覆盖：
 
 - 触发原因

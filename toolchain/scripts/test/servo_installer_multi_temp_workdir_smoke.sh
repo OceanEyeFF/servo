@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat >&2 <<'USAGE'
+	cat >&2 <<'USAGE'
 usage: servo_installer_multi_temp_workdir_smoke.sh [--output-dir DIR] [--skip-remote]
 
 Packs the current repository as a local servo-installer .tgz, then runs the
@@ -21,126 +21,126 @@ output_dir=""
 skip_remote="false"
 
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --output-dir)
-      output_dir="${2:-}"
-      if [[ -z "$output_dir" ]]; then
-        usage
-        exit 2
-      fi
-      shift 2
-      ;;
-    --skip-remote)
-      skip_remote="true"
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "unknown argument: $1" >&2
-      usage
-      exit 2
-      ;;
-  esac
+	case "$1" in
+	--output-dir)
+		output_dir="${2:-}"
+		if [[ -z "$output_dir" ]]; then
+			usage
+			exit 2
+		fi
+		shift 2
+		;;
+	--skip-remote)
+		skip_remote="true"
+		shift
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		echo "unknown argument: $1" >&2
+		usage
+		exit 2
+		;;
+	esac
 done
 
 repo_root="$(git rev-parse --show-toplevel)"
 if [[ -z "$output_dir" ]]; then
-  output_dir="$(mktemp -d)"
+	output_dir="$(mktemp -d)"
 else
-  mkdir -p "$output_dir"
-  output_dir="$(cd "$output_dir" && pwd)"
+	mkdir -p "$output_dir"
+	output_dir="$(cd "$output_dir" && pwd)"
 fi
 
 targets_root="$output_dir/targets"
 evidence_root="$output_dir/evidence"
 npm_state_root="$output_dir/npm-state"
 mkdir -p "$targets_root" "$evidence_root" "$npm_state_root/cache" "$npm_state_root/tmp" "$npm_state_root/home"
-printf 'audit=false\nfund=false\nupdate-notifier=false\n' > "$npm_state_root/npmrc"
+printf 'audit=false\nfund=false\nupdate-notifier=false\n' >"$npm_state_root/npmrc"
 
 package_path="$(
-  cd "$repo_root"
-  NPM_CONFIG_CACHE="$npm_state_root/cache" \
-    NPM_CONFIG_TMP="$npm_state_root/tmp" \
-    NPM_CONFIG_USERCONFIG="$npm_state_root/npmrc" \
-    HOME="$npm_state_root/home" \
-    "$repo_root/toolchain/scripts/test/npm_pack_tarball.sh" "$output_dir"
+	cd "$repo_root"
+	NPM_CONFIG_CACHE="$npm_state_root/cache" \
+		NPM_CONFIG_TMP="$npm_state_root/tmp" \
+		NPM_CONFIG_USERCONFIG="$npm_state_root/npmrc" \
+		HOME="$npm_state_root/home" \
+		"$repo_root/toolchain/scripts/test/npm_pack_tarball.sh" "$output_dir"
 )"
 
-node --version > "$output_dir/node.version"
-npm --version > "$output_dir/npm.version"
-git -C "$repo_root" rev-parse --abbrev-ref HEAD > "$output_dir/git.branch"
-git -C "$repo_root" rev-parse HEAD > "$output_dir/git.commit"
+node --version >"$output_dir/node.version"
+npm --version >"$output_dir/npm.version"
+git -C "$repo_root" rev-parse --abbrev-ref HEAD >"$output_dir/git.branch"
+git -C "$repo_root" rev-parse HEAD >"$output_dir/git.commit"
 
 target_specs=(
-  "empty-local|"
+	"empty-local|"
 )
 
 if [[ "$skip_remote" != "true" ]]; then
-  target_specs+=(
-    "t1-ai|https://github.com/OceanEyeFF/T1.AI.git"
-    "novel-agents|https://github.com/OceanEyeFF/novel-agents.git"
-  )
+	target_specs+=(
+		"t1-ai|https://github.com/OceanEyeFF/T1.AI.git"
+		"novel-agents|https://github.com/OceanEyeFF/novel-agents.git"
+	)
 else
-  target_specs+=(
-    "empty-beta|"
-    "empty-gamma|"
-  )
+	target_specs+=(
+		"empty-beta|"
+		"empty-gamma|"
+	)
 fi
 
 run_aw() {
-  local target_repo="$1"
-  shift
-  (
-    cd "$target_repo"
-    HOME="$npm_state_root/home" \
-      NPM_CONFIG_CACHE="$npm_state_root/cache" \
-      NPM_CONFIG_TMP="$npm_state_root/tmp" \
-      NPM_CONFIG_USERCONFIG="$npm_state_root/npmrc" \
-      SERVO_HARNESS_REPO_ROOT="" \
-      SERVO_HARNESS_TARGET_REPO_ROOT="" \
-      npm exec --yes --package "$package_path" -- servo-installer "$@"
-  )
+	local target_repo="$1"
+	shift
+	(
+		cd "$target_repo"
+		HOME="$npm_state_root/home" \
+			NPM_CONFIG_CACHE="$npm_state_root/cache" \
+			NPM_CONFIG_TMP="$npm_state_root/tmp" \
+			NPM_CONFIG_USERCONFIG="$npm_state_root/npmrc" \
+			SERVO_HARNESS_REPO_ROOT="" \
+			SERVO_HARNESS_TARGET_REPO_ROOT="" \
+			npm exec --yes --package "$package_path" -- servo-installer "$@"
+	)
 }
 
 summary_tsv="$output_dir/summary.tsv"
-printf 'target\turl\ttarget_repo\tresult\tpackage_path\n' > "$summary_tsv"
+printf 'target\turl\ttarget_repo\tresult\tpackage_path\n' >"$summary_tsv"
 
 for spec in "${target_specs[@]}"; do
-  IFS='|' read -r target_name target_url <<< "$spec"
-  target_repo="$targets_root/$target_name"
-  target_evidence="$evidence_root/$target_name"
-  mkdir -p "$target_evidence"
+	IFS='|' read -r target_name target_url <<<"$spec"
+	target_repo="$targets_root/$target_name"
+	target_evidence="$evidence_root/$target_name"
+	mkdir -p "$target_evidence"
 
-  if [[ -n "$target_url" ]]; then
-    git clone --depth 1 "$target_url" "$target_repo" > "$target_evidence/clone.out" 2> "$target_evidence/clone.err"
-    git -C "$target_repo" remote set-url --push origin "DISABLED_BY_AW_TEMP_SMOKE_NO_PUSH" > "$target_evidence/remote-push-guard.out" 2> "$target_evidence/remote-push-guard.err"
-    git -C "$target_repo" remote -v > "$target_evidence/remotes.after-guard.out"
-  else
-    mkdir -p "$target_repo"
-    git -C "$target_repo" init > "$target_evidence/git-init.out" 2> "$target_evidence/git-init.err"
-  fi
+	if [[ -n "$target_url" ]]; then
+		git clone --depth 1 "$target_url" "$target_repo" >"$target_evidence/clone.out" 2>"$target_evidence/clone.err"
+		git -C "$target_repo" remote set-url --push origin "DISABLED_BY_AW_TEMP_SMOKE_NO_PUSH" >"$target_evidence/remote-push-guard.out" 2>"$target_evidence/remote-push-guard.err"
+		git -C "$target_repo" remote -v >"$target_evidence/remotes.after-guard.out"
+	else
+		mkdir -p "$target_repo"
+		git -C "$target_repo" init >"$target_evidence/git-init.out" 2>"$target_evidence/git-init.err"
+	fi
 
-  run_aw "$target_repo" --help > "$target_evidence/help.out"
-  run_aw "$target_repo" --version > "$target_evidence/version.out"
+	run_aw "$target_repo" --help >"$target_evidence/help.out"
+	run_aw "$target_repo" --version >"$target_evidence/version.out"
 
-  if run_aw "$target_repo" tui > "$target_evidence/tui.out" 2> "$target_evidence/tui.err"; then
-    echo "expected servo-installer tui to require an interactive terminal for $target_name" >&2
-    exit 1
-  fi
-  test ! -s "$target_evidence/tui.out"
-  grep -F "servo-installer tui requires an interactive terminal" "$target_evidence/tui.err" > "$target_evidence/tui.guard"
+	if run_aw "$target_repo" tui >"$target_evidence/tui.out" 2>"$target_evidence/tui.err"; then
+		echo "expected servo-installer tui to require an interactive terminal for $target_name" >&2
+		exit 1
+	fi
+	test ! -s "$target_evidence/tui.out"
+	grep -F "servo-installer tui requires an interactive terminal" "$target_evidence/tui.err" >"$target_evidence/tui.guard"
 
-  run_aw "$target_repo" diagnose --backend agents --json > "$target_evidence/diagnose.before.json"
-  run_aw "$target_repo" update --backend agents --json > "$target_evidence/update.dry-run.json"
-  run_aw "$target_repo" install --backend agents > "$target_evidence/install.out"
-  run_aw "$target_repo" verify --backend agents > "$target_evidence/verify.out"
-  run_aw "$target_repo" update --backend agents --yes > "$target_evidence/update.apply.out"
-  run_aw "$target_repo" diagnose --backend agents --json > "$target_evidence/diagnose.after.json"
+	run_aw "$target_repo" diagnose --backend agents --json >"$target_evidence/diagnose.before.json"
+	run_aw "$target_repo" update --backend agents --json >"$target_evidence/update.dry-run.json"
+	run_aw "$target_repo" install --backend agents >"$target_evidence/install.out"
+	run_aw "$target_repo" verify --backend agents >"$target_evidence/verify.out"
+	run_aw "$target_repo" update --backend agents --yes >"$target_evidence/update.apply.out"
+	run_aw "$target_repo" diagnose --backend agents --json >"$target_evidence/diagnose.after.json"
 
-  node - "$repo_root" "$target_repo" "$target_evidence/diagnose.before.json" "$target_evidence/update.dry-run.json" "$target_evidence/diagnose.after.json" <<'NODE'
+	node - "$repo_root" "$target_repo" "$target_evidence/diagnose.before.json" "$target_evidence/update.dry-run.json" "$target_evidence/diagnose.after.json" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -196,32 +196,32 @@ if (!before.source_root || !after.source_root) {
 }
 NODE
 
-  printf '%s\t%s\t%s\tpassed\t%s\n' "$target_name" "${target_url:-local-empty}" "$target_repo" "$package_path" >> "$summary_tsv"
+	printf '%s\t%s\t%s\tpassed\t%s\n' "$target_name" "${target_url:-local-empty}" "$target_repo" "$package_path" >>"$summary_tsv"
 done
 
 legacy_summary_tsv="$output_dir/legacy-migration-summary.tsv"
-printf 'scenario\ttarget_repo\tresult\n' > "$legacy_summary_tsv"
+printf 'scenario\ttarget_repo\tresult\n' >"$legacy_summary_tsv"
 
 legacy_aw_only_target="$targets_root/legacy-aw-only-中文"
 legacy_aw_only_evidence="$evidence_root/legacy-aw-only"
 mkdir -p "$legacy_aw_only_target/.aw/worktrack" "$legacy_aw_only_evidence"
-git -C "$legacy_aw_only_target" init > "$legacy_aw_only_evidence/git-init.out" 2> "$legacy_aw_only_evidence/git-init.err"
-cat > "$legacy_aw_only_target/.aw/control-state.md" <<'EOF_AW_ONLY_CONTROL'
+git -C "$legacy_aw_only_target" init >"$legacy_aw_only_evidence/git-init.out" 2>"$legacy_aw_only_evidence/git-init.err"
+cat >"$legacy_aw_only_target/.aw/control-state.md" <<'EOF_AW_ONLY_CONTROL'
 # Legacy Control State
 
 - runtime: `.aw/control-state.md`
 - skill: aw-set-harness-goal-skill
 - branch: develop-aw
 EOF_AW_ONLY_CONTROL
-cat > "$legacy_aw_only_target/.aw/worktrack/contract.md" <<'EOF_AW_ONLY_CONTRACT'
+cat >"$legacy_aw_only_target/.aw/worktrack/contract.md" <<'EOF_AW_ONLY_CONTRACT'
 # Legacy Worktrack
 
 - scope: `.aw` runtime migration
 - branch: aw/demo-migration
 EOF_AW_ONLY_CONTRACT
 
-run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --yes > "$legacy_aw_only_evidence/migrate.out" 2> "$legacy_aw_only_evidence/migrate.err"
-run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --json > "$legacy_aw_only_evidence/migrate.rerun.json" 2> "$legacy_aw_only_evidence/migrate.rerun.err"
+run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --yes >"$legacy_aw_only_evidence/migrate.out" 2>"$legacy_aw_only_evidence/migrate.err"
+run_aw "$legacy_aw_only_target" migrate-runtime --from aw --to servo --json >"$legacy_aw_only_evidence/migrate.rerun.json" 2>"$legacy_aw_only_evidence/migrate.rerun.err"
 
 node - "$legacy_aw_only_target" "$legacy_aw_only_evidence/migrate.rerun.json" <<'NODE'
 const fs = require("node:fs");
@@ -248,7 +248,7 @@ if (!awControl.includes("`.aw/control-state.md`")) {
 if (!servoControl.includes("`.servo/control-state.md`")) {
   fail("migrated .servo control-state should rewrite .aw path references");
 }
-if (!servoControl.includes("servo-set-harness-goal-skill")) {
+if (!servoControl.includes("harness-set-goal-skill")) {
   fail("migrated .servo control-state should rewrite legacy skill reference");
 }
 if (!servoControl.includes("develop-aw")) {
@@ -262,41 +262,41 @@ if (rerun.state !== "already-migrated" || rerun.action !== "noop" || rerun.senti
   fail(`expected idempotent rerun, got state=${rerun.state} action=${rerun.action} sentinel=${rerun.sentinel_present}`);
 }
 NODE
-printf 'legacy-aw-only-nonascii-idempotent\t%s\tpassed\n' "$legacy_aw_only_target" >> "$legacy_summary_tsv"
+printf 'legacy-aw-only-nonascii-idempotent\t%s\tpassed\n' "$legacy_aw_only_target" >>"$legacy_summary_tsv"
 
 legacy_bundle_target="$targets_root/legacy-bundle"
 legacy_bundle_evidence="$evidence_root/legacy-bundle"
 mkdir -p \
-  "$legacy_bundle_target/.aw" \
-  "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill" \
-  "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill" \
-  "$legacy_bundle_evidence"
-git -C "$legacy_bundle_target" init > "$legacy_bundle_evidence/git-init.out" 2> "$legacy_bundle_evidence/git-init.err"
-printf 'runtime\n' > "$legacy_bundle_target/.aw/control-state.md"
-printf '# legacy agents close worktrack\n' > "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/SKILL.md"
-printf '# legacy claude close worktrack\n' > "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/SKILL.md"
-cat > "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_AGENTS_MARKER'
+	"$legacy_bundle_target/.aw" \
+	"$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill" \
+	"$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill" \
+	"$legacy_bundle_evidence"
+git -C "$legacy_bundle_target" init >"$legacy_bundle_evidence/git-init.out" 2>"$legacy_bundle_evidence/git-init.err"
+printf 'runtime\n' >"$legacy_bundle_target/.aw/control-state.md"
+printf '# legacy agents close worktrack\n' >"$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/SKILL.md"
+printf '# legacy claude close worktrack\n' >"$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/SKILL.md"
+cat >"$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_AGENTS_MARKER'
 {
   "marker_version": "aw-managed-skill-marker.v2",
   "backend": "agents",
-  "skill_id": "close-worktrack-skill",
+  "skill_id": "worktrack-close-skill",
   "payload_version": "agents-skill-payload.v0",
   "payload_fingerprint": "legacy-agents"
 }
 EOF_AGENTS_MARKER
-cat > "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_CLAUDE_MARKER'
+cat >"$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/aw.marker" <<'EOF_CLAUDE_MARKER'
 {
   "marker_version": "aw-managed-skill-marker.v2",
   "backend": "claude",
-  "skill_id": "close-worktrack-skill",
+  "skill_id": "worktrack-close-skill",
   "payload_version": "claude-skill-payload.v0",
   "payload_fingerprint": "legacy-claude"
 }
 EOF_CLAUDE_MARKER
 
-run_aw "$legacy_bundle_target" migrate-runtime --from aw --to servo --yes --reinstall --backend bundle > "$legacy_bundle_evidence/migrate.bundle.out" 2> "$legacy_bundle_evidence/migrate.bundle.err"
-run_aw "$legacy_bundle_target" verify --backend bundle > "$legacy_bundle_evidence/verify.bundle.out" 2> "$legacy_bundle_evidence/verify.bundle.err"
-run_aw "$legacy_bundle_target" diagnose --backend bundle --json > "$legacy_bundle_evidence/diagnose.bundle.json" 2> "$legacy_bundle_evidence/diagnose.bundle.err"
+run_aw "$legacy_bundle_target" migrate-runtime --from aw --to servo --yes --reinstall --backend bundle >"$legacy_bundle_evidence/migrate.bundle.out" 2>"$legacy_bundle_evidence/migrate.bundle.err"
+run_aw "$legacy_bundle_target" verify --backend bundle >"$legacy_bundle_evidence/verify.bundle.out" 2>"$legacy_bundle_evidence/verify.bundle.err"
+run_aw "$legacy_bundle_target" diagnose --backend bundle --json >"$legacy_bundle_evidence/diagnose.bundle.json" 2>"$legacy_bundle_evidence/diagnose.bundle.err"
 
 node - "$legacy_bundle_target" "$legacy_bundle_evidence/diagnose.bundle.json" <<'NODE'
 const fs = require("node:fs");
@@ -319,8 +319,8 @@ function mustNotExist(relativePath) {
 }
 mustExist(".aw/control-state.md");
 mustExist(".servo/control-state.md");
-mustExist(".agents/skills/servo-close-worktrack-skill/aw.marker");
-mustExist(".claude/skills/close-worktrack-skill/aw.marker");
+mustExist(".agents/skills/worktrack-close-skill/aw.marker");
+mustExist(".claude/skills/worktrack-close-skill/aw.marker");
 mustNotExist(".agents/skills/aw-close-worktrack-skill");
 mustNotExist(".claude/skills/aw-close-worktrack-skill");
 if (diagnose.bundle !== true || !diagnose.backends || !diagnose.backends.agents || !diagnose.backends.claude) {
@@ -339,17 +339,17 @@ if (diagnose.total_issues !== 0 || diagnose.total_managed <= 0) {
   fail(`expected clean bundle totals, got total_issues=${diagnose.total_issues} total_managed=${diagnose.total_managed}`);
 }
 NODE
-printf 'legacy-bundle-reinstall-convergence\t%s\tpassed\n' "$legacy_bundle_target" >> "$legacy_summary_tsv"
+printf 'legacy-bundle-reinstall-convergence\t%s\tpassed\n' "$legacy_bundle_target" >>"$legacy_summary_tsv"
 
 legacy_conflict_target="$targets_root/legacy-conflict"
 legacy_conflict_evidence="$evidence_root/legacy-conflict"
 mkdir -p "$legacy_conflict_target/.aw" "$legacy_conflict_target/.servo" "$legacy_conflict_evidence"
-git -C "$legacy_conflict_target" init > "$legacy_conflict_evidence/git-init.out" 2> "$legacy_conflict_evidence/git-init.err"
-printf 'legacy\n' > "$legacy_conflict_target/.aw/control-state.md"
-printf 'current\n' > "$legacy_conflict_target/.servo/control-state.md"
-if run_aw "$legacy_conflict_target" migrate-runtime --from aw --to servo --json > "$legacy_conflict_evidence/migrate.conflict.json" 2> "$legacy_conflict_evidence/migrate.conflict.err"; then
-  echo "expected packaged migrate-runtime to block .aw + existing .servo conflict" >&2
-  exit 1
+git -C "$legacy_conflict_target" init >"$legacy_conflict_evidence/git-init.out" 2>"$legacy_conflict_evidence/git-init.err"
+printf 'legacy\n' >"$legacy_conflict_target/.aw/control-state.md"
+printf 'current\n' >"$legacy_conflict_target/.servo/control-state.md"
+if run_aw "$legacy_conflict_target" migrate-runtime --from aw --to servo --json >"$legacy_conflict_evidence/migrate.conflict.json" 2>"$legacy_conflict_evidence/migrate.conflict.err"; then
+	echo "expected packaged migrate-runtime to block .aw + existing .servo conflict" >&2
+	exit 1
 fi
 
 node - "$legacy_conflict_target" "$legacy_conflict_evidence/migrate.conflict.json" <<'NODE'
@@ -366,53 +366,53 @@ if (servoControl !== "current\n") {
   throw new Error("conflict run must not rewrite existing .servo runtime");
 }
 NODE
-printf 'legacy-conflict-blocking\t%s\tpassed\n' "$legacy_conflict_target" >> "$legacy_summary_tsv"
+printf 'legacy-conflict-blocking\t%s\tpassed\n' "$legacy_conflict_target" >>"$legacy_summary_tsv"
 
 {
-  echo "# servo-installer Multi Temporary Workdir Smoke Report"
-  echo
-  echo "## Candidate"
-  echo
-  echo "- git branch: $(cat "$output_dir/git.branch")"
-  echo "- git commit: $(cat "$output_dir/git.commit")"
-  echo "- package path: $package_path"
-  echo "- node version: $(cat "$output_dir/node.version")"
-  echo "- npm version: $(cat "$output_dir/npm.version")"
-  echo "- evidence dir: $output_dir"
-  echo "- npm state dir: $npm_state_root"
-  echo "- skip remote: $skip_remote"
-  echo
-  echo "## Target Summary"
-  echo
-  echo "| Target | Source | Target repo | Result |"
-  echo "| --- | --- | --- | --- |"
-  tail -n +2 "$summary_tsv" | while IFS=$'\t' read -r target_name target_url target_repo result _package; do
-    echo "| $target_name | $target_url | $target_repo | $result |"
-  done
-  echo
-  echo "## Legacy Migration Regression Summary"
-  echo
-  echo "| Scenario | Target repo | Result |"
-  echo "| --- | --- | --- |"
-  tail -n +2 "$legacy_summary_tsv" | while IFS=$'\t' read -r scenario target_repo result; do
-    echo "| $scenario | $target_repo | $result |"
-  done
-  echo
-  echo "## Verdict"
-  echo
-  echo "- result: passed"
-  echo "- target_count: ${#target_specs[@]}"
-  echo "- legacy_migration_scenario_count: $(($(wc -l < "$legacy_summary_tsv") - 1))"
-  echo "- packaged_legacy_aw_only_migration: passed"
-  echo "- packaged_legacy_bundle_reinstall_convergence: passed"
-  echo "- packaged_legacy_conflict_blocking: passed"
-  echo "- source_root_checkout_leakage: not observed"
-  echo "- source_root_target_repo_leakage: not observed"
-  echo "- target_root_cross_workdir_leakage: not observed"
-  echo "- remote_mutation: not performed"
-  echo "- remote_push_guard: remote clone push URLs set to DISABLED_BY_AW_TEMP_SMOKE_NO_PUSH"
-  echo "- npm_publish_required: false"
-} > "$output_dir/report.md"
+	echo "# servo-installer Multi Temporary Workdir Smoke Report"
+	echo
+	echo "## Candidate"
+	echo
+	echo "- git branch: $(cat "$output_dir/git.branch")"
+	echo "- git commit: $(cat "$output_dir/git.commit")"
+	echo "- package path: $package_path"
+	echo "- node version: $(cat "$output_dir/node.version")"
+	echo "- npm version: $(cat "$output_dir/npm.version")"
+	echo "- evidence dir: $output_dir"
+	echo "- npm state dir: $npm_state_root"
+	echo "- skip remote: $skip_remote"
+	echo
+	echo "## Target Summary"
+	echo
+	echo "| Target | Source | Target repo | Result |"
+	echo "| --- | --- | --- | --- |"
+	tail -n +2 "$summary_tsv" | while IFS=$'\t' read -r target_name target_url target_repo result _package; do
+		echo "| $target_name | $target_url | $target_repo | $result |"
+	done
+	echo
+	echo "## Legacy Migration Regression Summary"
+	echo
+	echo "| Scenario | Target repo | Result |"
+	echo "| --- | --- | --- |"
+	tail -n +2 "$legacy_summary_tsv" | while IFS=$'\t' read -r scenario target_repo result; do
+		echo "| $scenario | $target_repo | $result |"
+	done
+	echo
+	echo "## Verdict"
+	echo
+	echo "- result: passed"
+	echo "- target_count: ${#target_specs[@]}"
+	echo "- legacy_migration_scenario_count: $(($(wc -l <"$legacy_summary_tsv") - 1))"
+	echo "- packaged_legacy_aw_only_migration: passed"
+	echo "- packaged_legacy_bundle_reinstall_convergence: passed"
+	echo "- packaged_legacy_conflict_blocking: passed"
+	echo "- source_root_checkout_leakage: not observed"
+	echo "- source_root_target_repo_leakage: not observed"
+	echo "- target_root_cross_workdir_leakage: not observed"
+	echo "- remote_mutation: not performed"
+	echo "- remote_push_guard: remote clone push URLs set to DISABLED_BY_AW_TEMP_SMOKE_NO_PUSH"
+	echo "- npm_publish_required: false"
+} >"$output_dir/report.md"
 
 echo "package_path=$package_path"
 echo "evidence_dir=$output_dir"

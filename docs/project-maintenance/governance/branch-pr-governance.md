@@ -84,7 +84,7 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 
 ## 九、发布后分支同步
 
-发布后若 `doc-catch-up-worker-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
+发布后若 `worktrack-doc-catch-up-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
 
 ## 十、相关文档
 

@@ -17,7 +17,7 @@ last_verified: 2026-06-15
 | ------ | -------- |
 | canonical skill source | 更新 `product/harness/skills/README.md` 的技能索引和文档追溯链；确认技能包内不依赖包外的运行时文档；若技能名称容易误用，采用带控制域前缀的规范名称 |
 | adapter payload | 同步 `agents` 和 `claude` 两个后端的 `payload.json`，核对 `skill_id`、`canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段；重命名时旧名只能保留为旧版别名，不可作为推荐入口 |
-| `.servo` template | 同步 `product/.servo_template/`、`set-harness-goal-skill/assets/`、`deploy_servo.js` 的生成和迁移路径，并补齐预览、执行和幂等性验证证据 |
+| `.servo` template | 同步 `product/.servo_template/`、`harness-set-goal-skill/assets/`、`deploy_servo.js` 的生成和迁移路径，并补齐预览、执行和幂等性验证证据 |
 | Harness artifact contract | 同步 `docs/harness/artifact/` 规范合同、技能模板、`.servo_template` 模板和对应的治理检查 |
 | operator-facing installer behavior | 同步 `docs/servo-installer/contracts/`、`docs/servo-installer/runbooks/`、`toolchain/scripts/deploy/README.md` 以及 CLI、TUI、包体烟测的命令说明 |
 | package and release program | 同步 npm 打包和发布预览、tarball 和 npx 烟测、发布通道不发版边界，以及必要的收尾证据 |

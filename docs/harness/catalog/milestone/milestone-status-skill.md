@@ -40,7 +40,7 @@ canonical executable source：
 - 不选择下一 Worktrack
 - 不初始化 worktrack
 - 不修改 version/release 状态
-- 不替代 gate-skill 的 verdict
+- 不替代 worktrack-gate-skill 的 verdict
 - 不膨胀 harness-skill（harness-skill 继续只做 supervisor）
 
 ## 输入

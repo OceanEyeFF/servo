@@ -5103,7 +5103,7 @@ test("migrate-runtime --yes rewrites .aw path references to .servo in text files
     // Verify .servo destination has rewritten paths
     const servoControl = readFileSync(join(root, ".servo", "control-state.md"), "utf8");
     assert.match(servoControl, /`\.servo\/control-state\.md`/);
-    assert.match(servoControl, /servo-set-harness-goal-skill/);
+    assert.match(servoControl, /harness-set-goal-skill/);
     assert.doesNotMatch(servoControl, /`\.aw\/control-state\.md`/);
     assert.doesNotMatch(servoControl, /aw-set-harness-goal-skill/);
 

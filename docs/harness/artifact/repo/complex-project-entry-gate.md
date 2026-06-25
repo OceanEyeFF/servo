@@ -87,10 +87,10 @@ Scanner output is evidence, not verdict. A scanner may report thresholds, counts
 The canonical local scanner command is:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
+PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 ```
 
-Claude backend installs the same scanner at `.claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
+Claude backend installs the same scanner at `.claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
 
 The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, and no destructive writes. The scanner skips secret-like paths and does not emit file contents, but it does bounded reads of non-secret-like text/code files for aggregate signals.
 
@@ -134,7 +134,7 @@ When weak docs prevent safe implementation, Harness should recommend a reinforce
 - `needed`: boolean. `true` means implementation-oriented create / activate / derive-worktrack remains blocked.
 - `recommendation_status`: `not_needed`, `recommended`, `required`, or `pending_operator_review`.
 - `recommendation_type`: `reinforcement_documentation`, `project_understanding`, or `N/A`.
-- `suggested_title` or `suggested_purpose`: enough brief content for `repo-whats-next-skill` / `init-milestone-skill` to hand back a candidate reinforcement Milestone without inventing scope.
+- `suggested_title` or `suggested_purpose`: enough brief content for `repo-whats-next-skill` / `milestone-init-skill` to hand back a candidate reinforcement Milestone without inventing scope.
 - `reason` or `recommendation_reason`: why weak docs or insufficient understanding block implementation.
 - `temporary_understanding_ref`: optional runtime evidence such as `.servo/repo/temporary-understanding.md`.
 - `evidence_refs`: supporting docs, scanner output, or programmer confirmations.
@@ -147,9 +147,9 @@ Weak-doc findings may use `.servo/repo/temporary-understanding.md` as runtime ev
 
 ## Consumers
 
-- `set-harness-goal-skill` may create or reference the gate during existing-code adoption when weak-doc or complex-project signals are found.
-- `pre-milestone-intake-skill` produces or updates `complex_project_entry_gate`, `operator_safety_policy`, and `dialog_review_questions` for high-risk Milestone requests.
-- `init-milestone-skill` consumes the gate and blocks create / upsert / activate when `milestone_blocking_decision` says to block.
+- `harness-set-goal-skill` may create or reference the gate during existing-code adoption when weak-doc or complex-project signals are found.
+- `milestone-pre-intake-skill` produces or updates `complex_project_entry_gate`, `operator_safety_policy`, and `dialog_review_questions` for high-risk Milestone requests.
+- `milestone-init-skill` consumes the gate and blocks create / upsert / activate when `milestone_blocking_decision` says to block.
 - `repo-whats-next-skill` checks the gate before deriving a Worktrack from an active Milestone.
 - `harness-skill` must not bind the next initializer when the gate has an unresolved Milestone-side blocker.
 

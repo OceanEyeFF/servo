@@ -169,9 +169,9 @@ SKILL_DEPLOYMENT_MAINTENANCE_REQUIRED_TERMS = [
 ]
 SUBAGENT_DEFAULT_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
-    "product/harness/skills/dispatch-skills/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
     "product/.servo_template/control-state.md",
     "docs/harness/artifact/control/control-state.md",
     "docs/harness/artifact/worktrack/contract.md",
@@ -179,8 +179,8 @@ SUBAGENT_DEFAULT_CONTRACT_PATHS = [
     "docs/harness/catalog/worktrack.md",
 ]
 EXECUTION_POLICY_TEMPLATE_REFERENCE_PATHS = [
-    "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
-    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "product/harness/skills/harness-set-goal-skill/assets/worktrack/contract.md",
+    "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
     "product/.servo_template/worktrack/contract.md",
 ]
 AGENTS_ADAPTER_SKILLS_DIR = "product/harness/adapters/agents/skills"
@@ -198,8 +198,8 @@ CLOSEOUT_ACCEPTANCE_GATE_STEPS = [
 ARTIFACT_SKILL_ALIGNMENTS = [
     {
         "contract": "docs/harness/artifact/worktrack/contract.md",
-        "skill": "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-        "label": "contract.md ↔ init-worktrack-skill template",
+        "skill": "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
+        "label": "contract.md ↔ worktrack-init-skill template",
         "fields": [
             "node_type",
             "baseline_form",
@@ -211,8 +211,8 @@ ARTIFACT_SKILL_ALIGNMENTS = [
     },
     {
         "contract": "docs/harness/artifact/worktrack/gate-evidence.md",
-        "skill": "product/harness/skills/gate-skill/SKILL.md",
-        "label": "gate-evidence.md ↔ gate-skill",
+        "skill": "product/harness/skills/worktrack-gate-skill/SKILL.md",
+        "label": "gate-evidence.md ↔ worktrack-gate-skill",
         "fields": [
             "verdict",
             "review_dimensions",
@@ -220,8 +220,8 @@ ARTIFACT_SKILL_ALIGNMENTS = [
     },
     {
         "contract": "docs/harness/artifact/worktrack/plan-task-queue.md",
-        "skill": "product/harness/skills/schedule-worktrack-skill/SKILL.md",
-        "label": "plan-task-queue.md ↔ schedule-worktrack-skill",
+        "skill": "product/harness/skills/worktrack-schedule-skill/SKILL.md",
+        "label": "plan-task-queue.md ↔ worktrack-schedule-skill",
         "fields": [
             "task_id",
             "status",
@@ -273,9 +273,9 @@ EXECUTION_POLICY_TEMPLATE_FORBIDDEN_PHRASES = [
 ]
 DISPATCH_CONTEXT_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/dispatch-packet.md",
-    "product/harness/skills/dispatch-skills/SKILL.md",
-    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
-    "product/harness/skills/generic-worker-skill/SKILL.md",
+    "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+    "product/harness/skills/worktrack-schedule-skill/SKILL.md",
+    "product/harness/skills/worktrack-generic-worker-skill/SKILL.md",
 ]
 DISPATCH_CONTEXT_REQUIRED_TERMS = [
     "shared_fact_pack",
@@ -290,8 +290,8 @@ RUNTIME_DISPATCH_PROFILE_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/dispatch-packet.md",
     "docs/harness/artifact/control/control-state.md",
     "product/harness/skills/harness-skill/SKILL.md",
-    "product/harness/skills/dispatch-skills/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
     "product/.servo_template/control-state.md",
 ]
 RUNTIME_DISPATCH_PROFILE_REQUIRED_TERMS = [
@@ -317,10 +317,10 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
 ]
 USER_DEFINED_SERVO_CONTROLS_PATHS = [
     "docs/harness/artifact/control/control-state.md",
-    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
     "product/.servo_template/control-state.md",
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
 ]
 USER_DEFINED_SERVO_CONTROLS_REQUIRED_TERMS = [
     "continuous_progression_permission",
@@ -398,7 +398,7 @@ HARNESS_ENTRY_PROFILE_ROUTE_HINT_REQUIRED_TERMS = [
 MILESTONE_RECOMMENDATION_FACT_FIRST_PATHS = [
     "docs/harness/scope/repo-scope.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
 ]
 MILESTONE_RECOMMENDATION_FACT_FIRST_REQUIRED_TERMS = [
     "observed_facts",
@@ -416,7 +416,7 @@ MILESTONE_WORKTRACK_PLANNING_SEPARATION_PATHS = [
     "docs/harness/foundations/runtime-control-loop.md",
     "docs/harness/artifact/worktrack/plan-task-queue.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
-    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-schedule-skill/SKILL.md",
 ]
 MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
     "Milestone",
@@ -432,10 +432,10 @@ MILESTONE_WORKTRACK_PLANNING_SEPARATION_REQUIRED_TERMS = [
 ]
 WORKTRACK_TASK_WINDOW_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/plan-task-queue.md",
-    "product/harness/skills/schedule-worktrack-skill/SKILL.md",
-    "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
+    "product/harness/skills/worktrack-schedule-skill/SKILL.md",
+    "product/harness/skills/worktrack-schedule-skill/templates/plan-task-queue.template.md",
     "product/.servo_template/worktrack/plan-task-queue.md",
-    "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+    "product/harness/skills/harness-set-goal-skill/assets/worktrack/plan-task-queue.md",
 ]
 WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
     "task window",
@@ -450,9 +450,9 @@ WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
     "stop_condition",
 ]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
-    "product/harness/skills/review-evidence-skill/SKILL.md",
+    "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
     "docs/harness/catalog/worktrack.md",
-    "product/harness/skills/set-harness-goal-skill/assets/worktrack/gate-evidence.md",
+    "product/harness/skills/harness-set-goal-skill/assets/worktrack/gate-evidence.md",
     "docs/harness/artifact/worktrack/gate-evidence.md",
 ]
 REVIEW_EVIDENCE_FOUR_LANE_REQUIRED_TERMS = [
@@ -514,7 +514,7 @@ WORKTRACK_BACKLOG_TRACEABILITY_REQUIRED_TERMS = [
 ]
 CLOSEOUT_RECORD_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/README.md",
-    "product/harness/skills/close-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-close-skill/SKILL.md",
 ]
 CLOSEOUT_RECORD_REQUIRED_TERMS = [
     "closeout_record",
@@ -538,10 +538,10 @@ CLOSEOUT_RECORD_REQUIRED_TERMS = [
 ]
 CLEANUP_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
-    "product/harness/skills/servo-cleanup-skill/SKILL.md",
+    "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
 ]
 CLEANUP_CONTRACT_REQUIRED_TERMS = [
-    "servo-cleanup-skill",
+    "worktrack-cleanup-skill",
     # Closeout pipeline terms: only checked in harness-skill (closeout pipeline authority)
 ]
 REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS = [
@@ -561,25 +561,25 @@ REPO_WHATS_NEXT_OVERVIEW_FALLBACK_REQUIRED_TERMS = [
 WORKTRACK_INTAKE_REVIEW_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
-    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-init-skill/SKILL.md",
     "docs/harness/scope/repo-scope.md",
     "docs/harness/foundations/runtime-control-loop.md",
     "docs/harness/artifact/worktrack/contract.md",
 ]
 WORKTRACK_INTAKE_REVIEW_TEMPLATE_PATHS = [
-    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-    "product/harness/skills/set-harness-goal-skill/assets/worktrack/contract.md",
+    "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
+    "product/harness/skills/harness-set-goal-skill/assets/worktrack/contract.md",
     "product/.servo_template/worktrack/contract.md",
 ]
 BRANCH_POLICY_FIELD_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/contract.md",
     "docs/harness/artifact/standard-fields.md",
-    "product/harness/skills/init-worktrack-skill/SKILL.md",
-    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
-    "product/harness/skills/close-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-init-skill/SKILL.md",
+    "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
+    "product/harness/skills/worktrack-close-skill/SKILL.md",
     "product/harness/skills/repo-refresh-skill/SKILL.md",
     "product/harness/skills/worktrack-status-skill/SKILL.md",
-    "product/harness/skills/recover-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-recover-skill/SKILL.md",
 ]
 BRANCH_POLICY_FIELD_REQUIRED_TERMS = [
     "baseline_branch",
@@ -591,7 +591,7 @@ BRANCH_POLICY_FIELD_REQUIRED_TERMS = [
 ]
 BRANCH_CONTEXT_GUARD_FIELD_PATHS = [
     "docs/harness/artifact/control/control-state.md",
-    "product/harness/skills/set-harness-goal-skill/assets/control-state.md",
+    "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
     "product/.servo_template/control-state.md",
 ]
 BRANCH_CONTEXT_GUARD_SEMANTIC_PATHS = [
@@ -653,13 +653,13 @@ WORKTRACK_INTAKE_REVIEW_VERDICTS = [
     "blocked",
 ]
 PRE_MILESTONE_INTAKE_CONTRACT_PATHS = [
-    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
     "docs/harness/catalog/repo.md",
 ]
 PRE_MILESTONE_INTAKE_PAYLOAD_PATHS = [
-    "product/harness/adapters/agents/skills/pre-milestone-intake-skill/payload.json",
-    "product/harness/adapters/claude/skills/pre-milestone-intake-skill/payload.json",
+    "product/harness/adapters/agents/skills/milestone-pre-intake-skill/payload.json",
+    "product/harness/adapters/claude/skills/milestone-pre-intake-skill/payload.json",
 ]
 PRE_MILESTONE_INTAKE_REQUIRED_TERMS = [
     "observed_facts",
@@ -700,8 +700,8 @@ PRE_MILESTONE_INTAKE_TEMPLATE_PAYLOAD_FILE = (
     "templates/pre-milestone-intake-review.template.md"
 )
 INIT_MILESTONE_INTAKE_HANDOFF_CONTRACT_PATHS = [
-    "product/harness/skills/init-milestone-skill/SKILL.md",
-    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "product/harness/skills/milestone-init-skill/SKILL.md",
+    "docs/harness/catalog/milestone/milestone-init-skill.md",
     "docs/harness/catalog/repo.md",
 ]
 INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
@@ -723,10 +723,10 @@ INIT_MILESTONE_INTAKE_HANDOFF_REQUIRED_TERMS = [
 MILESTONE_REVIEW_GATE_CONTRACT_PATHS = [
     "docs/harness/artifact/control/milestone.md",
     "docs/harness/artifact/control/control-state.md",
-    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
     "product/harness/skills/milestone-status-skill/SKILL.md",
-    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "docs/harness/catalog/milestone/milestone-init-skill.md",
     "docs/harness/catalog/repo.md",
 ]
 MILESTONE_REVIEW_GATE_REQUIRED_TERMS = [
@@ -753,8 +753,8 @@ MILESTONE_REVIEW_GATE_REQUIRED_TERMS = [
 MILESTONE_REVIEW_ROUTE_GUARD_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
-    "product/harness/skills/init-worktrack-skill/SKILL.md",
-    "product/harness/skills/init-worktrack-skill/templates/contract.template.md",
+    "product/harness/skills/worktrack-init-skill/SKILL.md",
+    "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
     "docs/harness/foundations/runtime-control-loop.md",
     "docs/harness/scope/repo-scope.md",
 ]
@@ -782,7 +782,7 @@ CONSERVATIVE_BACKFILL_CONTRACT_PATHS = [
     "docs/harness/artifact/control/milestone.md",
     "product/harness/skills/harness-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
-    "product/harness/skills/init-worktrack-skill/SKILL.md",
+    "product/harness/skills/worktrack-init-skill/SKILL.md",
     "product/harness/skills/milestone-status-skill/SKILL.md",
 ]
 CONSERVATIVE_BACKFILL_REQUIRED_TERMS = [
@@ -805,12 +805,12 @@ COMPLEX_PROJECT_ENTRY_GATE_CONTRACT_PATHS = [
     "docs/harness/scope/repo-scope.md",
     "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
     "docs/harness/catalog/repo.md",
-    "docs/harness/catalog/milestone/init-milestone-skill.md",
+    "docs/harness/catalog/milestone/milestone-init-skill.md",
     "product/harness/skills/harness-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
-    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/milestone-init-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
 ]
 COMPLEX_PROJECT_ENTRY_GATE_REQUIRED_TERMS = [
@@ -841,11 +841,11 @@ WEAK_DOC_REINFORCEMENT_ROUTING_CONTRACT_PATHS = [
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
     "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
     "docs/harness/catalog/repo.md",
-    "docs/harness/catalog/milestone/init-milestone-skill.md",
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/SKILL.md",
-    "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md",
-    "product/harness/skills/init-milestone-skill/SKILL.md",
+    "docs/harness/catalog/milestone/milestone-init-skill.md",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
+    "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
+    "product/harness/skills/milestone-init-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
 ]
 WEAK_DOC_REINFORCEMENT_ROUTING_TERMS = [
@@ -875,9 +875,9 @@ COMPLEX_PROJECT_ENTRY_GATE_BLOCKING_TERMS = [
     "must not be treated as clear",
     "must not be interpreted as clear",
 ]
-COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+COMPLEX_PROJECT_ENTRY_GATE_PRE_INTAKE_TEMPLATE_PATH = "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md"
 COMPLEXITY_SIGNAL_SCANNER_CONTRACT_PATHS = [
-    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
     "toolchain/scripts/test/README.md",
     "docs/harness/artifact/repo/complex-project-entry-gate.md",
@@ -901,7 +901,7 @@ COMPLEXITY_SIGNAL_SCANNER_REQUIRED_TERMS = [
     "code",
 ]
 COMPLEXITY_SIGNAL_SCANNER_SAFETY_PATHS = [
-    "product/harness/skills/set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
     "toolchain/scripts/test/test_complexity_signal_scanner.py",
 ]
 COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
@@ -914,15 +914,15 @@ COMPLEXITY_SIGNAL_SCANNER_SAFETY_TERMS = [
     "skipped_symlink_files",
 ]
 WEAK_DOC_TEMP_UNDERSTANDING_CONTRACT_PATHS = [
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
+    "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
     "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
     "docs/harness/catalog/repo.md",
 ]
 WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_PATHS = [
-    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
-    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
 ]
 WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS = [
     "temporary-understanding.md",
@@ -944,14 +944,14 @@ WEAK_DOC_TEMP_UNDERSTANDING_REQUIRED_TERMS = [
     "verified evidence",
     "not Goal Charter truth",
 ]
-WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = "product/harness/skills/set-harness-goal-skill/assets/repo/temporary-understanding.md"
+WEAK_DOC_TEMP_UNDERSTANDING_CANONICAL_PATH = "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md"
 WEAK_DOC_TEMP_UNDERSTANDING_PAYLOAD_FILE = "assets/repo/temporary-understanding.md"
 REPO_INIT_COMPLEX_GATE_CONTRACT_PATHS = [
-    "product/harness/skills/set-harness-goal-skill/SKILL.md",
-    "product/harness/skills/set-harness-goal-skill/assets/README.md",
-    "product/harness/skills/set-harness-goal-skill/assets/repo/README.md",
-    "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js",
+    "product/harness/skills/harness-set-goal-skill/SKILL.md",
+    "product/harness/skills/harness-set-goal-skill/assets/README.md",
+    "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
+    "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+    "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
 ]
 REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
     "complex-project-entry-gate.md",
@@ -968,14 +968,14 @@ REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
     "scanner output is evidence",
     "weak-doc",
     "scripts/complexity_signal_scanner.py",
-    ".agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
-    ".claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py",
+    ".agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+    ".claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
 ]
 REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
-    "product/harness/adapters/agents/skills/set-harness-goal-skill/payload.json",
-    "product/harness/adapters/claude/skills/set-harness-goal-skill/payload.json",
+    "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
+    "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
 ]
-REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = "product/harness/skills/set-harness-goal-skill/assets/repo/complex-project-entry-gate.md"
+REPO_INIT_COMPLEX_GATE_CANONICAL_PATH = "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md"
 REPO_INIT_COMPLEX_GATE_PAYLOAD_FILE = "assets/repo/complex-project-entry-gate.md"
 REPO_INIT_COMPLEX_GATE_SCANNER_PAYLOAD_FILE = "scripts/complexity_signal_scanner.py"
 REPO_INIT_COMPLEX_GATE_SAFE_DEFAULT_TERMS = [
@@ -2063,7 +2063,7 @@ def check_runtime_dispatch_profile_contract(
             "docs/harness/foundations/runtime-dispatch-contract.md",
             "docs/harness/artifact/worktrack/dispatch-packet.md",
             "product/harness/skills/harness-skill/SKILL.md",
-            "product/harness/skills/dispatch-skills/SKILL.md",
+            "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
         }:
             for term in RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS:
                 if term not in text:
@@ -2497,7 +2497,7 @@ def check_pre_milestone_intake_template_contract(
         required_payload_files = payload.get("required_payload_files")
         if (
             not isinstance(canonical_paths, list)
-            or "product/harness/skills/pre-milestone-intake-skill/templates/pre-milestone-intake-review.template.md"
+            or "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md"
             not in canonical_paths
         ):
             report.add_failure(
@@ -2681,7 +2681,7 @@ def check_complexity_signal_scanner_contract(
         wrapper_text = wrapper_path.read_text(encoding="utf-8")
         if (
             "CANONICAL_SCANNER" not in wrapper_text
-            or "set-harness-goal-skill" not in wrapper_text
+            or "harness-set-goal-skill" not in wrapper_text
         ):
             report.add_failure(
                 "complexity signal scanner wrapper must delegate to canonical distributable scanner: "

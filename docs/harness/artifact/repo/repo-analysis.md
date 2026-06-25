@@ -63,7 +63,7 @@ Repo Analysis 的上游刷新遵循项目基本面刷新触发规则（见 harne
 | Milestone closeout 后 | Milestone 验收完成后刷新 Snapshot 并更新 Pipeline；若 Goal Charter scope 变化，必须重新生成 Repo Analysis |
 | Git hash 变更后（新会话） | Harness Observe 阶段检测 hash 变化 → 绑定 `repo-refresh-skill` 刷新 baseline 观察 → 若 snapshot 过期则重新生成 |
 | Goal Charter 变更后 | 由 `repo-change-goal-skill` 触发；Charter 变化后必须重新生成 Repo Analysis（Charter 是最上游参考信号） |
-| `analysis_stale` 标记 | 任何下游 worktrack 的验证事实与当前 analysis 结论矛盾时，由 gate-skill 或 repo-refresh-skill 标记；下一轮 Decider 必须消费该标记 |
+| `analysis_stale` 标记 | 任何下游 worktrack 的验证事实与当前 analysis 结论矛盾时，由 worktrack-gate-skill 或 repo-refresh-skill 标记；下一轮 Decider 必须消费该标记 |
 
 **刷新动作不自动触发新 worktrack**；重新生成 Repo Analysis 后由 `repo-whats-next-skill` 决定是否需要新 worktrack。Analysis 是决策支撑 artifact，不是执行 contract。
 

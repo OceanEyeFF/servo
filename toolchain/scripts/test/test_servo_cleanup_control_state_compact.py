@@ -13,7 +13,7 @@ SCRIPT = (
     / "product"
     / "harness"
     / "skills"
-    / "servo-cleanup-skill"
+    / "worktrack-cleanup-skill"
     / "scripts"
     / "control_state_compact.py"
 )
@@ -23,7 +23,7 @@ SET_GOAL_CONTROL_STATE_ASSET = (
     / "product"
     / "harness"
     / "skills"
-    / "set-harness-goal-skill"
+    / "harness-set-goal-skill"
     / "assets"
     / "control-state.md"
 )

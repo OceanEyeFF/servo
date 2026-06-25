@@ -114,7 +114,7 @@ Use only `harness-skill` as the top-level control entry.
 This is a cold-start scenario: the repo is empty and `.servo/` does not exist.
 User requirement: Build a CLI Slay the Spire-lite. Reach full core system with combat, cards, deck, map, and events.
 Working rules: non-interactive test, each subsystem separate Worktrack, complete only first bounded slice unless continuous autonomy, use real files/tests.
-If `.servo/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
+If `.servo/` is missing, `harness-skill` should route to `harness-set-goal-skill`.
 ```
 
 ```bash
@@ -184,7 +184,7 @@ EOF
 
 读取每轮完整产物：`session.log`、Claude 最终输出、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
 
-观察点：是否从 `.servo/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、策略表现一致。
+观察点：是否从 `.servo/` 缺失进入 `harness-set-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `worktrack-dispatch-skill`、产生 review/test/rule-check/gate evidence、策略表现一致。
 
 ## 十一、继续与停止
 

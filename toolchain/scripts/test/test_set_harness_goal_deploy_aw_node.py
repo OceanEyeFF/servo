@@ -9,7 +9,7 @@ NODE_HELPER = (
     / "product"
     / "harness"
     / "skills"
-    / "set-harness-goal-skill"
+    / "harness-set-goal-skill"
     / "scripts"
     / "deploy_servo.js"
 )
@@ -20,7 +20,7 @@ AGENTS_PAYLOAD = (
     / "adapters"
     / "agents"
     / "skills"
-    / "set-harness-goal-skill"
+    / "harness-set-goal-skill"
     / "payload.json"
 )
 INSTALLER = REPO_ROOT / "toolchain" / "scripts" / "deploy" / "bin" / "servo-installer.js"
@@ -31,7 +31,7 @@ CLAUDE_PAYLOAD = (
     / "adapters"
     / "claude"
     / "skills"
-    / "set-harness-goal-skill"
+    / "harness-set-goal-skill"
     / "payload.json"
 )
 
@@ -382,7 +382,7 @@ def test_node_deploy_servo_installs_claude_skill_without_python_helper(tmp_path:
         tmp_path
         / ".claude"
         / "skills"
-        / "servo-set-harness-goal-skill"
+        / "harness-set-goal-skill"
     )
     assert (installed / "scripts" / "deploy_servo.js").is_file()
     assert not (installed / "scripts" / "deploy_aw.py").exists()
@@ -423,7 +423,7 @@ def test_installed_skills_can_initialize_servo_when_target_has_no_servo(
         target_repo
         / ".agents"
         / "skills"
-        / "servo-set-harness-goal-skill"
+        / "harness-set-goal-skill"
         / "scripts"
         / "deploy_servo.js"
     )
@@ -457,7 +457,7 @@ def test_installed_skills_can_initialize_servo_when_target_has_no_servo(
         target_repo
         / ".claude"
         / "skills"
-        / "servo-set-harness-goal-skill"
+        / "harness-set-goal-skill"
         / "scripts"
         / "deploy_servo.js"
     )
@@ -484,12 +484,12 @@ def test_set_harness_goal_payload_descriptors_use_node_helper() -> None:
     for payload_path in (AGENTS_PAYLOAD, CLAUDE_PAYLOAD):
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
         assert (
-            "product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js"
+            "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js"
             in payload["canonical_paths"]
         )
         assert "scripts/deploy_servo.js" in payload["required_payload_files"]
         assert (
-            "product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.py"
+            "product/harness/skills/harness-set-goal-skill/scripts/deploy_aw.py"
             not in payload["canonical_paths"]
         )
         assert "scripts/deploy_aw.py" not in payload["required_payload_files"]

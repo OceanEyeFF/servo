@@ -9,7 +9,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 
 把这个技能作为 `Codex` 中专门的 `工作追踪范围` 状态观察器使用。
 
-本技能实现 `WorktrackScope.Observe` 状态转移算子，对应 Harness 控制回路中的**状态估计**阶段。它是 `WorktrackScope` 控制回路的**传感器**层，负责通过读取当前工作追踪的正式产物形成结构化状态估计，为后续的 `Decide`（`schedule-worktrack-skill`）、`Dispatch`（`dispatch-skills`）、`Verify`（`review-evidence-skill` / `test-evidence-skill` / `rule-check-skill`）等算子提供输入。
+本技能实现 `WorktrackScope.Observe` 状态转移算子，对应 Harness 控制回路中的**状态估计**阶段。它是 `WorktrackScope` 控制回路的**传感器**层，负责通过读取当前工作追踪的正式产物形成结构化状态估计，为后续的 `Decide`（`schedule-worktrack-skill`）、`Dispatch`（`worktrack-dispatch-skill`）、`Verify`（`worktrack-review-evidence-skill` / `worktrack-test-evidence-skill` / `worktrack-rule-check-skill`）等算子提供输入。
 
 它实现一轮限定范围的 `工作追踪范围.观察中`，读取回答当前问题所需的最小标准产物，并向 `Harness` 返回结构化的 `WorktrackStateEstimate` 和一份观察交接结果。
 
@@ -19,7 +19,7 @@ description: 当 Harness 处于 WorktrackScope.observing，且需要一轮限定
 
 - `Worktrack Contract`
 - `Plan / Task Queue`
-- 当前 evidence（`review-evidence-skill`、`test-evidence-skill`、`rule-check-skill` 产出的结构化证据）
+- 当前 evidence（`worktrack-review-evidence-skill`、`worktrack-test-evidence-skill`、`worktrack-rule-check-skill` 产出的结构化证据）
 - 当前 branch 与 baseline 的差异状态
 - 当前 `Harness Control State`
 

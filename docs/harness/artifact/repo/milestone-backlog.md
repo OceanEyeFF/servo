@@ -8,13 +8,13 @@ last_verified: 2026-06-13
 
 # Milestone Backlog
 
-> `.servo/repo/milestone-backlog.md` 是 `RepoScope` 运行时 artifact，记录 Milestone Pipeline 中仍可行动的 live milestone：`planned` 与至多一个 `active`。完成或替换后的 milestone 移入 `.servo/repo/milestone-history.md`，不继续挤占 live backlog 视图。不是部署模板。由 `init-milestone-skill` 创建 live 条目，`harness-skill` 执行状态转移，`milestone-status-skill` 和 `repo-whats-next-skill` 作为 pipeline 推理输入。
+> `.servo/repo/milestone-backlog.md` 是 `RepoScope` 运行时 artifact，记录 Milestone Pipeline 中仍可行动的 live milestone：`planned` 与至多一个 `active`。完成或替换后的 milestone 移入 `.servo/repo/milestone-history.md`，不继续挤占 live backlog 视图。不是部署模板。由 `milestone-init-skill` 创建 live 条目，`harness-skill` 执行状态转移，`milestone-status-skill` 和 `repo-whats-next-skill` 作为 pipeline 推理输入。
 
 ## 定位
 
 - Scope: `RepoScope`
 - 性质: 运行时 artifact（非 git 追溯，`.servo/` 被 gitignore）
-- 产生时机: 首个 milestone 创建时由 `init-milestone-skill` 创建
+- 产生时机: 首个 milestone 创建时由 `milestone-init-skill` 创建
 - 更新时机: milestone 创建/状态转移/关闭时写入（upsert-by-milestone_id）
 - 消费方: `repo-status-skill`（pipeline 快照）、`milestone-status-skill`（pipeline 上下文）、`repo-whats-next-skill`（milestone-first 推理）
 - 历史承接: `.servo/repo/milestone-history.md` 保存 `completed` / `superseded` 条目，供依赖解析、审计和 stale marker 检查使用。
@@ -63,7 +63,7 @@ last_verified: 2026-06-13
 
 ## 维护约定
 
-- `init-milestone-skill` 按 `milestone_id` upsert 条目；programmer 和 harness 均可写入，时间戳最新者覆盖
+- `milestone-init-skill` 按 `milestone_id` upsert 条目；programmer 和 harness 均可写入，时间戳最新者覆盖
 - 条目按 priority（升序）→ created_at（升序）排列
 - `harness-skill` 在 milestone closeout 或 pipeline advancement 时更新条目 status；当 live 条目进入 `completed` 或 `superseded`，必须从 live backlog 移入 `.servo/repo/milestone-history.md`
 - `superseded` 条目保留在 history 中直到 programmer 手动清理

@@ -34,7 +34,7 @@ milestone-status-skill（sensor）
 以下情况不适用：
 
 - worktrack 未全部闭环 → 应返回 `not_ready`
-- 需要单个 WT 的 gate 判定 → 使用 `gate-skill`
+- 需要单个 WT 的 gate 判定 → 使用 `worktrack-gate-skill`
 - 需要进度计数 / handback 信号 → 使用 `milestone-status-skill`
 - 需要修改代码 / evidence → 禁止（只读）
 
