@@ -28,6 +28,22 @@ last_verified: 2026-06-13
 - control-state、gate、installer/publish、destructive action 默认 `deep`。
 - `deep` 等价于原四路 SubAgent 覆盖；无法真实并行分派时保留 lane 覆盖状态和 fallback 原因。
 
+## Node Type
+
+gate_criteria 因 node_type 而异，具体规则见 `worktrack-gate-skill` §按节点类型的判定差异。node_type 注册表见 `docs/harness/artifact/control/node-type-registry.md`。
+
+| Node Type | gate_criteria 覆盖维度 | 说明 |
+|-----------|----------------------|------|
+| research | review | 仅 review 维度，不强制 test/policy |
+| docs | review, policy | 文档类需 review + 策略合规 |
+| feature | review, test, policy | 全维度覆盖 |
+| fix | review, test | 修复类需 review + 测试验证 |
+| refactor | review, test, policy | 重构需 review + 测试 + 策略合规 |
+| config | review, policy | 配置变更需 review + 策略合规 |
+| ops | review, test | 运维类需 review + 验收测试 |
+
+> 完整 per-node-type gate criteria 映射以 `worktrack-gate-skill` §按节点类型的判定差异 为准。
+
 ## Verdict 字段定义
 
 Gate 推演结果以 `verdict` 字段记录，必须为以下四种值之一：
@@ -36,8 +52,8 @@ Gate 推演结果以 `verdict` 字段记录，必须为以下四种值之一：
 |---------|------|----------|
 | `pass` | 所有校验面（review/validation/policy）均通过，未发现任何需阻塞的问题 | 允许直接推进至下一状态（dispatching 或 closing） |
 | `soft-fail` | 存在可接受的低严重度问题，不影响核心功能、安全或架构一致性 | 可带条件推进，但必须记录吸收理由、问题清单及后续跟踪计划 |
-| `hard-fail` | 存在不可接受的中/高严重度问题，涉及正确性、安全性、结构性或合同违约 | 必须回退至 verifying 或 implementing 状态，不可强行推进 |
-| `blocked` | 缺失必要证据（如某证据面未完成）或外部依赖未满足，无法做出判定 | 保持当前上下文等待，不得重做；依赖满足后重新 intake |
+| `hard-fail` | 存在不可接受的中/高严重度问题，涉及正确性、安全性、结构性或合同违约 | 必须进入 Recover 阶段（retry/rollback/split_worktrack/refresh_baseline/replan），不可强行推进 |
+| `blocked` | 缺失必要证据（如某证据面未完成）或外部依赖未满足，无法做出判定 | 保持当前上下文等待；若为可恢复阻塞源（缺失证据可重采集、外部依赖可重获取），可触发 Recover 机制（retry/refresh_baseline/replan）；依赖满足后重新 intake |
 
 Verdict 判定流程：
 
@@ -56,6 +72,8 @@ Verdict 判定流程：
 | 中 | 可能影响可维护性、可读性或局部正确性，但不会导致系统级故障 | 缺少边界注释、非核心路径测试覆盖不足、命名不规范 | 否，触发 hard-fail |
 | 高 | 影响功能正确性、安全性、数据完整性或架构合同 | 逻辑错误、安全漏洞、路径/分层违规、合同未满足 | 否，触发 hard-fail |
 
+> **严重度符号映射**：部分 skill 使用 P1/P2/P3 符号体系。映射关系：`P1 = high`、`P2 = medium`、`P3 = low`。本 contract 中统一使用 low/medium/high。
+
 ### 吸收规则
 
 1. 低严重度问题可在 `soft-fail` verdict 中吸收（即在 soft-fail 下标注问题但允许推进）
@@ -66,7 +84,7 @@ Verdict 判定流程：
    - `absorption_rationale`：吸收理由（为什么可以带条件推进）
    - `follow_up_plan`：后续跟踪计划（何时、如何修复）
    - `follow_up_deadline`：跟踪截止时间（可选，但建议给出）
-4. 同一轮 gate 中累计低严重度问题超过 5 项时，应从 `soft-fail` 升级为 `hard-fail`（数量阈值的目的是防止低严重度问题累积到不可管理的程度）
+4. 低严重度问题的升级围栏：仅当低严重度发现跨越至少两个校验面（如同时出现于 review 和 validation 面），或形成系统性模式并实质性降低对验收或恢复的信心时，才应从 `soft-fail` 升级为 `hard-fail`。停留在单一层面且未形成威胁的低严重度发现必须保留在残留风险中。纯数量阈值的升级方式已被废止，详见 [worktrack-gate-skill 关卡判定规则](../../../../.agents/skills/worktrack-gate-skill/SKILL.md#关卡判定规则)。
 5. 吸收项必须在下一轮 verify gate 中被重新检查；未在截止时间前修复的吸收项在下一轮自动升级为中严重度
 
 ### 吸收记录示例
@@ -105,5 +123,15 @@ Gate evidence 中的每条 review 证据面应覆盖以下标准维度。每个�
 | test-review | correctness, completeness |
 | project-security-review | correctness, scope_boundary, structural_compliance |
 | complexity-performance-review | correctness, consistency |
+
+Gate 维度到 SubAgent Lane 的映射（用于 per-milestone gate 四轴判定时交叉引用）：
+
+| Gate Dimension (gate-skill) | Nearest SubAgent Lane | Coverage |
+|-----------------------------|----------------------|----------|
+| performance | complexity-performance-review | Direct |
+| architecture | static-semantic-review (structural_compliance) | Partial |
+| security | project-security-review | Direct |
+| quality | static-semantic-review (correctness, consistency) | Partial |
+| tests | test-review | Direct |
 
 每个 SubAgent 返回的 review 结果应包含每个维度的评分和具体发现。Gate 汇总时按维度取最严格评分（任一 SubAgent 报告 hard-fail 则该维度 hard-fail）。

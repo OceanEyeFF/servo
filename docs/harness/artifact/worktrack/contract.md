@@ -63,7 +63,7 @@ last_verified: 2026-06-13
 - `branch_source_ref`: 创建本 Worktrack branch 的来源 ref。普通非 Milestone worktrack 通常等于 `baseline_branch@HEAD`；Milestone-derived worktrack 通常等于 active Milestone branch head。
 - `worktrack_branch`: 本 Worktrack 的执行分支。
 - `integration_target_ref`: 本 Worktrack closeout 的直接集成目标。Milestone-derived worktrack 默认是 active Milestone branch；非 Milestone worktrack 可为 `baseline_branch`。
-- `closeout_target_ref`: close-worktrack-skill 实际用于 PR/merge/checkpoint 的目标 ref。默认等于 `integration_target_ref`。
+- `closeout_target_ref`: worktrack-close-skill 实际用于 PR/merge/checkpoint 的目标 ref。默认等于 `integration_target_ref`。
 - `final_baseline_branch`: Milestone final acceptance 后的最终主线目标；通常等于 `baseline_branch`。
 - `checkpoint_base_ref`: closeout/refreshed checkpoint 与哪一个 ref 比较；Worktrack closeout 默认比较 `closeout_target_ref`，Repo/Milestone final acceptance 再比较 `baseline_branch`。
 
@@ -80,7 +80,7 @@ branch_policy:
   checkpoint_base_ref: "ms/MS-20260605-004-branch-model@<hash>"
 ```
 
-若 active Milestone 尚未创建 `milestone_branch`，`init-worktrack-skill` 必须按当前批准的 Milestone branch policy 创建或同步它，或返回 blocked；不得静默从另一个 Milestone branch、随机当前分支或 stale branch 创建 Worktrack。
+若 active Milestone 尚未创建 `milestone_branch`，`worktrack-init-skill` 必须按当前批准的 Milestone branch policy 创建或同步它，或返回 blocked；不得静默从另一个 Milestone branch、随机当前分支或 stale branch 创建 Worktrack。
 
 `branch_source_ref`、`integration_target_ref` 与 `closeout_target_ref` 都是 contract-controlled 字段。调度、分派、验证、closeout 和 repo-refresh 只能消费这些字段，不得从当前分支名反推。若实际分支来源、PR target、merge target 或 checkpoint target 与合同不一致，必须标记 `checkpoint_policy_match: no` 并进入审批或 Recover。
 
@@ -132,4 +132,4 @@ Contract 模板中 `closeout_checklist` 字段清单（参见 [product/.servo_te
 - `intake_review_verdict`: `ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`。
 - `ready_for_worktrack_init`: 布尔值，只能在 verdict 为 `ready_for_worktrack_init` 且无阻塞时为 true。
 
-若 verdict 不是 `ready_for_worktrack_init`，`init-worktrack-skill` 不得创建分支、播种队列或交给执行载体；必须把控制权路由回 RepoScope 的观察、刷新、worktrack 调整或 handback 路径。
+若 verdict 不是 `ready_for_worktrack_init`，`worktrack-init-skill` 不得创建分支、播种队列或交给执行载体；必须把控制权路由回 RepoScope 的观察、刷新、worktrack 调整或 handback 路径。

@@ -46,7 +46,7 @@
 - suggested_milestone_action：create / activate / append_worktracks / upsert / N/A
 - 目标 milestone_id：
 - milestone brief boundary：
-- 是否需要 init-milestone-skill：
+- 是否需要 milestone-init-skill：
 - milestone approval boundary：
 
 ## 路由判定

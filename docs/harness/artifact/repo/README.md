@@ -17,6 +17,6 @@ last_verified: 2026-06-13
 - [goal-charter.md](./goal-charter.md)
 - [repo-analysis.md](./repo-analysis.md)
 - [snapshot-status.md](./snapshot-status.md)
-- [milestone-backlog.md](./milestone-backlog.md) — 运行时 artifact：记录 live Milestone Pipeline（planned/active），由 init-milestone-skill 创建条目，harness-skill 执行状态转移，milestone-status-skill 和 repo-whats-next-skill 作为 pipeline 推理输入
+- [milestone-backlog.md](./milestone-backlog.md) — 运行时 artifact：记录 live Milestone Pipeline（planned/active），由 milestone-init-skill 创建条目，harness-skill 执行状态转移，milestone-status-skill 和 repo-whats-next-skill 作为 pipeline 推理输入
 - [milestone-history.md](./milestone-history.md) — 运行时 artifact：记录 completed/superseded milestone 历史，供依赖解析、审计和 stale marker 检查使用
 - [worktrack-backlog.md](./worktrack-backlog.md) — 运行时 artifact：记录所有 worktrack 的完成状态（done/deferred/blocked/resolved），由 repo-refresh-skill 在 worktrack closeout 后写入，由 milestone-status-skill 在 Milestone Observe 时消费

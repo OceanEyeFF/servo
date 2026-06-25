@@ -61,7 +61,7 @@ npx servo-installer verify --backend agents
 在 Coding CLI 中调用：
 
 ```
-/set-harness-goal-skill
+/harness-set-goal-skill
 ```
 
 这一步会创建 `.servo/` 目录并生成 Goal Charter，定义仓库的长期目标、工程节点类型和系统不变量。

@@ -110,7 +110,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 1. 对每个 WT，检查 closeout record 是否包含以下三段：
    - `self_review_record`（来自 self-review-contract.md）
    - `gate_evidence`（implementation / validation / policy 三面）
-   - `closeout_gate_verdict`（gate-skill 产出的 verdict）
+   - `closeout_gate_verdict`（worktrack-gate-skill 产出的 verdict）
 2. 判定规则：
    - 任一 WT 缺失上述三段中任一段 → `hard_fail`
    - 所有 WT 三段完整 → `pass`

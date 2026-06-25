@@ -89,7 +89,7 @@ NPM_VERSION = json.loads((closeout_acceptance_gate.REPO_ROOT / "package.json").r
 NPM_VERSION_STDOUT = f"servo-installer {NPM_VERSION}\n"
 CLAUDE_SKILL_DIR_NAMES = closeout_acceptance_gate.CLAUDE_REQUIRED_PAYLOAD_SKILLS
 CLAUDE_TARGET_DIR_BY_SKILL = {
-    "set-harness-goal-skill": "servo-set-harness-goal-skill",
+    "harness-set-goal-skill": "harness-set-goal-skill",
 }
 
 
@@ -990,7 +990,7 @@ def test_run_test_gate_fails_on_unexpected_npm_packlist(monkeypatch, tmp_path) -
 def test_root_npm_package_packlist_rejects_forbidden_python_payload(monkeypatch, tmp_path) -> None:
     write_root_package_json(tmp_path)
     packed_paths = set(closeout_acceptance_gate.ROOT_NPM_REQUIRED_PACKAGE_FILES)
-    packed_paths.add("product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.py")
+    packed_paths.add("product/harness/skills/harness-set-goal-skill/scripts/deploy_aw.py")
 
     def fake_run_command(command: list[str], *, cwd: Path, extra_env: dict[str, str] | None = None) -> dict:
         assert command == ["npm", "pack", "--dry-run", "--json"]

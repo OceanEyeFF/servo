@@ -22,7 +22,7 @@ last_verified: 2026-06-13
 
 ## C-2: 控制状态约束
 
-- 变更 `Harness Control State` 的行为仅在 `Close`（`close-worktrack-skill`、`repo-refresh-skill`）、`SetGoal`（`set-harness-goal-skill`）或 `ChangeGoal`（`repo-change-goal-skill`）阶段合法
+- 变更 `Harness Control State` 的行为仅在 `Close`（`worktrack-close-skill`、`repo-refresh-skill`）、`SetGoal`（`harness-set-goal-skill`）或 `ChangeGoal`（`repo-change-goal-skill`）阶段合法
 - 其余所有 Skill 必须返回结构化输出供监督器（`harness-skill`）决策
 - 状态更新的唯一合法依据是经过 Gate 裁决后的判定结果；子代理的返回结果不能直接作为状态更新依据
 
@@ -40,13 +40,13 @@ last_verified: 2026-06-13
 | 阶段 | 算子 | 合法行为 | 禁止行为 |
 |------|------|---------|---------|
 | Observe | `repo-status-skill` / `worktrack-status-skill` / `milestone-status-skill` | 读取传感器数据，产出结构化状态估计 | 选择下一步动作、分派执行、输出 gate 判定 |
-| Decide | `repo-whats-next-skill` / `schedule-worktrack-skill` | 基于状态估计选择算子，产出路由建议 | 执行选中动作、变更控制状态、输出 gate 判定 |
-| Init | `init-worktrack-skill` | 创建分支、固定基准、构建约定、播种队列 | 实现、验证、关卡判定 |
-| Dispatch | `dispatch-skills` / `generic-worker-skill` | 绑定技能、打包任务、分派执行 | 算子选择、裁决判定 |
-| Verify | `review-evidence-skill` / `test-evidence-skill` / `rule-check-skill` | 收集对应维度的证据 | 输出最终关卡判定 |
-| Judge | `gate-skill` | 基于证据做 gate 判定，输出 verdict | 执行修复、重跑实现、变更控制状态 |
-| Recover | `recover-worktrack-skill` | 评估恢复路径、选择恢复策略 | 静默执行破坏性操作 |
-| Close | `close-worktrack-skill` / `repo-refresh-skill` | 收尾处理、代码仓库刷新 | 重新打开实现、重排计划 |
+| Decide | `repo-whats-next-skill` / `worktrack-schedule-skill` | 基于状态估计选择算子，产出路由建议 | 执行选中动作、变更控制状态、输出 gate 判定 |
+| Init | `worktrack-init-skill` | 创建分支、固定基准、构建约定、播种队列 | 实现、验证、关卡判定 |
+| Dispatch | `worktrack-dispatch-skill` / `worktrack-generic-worker-skill` | 绑定技能、打包任务、分派执行 | 算子选择、裁决判定 |
+| Verify | `worktrack-review-evidence-skill` / `worktrack-test-evidence-skill` / `worktrack-rule-check-skill` | 收集对应维度的证据 | 输出最终关卡判定 |
+| Judge | `worktrack-gate-skill` | 基于证据做 gate 判定，输出 verdict | 执行修复、重跑实现、变更控制状态 |
+| Recover | `worktrack-recover-skill` | 评估恢复路径、选择恢复策略 | 静默执行破坏性操作 |
+| Close | `worktrack-close-skill` / `repo-refresh-skill` | 收尾处理、代码仓库刷新 | 重新打开实现、重排计划 |
 
 ## C-5: 上游产出物约束
 

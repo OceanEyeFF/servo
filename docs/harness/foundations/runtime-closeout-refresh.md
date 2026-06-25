@@ -29,7 +29,7 @@ merge -> refresh repo snapshot -> update milestone progress -> cleanup -> return
 
 ## Closeout Record
 
-Worktrack `closeout_record` 不单独新增长期 artifact。它折叠在 `close-worktrack-skill` 的关闭报告与 `repo-refresh-skill` 的刷新交接中，并由 repo refresh 写入 repo 级 backlog / snapshot。
+Worktrack `closeout_record` 不单独新增长期 artifact。它折叠在 `worktrack-close-skill` 的关闭报告与 `repo-refresh-skill` 的刷新交接中，并由 repo refresh 写入 repo 级 backlog / snapshot。
 
 Closeout record 字段词汇由 [worktrack artifact entry](../artifact/worktrack/README.md#closeout-boundary) 和对应 skill 输出合同承接。本页只固定 closeout 运行语义，不复制字段清单。
 

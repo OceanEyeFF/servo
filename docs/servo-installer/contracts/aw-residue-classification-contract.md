@@ -21,7 +21,7 @@ The inventory found the important residue families in:
 - installer migration implementation under `toolchain/scripts/deploy/bin/servo-installer.js`
 - deploy tests and packaged/TUI smoke tests
 - servo-installer contracts, runbooks, references, and project-maintenance navigation docs
-- one canonical source marker file: `product/harness/skills/init-milestone-skill/aw.marker`
+- one canonical source marker file: `product/harness/skills/milestone-init-skill/aw.marker`
 
 ## Classification Categories
 
@@ -54,7 +54,7 @@ Every `.aw`, `aw-*`, or `aw.marker` occurrence in distribution-relevant paths mu
 | `docs/servo-installer/reference/tui-aw-runtime-migration-repro.md` | `.aw`, `aw.marker` | `historical-doc-only` | Allowed as v0.5.7 repro and residual-risk evidence; must not describe current behavior as still broken after the fix. |
 | `docs/book.md`, `docs/servo-installer/README.md`, and project-maintenance navigation docs | `.aw`, `aw-*` | `navigation-only` | Allowed only when linking to an allowed compatibility, runbook, reference, or contract document. |
 | deploy tests and smoke tests | `.aw`, `aw-*`, `aw.marker` | `test-fixture-only` | Allowed when asserting migration, compatibility, marker identity, conflict blocking, legacy convergence, or historical output handling. |
-| `product/harness/skills/set-harness-goal-skill/scripts/deploy_servo.js` marker exclusion | `aw.marker` | `marker-identity-contract` | Allowed when excluding runtime marker files from canonical skill packaging. |
+| `product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js` marker exclusion | `aw.marker` | `marker-identity-contract` | Allowed when excluding runtime marker files from canonical skill packaging. |
 
 ## Remediation-Required Rules
 
@@ -67,7 +67,7 @@ An occurrence is `remediation-required` when any of the following is true:
 - It appears in package payload or generated install content without a documented compatibility category from this contract.
 - It is a stale historical statement that contradicts current verified behavior, for example saying the fixed TUI path still does not run migration.
 
-The current inventory marked `product/harness/skills/init-milestone-skill/aw.marker` as a candidate `remediation-required` item because it was a zero-byte marker file in canonical skill source and appeared in the npm packlist. `WT-20260527-distribution-template-remediation` removed that source marker. Future occurrences of the same shape remain `remediation-required` unless a specific contract proves why the marker must exist in canonical source.
+The current inventory marked `product/harness/skills/milestone-init-skill/aw.marker` as a candidate `remediation-required` item because it was a zero-byte marker file in canonical skill source and appeared in the npm packlist. `WT-20260527-distribution-template-remediation` removed that source marker. Future occurrences of the same shape remain `remediation-required` unless a specific contract proves why the marker must exist in canonical source.
 
 ## Evidence Requirements
 

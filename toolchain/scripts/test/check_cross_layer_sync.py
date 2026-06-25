@@ -3,12 +3,12 @@
 
 Checks:
   1. artifact contract (docs/harness/artifact/worktrack/contract.md)
-     ↔ skill template (product/harness/skills/init-worktrack-skill/templates/contract.template.md)
+     ↔ skill template (product/harness/skills/worktrack-init-skill/templates/contract.template.md)
   2. tracked goal-charter template source
-     (product/harness/skills/set-harness-goal-skill/assets/goal-charter.md)
+     (product/harness/skills/harness-set-goal-skill/assets/goal-charter.md)
      ↔ node-type-registry (docs/harness/artifact/control/node-type-registry.md)
   3. control-state contract (docs/harness/artifact/control/control-state.md)
-     ↔ set-harness-goal template (product/harness/skills/set-harness-goal-skill/assets/control-state.md)
+     ↔ set-harness-goal template (product/harness/skills/harness-set-goal-skill/assets/control-state.md)
   4. plan-task-queue contract (docs/harness/artifact/worktrack/plan-task-queue.md)
      ↔ runtime and schedule skill templates
 """
@@ -29,22 +29,22 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 # ── file paths ──────────────────────────────────────────────────────────────────
 CONTRACT_PATH = "docs/harness/artifact/worktrack/contract.md"
 CONTRACT_TEMPLATE_PATH = (
-    "product/harness/skills/init-worktrack-skill/templates/contract.template.md"
+    "product/harness/skills/worktrack-init-skill/templates/contract.template.md"
 )
 GOAL_CHARTER_SOURCE_PATH = (
-    "product/harness/skills/set-harness-goal-skill/assets/goal-charter.md"
+    "product/harness/skills/harness-set-goal-skill/assets/goal-charter.md"
 )
 RUNTIME_CHARTER_PATH = ".servo/goal-charter.md"
 REGISTRY_PATH = "docs/harness/artifact/control/node-type-registry.md"
 CONTROL_STATE_CONTRACT_PATH = "docs/harness/artifact/control/control-state.md"
 CONTROL_STATE_TEMPLATE_PATH = (
-    "product/harness/skills/set-harness-goal-skill/assets/control-state.md"
+    "product/harness/skills/harness-set-goal-skill/assets/control-state.md"
 )
 PLAN_TASK_QUEUE_CONTRACT_PATH = "docs/harness/artifact/worktrack/plan-task-queue.md"
 PLAN_TASK_QUEUE_TEMPLATE_PATHS = [
     "product/.servo_template/worktrack/plan-task-queue.md",
-    "product/harness/skills/schedule-worktrack-skill/templates/plan-task-queue.template.md",
-    "product/harness/skills/set-harness-goal-skill/assets/worktrack/plan-task-queue.md",
+    "product/harness/skills/worktrack-schedule-skill/templates/plan-task-queue.template.md",
+    "product/harness/skills/harness-set-goal-skill/assets/worktrack/plan-task-queue.md",
 ]
 
 # ── key fields for check 1 ──────────────────────────────────────────────────────

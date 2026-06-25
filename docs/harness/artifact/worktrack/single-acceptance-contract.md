@@ -8,7 +8,7 @@ last_verified: "2026-06-23"
 ---
 # Worktrack Single-Acceptance Contract
 
-> 本 contract 定义单 worktrack 级别的验收步骤 (single-worktrack acceptance)，在 close-worktrack-skill 内执行，对照 worktrack contract 的 completion signals 逐条验证，产出结构化 single-acceptance verdict。
+> 本 contract 定义单 worktrack 级别的验收步骤 (single-worktrack acceptance)，在 worktrack-close-skill 内执行，对照 worktrack contract 的 completion signals 逐条验证，产出结构化 single-acceptance verdict。
 
 ## 一、定位
 
@@ -17,8 +17,8 @@ Single-acceptance 是 worktrack 级别的结构化验收，与 Milestone composi
 | 层级 | 执行者 | 时机 | 输入 | 输出 |
 |------|--------|------|------|------|
 | Self-Review | worktrack executor | closeout 前 | closeout_checklist | self-review record |
-| Single-Acceptance | close-worktrack-skill | closeout gate 前 | completion_signals | single-acceptance verdict |
-| Closeout Gate | gate-skill | merge 前 | all evidence | gate verdict |
+| Single-Acceptance | worktrack-close-skill | closeout gate 前 | completion_signals | single-acceptance verdict |
+| Closeout Gate | worktrack-gate-skill | merge 前 | all evidence | gate verdict |
 | Composite Acceptance | MS-20260623-003 | milestone 全 WT 闭环后 | N 个 single-acceptance verdicts | composite acceptance report |
 
 ## 二、Completion Signal → Verification Item 映射
@@ -28,13 +28,13 @@ Single-acceptance 以 worktrack contract 中的 `completion_signals` 为验收�
 ```yaml
 # 示例
 completion_signals:
-  - "close-worktrack-skill 包含 structured self-review 步骤"  # CS1
+  - "worktrack-close-skill 包含 structured self-review 步骤"  # CS1
 
 verification_items:
   - signal_ref: "CS1"
-    verification: "检查 close-worktrack-skill SKILL.md 是否包含 self-review 步骤引用"
+    verification: "检查 worktrack-close-skill SKILL.md 是否包含 self-review 步骤引用"
     evidence_type: "file_content_check"
-    evidence_path: ".agents/skills/servo-close-worktrack-skill/SKILL.md"
+    evidence_path: ".agents/skills/servo-worktrack-close-skill/SKILL.md"
 ```
 
 映射规则：
@@ -50,7 +50,7 @@ single_acceptance_verdict:
   worktrack_id: "WT-xxxx"
   milestone_id: "MS-xxxx"
   acceptance_timestamp: "ISO8601"
-  acceptor: "close-worktrack-skill"
+  acceptor: "worktrack-close-skill"
 
   completion_signals_checked: 6  # total signals checked
   completion_signals_passed: 5   # signals passed
@@ -60,7 +60,7 @@ single_acceptance_verdict:
     - item_id: "V1"
       signal_ref: "CS1"
       evidence_type: "file_content_check"
-      evidence_path: ".agents/skills/servo-close-worktrack-skill/SKILL.md"
+      evidence_path: ".agents/skills/servo-worktrack-close-skill/SKILL.md"
       verdict: "pass" | "fail" | "partial"
       detail: "description of what was found"
     # ... more items
@@ -100,7 +100,7 @@ overall_verdict
 
 ## 五、与 Closeout Pipeline 的集成
 
-Single-acceptance 在 close-worktrack-skill 中的位置：
+Single-acceptance 在 worktrack-close-skill 中的位置：
 
 ```text
 Self-Review
@@ -110,7 +110,7 @@ Single-Acceptance (本 contract 定义)    ← 新增步骤
     ├─ accepted / accepted_with_notes → Closeout Gate
     └─ blocked → handback / fix
     ↓
-Closeout Gate (gate-skill)
+Closeout Gate (worktrack-gate-skill)
     ↓
 PR → Merge → Cleanup → Repo Refresh
 ```
@@ -141,6 +141,6 @@ MS-20260623-003 负责：
 
 ## 七、Contract 引用
 
-- 本 contract 被 `close-worktrack-skill` 引用
+- 本 contract 被 `worktrack-close-skill` 引用
 - 本 contract 消费 worktrack contract 的 `completion_signals` 字段
 - 本 contract 产出 `single-acceptance verdict`，被 closeout record 和 MS-20260623-003 消费

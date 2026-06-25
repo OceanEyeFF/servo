@@ -135,9 +135,9 @@ Avoid these patterns:
 
 Current policy is docs-first. Existing skills can support this model if they preserve explicit repo binding:
 
-- `init-milestone-skill`: milestone purpose may be project-level, but worktracks need repo binding in their contract.
+- `milestone-init-skill`: milestone purpose may be project-level, but worktracks need repo binding in their contract.
 - `repo-whats-next-skill`: intake review should classify the candidate as frontend-only, backend-only, coordinated, or integration-only when multi-repo signals appear.
-- `init-worktrack-skill`: Worktrack Contract should identify the current execution repo and treat other repos as external dependencies unless a project coordination surface authorizes broader access.
-- `test-evidence-skill`: integration evidence must cite exact refs/releases/environments.
+- `worktrack-init-skill`: Worktrack Contract should identify the current execution repo and treat other repos as external dependencies unless a project coordination surface authorizes broader access.
+- `worktrack-test-evidence-skill`: integration evidence must cite exact refs/releases/environments.
 
 If first-class project coordination artifacts are required, they must be introduced explicitly instead of overloading repo-local `.servo/`.

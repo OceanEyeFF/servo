@@ -34,7 +34,7 @@ npx servo-installer verify --backend agents
 以 Codex 为例：
 
 ```txt
-$set-harness-goal-skill 当前空仓库期望最终实现一个 [目标描述]。
+$harness-set-goal-skill 当前空仓库期望最终实现一个 [目标描述]。
 ```
 
 目标描述示例：

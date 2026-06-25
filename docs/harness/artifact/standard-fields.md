@@ -25,8 +25,8 @@ last_verified: 2026-06-13
 
 | 标准字段名 | 类型 | 说明 | 适用 Skill |
 |-----------|------|------|-----------|
-| `verdict` | `pass \| soft_fail \| hard_fail \| blocked` | Gate 裁决结果 | `gate-skill` |
-| `verdict_confidence` | `high \| medium \| low` | 裁决置信度 | `gate-skill` |
+| `verdict` | `pass \| soft_fail \| hard_fail \| blocked` | Gate 裁决结果 | `worktrack-gate-skill` |
+| `verdict_confidence` | `high \| medium \| low` | 裁决置信度 | `worktrack-gate-skill` |
 | `allowed_next_routes` | `string[]` | 允许的下一路由列表 | All |
 | `recommended_next_route` | `string` | 建议的下一路由（Skill 名称） | All |
 | `recommended_next_scope` | `RepoScope \| WorktrackScope` | 建议的下一 Scope | All |
@@ -48,11 +48,11 @@ last_verified: 2026-06-13
 
 | 标准字段名 | 类型 | 说明 | 适用 Skill |
 |-----------|------|------|-----------|
-| `evidence_dimensions` | `object` | 正交证据维度封套 | `review-evidence-skill`, `test-evidence-skill`, `rule-check-skill` |
-| `decisive_evidence` | `string[]` | 决定性证据列表 | `gate-skill` |
+| `evidence_dimensions` | `object` | 正交证据维度封套 | `worktrack-review-evidence-skill`, `worktrack-test-evidence-skill`, `worktrack-rule-check-skill` |
+| `decisive_evidence` | `string[]` | 决定性证据列表 | `worktrack-gate-skill` |
 | `missing_evidence` | `string[]` | 缺失证据列表 | All Verify skills |
 | `residual_risk` | `string[]` | 残留风险列表 | All |
-| `upstream_constraint_signal` | `boolean` | 是否存在上游约束信号 | `gate-skill`, `review-evidence-skill` |
+| `upstream_constraint_signal` | `boolean` | 是否存在上游约束信号 | `worktrack-gate-skill`, `worktrack-review-evidence-skill` |
 
 ## 控制回路元数据
 
@@ -69,28 +69,28 @@ last_verified: 2026-06-13
 | 标准字段名 | 类型 | 说明 | 适用 Skill |
 |-----------|------|------|-----------|
 | `worktrack_id` | `string` | Worktrack 标识符 | WorktrackScope Skills |
-| `node_type` | `feature \| refactor \| research \| bugfix \| docs \| config \| test` | 节点类型 | `init-worktrack-skill` |
-| `baseline_branch` | `string` | 基线分支 | `init-worktrack-skill`, `close-worktrack-skill` |
-| `baseline_form` | `string` | 基线形式 | `init-worktrack-skill` |
-| `merge_required` | `boolean` | 是否需要合并 | `init-worktrack-skill`, `close-worktrack-skill` |
-| `branch_source_ref` | `string` | Worktrack branch 创建来源 ref | `init-worktrack-skill`, `close-worktrack-skill` |
-| `worktrack_branch` | `string` | Worktrack 执行分支 | `init-worktrack-skill`, `worktrack-status-skill`, `close-worktrack-skill` |
-| `integration_target_ref` | `string` | Worktrack closeout 的集成目标 ref | `init-worktrack-skill`, `close-worktrack-skill`, `repo-refresh-skill` |
-| `closeout_target_ref` | `string` | closeout PR/merge/checkpoint 目标 ref | `close-worktrack-skill`, `repo-refresh-skill` |
-| `final_baseline_branch` | `string` | Milestone final acceptance 后的最终基线分支 | `init-worktrack-skill`, `close-worktrack-skill` |
-| `checkpoint_base_ref` | `string` | Worktrack closeout checkpoint 对比基准 ref | `init-worktrack-skill`, `close-worktrack-skill`, `repo-refresh-skill` |
-| `gate_criteria` | `string` | 关卡标准 | `init-worktrack-skill`, `schedule-worktrack-skill` |
-| `if_interrupted_strategy` | `string` | 中断处理策略 | `init-worktrack-skill`, `recover-worktrack-skill` |
+| `node_type` | `feature \| refactor \| research \| bugfix \| docs \| config \| test` | 节点类型 | `worktrack-init-skill` |
+| `baseline_branch` | `string` | 基线分支 | `worktrack-init-skill`, `worktrack-close-skill` |
+| `baseline_form` | `string` | 基线形式 | `worktrack-init-skill` |
+| `merge_required` | `boolean` | 是否需要合并 | `worktrack-init-skill`, `worktrack-close-skill` |
+| `branch_source_ref` | `string` | Worktrack branch 创建来源 ref | `worktrack-init-skill`, `worktrack-close-skill` |
+| `worktrack_branch` | `string` | Worktrack 执行分支 | `worktrack-init-skill`, `worktrack-status-skill`, `worktrack-close-skill` |
+| `integration_target_ref` | `string` | Worktrack closeout 的集成目标 ref | `worktrack-init-skill`, `worktrack-close-skill`, `repo-refresh-skill` |
+| `closeout_target_ref` | `string` | closeout PR/merge/checkpoint 目标 ref | `worktrack-close-skill`, `repo-refresh-skill` |
+| `final_baseline_branch` | `string` | Milestone final acceptance 后的最终基线分支 | `worktrack-init-skill`, `worktrack-close-skill` |
+| `checkpoint_base_ref` | `string` | Worktrack closeout checkpoint 对比基准 ref | `worktrack-init-skill`, `worktrack-close-skill`, `repo-refresh-skill` |
+| `gate_criteria` | `string` | 关卡标准 | `worktrack-init-skill`, `worktrack-schedule-skill` |
+| `if_interrupted_strategy` | `string` | 中断处理策略 | `worktrack-init-skill`, `worktrack-recover-skill` |
 
 ## Repo Snapshot 专有字段
 
 | 标准字段名 | 类型 | 说明 | 适用 Skill |
 |-----------|------|------|-----------|
 | `source_baselines` | `object` | 已验证 source root 的 checkpoint 摘要，按 source root key 分组 | `repo-refresh-skill`, `repo-status-skill` |
-| `source_root` | `string` | source root 的 repo-relative 路径 | `repo-refresh-skill`, `doc-catch-up-worker-skill` |
-| `docs_owner` | `string` | 对应 docs/catalog owner 路径 | `repo-refresh-skill`, `doc-catch-up-worker-skill` |
-| `git_head` | `string` | 对应 source root 最近 verified checkpoint 的 git HEAD | `repo-refresh-skill`, `doc-catch-up-worker-skill` |
-| `source_change_kind` | `string` | source baseline 变化类型，如 `source-change` / `source-index-change` / `docs-source-traceability-change` | `repo-refresh-skill`, `doc-catch-up-worker-skill` |
+| `source_root` | `string` | source root 的 repo-relative 路径 | `repo-refresh-skill`, `worktrack-doc-catch-up-skill` |
+| `docs_owner` | `string` | 对应 docs/catalog owner 路径 | `repo-refresh-skill`, `worktrack-doc-catch-up-skill` |
+| `git_head` | `string` | 对应 source root 最近 verified checkpoint 的 git HEAD | `repo-refresh-skill`, `worktrack-doc-catch-up-skill` |
+| `source_change_kind` | `string` | source baseline 变化类型，如 `source-change` / `source-index-change` / `docs-source-traceability-change` | `repo-refresh-skill`, `worktrack-doc-catch-up-skill` |
 
 ## 字段使用约定
 

@@ -62,7 +62,7 @@ ROOT_NPM_FORBIDDEN_PACKAGE_FILES = {
     "toolchain/scripts/deploy/harness_deploy.py",
     "toolchain/scripts/deploy/aw_scaffold.py",
     "toolchain/scripts/deploy/bin/servo-harness-deploy.js",
-    "product/harness/skills/set-harness-goal-skill/scripts/deploy_aw.py",
+    "product/harness/skills/harness-set-goal-skill/scripts/deploy_aw.py",
 }
 @dataclass
 class GateStep:
@@ -1024,7 +1024,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "servo-set-harness-goal-skill"
+                    / "harness-set-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (
@@ -1131,7 +1131,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "servo-set-harness-goal-skill"
+                    / "harness-set-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (

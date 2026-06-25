@@ -1,0 +1,25 @@
+{
+  "payload_version": "agents-skill-payload.v1",
+  "backend": "agents",
+  "skill_id": "worktrack-doc-catch-up-skill",
+  "canonical_dir": "product/harness/skills/worktrack-doc-catch-up-skill",
+  "canonical_paths": [
+    "product/harness/skills/worktrack-doc-catch-up-skill/SKILL.md"
+  ],
+  "target_dir": "worktrack-doc-catch-up-skill",
+  "target_entry_name": "SKILL.md",
+  "payload_policy": "canonical-copy",
+  "supported_target_scopes": [
+    "local"
+  ],
+  "reference_distribution": "copy-listed-canonical-paths",
+  "required_payload_files": [
+    "SKILL.md",
+    "payload.json",
+    "aw.marker"
+  ],
+  "legacy_target_dirs": [
+    "doc-catch-up-worker-skill",
+    "aw-doc-catch-up-worker-skill"
+  ]
+}
