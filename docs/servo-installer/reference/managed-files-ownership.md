@@ -67,7 +67,10 @@ target repo root/
 
 `.servo/` 目录包含：
 
-- `control-state.md` — Harness 控制面配置与状态
+- `control-state.md` — Harness 跨 scope 控制记忆（Handback Guard, Approval Boundary, Linked Formal Documents, Autonomy Ledger）
+- `operator-config.md` — 人类可调控制配置（SubAgent 模式、自动性、分支策略）
+- `control-state-repo.md` — Repo + Milestone 级控制状态
+- `control-state-wt.md` — Worktrack 级控制状态
 - `goal-charter.md` — Repo 目标章程
 - `repo/` — 仓库级快照与 backlog
 - `worktrack/` — 当前 worktrack 合同、任务队列与证据
@@ -159,7 +162,10 @@ servo/           ← 用户自有（target repo 本身）
 │   └── *                          ← 所有目录均为受管
 │
 ├── .servo/                           ← 运行时控制状态（非 installer payload）
-│   ├── control-state.md           ← Harness 控制面配置
+│   ├── control-state.md           ← Harness 跨 scope 控制记忆
+│   ├── operator-config.md         ← 人类可调控制配置
+│   ├── control-state-repo.md      ← Repo + Milestone 级控制状态
+│   ├── control-state-wt.md        ← Worktrack 级控制状态
 │   ├── goal-charter.md            ← Repo 目标章程
 │   ├── repo/                      ← 仓库级快照与 backlog
 │   ├── worktrack/                 ← 当前 worktrack artifacts
