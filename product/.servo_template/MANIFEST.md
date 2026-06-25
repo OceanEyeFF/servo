@@ -1,15 +1,18 @@
 # .servo_template Manifest（清单跟踪）
 
 > 本文件记录 `product/.servo_template/` 中每个文件的对应关系。
-> **最后审计**: 2026-06-13（MS-20260613-002，WT-20260613-audit-* 系列完成）
+> **最后审计**: 2026-06-26（MS-20260625-003，WT-20260625-installer-template-sync）
 >
-> ✅ **审计完成**：8 个 template 已完成字段级对比，缺失字段已同步。
+> ✅ **MS-20260625-003 更新**：新增 3 个分拆模板（operator-config、control-state-repo、control-state-wt），更新 control-state 模板为精简跨 scope 记忆版本。validate 全部通过。
 
 ## Manifest Entries
 
 | template 路径 | 写入它的 skill | 用途 | 审计状态 |
 |---|---|---|---|
-| `control-state.md` | `harness-skill`（状态更新阶段） | `.servo/control-state.md` 初始化模板 | ✅ 2026-06-22 — synced runtime footprint placeholders: rotation metadata, active milestone branch head, planned milestone summary, current checkout, checkpoint traceability; backup/update artifacts and runtime history rows intentionally not templated |
+| `control-state.md` | `harness-skill`（状态更新阶段） | `.servo/control-state.md` 初始化模板（分拆后仅保留跨 scope 记忆） | ✅ 2026-06-26 — MS-20260625-003 更新为分拆版本 |
+| `operator-config.md` | `harness-set-goal-skill` | `.servo/operator-config.md` 初始化模板（人类可调配置） | ✅ 2026-06-26 — MS-20260625-003 新增 |
+| `repo/control-state-repo.md` | `harness-set-goal-skill` | `.servo/control-state-repo.md` 初始化模板（Repo + Milestone 级） | ✅ 2026-06-26 — MS-20260625-003 新增 |
+| `worktrack/control-state-wt.md` | `harness-set-goal-skill` | `.servo/control-state-wt.md` 初始化模板（Worktrack 级） | ✅ 2026-06-26 — MS-20260625-003 新增 |
 | `goal-charter.md` | `harness-set-goal-skill` / `repo-change-goal-skill` | `.servo/goal-charter.md` 初始化模板 | ✅ 2026-06-13 — 12 missing (6 cross-artifact)/2 extra/1 naming deviation |
 | `repo/discovery-input.md` | `harness-set-goal-skill`（Existing Code Project Adoption） | `.servo/repo/discovery-input.md` 只读事实输入模板 | ✅ 2026-06-14 — restored for set-harness-goal adoption fixture and package smoke |
 | `repo/temporary-understanding.md` | `harness-set-goal-skill`（Weak-doc onboarding） | `.servo/repo/temporary-understanding.md` 临时理解模板 | ✅ 2026-06-14 — restored for weak-doc onboarding fixture |
