@@ -197,10 +197,15 @@ def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
     report = SemanticReport()
     check_required_handoffs(tmp_path, report)
 
-    assert any("toolchain-layering.md -> toolchain/scripts/README.md" in item for item in report.failures)
+    assert any(
+        "toolchain-layering.md -> toolchain/scripts/README.md" in item
+        for item in report.failures
+    )
 
 
-def test_check_pull_request_template_release_evidence_flags_missing_terms(tmp_path: Path) -> None:
+def test_check_pull_request_template_release_evidence_flags_missing_terms(
+    tmp_path: Path,
+) -> None:
     write_doc(tmp_path / ".github/pull_request_template.md", "## Verification\n")
 
     report = SemanticReport()
@@ -209,7 +214,9 @@ def test_check_pull_request_template_release_evidence_flags_missing_terms(tmp_pa
     assert any("Release PR Evidence" in item for item in report.failures)
 
 
-def test_check_pull_request_template_release_evidence_accepts_guard_terms(tmp_path: Path) -> None:
+def test_check_pull_request_template_release_evidence_accepts_guard_terms(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / ".github/pull_request_template.md",
         "develop -> master\n"
@@ -229,7 +236,9 @@ def test_check_pull_request_template_release_evidence_accepts_guard_terms(tmp_pa
     assert report.failures == []
 
 
-def test_check_skill_deployment_maintenance_checklist_flags_missing_terms(tmp_path: Path) -> None:
+def test_check_skill_deployment_maintenance_checklist_flags_missing_terms(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/servo-installer/runbooks/skill-deployment-maintenance.md",
         "## Source maintenance checklist\ncanonical skill source only\n",
@@ -241,7 +250,9 @@ def test_check_skill_deployment_maintenance_checklist_flags_missing_terms(tmp_pa
     assert any("adapter payload" in item for item in report.failures)
 
 
-def test_check_skill_deployment_maintenance_checklist_accepts_required_terms(tmp_path: Path) -> None:
+def test_check_skill_deployment_maintenance_checklist_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/servo-installer/runbooks/skill-deployment-maintenance.md",
         "## Source maintenance checklist\n"
@@ -260,7 +271,9 @@ def test_check_skill_deployment_maintenance_checklist_accepts_required_terms(tmp
     assert report.failures == []
 
 
-def test_check_foundations_authority_shadows_flags_prefixed_duplicate(tmp_path: Path) -> None:
+def test_check_foundations_authority_shadows_flags_prefixed_duplicate(
+    tmp_path: Path,
+) -> None:
     foundations_dir = tmp_path / "docs/project-maintenance/foundations"
     foundations_dir.mkdir(parents=True, exist_ok=True)
     write_doc(foundations_dir / "root-directory-layering.md", "# doc\n")
@@ -285,14 +298,19 @@ def test_check_outdated_placeholder_phrases_flags_stale_text(tmp_path: Path) -> 
     assert any("toolchain/scripts/README.md" in item for item in report.failures)
 
 
-def test_check_retired_entrypoint_references_flags_retired_paths(tmp_path: Path) -> None:
+def test_check_retired_entrypoint_references_flags_retired_paths(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "AGENTS.md",
         "旧入口：`docs/harness/adjacent-systems/memory-side/overview.md`\n",
     )
     write_doc(tmp_path / "docs/README.md", "current\n")
     write_doc(tmp_path / "docs/harness/README.md", "current\n")
-    write_doc(tmp_path / "docs/project-maintenance/governance/path-governance-checks.md", "current\n")
+    write_doc(
+        tmp_path / "docs/project-maintenance/governance/path-governance-checks.md",
+        "current\n",
+    )
 
     report = SemanticReport()
     check_retired_entrypoint_references(tmp_path, report)
@@ -300,7 +318,9 @@ def test_check_retired_entrypoint_references_flags_retired_paths(tmp_path: Path)
     assert any("AGENTS.md" in item for item in report.failures)
 
 
-def test_check_retired_entrypoint_references_accepts_current_sources(tmp_path: Path) -> None:
+def test_check_retired_entrypoint_references_accepts_current_sources(
+    tmp_path: Path,
+) -> None:
     write_doc(tmp_path / "AGENTS.md", "current\n")
     write_doc(tmp_path / "docs/README.md", "current\n")
     write_doc(tmp_path / "docs/harness/README.md", "current\n")
@@ -311,7 +331,9 @@ def test_check_retired_entrypoint_references_accepts_current_sources(tmp_path: P
     assert report.failures == []
 
 
-def test_check_agents_route_slimming_contract_flags_fixed_read_first(tmp_path: Path) -> None:
+def test_check_agents_route_slimming_contract_flags_fixed_read_first(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "AGENTS.md",
         "\n".join(
@@ -333,7 +355,9 @@ def test_check_agents_route_slimming_contract_flags_fixed_read_first(tmp_path: P
     assert any("Default Boot" in item for item in report.failures)
 
 
-def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Path) -> None:
+def test_check_agents_route_slimming_contract_accepts_default_boot(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "AGENTS.md",
         "\n".join(
@@ -357,14 +381,17 @@ def test_check_agents_route_slimming_contract_accepts_default_boot(tmp_path: Pat
 
 def _write_aw_residue_contract(tmp_path: Path) -> None:
     write_doc(
-        tmp_path / "docs/servo-installer/contracts/aw-residue-classification-contract.md",
+        tmp_path
+        / "docs/servo-installer/contracts/aw-residue-classification-contract.md",
         "compatibility-allowed\nruntime-migration-contract\nmarker-identity-contract\n"
         "legacy-target-dir-contract\ntest-fixture-only\nhistorical-doc-only\n"
         "navigation-only\nremediation-required\nunclassified-aw-residue\n",
     )
 
 
-def test_check_aw_residue_classification_contract_flags_canonical_marker(tmp_path: Path) -> None:
+def test_check_aw_residue_classification_contract_flags_canonical_marker(
+    tmp_path: Path,
+) -> None:
     _write_aw_residue_contract(tmp_path)
     write_doc(
         tmp_path / "product/harness/skills/demo-skill/aw.marker",
@@ -381,7 +408,9 @@ def test_check_aw_residue_classification_contract_flags_canonical_marker(tmp_pat
     assert any("canonical source" in item for item in report.failures)
 
 
-def test_check_aw_residue_classification_contract_flags_payload_marker_drift(tmp_path: Path) -> None:
+def test_check_aw_residue_classification_contract_flags_payload_marker_drift(
+    tmp_path: Path,
+) -> None:
     _write_aw_residue_contract(tmp_path)
     write_doc(
         tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
@@ -394,7 +423,9 @@ def test_check_aw_residue_classification_contract_flags_payload_marker_drift(tmp
     assert any("required_payload_files" in item for item in report.failures)
 
 
-def test_check_aw_residue_classification_contract_flags_unclassified_aw_target_dir(tmp_path: Path) -> None:
+def test_check_aw_residue_classification_contract_flags_unclassified_aw_target_dir(
+    tmp_path: Path,
+) -> None:
     _write_aw_residue_contract(tmp_path)
     write_doc(
         tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
@@ -407,7 +438,9 @@ def test_check_aw_residue_classification_contract_flags_unclassified_aw_target_d
     assert any("legacy aw-* adapter value" in item for item in report.failures)
 
 
-def test_check_aw_residue_classification_contract_accepts_adapter_compatibility_payload(tmp_path: Path) -> None:
+def test_check_aw_residue_classification_contract_accepts_adapter_compatibility_payload(
+    tmp_path: Path,
+) -> None:
     _write_aw_residue_contract(tmp_path)
     write_doc(
         tmp_path / "product/harness/adapters/agents/skills/demo-skill/payload.json",
@@ -426,7 +459,8 @@ def test_check_append_request_contract_terms_flags_drift(tmp_path: Path) -> None
         "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\n",
     )
     write_doc(
-        tmp_path / "docs/harness/workflow-families/repo-evolution/append-request-routing.md",
+        tmp_path
+        / "docs/harness/workflow-families/repo-evolution/append-request-routing.md",
         "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
@@ -434,7 +468,8 @@ def test_check_append_request_contract_terms_flags_drift(tmp_path: Path) -> None
         "append-feature\nappend-design\nappend-milestone\ngoal change\nnew milestone\nnew worktrack\nscope expansion\ndesign-only\ndesign-then-implementation\napproval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
     write_doc(
-        tmp_path / "product/harness/skills/repo-append-request-skill/templates/append-request.template.md",
+        tmp_path
+        / "product/harness/skills/repo-append-request-skill/templates/append-request.template.md",
         "approval_required\ncontinuation_ready\ncontinuation_blockers\n",
     )
 
@@ -444,7 +479,9 @@ def test_check_append_request_contract_terms_flags_drift(tmp_path: Path) -> None
     assert any("continuation_blockers" in item for item in report.failures)
 
 
-def test_check_subagent_dispatch_default_contract_flags_missing_term(tmp_path: Path) -> None:
+def test_check_subagent_dispatch_default_contract_flags_missing_term(
+    tmp_path: Path,
+) -> None:
     for relative_path in (
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
@@ -479,7 +516,9 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(tmp_path: P
     assert any("dispatch package unsafe" in item for item in report.failures)
 
 
-def test_check_subagent_dispatch_default_contract_flags_template_prose_duplication(tmp_path: Path) -> None:
+def test_check_subagent_dispatch_default_contract_flags_template_prose_duplication(
+    tmp_path: Path,
+) -> None:
     for relative_path in (
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
@@ -515,7 +554,9 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
     assert any("duplicates canonical prose" in item for item in report.failures)
 
 
-def test_check_dispatch_context_contract_flags_missing_budget_term(tmp_path: Path) -> None:
+def test_check_dispatch_context_contract_flags_missing_budget_term(
+    tmp_path: Path,
+) -> None:
     for relative_path in (
         "docs/harness/artifact/worktrack/dispatch-packet.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
@@ -547,7 +588,9 @@ def _write_runtime_dispatch_profile_sources(tmp_path: Path, text: str) -> None:
         write_doc(tmp_path / relative_path, text)
 
 
-def test_check_runtime_dispatch_profile_contract_flags_missing_field(tmp_path: Path) -> None:
+def test_check_runtime_dispatch_profile_contract_flags_missing_field(
+    tmp_path: Path,
+) -> None:
     _write_runtime_dispatch_profile_sources(
         tmp_path,
         "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
@@ -573,7 +616,9 @@ def test_check_runtime_dispatch_profile_contract_flags_missing_field(tmp_path: P
     assert any("dispatch_package_safety" in item for item in report.failures)
 
 
-def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(tmp_path: Path) -> None:
+def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
     _write_runtime_dispatch_profile_sources(
         tmp_path,
         "runtime_dispatch_profile\nbackend_runtime\nmodel_family\n"
@@ -875,7 +920,9 @@ def test_check_worktrack_task_window_contract_accepts_terms(tmp_path: Path) -> N
     assert report.failures == []
 
 
-def test_check_review_evidence_four_lane_contract_flags_missing_lane(tmp_path: Path) -> None:
+def test_check_review_evidence_four_lane_contract_flags_missing_lane(
+    tmp_path: Path,
+) -> None:
     for relative_path in (
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
         "docs/harness/catalog/worktrack.md",
@@ -907,7 +954,9 @@ def test_check_debug_evidence_contract_flags_missing_field(tmp_path: Path) -> No
     assert any("next_debug_action" in item for item in report.failures)
 
 
-def test_check_decision_traceability_contract_flags_missing_decision_refs(tmp_path: Path) -> None:
+def test_check_decision_traceability_contract_flags_missing_decision_refs(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/harness/artifact/repo/decision-log.md",
         "decision_id\ndate\nstatus\naccepted\nsuperseded\nrejected\ncontext\n"
@@ -932,7 +981,10 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
         "docs_updated\nsnapshot_refreshed\nbacklog_updated\ncleanup_done\nremaining_risks\n"
     )
     write_doc(tmp_path / "docs/harness/artifact/worktrack/README.md", closeout_terms)
-    write_doc(tmp_path / "product/harness/skills/worktrack-close-skill/SKILL.md", closeout_terms)
+    write_doc(
+        tmp_path / "product/harness/skills/worktrack-close-skill/SKILL.md",
+        closeout_terms,
+    )
 
     report = SemanticReport()
     check_closeout_record_contract(tmp_path, report)
@@ -940,7 +992,9 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
     assert any("next_repo_scope_action" in item for item in report.failures)
 
 
-def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(tmp_path: Path) -> None:
+def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(
+    tmp_path: Path,
+) -> None:
     for relative_path in (
         "product/harness/skills/repo-whats-next-skill/SKILL.md",
         "product/harness/skills/repo-whats-next-skill/references/overview-fallback-mode.md",
@@ -972,7 +1026,9 @@ def _write_worktrack_intake_review_sources(tmp_path: Path, text: str) -> None:
         write_doc(tmp_path / relative_path, text)
 
 
-def test_check_worktrack_intake_review_contract_flags_missing_field(tmp_path: Path) -> None:
+def test_check_worktrack_intake_review_contract_flags_missing_field(
+    tmp_path: Path,
+) -> None:
     _write_worktrack_intake_review_sources(
         tmp_path,
         "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
@@ -996,7 +1052,9 @@ def test_check_worktrack_intake_review_contract_flags_missing_field(tmp_path: Pa
     assert any("snapshot_freshness" in item for item in report.failures)
 
 
-def test_check_worktrack_intake_review_contract_accepts_complete_sources(tmp_path: Path) -> None:
+def test_check_worktrack_intake_review_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
     _write_worktrack_intake_review_sources(
         tmp_path,
         "worktrack_intake_review\nrepo_fundamentals\nsnapshot_freshness\n"
@@ -1054,7 +1112,9 @@ def test_check_branch_policy_contract_accepts_complete_sources(tmp_path: Path) -
 
 
 def test_check_branch_policy_contract_flags_missing_field(tmp_path: Path) -> None:
-    _write_branch_policy_sources(tmp_path, BRANCH_POLICY_COMPLETE_TEXT.replace("checkpoint_base_ref\n", ""))
+    _write_branch_policy_sources(
+        tmp_path, BRANCH_POLICY_COMPLETE_TEXT.replace("checkpoint_base_ref\n", "")
+    )
 
     report = SemanticReport()
     check_branch_policy_contract(tmp_path, report)
@@ -1062,7 +1122,9 @@ def test_check_branch_policy_contract_flags_missing_field(tmp_path: Path) -> Non
     assert any("checkpoint_base_ref" in item for item in report.failures)
 
 
-def test_check_branch_policy_contract_flags_legacy_baseline_only_guard(tmp_path: Path) -> None:
+def test_check_branch_policy_contract_flags_legacy_baseline_only_guard(
+    tmp_path: Path,
+) -> None:
     _write_branch_policy_sources(
         tmp_path,
         BRANCH_POLICY_COMPLETE_TEXT + "必须在 `baseline_branch` 上执行\n",
@@ -1074,7 +1136,9 @@ def test_check_branch_policy_contract_flags_legacy_baseline_only_guard(tmp_path:
     assert any("baseline-only guard phrase" in item for item in report.failures)
 
 
-def test_check_adapter_wrappers_are_thin_ignores_absent_adapter_layer(tmp_path: Path) -> None:
+def test_check_adapter_wrappers_are_thin_ignores_absent_adapter_layer(
+    tmp_path: Path,
+) -> None:
     report = SemanticReport()
     check_adapter_wrappers_are_thin(tmp_path, report)
     assert report.failures == []
@@ -1100,7 +1164,9 @@ def test_check_adapter_wrappers_are_thin_accepts_valid_wrapper(tmp_path: Path) -
     assert report.failures == []
 
 
-def test_check_adapter_wrappers_are_thin_flags_missing_heading_and_duplication(tmp_path: Path) -> None:
+def test_check_adapter_wrappers_are_thin_flags_missing_heading_and_duplication(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "product/harness/adapters/agents/skills/demo-skill/SKILL.md",
         "\n".join(
@@ -1121,7 +1187,9 @@ def test_check_adapter_wrappers_are_thin_flags_missing_heading_and_duplication(t
     assert any("Execution Rules" in item for item in report.failures)
 
 
-def test_check_adapter_wrappers_are_thin_ignores_code_fence_headings(tmp_path: Path) -> None:
+def test_check_adapter_wrappers_are_thin_ignores_code_fence_headings(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "product/harness/adapters/agents/skills/demo-skill/SKILL.md",
         "\n".join(
@@ -1144,7 +1212,9 @@ def test_check_adapter_wrappers_are_thin_ignores_code_fence_headings(tmp_path: P
     assert report.failures == []
 
 
-def test_check_canonical_skill_packages_are_minimal_accepts_valid_package(tmp_path: Path) -> None:
+def test_check_canonical_skill_packages_are_minimal_accepts_valid_package(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "product/harness/skills/demo-skill/SKILL.md",
         "\n".join(
@@ -1185,7 +1255,9 @@ def test_check_canonical_skill_packages_are_minimal_flags_deprecated_entrypoint_
     report = SemanticReport()
     check_canonical_skill_packages_are_minimal(tmp_path, report)
 
-    assert any("deprecated references/entrypoints.md" in item for item in report.failures)
+    assert any(
+        "deprecated references/entrypoints.md" in item for item in report.failures
+    )
 
 
 def test_check_canonical_skill_packages_are_minimal_flags_deprecated_entrypoint_file(
@@ -1212,10 +1284,14 @@ def test_check_canonical_skill_packages_are_minimal_flags_deprecated_entrypoint_
     report = SemanticReport()
     check_canonical_skill_packages_are_minimal(tmp_path, report)
 
-    assert any("deprecated references/entrypoints.md file" in item for item in report.failures)
+    assert any(
+        "deprecated references/entrypoints.md file" in item for item in report.failures
+    )
 
 
-def test_check_canonical_skill_packages_are_minimal_flags_adapter_leakage(tmp_path: Path) -> None:
+def test_check_canonical_skill_packages_are_minimal_flags_adapter_leakage(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "product/harness/skills/demo-skill/SKILL.md",
         "\n".join(
@@ -1261,7 +1337,9 @@ def test_check_canonical_skill_packages_are_minimal_ignores_code_fence_headings(
     assert report.failures == []
 
 
-def test_check_repo_python_commands_are_bytecode_free_flags_bare_repo_command(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_flags_bare_repo_command(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "Run `python3 toolchain/scripts/test/folder_logic_check.py`.\n",
@@ -1273,7 +1351,9 @@ def test_check_repo_python_commands_are_bytecode_free_flags_bare_repo_command(tm
     assert any("review-verify-handbook.md:1" in item for item in report.failures)
 
 
-def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_repo_command(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_repo_command(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/branch-pr-governance.md",
         "Run `python toolchain/scripts/test/folder_logic_check.py`.\n",
@@ -1285,7 +1365,9 @@ def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_repo_com
     assert any("branch-pr-governance.md:1" in item for item in report.failures)
 
 
-def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_module_command(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_module_command(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/branch-pr-governance.md",
         "Run `python -m pytest toolchain/scripts/test/test_folder_logic_check.py`.\n",
@@ -1297,7 +1379,9 @@ def test_check_repo_python_commands_are_bytecode_free_flags_bare_python_module_c
     assert any("branch-pr-governance.md:1" in item for item in report.failures)
 
 
-def test_check_repo_python_commands_are_bytecode_free_accepts_prefixed_repo_command(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_accepts_prefixed_repo_command(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "Run `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/folder_logic_check.py`.\n",
@@ -1309,7 +1393,9 @@ def test_check_repo_python_commands_are_bytecode_free_accepts_prefixed_repo_comm
     assert report.failures == []
 
 
-def test_check_repo_python_commands_are_bytecode_free_flags_bare_tools_command(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_flags_bare_tools_command(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "Run `python3 tools/closeout_acceptance_gate.py --json`.\n",
@@ -1321,7 +1407,9 @@ def test_check_repo_python_commands_are_bytecode_free_flags_bare_tools_command(t
     assert any("review-verify-handbook.md:1" in item for item in report.failures)
 
 
-def test_check_repo_python_commands_are_bytecode_free_checks_each_occurrence(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_checks_each_occurrence(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "toolchain/scripts/deploy/README.md",
         "`PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/deploy/aw_scaffold.py list` and "
@@ -1334,9 +1422,12 @@ def test_check_repo_python_commands_are_bytecode_free_checks_each_occurrence(tmp
     assert len(report.failures) == 1
 
 
-def test_check_repo_python_commands_are_bytecode_free_skips_historical_log(tmp_path: Path) -> None:
+def test_check_repo_python_commands_are_bytecode_free_skips_historical_log(
+    tmp_path: Path,
+) -> None:
     write_doc(
-        tmp_path / "docs/project-maintenance/testing/codex-harness-manual-run-continuous-2026-05-01.md",
+        tmp_path
+        / "docs/project-maintenance/testing/codex-harness-manual-run-continuous-2026-05-01.md",
         "`python3 -m unittest discover -s tests -v`\n",
     )
 
@@ -1352,14 +1443,18 @@ def test_check_repo_python_commands_are_bytecode_free_skips_historical_log(tmp_p
     )
 
 
-def test_check_manual_runbook_agents_skill_count_accepts_matching_count(tmp_path: Path) -> None:
+def test_check_manual_runbook_agents_skill_count_accepts_matching_count(
+    tmp_path: Path,
+) -> None:
     for skill_id in ("harness-skill", "repo-status-skill"):
         write_doc(
-            tmp_path / f"product/harness/adapters/agents/skills/{skill_id}/payload.json",
+            tmp_path
+            / f"product/harness/adapters/agents/skills/{skill_id}/payload.json",
             "{}\n",
         )
     write_doc(
-        tmp_path / "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md",
+        tmp_path
+        / "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md",
         "- 当前 `agents` install 已包含全部 2 个 skills，覆盖完整 Harness 控制回路\n",
     )
 
@@ -1372,18 +1467,22 @@ def test_check_manual_runbook_agents_skill_count_accepts_matching_count(tmp_path
 def test_check_manual_runbook_agents_skill_count_flags_mismatch(tmp_path: Path) -> None:
     for skill_id in ("harness-skill", "repo-status-skill", "repo-whats-next-skill"):
         write_doc(
-            tmp_path / f"product/harness/adapters/agents/skills/{skill_id}/payload.json",
+            tmp_path
+            / f"product/harness/adapters/agents/skills/{skill_id}/payload.json",
             "{}\n",
         )
     write_doc(
-        tmp_path / "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md",
+        tmp_path
+        / "docs/project-maintenance/testing/codex-post-deploy-behavior-tests.md",
         "- 当前 `agents` install 已包含全部 2 个 skills，覆盖完整 Harness 控制回路\n",
     )
 
     report = SemanticReport()
     check_manual_runbook_agents_skill_count(tmp_path, report)
 
-    assert any("documents 2, adapter payload source has 3" in item for item in report.failures)
+    assert any(
+        "documents 2, adapter payload source has 3" in item for item in report.failures
+    )
 
 
 def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and_payloads(
@@ -1457,7 +1556,9 @@ def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and
     assert report.failures == []
 
 
-def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path: Path) -> None:
+def test_check_pre_milestone_intake_template_contract_flags_payload_gap(
+    tmp_path: Path,
+) -> None:
     required_text = "\n".join(
         [
             "observed_facts",
@@ -1501,7 +1602,9 @@ def test_check_pre_milestone_intake_template_contract_flags_payload_gap(tmp_path
     ):
         write_doc(tmp_path / relative_path, required_text)
     payload = {
-        "canonical_paths": ["product/harness/skills/milestone-pre-intake-skill/SKILL.md"],
+        "canonical_paths": [
+            "product/harness/skills/milestone-pre-intake-skill/SKILL.md"
+        ],
         "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
     }
     for relative_path in (
@@ -1628,10 +1731,14 @@ def test_check_init_milestone_intake_handoff_contract_flags_missing_state_semant
     check_init_milestone_intake_handoff_contract(tmp_path, report)
 
     assert any("questions_required" in item for item in report.failures)
-    assert any("不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures)
+    assert any(
+        "不得把薄弱的 milestone brief 伪装成已确认" in item for item in report.failures
+    )
 
 
-def test_check_milestone_review_gate_contract_accepts_required_terms(tmp_path: Path) -> None:
+def test_check_milestone_review_gate_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
     required_text = "\n".join(
         [
             "Milestone Review Gate",
@@ -1848,8 +1955,12 @@ def test_check_conservative_backfill_contract_flags_permission_expansion_gap(
     check_conservative_backfill_contract(tmp_path, report)
 
     assert any("must not grant permissions" in item for item in report.failures)
-    assert any("must not infer programmer confirmation" in item for item in report.failures)
-    assert any("must not enable Worktrack Init/Dispatch" in item for item in report.failures)
+    assert any(
+        "must not infer programmer confirmation" in item for item in report.failures
+    )
+    assert any(
+        "must not enable Worktrack Init/Dispatch" in item for item in report.failures
+    )
 
 
 def test_check_complex_project_entry_gate_contract_accepts_required_terms(
@@ -1939,7 +2050,9 @@ def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
     check_complex_project_entry_gate_contract(tmp_path, report)
 
     assert any("dialog_review_questions" in item for item in report.failures)
-    assert any("reinforcement_milestone_recommendation" in item for item in report.failures)
+    assert any(
+        "reinforcement_milestone_recommendation" in item for item in report.failures
+    )
     assert any("not fixed heavy mode" in item for item in report.failures)
 
 
@@ -2034,7 +2147,9 @@ def test_check_complex_project_entry_gate_contract_flags_reinforcement_routing_g
     report = SemanticReport()
     check_complex_project_entry_gate_contract(tmp_path, report)
 
-    assert any("weak-doc reinforcement routing term" in item for item in report.failures)
+    assert any(
+        "weak-doc reinforcement routing term" in item for item in report.failures
+    )
 
 
 def test_check_complex_project_entry_gate_contract_flags_unresolved_without_blocking(
@@ -2629,7 +2744,9 @@ def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
     report = SemanticReport()
     check_repo_init_complex_gate_contract(tmp_path, report)
 
-    assert any("weak-doc reinforcement routing term" in item for item in report.failures)
+    assert any(
+        "weak-doc reinforcement routing term" in item for item in report.failures
+    )
 
 
 def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
@@ -2798,9 +2915,14 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
     assert any("must not pre-authorize" in item for item in report.failures)
 
 
-def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path: Path) -> None:
+def test_governance_semantic_cli_disables_bytecode_before_local_import(
+    tmp_path: Path,
+) -> None:
     source_script = Path(__file__).resolve().parent / "governance_semantic_check.py"
-    write_doc(tmp_path / "governance_semantic_check.py", source_script.read_text(encoding="utf-8"))
+    write_doc(
+        tmp_path / "governance_semantic_check.py",
+        source_script.read_text(encoding="utf-8"),
+    )
     write_doc(
         tmp_path / "path_governance_check.py",
         "\n".join(
@@ -2818,7 +2940,12 @@ def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path:
     env = os.environ.copy()
     env.pop("PYTHONDONTWRITEBYTECODE", None)
     completed = subprocess.run(
-        [sys.executable, str(tmp_path / "governance_semantic_check.py"), "--repo-root", str(tmp_path)],
+        [
+            sys.executable,
+            str(tmp_path / "governance_semantic_check.py"),
+            "--repo-root",
+            str(tmp_path),
+        ],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -2830,7 +2957,9 @@ def test_governance_semantic_cli_disables_bytecode_before_local_import(tmp_path:
     assert not list(tmp_path.rglob("*.pyc"))
 
 
-def test_check_root_tool_shims_disable_bytecode_flags_late_guard(tmp_path: Path) -> None:
+def test_check_root_tool_shims_disable_bytecode_flags_late_guard(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "tools/scope_gate_check.py",
         "\n".join(
@@ -2849,7 +2978,9 @@ def test_check_root_tool_shims_disable_bytecode_flags_late_guard(tmp_path: Path)
     assert any("tools/scope_gate_check.py" in item for item in report.failures)
 
 
-def test_check_root_tool_shims_disable_bytecode_accepts_guard_before_import(tmp_path: Path) -> None:
+def test_check_root_tool_shims_disable_bytecode_accepts_guard_before_import(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "tools/scope_gate_check.py",
         "\n".join(
@@ -2868,7 +2999,9 @@ def test_check_root_tool_shims_disable_bytecode_accepts_guard_before_import(tmp_
     assert report.failures == []
 
 
-def test_check_path_governance_docs_list_gitignore_entries_flags_missing_entry(tmp_path: Path) -> None:
+def test_check_path_governance_docs_list_gitignore_entries_flags_missing_entry(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/path-governance-checks.md",
         "` .servo/ `\n",
@@ -2880,7 +3013,9 @@ def test_check_path_governance_docs_list_gitignore_entries_flags_missing_entry(t
     assert any(".agents/" in item for item in report.failures)
 
 
-def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list(tmp_path: Path) -> None:
+def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/path-governance-checks.md",
         "\n".join(
@@ -2906,7 +3041,9 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
     assert report.failures == []
 
 
-def test_check_review_verify_docs_list_closeout_steps_flags_missing_step(tmp_path: Path) -> None:
+def test_check_review_verify_docs_list_closeout_steps_flags_missing_step(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "scope_gate -> spec_gate -> static_gate -> test_gate -> smoke_gate\n",
@@ -2918,7 +3055,9 @@ def test_check_review_verify_docs_list_closeout_steps_flags_missing_step(tmp_pat
     assert any("cache_gate" in item for item in report.failures)
 
 
-def test_check_review_verify_docs_list_closeout_steps_accepts_complete_sequence(tmp_path: Path) -> None:
+def test_check_review_verify_docs_list_closeout_steps_accepts_complete_sequence(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "scope_gate -> spec_gate -> static_gate -> cache_gate -> test_gate -> smoke_gate\n",
@@ -2930,7 +3069,9 @@ def test_check_review_verify_docs_list_closeout_steps_accepts_complete_sequence(
     assert report.failures == []
 
 
-def test_check_docs_list_closeout_cache_roots_flags_missing_root(tmp_path: Path) -> None:
+def test_check_docs_list_closeout_cache_roots_flags_missing_root(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
         "`docs/` `product/` `toolchain/`\n",
@@ -2946,9 +3087,14 @@ def test_check_docs_list_closeout_cache_roots_flags_missing_root(tmp_path: Path)
     assert any("tools" in item for item in report.failures)
 
 
-def test_check_docs_list_closeout_cache_roots_accepts_complete_roots(tmp_path: Path) -> None:
+def test_check_docs_list_closeout_cache_roots_accepts_complete_roots(
+    tmp_path: Path,
+) -> None:
     roots = "`docs/` `product/` `toolchain/` `tools/`\n"
-    write_doc(tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md", roots)
+    write_doc(
+        tmp_path / "docs/project-maintenance/governance/review-verify-handbook.md",
+        roots,
+    )
     write_doc(tmp_path / "toolchain/scripts/test/README.md", roots)
 
     report = SemanticReport()
@@ -2957,7 +3103,9 @@ def test_check_docs_list_closeout_cache_roots_accepts_complete_roots(tmp_path: P
     assert report.failures == []
 
 
-def test_check_orphan_docs_accepts_canonical_skill_only_reference(tmp_path: Path) -> None:
+def test_check_orphan_docs_accepts_canonical_skill_only_reference(
+    tmp_path: Path,
+) -> None:
     write_doc(
         tmp_path / "docs/harness/artifact/repo/goal-charter.md",
         "# Goal Charter\n",
@@ -2976,40 +3124,50 @@ def test_check_orphan_docs_accepts_canonical_skill_only_reference(tmp_path: Path
 def test_check_artifact_skill_alignment_all_fields_pass(tmp_path: Path) -> None:
     write_doc(
         tmp_path / "product/harness/skills/worktrack-gate-skill/SKILL.md",
-        "\n".join([
-            "# Gate Skill",
-            "",
-            "verdict: pass or fail",
-            "review_dimensions: correctness completeness consistency",
-            "",
-        ]) + "\n",
+        "\n".join(
+            [
+                "# Gate Skill",
+                "",
+                "verdict: pass or fail",
+                "review_dimensions: correctness completeness consistency",
+                "",
+            ]
+        )
+        + "\n",
     )
     write_doc(
-        tmp_path / "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
-        "\n".join([
-            "# Contract Template",
-            "",
-            "node_type: feature",
-            "baseline_form: commit-on-feature-branch",
-            "merge_required: true",
-            "gate_criteria: standard",
-            "if_interrupted_strategy: stop",
-            "runtime_dispatch_mode: auto",
-            "",
-        ]) + "\n",
+        tmp_path
+        / "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
+        "\n".join(
+            [
+                "# Contract Template",
+                "",
+                "node_type: feature",
+                "baseline_form: commit-on-feature-branch",
+                "merge_required: true",
+                "gate_criteria: standard",
+                "if_interrupted_strategy: stop",
+                "runtime_dispatch_mode: auto",
+                "",
+            ]
+        )
+        + "\n",
     )
     write_doc(
         tmp_path / "product/harness/skills/worktrack-schedule-skill/SKILL.md",
-        "\n".join([
-            "# Schedule Worktrack Skill",
-            "",
-            "task_id: T-001",
-            "status: pending",
-            "priority: high",
-            "depends_on: []",
-            "acceptance: all tests pass",
-            "",
-        ]) + "\n",
+        "\n".join(
+            [
+                "# Schedule Worktrack Skill",
+                "",
+                "task_id: T-001",
+                "status: pending",
+                "priority: high",
+                "depends_on: []",
+                "acceptance: all tests pass",
+                "",
+            ]
+        )
+        + "\n",
     )
 
     report = SemanticReport()
@@ -3166,7 +3324,9 @@ def test_check_runtime_artifact_consistency_noops_without_servo(tmp_path: Path) 
     assert any(".servo/ directory missing" in item for item in report.infos)
 
 
-def test_check_runtime_artifact_consistency_accepts_consistent_state(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_accepts_consistent_state(
+    tmp_path: Path,
+) -> None:
     _write_runtime_artifacts(tmp_path)
 
     report = SemanticReport()
@@ -3175,25 +3335,37 @@ def test_check_runtime_artifact_consistency_accepts_consistent_state(tmp_path: P
     assert report.failures == []
 
 
-def test_check_runtime_artifact_consistency_flags_missing_active_pointer(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_flags_missing_active_pointer(
+    tmp_path: Path,
+) -> None:
     _write_runtime_artifacts(tmp_path, active_milestone="MS-MISSING")
 
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("active_milestone MS-MISSING is missing" in item for item in report.failures)
+    assert any(
+        "active_milestone MS-MISSING is missing" in item for item in report.failures
+    )
 
 
-def test_check_runtime_artifact_consistency_flags_summary_mismatch(tmp_path: Path) -> None:
-    _write_runtime_artifacts(tmp_path, summary="planned=1 / active=0 / completed=1 / superseded=0")
+def test_check_runtime_artifact_consistency_flags_summary_mismatch(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(
+        tmp_path, summary="planned=1 / active=0 / completed=1 / superseded=0"
+    )
 
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("milestone_pipeline_summary mismatch" in item for item in report.failures)
+    assert any(
+        "milestone_pipeline_summary mismatch" in item for item in report.failures
+    )
 
 
-def test_check_runtime_artifact_consistency_flags_multiple_active_milestones(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_flags_multiple_active_milestones(
+    tmp_path: Path,
+) -> None:
     _write_runtime_artifacts(
         tmp_path,
         summary="planned=0 / active=2 / completed=0 / superseded=0",
@@ -3270,7 +3442,10 @@ def test_check_runtime_artifact_consistency_flags_history_status_in_live_backlog
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("live milestone backlog contains history status" in item for item in report.failures)
+    assert any(
+        "live milestone backlog contains history status" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_flags_completed_artifact_still_live(
@@ -3286,8 +3461,14 @@ def test_check_runtime_artifact_consistency_flags_completed_artifact_still_live(
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("completed/superseded milestone artifact MS-001 remains live" in item for item in report.failures)
-    assert any("active_milestone MS-001 points to completed/superseded" in item for item in report.failures)
+    assert any(
+        "completed/superseded milestone artifact MS-001 remains live" in item
+        for item in report.failures
+    )
+    assert any(
+        "active_milestone MS-001 points to completed/superseded" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_flags_suspended_primary_status(
@@ -3316,7 +3497,10 @@ def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+    assert any(
+        "active_worktrack WT-001 points to closed worktrack" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_flags_paused_milestone_retaining_active_worktrack(
@@ -3366,8 +3550,14 @@ def test_check_runtime_artifact_consistency_flags_milestone_worktrack_wrong_clos
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("integration_target_ref='develop' does not target milestone_branch" in item for item in report.failures)
-    assert any("closeout_target_ref='develop' does not target milestone_branch" in item for item in report.failures)
+    assert any(
+        "integration_target_ref='develop' does not target milestone_branch" in item
+        for item in report.failures
+    )
+    assert any(
+        "closeout_target_ref='develop' does not target milestone_branch" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_flags_active_worktrack_closed_expected_status(
@@ -3384,7 +3574,10 @@ def test_check_runtime_artifact_consistency_flags_active_worktrack_closed_expect
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in report.failures)
+    assert any(
+        "active_worktrack WT-001 points to closed worktrack" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_allows_active_expected_status_completed(
@@ -3432,7 +3625,10 @@ def test_check_runtime_artifact_consistency_flags_completed_artifact_incomplete_
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("completed milestone artifact MS-001 has incomplete progress 0/1" in item for item in report.failures)
+    assert any(
+        "completed milestone artifact MS-001 has incomplete progress 0/1" in item
+        for item in report.failures
+    )
 
 
 def test_check_runtime_artifact_consistency_allows_legacy_completed_artifact_not_in_history(
@@ -3481,18 +3677,29 @@ def test_runtime_artifact_consistency_simulation_matches_expected_outcomes() -> 
 
     assert all(result["expected_pass"] == result["actual_pass"] for result in results)
     failures_by_id = {
-        str(result["scenario_id"]): list(result["failures"])
-        for result in results
+        str(result["scenario_id"]): list(result["failures"]) for result in results
     }
     assert failures_by_id["consistent-active"] == []
-    assert any("remains live as status 'active'" in item for item in failures_by_id["completed-artifact-still-live"])
-    assert any("active_worktrack WT-001 points to closed worktrack" in item for item in failures_by_id["active-worktrack-closed"])
-    assert any("invalid primary status 'suspended'" in item for item in failures_by_id["suspended-primary-status"])
+    assert any(
+        "remains live as status 'active'" in item
+        for item in failures_by_id["completed-artifact-still-live"]
+    )
+    assert any(
+        "active_worktrack WT-001 points to closed worktrack" in item
+        for item in failures_by_id["active-worktrack-closed"]
+    )
+    assert any(
+        "invalid primary status 'suspended'" in item
+        for item in failures_by_id["suspended-primary-status"]
+    )
     assert any(
         "continuation_state waiting_external retains active_worktrack WT-001" in item
         for item in failures_by_id["paused-retains-active-worktrack"]
     )
-    assert any("incomplete progress 0/1" in item for item in failures_by_id["completed-artifact-incomplete-progress"])
+    assert any(
+        "incomplete progress 0/1" in item
+        for item in failures_by_id["completed-artifact-incomplete-progress"]
+    )
     assert failures_by_id["active-expected-status-completed"] == []
 
 
@@ -3516,13 +3723,20 @@ def test_check_runtime_artifact_consistency_flags_live_status_in_history(
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("milestone-history contains live status" in item for item in report.failures)
+    assert any(
+        "milestone-history contains live status" in item for item in report.failures
+    )
 
 
-def test_check_runtime_artifact_consistency_flags_malformed_summary(tmp_path: Path) -> None:
+def test_check_runtime_artifact_consistency_flags_malformed_summary(
+    tmp_path: Path,
+) -> None:
     _write_runtime_artifacts(tmp_path, summary="active milestone only")
 
     report = SemanticReport()
     check_runtime_artifact_consistency(tmp_path, report)
 
-    assert any("milestone_pipeline_summary is missing or malformed" in item for item in report.failures)
+    assert any(
+        "milestone_pipeline_summary is missing or malformed" in item
+        for item in report.failures
+    )
