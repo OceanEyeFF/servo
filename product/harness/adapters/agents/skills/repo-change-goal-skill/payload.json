@@ -9,8 +9,7 @@
   ],
   "target_dir": "repo-change-goal-skill",
   "legacy_target_dirs": [
-    "goal-change-control-skill",
-    "repo-change-goal-skill",
+    "servo-repo-change-goal-skill",
     "aw-repo-change-goal-skill"
   ],
   "legacy_skill_ids": [

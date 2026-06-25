@@ -19,7 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "worktrack-status-skill",
+    "servo-worktrack-status-skill",
     "aw-worktrack-status-skill"
   ]
 }

@@ -8,7 +8,7 @@
   ],
   "target_dir": "repo-status-skill",
   "legacy_target_dirs": [
-    "repo-status-skill",
+    "servo-repo-status-skill",
     "aw-repo-status-skill"
   ],
   "target_entry_name": "SKILL.md",

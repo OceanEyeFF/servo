@@ -9,7 +9,7 @@
   ],
   "target_dir": "repo-append-request-skill",
   "legacy_target_dirs": [
-    "repo-append-request-skill",
+    "servo-repo-append-request-skill",
     "aw-repo-append-request-skill"
   ],
   "target_entry_name": "SKILL.md",

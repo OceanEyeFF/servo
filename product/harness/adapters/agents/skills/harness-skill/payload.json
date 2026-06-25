@@ -21,6 +21,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "harness-skill"
+    "servo-harness-skill",
+    "aw-harness-skill"
   ]
 }

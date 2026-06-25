@@ -19,7 +19,7 @@
     "aw.marker"
   ],
   "legacy_target_dirs": [
-    "repo-refresh-skill",
+    "servo-repo-refresh-skill",
     "aw-repo-refresh-skill"
   ]
 }
