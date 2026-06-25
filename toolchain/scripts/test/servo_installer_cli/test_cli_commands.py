@@ -100,7 +100,7 @@ def test_cli_help_version_and_noninteractive_default(
 def test_cli_agents_command_lifecycle(repo_root: Path, node_path: str, tmp_path: Path) -> None:
     target_repo = tmp_path / "agents-target"
     target_root = target_repo / ".agents" / "skills"
-    installed_skill = target_root / "servo-harness-skill" / "SKILL.md"
+    installed_skill = target_root / "harness-skill" / "SKILL.md"
 
     diagnose = assert_json_payload(
         run_servo_installer(repo_root, node_path, target_repo, "diagnose", "--backend", "agents", "--json")
@@ -320,7 +320,7 @@ def test_cli_prune_agents(
     )
     assert_success(install)
 
-    harness_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+    harness_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
     assert harness_skill.is_file()
 
     prune = run_servo_installer(
