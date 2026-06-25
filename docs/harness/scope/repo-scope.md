@@ -101,7 +101,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - 每个 candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险、programmer decision boundary 和 programmer confirmation requirement。
 - 候选数量应收敛，通常为 1 到 3 个；数量过多说明 RepoScope.Decide 应回到调研/问题收集，而不是创建 milestone。
 
-所有 candidate milestone brief 在 programmer 明确确认前都只能停留在建议层。`init-milestone-skill` 才能创建或激活 Milestone；`repo-whats-next-skill` / RepoScope.Decide 不得把候选建议写成 live backlog truth，不得把候选 Worktrack 写入 `.servo/worktrack/*`，也不得越过 Milestone Review Gate、Complex Project Entry Gate 或 Worktrack Intake Review。
+所有 candidate milestone brief 在 programmer 明确确认前都只能停留在建议层。`milestone-init-skill` 才能创建或激活 Milestone；`repo-whats-next-skill` / RepoScope.Decide 不得把候选建议写成 live backlog truth，不得把候选 Worktrack 写入 `.servo/worktrack/*`，也不得越过 Milestone Review Gate、Complex Project Entry Gate 或 Worktrack Intake Review。
 
 ## RepoScope ↔ WorktrackScope 切换
 
@@ -127,8 +127,8 @@ RepoScope.Decide 基于观测结果做出以下判定：
 - `branch_context`: 当前 checkout 必须匹配即将进入的 mutating Function。milestone-derived Worktrack 初始化要求 `milestone`；非 milestone-derived 初始化要求 `baseline`。
 
 进入动作：
-1. `init-worktrack-skill` 校验并写入 `worktrack_intake_review`
-2. `init-worktrack-skill` 创建 worktrack branch、contract、plan-task-queue、gate-evidence
+1. `worktrack-init-skill` 校验并写入 `worktrack_intake_review`
+2. `worktrack-init-skill` 创建 worktrack branch、contract、plan-task-queue、gate-evidence
 3. Control State 切换到 `worktrack_scope`
 4. 控制权移交 WorktrackScope 控制回路
 
@@ -176,7 +176,7 @@ RepoScope 在以下情况触发文档追平：
 - 验证命令变更
 - Operator-facing 文档过时
 
-文档追平由 `doc-catch-up-worker-skill` 执行，完成后写入 `last_doc_catch_up_checkpoint`。
+文档追平由 `worktrack-doc-catch-up-skill` 执行，完成后写入 `last_doc_catch_up_checkpoint`。
 
 ## 治理约束
 

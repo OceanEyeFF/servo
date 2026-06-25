@@ -11,7 +11,7 @@ last_verified: 2026-06-13
 
 Plan / Task Queue 是单个 Worktrack 内的局部任务窗口 / task window，不是 Repo backlog、Milestone backlog、candidate milestone 列表或候选 Milestone 列表。它只能展开当前已批准的 `WorktrackContract`，不得创建 milestone、追加 worktrack、改变 milestone purpose，或把 RepoScope.Decide 的候选建议解释成执行队列。
 
-在同一 Worktrack Contract 范围内，queue 可以规划多个连续小任务，并按依赖、验收映射和 dispatch handoff 连续推进。连续推进不等于一次 dispatch 执行整个 queue：`schedule-worktrack-skill` 每轮只能选择一个当前下一步动作，并生成 bounded dispatch handoff packet；`dispatch-skills` 只消费该 packet，不反向改写 queue。
+在同一 Worktrack Contract 范围内，queue 可以规划多个连续小任务，并按依赖、验收映射和 dispatch handoff 连续推进。连续推进不等于一次 dispatch 执行整个 queue：`worktrack-schedule-skill` 每轮只能选择一个当前下一步动作，并生成 bounded dispatch handoff packet；`worktrack-dispatch-skill` 只消费该 packet，不反向改写 queue。
 
 最少应包含：
 

@@ -140,7 +140,7 @@ npx servo-installer verify --backend agents
 然后在你的 Coding CLI 里：
 
 ```txt
-$set-harness-goal-skill 当前仓库期望最终实现一个 [目标描述]。
+$harness-set-goal-skill 当前仓库期望最终实现一个 [目标描述]。
 $repo-whats-next-skill    # 分析候选 Milestone
 $harness-skill            # 开始推进
 ```

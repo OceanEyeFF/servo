@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-"use strict";
+
 
 const {
   chmodSync,
@@ -52,7 +52,7 @@ const runtimeMigrationAwPathReplacements = [
   [/\.aw\//g, ".servo/"],
   [/`\.aw`/g, "`.servo`"],
   [/\.aw(?=\s)/g, ".servo"],
-  [/aw-set-harness-goal-skill/g, "servo-set-harness-goal-skill"],
+  [/aw-set-harness-goal-skill/g, "harness-set-goal-skill"],
 ];
 const defaultGithubRepo = "OceanEyeFF/servo";
 const githubRepoPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
@@ -805,7 +805,7 @@ function targetRootForBackend(backend, targetRepoRoot, options = {}) {
 
 function buildNodeBackendContext(options = {}) {
   const backend = options.backend || agentsBackend;
-  if (!Object.prototype.hasOwnProperty.call(expectedPayloadVersions, backend)) {
+  if (!Object.hasOwn(expectedPayloadVersions, backend)) {
     throw new Error(`Unsupported backend for Node-owned path: ${backend}`);
   }
   const sourceRootOverride = options.sourceRootOverride;
@@ -1755,7 +1755,7 @@ function applyMarkdownFrontmatterOverrides(sourceText, overrides) {
       const updatedFrontmatter = [];
       for (const line of lines.slice(1, closingIndex)) {
         const key = frontmatterKey(line);
-        if (Object.prototype.hasOwnProperty.call(overrides, key)) {
+        if (Object.hasOwn(overrides, key)) {
           updatedFrontmatter.push(`${key}: ${renderFrontmatterValue(overrides[key])}\n`);
           seenKeys.add(key);
         } else {
@@ -3616,7 +3616,7 @@ function reconcileServoContext(parsed) {
     "product",
     "harness",
     "skills",
-    "set-harness-goal-skill",
+    "harness-set-goal-skill",
     "scripts",
     "deploy_servo.js",
   );
@@ -5230,7 +5230,7 @@ async function guidedSummary(rl, state, results) {
   } else {
     console.log(SYM_FAIL + " " + colorBold("Guided flow incomplete — partial state."));
     var stageNames = ["diagnose", "preview", "confirm", "install", "verify"];
-    results.forEach(function(pass, i) {
+    results.forEach((pass, i) => {
       console.log("  " + statusSymbol(pass) + " Stage " + (i + 1) + ": " + stageNames[i]);
     });
     console.log("\n" + SYM_WARN + " Recovery options:");
@@ -5243,7 +5243,7 @@ async function guidedSummary(rl, state, results) {
     }
     console.log("  → Re-run guided flow from TUI menu (option 1)");
     state.recoveryHint = results[3] ? "verify" : "install";
-    state.failedStages = stageNames.filter(function(_, i) { return !results[i]; });
+    state.failedStages = stageNames.filter((_, i) => !results[i]);
   }
   console.log(sep);
   return ok;

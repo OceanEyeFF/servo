@@ -174,7 +174,7 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 
 此外应保存 Baseline Traceability，用于 `WorktrackScope` 关闭后快速定位已验证基线：`last_verified_checkpoint`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`checkpoint_type`、`checkpoint_ref`、`verified_at`、`if_no_commit_reason`、`alternative_traceability`。
 
-其中 `latest_observed_checkpoint` 与 `last_doc_catch_up_checkpoint` 是 git hash 幂等性锚点，分别记录 `repo-refresh-skill` 和 `doc-catch-up-worker-skill` 上次执行时的 HEAD hash，供 `harness-skill` 启动时对比以跳过重复刷新。
+其中 `latest_observed_checkpoint` 与 `last_doc_catch_up_checkpoint` 是 git hash 幂等性锚点，分别记录 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill` 上次执行时的 HEAD hash，供 `harness-skill` 启动时对比以跳过重复刷新。
 
 ## Skill Source Baseline Traceability
 
@@ -185,7 +185,7 @@ Canonical skill 源版本事实由 repo 级 checkpoint 正式对象持有，而�
 - 当前源 checkpoint 所有者：`.servo/repo/snapshot-status.md`（经 `repo-refresh-skill` 后）
 - 当前控制平面幂等所有者：`.servo/control-state.md` 的 `Baseline Traceability`
 
-已验证的 worktrack 变更 canonical skill 源、源侧 skill 索引或文档/源码可追溯性时，closeout 记录将证据与合并提交写入其 closeout 记录，随后 `repo-refresh-skill` 将刷新后的 git HEAD 写入 `latest_observed_checkpoint` 和 `checkpoint_ref`。若同一变更同时更新了 operator-facing 文档或版本事实，`doc-catch-up-worker-skill` 将该 HEAD 记录为 `last_doc_catch_up_checkpoint`。
+已验证的 worktrack 变更 canonical skill 源、源侧 skill 索引或文档/源码可追溯性时，closeout 记录将证据与合并提交写入其 closeout 记录，随后 `repo-refresh-skill` 将刷新后的 git HEAD 写入 `latest_observed_checkpoint` 和 `checkpoint_ref`。若同一变更同时更新了 operator-facing 文档或版本事实，`worktrack-doc-catch-up-skill` 将该 HEAD 记录为 `last_doc_catch_up_checkpoint`。
 
 长期文档应链接到源根或 catalog 所有者，不应为每个 skill 嵌入一次性 commit hash。若审计交接需要 commit hash，保留在运行时正式对象中，如 closeout 记录、repo snapshot 或 release/version evidence。部署目标是源基线的消费者，不得成为基线所有者。
 

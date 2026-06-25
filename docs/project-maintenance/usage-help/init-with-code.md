@@ -41,10 +41,10 @@ npx servo-installer verify --backend claude
 
 ## 二、初始化 Harness 控制面
 
-安装完成后，在 Coding CLI 中调用 `set-harness-goal-skill` 建立控制面。以 Codex 为例：
+安装完成后，在 Coding CLI 中调用 `harness-set-goal-skill` 建立控制面。以 Codex 为例：
 
 ```txt
-$set-harness-goal-skill 请根据当前已有代码项目初始化 Harness，并生成可确认的 Goal Charter 草稿。
+$harness-set-goal-skill 请根据当前已有代码项目初始化 Harness，并生成可确认的 Goal Charter 草稿。
 ```
 
 目标描述应包含：

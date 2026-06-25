@@ -15,7 +15,7 @@ last_verified: 2026-06-23
 - 属于 `RepoScope`，是 `Observe`/`Decide` 阶段的输入。
 - 记录多个 worktrack 的聚合目标、完成阈值和验收边界。
 - 不选择下一 Worktrack（`RepoScope.Decide` 的职责）。
-- 不初始化 worktrack（`init-worktrack-skill` 的职责）。
+- 不初始化 worktrack（`worktrack-init-skill` 的职责）。
 - 不修改 version/release 状态。
 
 ## 字段定义
@@ -48,11 +48,11 @@ last_verified: 2026-06-23
 | `created_by` | enum | `programmer` / `harness` — 创建来源 |
 | `milestone_kind` | enum | `goal-driven` / `work-collection` — milestone 类型，默认 `goal-driven` |
 | `completion_threshold_pct` | integer | goal-driven milestone 的完成阈值百分比，默认 `100`；仅当 `signal_satisfaction_pct` 与 `criteria_pass_pct` 均达到该阈值时，`purpose_achieved == true` |
-| `milestone_task_complexity_assessment` | object | 任务复杂度评估结构化字段，由 pre-milestone-intake-skill 产出；缺失时等同于 blocked |
+| `milestone_task_complexity_assessment` | object | 任务复杂度评估结构化字段，由 milestone-pre-intake-skill 产出；缺失时等同于 blocked |
 
 ## Milestone Task Complexity Assessment
 
-`milestone_task_complexity_assessment` 是 pre-milestone-intake-skill 产出的结构化复杂度评估，写入 Milestone artifact 并被 downstream consumers（harness-skill、init-milestone-skill、milestone-status-skill）消费。它以固定字段集量化 Milestone 的风险、范围和不确定度，为入口守卫和阻断决策提供结构化依据。
+`milestone_task_complexity_assessment` 是 milestone-pre-intake-skill 产出的结构化复杂度评估，写入 Milestone artifact 并被 downstream consumers（harness-skill、milestone-init-skill、milestone-status-skill）消费。它以固定字段集量化 Milestone 的风险、范围和不确定度，为入口守卫和阻断决策提供结构化依据。
 
 ### 字段定义
 
@@ -132,7 +132,7 @@ Worktrack execution modes `normal`、`autoreview`、`yolo` 仍属于 WorktrackSc
 - Control State 只保存当前 active milestone 的 review gate routing state，例如 `active_milestone_review_gate_status`、`active_milestone_review_count`、`active_milestone_review_checkpoint`、`active_milestone_review_required` 和 `active_milestone_review_blockers`。
 - `milestone_review_count >= 1` 且 `latest_review_status = effective_pass` 且 `effective_review_pass = true` 才能视为有效 review pass。
 - `skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全都不是有效 review pass；不得把 skipped/questions_required/blocked intake 当成 pass。
-- `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化时，必须写入 `review_invalidated_by`，并把 `latest_review_status` 视为 `invalidated`，直到新的 pre-milestone-intake-skill review 产生 fresh checkpoint。
+- `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化时，必须写入 `review_invalidated_by`，并把 `latest_review_status` 视为 `invalidated`，直到新的 milestone-pre-intake-skill review 产生 fresh checkpoint。
 - `milestone_review_gate_handoff` 是 `pre_milestone_intake_review` 到 Milestone artifact 的结构化交接对象；review checkpoint 应引用该 handoff 的稳定摘要或输入指纹；缺失 checkpoint 时不得进入 Worktrack Init/Dispatch。
 
 Conservative runtime backfill applies when older `.servo/milestone/*.md` artifacts lack additive `milestone_review_gate` fields. Missing additive fields must default to `missing`, `false`, `unknown`, `0`, `N/A`, `blocked`, or `not ready`: `milestone_review_count = 0`, `latest_review_status = missing`, `effective_review_pass = false`, `latest_review_checkpoint = N/A`, and `review_invalidated_by` treated as blocking until verified. Backfill must be forward-only, preserve existing observed facts, avoid broad historical rewrites, and must not infer programmer confirmation, grant permissions, increment review counters, or create an `effective_pass`.
@@ -333,7 +333,7 @@ work-collection milestone 完成判定仅需满足：
 
 ## Candidate Recommendation Boundary
 
-Milestone artifact 保存已经创建、激活或完成的 milestone truth；候选 Milestone recommendation 不是该 artifact 的 live truth，除非已经经过 programmer confirmation 并由 `init-milestone-skill` 写入。
+Milestone artifact 保存已经创建、激活或完成的 milestone truth；候选 Milestone recommendation 不是该 artifact 的 live truth，除非已经经过 programmer confirmation 并由 `milestone-init-skill` 写入。
 
 RepoScope 可以在 pre-milestone 场景输出 candidate milestone brief，但该 brief 必须与 live artifact 区分：
 

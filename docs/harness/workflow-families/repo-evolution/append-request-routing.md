@@ -21,11 +21,11 @@ last_verified: 2026-06-13
 
 ### new milestone
 
-追加请求属于 Milestone Pipeline 层：需要创建新 milestone、注册 planned milestone、激活符合条件的 milestone，或向已有 milestone 追加 worktrack 并触发 coverage review。下一路由：`init-milestone-skill`。输出必须包含 milestone brief 边界、`suggested_milestone_action`、RepoScope 路由和审批字段；在 milestone brief 未确认前不得写入或激活。
+追加请求属于 Milestone Pipeline 层：需要创建新 milestone、注册 planned milestone、激活符合条件的 milestone，或向已有 milestone 追加 worktrack 并触发 coverage review。下一路由：`milestone-init-skill`。输出必须包含 milestone brief 边界、`suggested_milestone_action`、RepoScope 路由和审批字段；在 milestone brief 未确认前不得写入或激活。
 
 ### new worktrack
 
-追加请求在 repo 目标内但应独立成为新 worktrack：不属于活跃 worktrack 批准范围、可绑定到 Node Map 候选 node type、需独立 branch/baseline/contract/plan/gate。下一路由：`init-worktrack-skill`。
+追加请求在 repo 目标内但应独立成为新 worktrack：不属于活跃 worktrack 批准范围、可绑定到 Node Map 候选 node type、需独立 branch/baseline/contract/plan/gate。下一路由：`worktrack-init-skill`。
 
 ### scope expansion
 

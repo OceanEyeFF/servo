@@ -155,7 +155,7 @@ self-review blocked
 
 ## 五、与 Closeout Pipeline 的集成
 
-Self-review 在 close-worktrack-skill 中的插入位置：
+Self-review 在 worktrack-close-skill 中的插入位置：
 
 ```text
 Gate pass
@@ -176,13 +176,13 @@ Self-review 的输入来自 `Worktrack Contract.closeout_checklist` 字段（由
 | 步骤 | 执行者 | 时机 |
 |------|--------|------|
 | Self-Review | worktrack executor | closeout 前 |
-| Single-Acceptance | close-worktrack-skill 内部 | closeout gate 前 (merge 前) |
-| Closeout Gate | gate-skill | merge 前 / merge 后 |
+| Single-Acceptance | worktrack-close-skill 内部 | closeout gate 前 (merge 前) |
+| Closeout Gate | worktrack-gate-skill | merge 前 / merge 后 |
 
 Self-review 是自查，single-acceptance 是结构化验收。两者互补但不可替代。
 
 ## 七、Contract 引用
 
-- 本 contract 被 `close-worktrack-skill` 引用
+- 本 contract 被 `worktrack-close-skill` 引用
 - 本 contract 消费 `closeout_checklist` 字段（来自 WT-20260623-wt-contract-checklist）
-- 本 contract 产出 `self-review record`，被 gate-skill 和 closeout record 消费
+- 本 contract 产出 `self-review record`，被 worktrack-gate-skill 和 closeout record 消费

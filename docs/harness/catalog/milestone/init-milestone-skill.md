@@ -19,7 +19,7 @@ last_verified: 2026-06-13
 
 canonical executable source：
 
-- [../../../../product/harness/skills/init-milestone-skill/SKILL.md](../../../../product/harness/skills/init-milestone-skill/SKILL.md)
+- [../../../../product/harness/skills/milestone-init-skill/SKILL.md](../../../../product/harness/skills/milestone-init-skill/SKILL.md)
 
 ## 职责
 
@@ -36,7 +36,7 @@ canonical executable source：
 
 - 不分析 Milestone 状态（`milestone-status-skill` 的职责）
 - 不选择下一 Worktrack（`repo-whats-next-skill` 的职责）
-- 不初始化 worktrack（`init-worktrack-skill` 的职责）
+- 不初始化 worktrack（`worktrack-init-skill` 的职责）
 - 不修改 version/release 状态
 
 ## 输入
@@ -47,9 +47,9 @@ canonical executable source：
 | Harness 推理规格 | `repo-whats-next-skill` 输出 | harness 推理的 milestone 建议 |
 | Milestone backlog | `.servo/repo/milestone-backlog.md` | 唯一性检查 + pipeline 上下文 |
 | Control state | `.servo/control-state.md` | active_milestone 状态 |
-| Pre-milestone intake review | `pre-milestone-intake-skill` 输出 | 高风险或模糊 milestone create/upsert/activate 前的 ready/skipped/blocked 交接证据 |
+| Pre-milestone intake review | `milestone-pre-intake-skill` 输出 | 高风险或模糊 milestone create/upsert/activate 前的 ready/skipped/blocked 交接证据 |
 | Complex Project Entry Gate | `.servo/repo/complex-project-entry-gate.md` 或 `complex_project_entry_gate` handoff | 复杂项目、弱文档或高风险 milestone create/upsert/activate 前的 Milestone-side blocking gate |
-| Milestone Review Gate handoff | `pre-milestone-intake-skill` 输出 | 记录是否形成 `effective_pass` 的执行入口复核；非 pass 状态不得进入 Worktrack 初始化 |
+| Milestone Review Gate handoff | `milestone-pre-intake-skill` 输出 | 记录是否形成 `effective_pass` 的执行入口复核；非 pass 状态不得进入 Worktrack 初始化 |
 
 ## 输出
 
@@ -76,7 +76,7 @@ canonical executable source：
 
 ## Pre-Milestone Intake Handoff
 
-`init-milestone-skill` 消费 `pre-milestone-intake-skill` 的 `pre_milestone_intake_review`，不生成 intake 问题，也不把未确认推断写成 milestone truth。
+`milestone-init-skill` 消费 `milestone-pre-intake-skill` 的 `pre_milestone_intake_review`，不生成 intake 问题，也不把未确认推断写成 milestone truth。
 
 必需 handoff 字段：
 
@@ -132,7 +132,7 @@ canonical executable source：
 
 - `ready`: 只有 `ready_for_init_milestone = true`、`programmer_confirmed = true` 且 `intake_skipped = false` 时才允许 create/upsert/activate。
 - `skipped`: 只能表示 programmer 显式接受跳过风险；必须记录 `skip_reason` 和 `accepted_risk`，不得伪装成 ready。默认路由是 handback / approval，不自动 create、upsert 或 activate；只有同一轮输入明确授权“跳过 intake 后仍允许初始化”时才可继续。
-- `questions_required`: 必须返回 blocked，保留 `continuation_state` 和 `next_required_question`，并路由回 `pre-milestone-intake-skill` 继续 one-question-at-a-time；不得当成 approval。
+- `questions_required`: 必须返回 blocked，保留 `continuation_state` 和 `next_required_question`，并路由回 `milestone-pre-intake-skill` 继续 one-question-at-a-time；不得当成 approval。
 - `blocked`: 必须返回 blocked 并暴露阻断原因。
 - missing / 字段不全 / 状态矛盾：必须返回 blocked，不得把薄弱的 milestone brief 伪装成已确认。
 
@@ -140,7 +140,7 @@ Milestone Review Gate handoff 只能在 `intake_status = ready`、`programmer_co
 
 ## Complex Project Entry Gate Handoff
 
-当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，`init-milestone-skill` 必须消费 `complex_project_entry_gate`。该 gate 是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该 gate。
+当 milestone creation/upsert/activation 命中复杂项目、弱文档、高风险操作或跨系统触发条件时，`milestone-init-skill` 必须消费 `complex_project_entry_gate`。该 gate 是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。Worktrack execution modes `normal`、`autoreview`、`yolo` 不替代该 gate。
 
 必需 handoff 字段：
 
@@ -161,7 +161,7 @@ Milestone Review Gate handoff 只能在 `intake_status = ready`、`programmer_co
 - work-collection milestone 保持既有自动激活语义；可输出同结构 brief 作为信息提示，但不形成阻塞确认边界。
 - 若本次 upsert 修改了 `completion_signals`、`acceptance_criteria` 或 `completion_threshold_pct`，必须输出 `milestone_reevaluation_required = true`，并要求后续由 `milestone-status-skill` 重新评估 milestone。
 - 若仅向 `worktrack_list` 追加 worktrack，且该 worktrack 已确认归属当前 milestone 的 `purpose`/`signals`/`criteria`，则不触发 milestone 重新评估。
-- 追加进入当前 milestone 的 worktrack 以独立执行单元形式推进：专属 branch、contract、queue、evidence、closeout 和 repo-refresh 追踪由下游 `init-worktrack-skill` / closeout 路径承接。
+- 追加进入当前 milestone 的 worktrack 以独立执行单元形式推进：专属 branch、contract、queue、evidence、closeout 和 repo-refresh 追踪由下游 `worktrack-init-skill` / closeout 路径承接。
 - 若追加的 worktrack 不归属当前 milestone，`ownership_review` 必须返回 `suggest_other_milestone` 或 `suggest_new_milestone`；不得通过静默改写当前 milestone 定义来吸收该 worktrack。
 
 ## 调用时机

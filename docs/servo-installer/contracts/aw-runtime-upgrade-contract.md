@@ -180,7 +180,7 @@ TUI 可以把 legacy `.aw/` 作为 warning 或 upgrade prompt 展示，但 mutat
 - failed copy 暴露 recovery guidance
 - Windows / non-ASCII target path migration 成功，且不依赖 `fs.cpSync`
 - reinstall / update 通过现有 installer path 刷新 managed skill markers 和 payload fingerprints
-- **path reference rewriting：`.aw/` -> `.servo/`，`` `.aw` `` -> `` `.servo` ``，`aw-set-harness-goal-skill` -> `servo-set-harness-goal-skill` in migrated text files；branch names（`develop-aw`、`aw/demo-*`）和 `aw.marker` 不能被改写**
+- **path reference rewriting：`.aw/` -> `.servo/`，`` `.aw` `` -> `` `.servo` ``，`aw-harness-set-goal-skill` -> `harness-set-goal-skill` in migrated text files；branch names（`develop-aw`、`aw/demo-*`）和 `aw.marker` 不能被改写**
 
 当前已验证测试覆盖还包括：update preflight 在 runtime copy 前阻断，以及 bundle reinstall 安装两个 backend payloads。
 

@@ -248,7 +248,7 @@ if (!awControl.includes("`.aw/control-state.md`")) {
 if (!servoControl.includes("`.servo/control-state.md`")) {
   fail("migrated .servo control-state should rewrite .aw path references");
 }
-if (!servoControl.includes("servo-set-harness-goal-skill")) {
+if (!servoControl.includes("harness-set-goal-skill")) {
   fail("migrated .servo control-state should rewrite legacy skill reference");
 }
 if (!servoControl.includes("develop-aw")) {
@@ -279,7 +279,7 @@ cat > "$legacy_bundle_target/.agents/skills/aw-close-worktrack-skill/aw.marker" 
 {
   "marker_version": "aw-managed-skill-marker.v2",
   "backend": "agents",
-  "skill_id": "close-worktrack-skill",
+  "skill_id": "worktrack-close-skill",
   "payload_version": "agents-skill-payload.v0",
   "payload_fingerprint": "legacy-agents"
 }
@@ -288,7 +288,7 @@ cat > "$legacy_bundle_target/.claude/skills/aw-close-worktrack-skill/aw.marker" 
 {
   "marker_version": "aw-managed-skill-marker.v2",
   "backend": "claude",
-  "skill_id": "close-worktrack-skill",
+  "skill_id": "worktrack-close-skill",
   "payload_version": "claude-skill-payload.v0",
   "payload_fingerprint": "legacy-claude"
 }
@@ -319,8 +319,8 @@ function mustNotExist(relativePath) {
 }
 mustExist(".aw/control-state.md");
 mustExist(".servo/control-state.md");
-mustExist(".agents/skills/servo-close-worktrack-skill/aw.marker");
-mustExist(".claude/skills/close-worktrack-skill/aw.marker");
+mustExist(".agents/skills/worktrack-close-skill/aw.marker");
+mustExist(".claude/skills/worktrack-close-skill/aw.marker");
 mustNotExist(".agents/skills/aw-close-worktrack-skill");
 mustNotExist(".claude/skills/aw-close-worktrack-skill");
 if (diagnose.bundle !== true || !diagnose.backends || !diagnose.backends.agents || !diagnose.backends.claude) {

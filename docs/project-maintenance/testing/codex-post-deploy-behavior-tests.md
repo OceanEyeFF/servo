@@ -49,7 +49,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js install --backend agents --
 node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
 ```
 
-当前 `agents` install 已包含全部 23 个 skills（RepoScope/WorktrackScope/验证/裁决/恢复/收尾/通用执行/Milestone/pre-milestone intake/清理）；`set-harness-goal-skill` 自带 `.servo/` 初始化资产。
+当前 `agents` install 已包含全部 23 个 skills（RepoScope/WorktrackScope/验证/裁决/恢复/收尾/通用执行/Milestone/pre-milestone intake/清理）；`harness-set-goal-skill` 自带 `.servo/` 初始化资产。
 
 ## 五、选择观察策略
 
@@ -69,7 +69,7 @@ Use only `harness-skill` as the top-level control entry.
 This is a cold-start scenario: the repo is empty and `.servo/` does not exist.
 User requirement: Build a CLI Slay the Spire-lite in this temporary repo. Reach a full core system with combat, cards, deck, map, and events.
 Working rules: non-interactive test, each subsystem separate Worktrack, complete only first bounded slice unless continuous autonomy, use real files/tests.
-If `.servo/` is missing, `harness-skill` should route to `set-harness-goal-skill`.
+If `.servo/` is missing, `harness-skill` should route to `harness-set-goal-skill`.
 ```
 
 ```bash
@@ -97,7 +97,7 @@ codex exec --cd "$TMP_REPO" --skip-git-repo-check --output-last-message "$TMP_RU
 
 读取每轮完整产物：`session.log`、`final.txt`、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、相关源码与测试结果。
 
-观察点：是否从 `.servo/` 缺失进入 `set-harness-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `dispatch-skills`、产生 review/test/rule-check/gate evidence、在 handback/continuous-autonomy 下表现一致。
+观察点：是否从 `.servo/` 缺失进入 `harness-set-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `worktrack-dispatch-skill`、产生 review/test/rule-check/gate evidence、在 handback/continuous-autonomy 下表现一致。
 
 ## 九、继续与停止
 
