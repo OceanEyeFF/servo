@@ -7,7 +7,7 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 [Milestone Gate 四轴 Skills 与两层编排设计](../../../../.servo/repo/design-four-axis-skills.md) 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
+本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 [Milestone Gate 四轴 Skills 与两层编排设计](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
 
 核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary 和 diff summary（文件变更摘要），不做代码级审查。代码级审查由 whitebox 轴（`milestone-whitebox-check`）负责。
 
@@ -318,7 +318,7 @@ blackbox_verdict:
 
 ## 资源
 
-- 本技能的设计依据：[Milestone Gate 四轴 Skills 与两层编排设计稿](../../../../.servo/repo/design-four-axis-skills.md) — 定义四轴架构、Skill 层级、输入/输出合同
+- 本技能的设计依据：[Milestone Gate 四轴 Skills 与两层编排设计稿](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — 定义四轴架构、Skill 层级、输入/输出合同
 - Milestone Gate 聚合合同：[docs/harness/artifact/control/milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — 定义 aggregation_rules 和 Layer 2 输入格式（本技能是 Layer 2 的输入来源之一）
 - Single-Acceptance Contract：[docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — 定义被消费的 WT verdict 格式
 - Worktrack Contract：[docs/harness/artifact/worktrack/contract.md](../../../../docs/harness/artifact/worktrack/contract.md) — 定义 WT 的 scope、node_type、completion_signals_trace 等字段

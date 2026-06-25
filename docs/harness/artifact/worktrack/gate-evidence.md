@@ -84,7 +84,7 @@ Verdict 判定流程：
    - `absorption_rationale`：吸收理由（为什么可以带条件推进）
    - `follow_up_plan`：后续跟踪计划（何时、如何修复）
    - `follow_up_deadline`：跟踪截止时间（可选，但建议给出）
-4. 低严重度问题的升级围栏：仅当低严重度发现跨越至少两个校验面（如同时出现于 review 和 validation 面），或形成系统性模式并实质性降低对验收或恢复的信心时，才应从 `soft-fail` 升级为 `hard-fail`。停留在单一层面且未形成威胁的低严重度发现必须保留在残留风险中。纯数量阈值的升级方式已被废止，详见 [worktrack-gate-skill 关卡判定规则](../../../../.agents/skills/worktrack-gate-skill/SKILL.md#关卡判定规则)。
+4. 低严重度问题的升级围栏：仅当低严重度发现跨越至少两个校验面（如同时出现于 review 和 validation 面），或形成系统性模式并实质性降低对验收或恢复的信心时，才应从 `soft-fail` 升级为 `hard-fail`。停留在单一层面且未形成威胁的低严重度发现必须保留在残留风险中。纯数量阈值的升级方式已被废止，详见 [worktrack-gate-skill 关卡判定规则](../../../product/harness/skills/worktrack-gate-skill/SKILL.md#关卡判定规则)。
 5. 吸收项必须在下一轮 verify gate 中被重新检查；未在截止时间前修复的吸收项在下一轮自动升级为中严重度
 
 ### 吸收记录示例

@@ -7,7 +7,7 @@ description: 当 Milestone Gate 需要从内部实现视角检查跨 WT 集成�
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴检查架构中的 **whitebox 轴**（Layer 1 独立检查层），对应 [design-four-axis-skills.md](../../../../.servo/repo/design-four-axis-skills.md) 中定义的 Skill 2。它从 milestone 的**内部实现视角**出发，检查跨 worktrack 的关键集成路径、接口拼接、状态传递、依赖关系和架构对齐。它是四个轴检查中的实现深度审查者——不同于 blackbox 轴的外部视角（只看合约和用户可见产出），whitebox 轴可以并且必须阅读完整实现代码来完成分析。
+本技能实现 Milestone Gate 四轴检查架构中的 **whitebox 轴**（Layer 1 独立检查层），对应 [design-four-axis-skills.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) 中定义的 Skill 2。它从 milestone 的**内部实现视角**出发，检查跨 worktrack 的关键集成路径、接口拼接、状态传递、依赖关系和架构对齐。它是四个轴检查中的实现深度审查者——不同于 blackbox 轴的外部视角（只看合约和用户可见产出），whitebox 轴可以并且必须阅读完整实现代码来完成分析。
 
 当 Milestone Gate orchestrator（`milestone-status-skill`）确认所有 worktrack 已闭环、需要收集 whitebox 轴证据以输入 Layer 2 aggregator 时，使用这个技能。
 
@@ -232,7 +232,7 @@ whitebox_verdict:
 
 ## 资源
 
-- 设计文档：`.servo/repo/design-four-axis-skills.md` — 四轴检查架构总设计，Skill 2（whitebox）的定义
+- 设计文档：`docs/harness/artifact/control/milestone-gate-aggregation.md` — 四轴检查架构总设计，Skill 2（whitebox）的定义
 - 聚合合同：`docs/harness/artifact/control/milestone-gate-aggregation.md` — composite_lane_rules 中 whitebox 轴的 veto_power 和消费规则
 - 公共约束：`docs/harness/foundations/skill-common-constraints.md` — 所有 Skill 的 C-1 至 C-7 公共约束
 - 架构分层：`docs/project-maintenance/foundations/root-directory-layering.md` — 路径分层规则，用于 W4 架构对齐检查
