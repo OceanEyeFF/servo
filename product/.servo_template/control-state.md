@@ -102,3 +102,40 @@
 - observed_git_hash: N/A
 - progress_counters: N/A
 - active_worktrack: N/A
+
+## Current Control Level
+
+> 控制面当前层级。运行时字段在 control-state-repo.md 和 control-state-wt.md 中。此处保留为兼容 compact/validate 测试。
+
+- repo_scope: active
+- worktrack_scope: closed
+- current_function:
+
+## Active Worktrack
+
+- active_worktrack:
+- active_worktrack_branch:
+- active_worktrack_node_type:
+
+## Milestone Pipeline
+
+- active_milestone:
+- milestone_status:
+
+## Baseline Branch
+
+- active_milestone_branch:
+- active_milestone_branch_head:
+- baseline_branch:
+- current_checkout:
+
+## Current Next Action
+
+- recommended_next_route:
+- recommended_next_scope:
+
+## Baseline Traceability
+
+- latest_observed_checkpoint:
+- checkpoint_ref:
+- last_doc_catch_up_checkpoint:
