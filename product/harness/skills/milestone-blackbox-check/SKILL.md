@@ -31,7 +31,7 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 - 需要逐行代码审查 → 应使用 `milestone-whitebox-check`
 - 需要检测证据伪造（mock abuse / self-review bias 等）→ 应使用 `milestone-anticheat-check`
 - 需要复合验收 lane 评估（code-review / feature-completeness 等）→ 应使用 `milestone-composite-check`
-- 需要对单个 WT 做 gate 判定 → 应使用 `gate-skill`
+- 需要对单个 WT 做 gate 判定 → 应使用 `worktrack-gate-skill`
 - 当前处于 worktrack scope 而非 milestone scope → 不适用
 
 ## 工作流

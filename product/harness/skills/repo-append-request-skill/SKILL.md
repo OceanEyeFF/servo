@@ -29,8 +29,8 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 - 已经明确是修改 `Goal Charter`，且用户要求直接进入目标变更流程（用 `repo-change-goal-skill`）
 - 已经有批准过的 worktrack contract，且当前任务只是在其中调度下一步（用 `schedule-worktrack-skill`）
-- 已经确定要初始化新的 milestone，且 milestone brief 已确认、无需先分类路由（用 `init-milestone-skill`）
-- 已经确定要初始化新的 worktrack，且无需先分类路由（用 `init-worktrack-skill`）
+- 已经确定要初始化新的 milestone，且 milestone brief 已确认、无需先分类路由（用 `milestone-init-skill`）
+- 已经确定要初始化新的 worktrack，且无需先分类路由（用 `worktrack-init-skill`）
 - 只是 repo 下一步优先级判断，没有具体追加请求（用 `repo-whats-next-skill`）
 
 ## 输入
@@ -72,13 +72,13 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 - 它要创建、注册或激活一个 milestone
 - 它要把多个已确认 worktrack 合并到一个 milestone 级功能迭代
-- 它要向已有 milestone 追加 worktrack，且应由 `init-milestone-skill` 做 coverage review
+- 它要向已有 milestone 追加 worktrack，且应由 `milestone-init-skill` 做 coverage review
 - 它需要 milestone brief、priority、depends_on、completion_signals、acceptance_criteria 或 activation intent
 - 它不是对当前活跃 worktrack 的必要修正或验收缺口
 
 路由结果：
 
-- `recommended_next_route: init-milestone-skill`
+- `recommended_next_route: milestone-init-skill`
 - `recommended_next_scope: RepoScope`
 - `approval_required: true`，除非输入事实已明确包含 programmer 对 milestone brief 的确认
 - 输出 `suggested_milestone_action`（create / activate / append_worktracks / upsert）与 milestone brief 所需最小字段
@@ -95,10 +95,10 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 路由结果：
 
-- `recommended_next_route: init-worktrack-skill`
+- `recommended_next_route: worktrack-init-skill`
 - `recommended_next_scope: WorktrackScope`
 - `approval_required` 取决于该追加请求是否已经获得 programmer 授权
-- 输出 `suggested_node_type` 与理由，最终绑定由 `init-worktrack-skill` 完成
+- 输出 `suggested_node_type` 与理由，最终绑定由 `worktrack-init-skill` 完成
 
 ### 4. scope expansion
 
@@ -163,7 +163,7 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 1. 确认 mode 是 `append-feature`、`append-design` 或 `append-milestone`。
 2. 读取最小 repo truth 与当前控制状态。
 3. 判断追加请求是否改变长期目标；若是，分类为 `goal change`。
-4. 判断追加请求是否属于 Milestone Pipeline 层；若是，分类为 `new milestone` 并路由到 `init-milestone-skill`。
+4. 判断追加请求是否属于 Milestone Pipeline 层；若是，分类为 `new milestone` 并路由到 `milestone-init-skill`。
 5. 判断是否存在活跃 worktrack，以及追加请求是否越过当前 worktrack contract。
 6. 判断请求是 implementation、design-only，还是 design-then-implementation。
 7. 对 worktrack 级请求从 `Engineering Node Map` 提取候选节点类型；对 milestone 级请求提取 `suggested_milestone_action` 与 milestone brief 边界；无法提取时暴露缺口。
