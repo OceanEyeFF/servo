@@ -425,7 +425,7 @@ class AgentsAdapterContractTest(unittest.TestCase):
         self.assertEqual(completed.stderr, "")
 
         summary = json.loads(completed.stdout)
-        self.assertIn("wrong-target-entry-type", summary["issue_codes"])
+        self.assertIn("missing-target-entry", summary["issue_codes"])
         self.assertGreater(summary["conflict_count"], 0)
         self.assertTrue(
             any(

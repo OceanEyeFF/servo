@@ -103,6 +103,19 @@
 - progress_counters: N/A
 - active_worktrack: N/A
 
+## Continuation Authority
+
+> 运行时在 operator-config.md，此处保留为 compact/validate 兼容。
+
+- post_contract_autonomy: false
+
+## Review Gate
+
+> 运行时在 control-state-repo.md，此处保留为 compact/validate 兼容。
+
+- milestone_review_gate_ready: false
+- milestone_review_gate_checkpoint: N/A
+
 ## Current Control Level
 
 > 控制面当前层级。运行时字段在 control-state-repo.md 和 control-state-wt.md 中。此处保留为兼容 compact/validate 测试。

@@ -1423,6 +1423,7 @@ def test_check_pre_milestone_intake_template_contract_accepts_required_terms_and
             "accepted_residual_risk",
             "handoff_to_init_milestone",
             "template_contract_ref",
+            "milestone_task_complexity_assessment",
         ]
     )
     for relative_path in (
@@ -1553,6 +1554,7 @@ def test_check_init_milestone_intake_handoff_contract_accepts_required_terms(
             "accepted_residual_risk",
             "handoff_to_init_milestone",
             "template_contract_ref",
+            "milestone_task_complexity_assessment",
             "pre_milestone_intake_review",
             "intake_status",
             "request_summary",
