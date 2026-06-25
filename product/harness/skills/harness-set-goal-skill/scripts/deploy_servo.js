@@ -1317,6 +1317,16 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 		secrets_policy: "pending_programmer_confirmation",
 		protected_paths: "pending_programmer_confirmation",
 		protected_branches: "pending_programmer_confirmation",
+		protected_branch_policy: "pending_programmer_confirmation",
+		continuous_progression_permission: "pending_programmer_confirmation",
+		per_milestone_automatic_worktrack_budget: "0",
+		default_servo_work_branch: "develop",
+		auto_maintained_runtime_facts_not_asked: "milestone_pipeline_summary, last_doc_catch_up_checkpoint, latest_observed_checkpoint, runtime_dispatch_profile, progress_counters, observed_git_hash, active_worktrack",
+		runtime_dispatch_profile: "N/A",
+		progress_counters: "N/A",
+		observed_git_hash: "N/A",
+		active_worktrack: "N/A",
+			"runtime facts": "auto-maintained",
 		allowed_high_risk_command_modes: "pending_programmer_confirmation",
 		allowed_before_confirmation:
 			"read_only_discovery_and_scanner_evidence_collection",
@@ -1350,9 +1360,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 			? "temporary-understanding.md"
 			: "N/A",
 		confirmation_required: weakDocReinforcementNeeded ? "true" : "false",
-		blocks_implementation_until_resolved: weakDocReinforcementNeeded
-			? "true"
-			: "false",
+		blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false",
 		promotion_allowed: "false",
 		repository_path: args.deployPath || placeholder("repository_path"),
 		baseline_branch: args.baselineBranch || placeholder("baseline_branch"),

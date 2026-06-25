@@ -11,7 +11,7 @@ published_status: "published"
 canonical_copy: "platform-original"
 derivative_policy: "derive-by-platform-from-technical-architecture"
 protected_copy: "linuxdo-release-post-v061.md"
-protected_copy_sha256: "1257b7f2a9df6d271f9f0ac4b82dd12edacfd246be44ab9344151e103b11436c"
+protected_copy_sha256: "6884dffdebec7b01c5ee18c1b54d2e534388386f17c5f6c476e57823a9fe7f2e"
 frontmatter_exemption: "literal-platform-copy"
 ---
 # Linux Do v0.6.1 发布推广帖管理上下文
