@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-"use strict";
+
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -9,10 +9,10 @@ const SKILL_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
-const DEFAULT_CLAUDE_SKILL_NAME = "servo-set-harness-goal-skill";
+const DEFAULT_CLAUDE_SKILL_NAME = "harness-set-goal-skill";
 const CANONICAL_TEMPLATE_RELPATH = path.join("product", ".servo_template");
 
-let _templateRoot = undefined;
+let _templateRoot ;
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
   ".git",
   "__pycache__",
@@ -738,7 +738,7 @@ function placeholder(name) {
 
 function usage() {
   return [
-    "Generate and validate `.servo` bootstrap artifacts from set-harness-goal-skill-owned assets.",
+    "Generate and validate `.servo` bootstrap artifacts from harness-set-goal-skill-owned assets.",
     "",
     "Usage:",
     "  node deploy_servo.js list [--json]",
@@ -1098,11 +1098,11 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     understanding_mode: placeholder("lightweight_or_full"),
     token_budget_note: "lightweight is low-token and quick; full is deeper and may require a separate discovery milestone or worktrack",
     source_scope: placeholder("source_scope"),
-    generated_by: "set-harness-goal-skill",
+    generated_by: "harness-set-goal-skill",
     truth_status: "temporary-inferred",
     gate_truth_status: "runtime-evidence",
-    scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
-    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command: "PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+    scanner_command_alternatives: "PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
     scanner_output_role: "scanner output is evidence, not verdict",
     docker_compose_permission: "pending_programmer_confirmation",
     database_migration_permission: "pending_programmer_confirmation",
@@ -1153,7 +1153,7 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
     why: placeholder("why"),
     pass: "pending",
   };
-  if (Object.prototype.hasOwnProperty.call(directValues, key)) return directValues[key];
+  if (Object.hasOwn(directValues, key)) return directValues[key];
   const linkedTemplateId = LINKED_PATH_FIELDS[key];
   if (linkedTemplateId) {
     const linkedSpec = TEMPLATE_SPECS[linkedTemplateId];
@@ -1890,7 +1890,7 @@ function appendSectionField(content, sectionName, key, value) {
 
 function appendNestedSectionField(content, parentName, childName, key, value) {
   const lines = content.split('\n');
-  let parentIdx = lines.findIndex(l => l.trim() === `## ${parentName}`);
+  const parentIdx = lines.findIndex(l => l.trim() === `## ${parentName}`);
   if (parentIdx < 0) return content;
   let childIdx = -1;
   for (let i = parentIdx + 1; i < lines.length; i++) {

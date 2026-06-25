@@ -11,19 +11,19 @@
 
 ## Project Vision
 
-- 
+-
 
 ## Core Product Goals
 
-- 
+-
 
 ## Technical Direction
 
-- 
+-
 
 ## Engineering Node Map
 
-> 本 Goal 涉及的工程节点类型规划，供 `init-worktrack-skill` 在拆分 worktrack 时参考。
+> 本 Goal 涉及的工程节点类型规划，供 `worktrack-init-skill` 在拆分 worktrack 时参考。
 
 ### Node Type Registry
 
@@ -65,12 +65,12 @@
 
 ## Success Criteria
 
-- 
+-
 
 ## System Invariants
 
-- 
+-
 
 ## Notes
 
-- 
+-

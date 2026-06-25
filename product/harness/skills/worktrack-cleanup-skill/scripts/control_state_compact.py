@@ -207,7 +207,7 @@ def history_artifact_text(
         f"- source: {source_path.as_posix()}\n"
         f"- source_sha256: {source_hash}\n"
         f"- created_at: {created_at}\n"
-        "- generated_by: servo-cleanup-skill/scripts/control_state_compact.py\n\n"
+        "- generated_by: worktrack-cleanup-skill/scripts/control_state_compact.py\n\n"
         "## Preserved Field Summary\n\n"
         f"{preserved_fields}\n\n"
         "## Externalized Sections\n\n"

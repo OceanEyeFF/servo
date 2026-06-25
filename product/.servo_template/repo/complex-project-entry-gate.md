@@ -23,8 +23,8 @@
 > Candidate trigger vocabulary includes weak-doc, large_repo, multi_service, migration_or_data_risk, deploy_or_network_surface, destructive_or_secret_surface, and authority_boundary_unclear. Record only observed signals in trigger_conditions.
 
 - scanner_evidence_ref:
-- scanner_command: PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
-  - scanner_command_alternatives: PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/servo-set-harness-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
+- scanner_command: PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
+  - scanner_command_alternatives: PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 - scanner_output_role: scanner output is evidence, not verdict
 - complexity_signals:
 - thresholds:
