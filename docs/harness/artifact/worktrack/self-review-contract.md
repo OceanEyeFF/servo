@@ -19,7 +19,7 @@ Self-review 是 closeout gate 的**前置检查步骤**，不是替代 gate 裁�
 | 执行者 | worktrack executor (current-carrier / SubAgent) | 独立审查载体 (review / test / policy skills) |
 | 性质 | 自查 + 记录 | 正式裁决 |
 | 阻断语义 | 记录 + critical failure 升级阻断 | 硬裁决 (pass / soft-fail / hard-fail / blocked) |
-| 时机 | closeout 阶段开始前 | closeout 阶段中 (merge 前) |
+| 时机 | closeout pipeline 的 pre-closeout checks 阶段（merge/PR 后段之前） | closeout 阶段中 (merge 前) |
 
 ## 二、检查维度
 
@@ -158,15 +158,25 @@ self-review blocked
 Self-review 在 worktrack-close-skill 中的插入位置：
 
 ```text
-Gate pass
+Worktrack Gate pass (worktrack-gate-skill verdict = pass, 进入 WorktrackScope.closing)
     ↓
-Self-Review (本 contract 定义)          ← 新增步骤
+Self-Review (本 contract 定义)
     ↓
-    ├─ clear → 继续 closeout
+    ├─ clear → 继续
     └─ blocked → handback / fix
     ↓
+Single-Acceptance (single-acceptance-contract)
+    ↓
+    ├─ accepted / accepted_with_notes → 继续
+    └─ blocked → handback / fix
+    ↓
+Closeout Gate (Close 阶段内部 gate)
+    ↓
+    ├─ pass → 继续
+    └─ fail/blocked → recover
+    ↓
 Closeout phases:
-    准备合并请求 → PR → Merge → Cleanup → Repo Refresh
+    准备合并请求 → PR → Merge → Doc-Catch-Up → Refresh → Cleanup → return RepoScope
 ```
 
 Self-review 的输入来自 `Worktrack Contract.closeout_checklist` 字段（由 WT-20260623-wt-contract-checklist 定义），该字段列出本 worktrack 完成后必须更新的 `.servo/` 产物及对应字段。
@@ -177,7 +187,7 @@ Self-review 的输入来自 `Worktrack Contract.closeout_checklist` 字段（由
 |------|--------|------|
 | Self-Review | worktrack executor | closeout 前 |
 | Single-Acceptance | worktrack-close-skill 内部 | closeout gate 前 (merge 前) |
-| Closeout Gate | worktrack-gate-skill | merge 前 / merge 后 |
+| Closeout Gate | Close 阶段内部 | merge 前 |
 
 Self-review 是自查，single-acceptance 是结构化验收。两者互补但不可替代。
 

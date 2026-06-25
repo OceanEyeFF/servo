@@ -89,6 +89,8 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
 - `后续产物`
 - `交接目标`
 
+> 若恢复成功且所选模式非 replan，最终应经过 worktrack-close-skill 完成收尾。
+
 ## 恢复权限边界
 
 恢复决策必须停留在以下权限限制内：
@@ -115,6 +117,14 @@ description: 当 Harness 处于 WorktrackScope.recovering，且需要一轮带�
   - 当当前工作追踪的目标、范围或约定本身需要重新审定时，可以触发跨 Scope 回到 RepoScope 的重新规划。
   - 新工作追踪的创建和上游约定的改写必须通过显式审批和交接流程。从本技能静默执行的行为必须被阻断。
   - 必须返回明确的重新规划交接，说明哪些内容需要回到 RepoScope 重新评估。
+
+### if_interrupted_strategy → 恢复模式映射
+
+| if_interrupted_strategy | 默认恢复行为 |
+|------------------------|-------------|
+| checkpoint-or-recover | 保存 checkpoint → 优先 retry（目标与基准仍有效时）|
+| checkpoint-or-rollback | 保存 checkpoint → 优先 rollback |
+| preserve-report-and-stop | 保留报告 artifact → 禁止 retry/rollback → 路由到 replan 或 handback |
 
 ## 硬约束
 

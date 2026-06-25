@@ -9,10 +9,9 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 
 本技能实现 `WorktrackScope.Judge` 状态转移算子，对应 Harness 控制回路中的**裁决**阶段。它负责基于三个正交校验面（implementation/validation/policy）的证据，判断"当前状态是否允许推进"，生成 verdict 并决定允许的下一路由。
 
-除三个校验面的传统证据外，gate 还消费以下 pre-closeout 产物作为裁决输入：
+本 gate 基于三个正交校验面（implementation/validation/policy）的证据做裁决，不直接消费 Self-Review Record 和 Single-Acceptance Verdict。
 
-- **Self-Review Record**：由 [worktrack-close-skill](../worktrack-close-skill/SKILL.md) 在 pre-closeout checks 阶段产出，定义见 [self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md)。
-- **Single-Acceptance Verdict**：由 worktrack-close-skill 在 pre-closeout checks 阶段产出，定义见 [single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。
+> **注意**：Self-Review Record 和 Single-Acceptance Verdict 由 [worktrack-close-skill](../worktrack-close-skill/SKILL.md) 在 Close 阶段的 pre-closeout checks 中产出，并被 Close 阶段内的 **Closeout Gate**（非本 Worktrack Gate）消费。详见 [harness-skill §7 closeout pipeline](../harness-skill/SKILL.md#七)。
 
 当 `Harness` 已经掌握当前轮次的证据，并需要在 `WorktrackScope.judging` 内完成一轮限定范围判定时，使用这个技能。
 
@@ -152,7 +151,7 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 

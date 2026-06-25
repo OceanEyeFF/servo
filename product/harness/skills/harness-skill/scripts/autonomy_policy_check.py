@@ -1,0 +1,640 @@
+#!/usr/bin/env python3
+"""Autonomy Policy Check — Low-Risk Default-Flow Autonomy Policy 运行时检查脚本。
+
+根据 operation + skill 判断当前操作是否命中 forbidden / stop_condition，
+并报告 allowed 状态、审批需求和证据完整性。
+
+对应 SKILL.md §10.7 步骤 5 的低风险默认流策略。
+
+用法:
+  PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/autonomy_policy_check.py \
+    --operation {observe|schedule|dispatch|verify|close|recover|change_goal|init_milestone|init_worktrack|cleanup|doc_catch_up} \
+    --skill {skill_name} \
+    --control-state .servo/control-state.md
+
+输出: JSON (allowed, blocked, stop_condition_hit, forbidden_hit,
+            needs_approval, evidence_required_complete, evidence_missing, reason)
+Exit 0 = check passed (无 hard block); exit 1 = hard block.
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+from typing import Any
+
+# ──────────────────────────────────────────────
+# 策略规则定义（4 类，从 SKILL.md §10.7 步骤 5 提取）
+# ──────────────────────────────────────────────
+
+FORBIDDEN: dict[str, str] = {
+    "goal_change":                         "目标变更",
+    "scope_expansion":                     "范围扩展",
+    "milestone_final_acceptance":          "Milestone 最终验收",
+    "release_publish":                     "发布/打包/标签",
+    "github_release":                      "GitHub Release",
+    "publish_workflow":                    "发布工作流",
+    "protected_branch_mutation":           "受保护分支变更",
+    "force_push":                          "强制推送",
+    "large_file_deletion":                 "大量文件删除",
+    "destructive_cleanup":                 "破坏性清理",
+    "secret_security_privacy":             "密钥/安全/隐私",
+    "deploy_network_db":                   "部署/网络/数据库迁移",
+    "cross_repo_side_effects":             "跨仓库副作用",
+    "external_paid_quota":                 "外部付费/配额消耗",
+}
+
+STOP_CONDITION: dict[str, str] = {
+    "evidence_missing":                    "证据缺失或冲突",
+    "branch_mismatch":                     "分支不匹配",
+    "gate_fail":                           "Gate 失败",
+    "context_noise":                       "上下文噪音/遗忘",
+    "needs_programmer_judgment":           "需要程序员判断",
+    "authority_boundary_unclear":          "权限边界不清",
+    "contract_scope_expansion":            "Contract 外扩",
+    "protected_branch_policy_hit":         "受保护分支策略命中",
+    "destructive_operation_hit":           "破坏性操作命中",
+    "release_sensitive_signal":            "发布敏感信号",
+    "milestone_final_acceptance_boundary": "Milestone 最终验收边界",
+}
+
+ALLOWED: dict[str, str] = {
+    "read_only_observation":       "只读观察",
+    "artifact_hydration":          "Artifact 水合",
+    "status_consistency_check":    "状态一致性检查",
+    "worktrack_queue_scheduling":  "Worktrack 内队列调度",
+    "non_destructive_docs_edits":  "非破坏性文档编辑",
+    "bounded_local_verification":  "限定范围本地验证",
+    "post_gate_repo_refresh":      "Gate 后 repo 刷新写回",
+    "scaffold_validation":         "脚手架验证无外部副作用",
+}
+
+EVIDENCE_REQUIRED: dict[str, str] = {
+    "route_decision":              "路由决策",
+    "worktrack_contract_scope":    "Worktrack Contract 范围",
+    "selected_task_dispatch_packet": "选中任务/分派包",
+    "runtime_dispatch_profile":    "运行时 dispatch profile",
+    "validation_evidence":         "验证证据",
+    "governance_policy_evidence":  "治理策略证据",
+    "gate_verdict":                "Gate 裁决",
+    "closeout_record":             "收尾记录",
+    "repo_refresh_checkpoint":     "Repo 刷新 checkpoint",
+}
+
+
+# ──────────────────────────────────────────────
+# 操作 → 策略命中映射
+# ──────────────────────────────────────────────
+
+class PolicyProfile:
+    """单个 operation + skill 组合的策略命中 profile。"""
+
+    __slots__ = (
+        "allowed_rules",
+        "forbidden_hit",
+        "stop_condition_hit",
+        "needs_approval",
+        "blocked_override",
+        "description",
+    )
+
+    def __init__(
+        self,
+        *,
+        allowed_rules: list[str] | None = None,
+        forbidden_hit: list[str] | None = None,
+        stop_condition_hit: list[str] | None = None,
+        needs_approval: bool = False,
+        blocked_override: bool | None = None,
+        description: str = "",
+    ):
+        self.allowed_rules = allowed_rules or []
+        self.forbidden_hit = forbidden_hit or []
+        self.stop_condition_hit = stop_condition_hit or []
+        self.needs_approval = needs_approval
+        self.blocked_override = blocked_override
+        self.description = description
+
+
+# ── operation → skill-specific profiles ──
+# key format: "operation::skill"
+# 未在映射中的组合走默认通用策略
+
+POLICY_MAP: dict[str, PolicyProfile] = {
+    # ── observe ──
+    "observe::repo-status-skill": PolicyProfile(
+        allowed_rules=["read_only_observation", "artifact_hydration",
+                        "status_consistency_check"],
+        description="RepoScope 只读观察：安全，在 allowed 范围内",
+    ),
+    "observe::worktrack-status-skill": PolicyProfile(
+        allowed_rules=["read_only_observation", "artifact_hydration",
+                        "status_consistency_check"],
+        description="WorktrackScope 只读观察：安全，在 allowed 范围内",
+    ),
+    "observe::milestone-status-skill": PolicyProfile(
+        allowed_rules=["read_only_observation", "artifact_hydration",
+                        "status_consistency_check"],
+        description="Milestone 状态观察：只读传感器，在 allowed 范围内",
+    ),
+
+    # ── schedule ──
+    "schedule::schedule-worktrack-skill": PolicyProfile(
+        allowed_rules=["worktrack_queue_scheduling", "artifact_hydration",
+                        "status_consistency_check"],
+        description="Worktrack 内队列调度：在 allowed 范围内",
+    ),
+
+    # ── verify ──
+    "verify::review-evidence-skill": PolicyProfile(
+        allowed_rules=["bounded_local_verification"],
+        description="审查证据收集：限定范围本地验证，在 allowed 范围内",
+    ),
+    "verify::test-evidence-skill": PolicyProfile(
+        allowed_rules=["bounded_local_verification"],
+        description="测试证据收集：限定范围本地验证，在 allowed 范围内",
+    ),
+    "verify::rule-check-skill": PolicyProfile(
+        allowed_rules=["bounded_local_verification"],
+        description="规则检查证据收集：限定范围本地验证，在 allowed 范围内",
+    ),
+    "verify::gate-skill": PolicyProfile(
+        allowed_rules=["bounded_local_verification"],
+        description="Gate 裁决：在 allowed 范围内",
+    ),
+
+    # ── dispatch ──
+    "dispatch::generic-worker-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "needs_programmer_judgment",
+            "authority_boundary_unclear",
+        ],
+        needs_approval=True,
+        description=(
+            "generic-worker-skill 无策略感知，可能执行任何 forbidden 操作。"
+            "需要人工检查 forbidden 全列表（14 项），标记为 needs_approval: true"
+        ),
+    ),
+    "dispatch::dispatch-skills": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "authority_boundary_unclear",
+        ],
+        needs_approval=True,
+        description=(
+            "dispatch-skills 分派：限定范围但可能触及边界，需要审批"
+        ),
+    ),
+
+    # ── close ──
+    "close::close-worktrack-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "protected_branch_policy_hit",
+        ],
+        needs_approval=True,
+        description=(
+            "close-worktrack-skill 涉及 merge/rebase 触达受保护分支策略，"
+            "需要审批。已批准的 closeout 流程可继续"
+        ),
+    ),
+
+    # ── recover ──
+    "recover::recover-worktrack-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "needs_programmer_judgment",
+            "authority_boundary_unclear",
+        ],
+        needs_approval=True,
+        description=(
+            "恢复操作涉及重试/回滚/拆分等决策，需要审批"
+        ),
+    ),
+
+    # ── change_goal ──
+    "change_goal::repo-change-goal-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=["goal_change"],
+        stop_condition_hit=[
+            "needs_programmer_judgment",
+            "milestone_final_acceptance_boundary",
+        ],
+        needs_approval=True,
+        blocked_override=False,  # 有独立审批门，不硬阻断
+        description=(
+            "目标变更命中 forbidden:goal_change，但 repo-change-goal-skill "
+            "有独立审批门，标记 needs_approval: true 而非 blocked"
+        ),
+    ),
+
+    # ── init_milestone ──
+    "init_milestone::init-milestone-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "contract_scope_expansion",
+            "needs_programmer_judgment",
+        ],
+        needs_approval=True,
+        description="Milestone 初始化可能扩大 scope，需要审批",
+    ),
+
+    # ── init_worktrack ──
+    "init_worktrack::init-worktrack-skill": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=["contract_scope_expansion"],
+        needs_approval=True,
+        description="Worktrack 初始化可能扩大 scope，需要审批",
+    ),
+
+    # ── cleanup ──
+    "cleanup::servo-cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "servo-cleanup-skill 使用 -d 安全删除，"
+            "不命中 forbidden:destructive_cleanup"
+        ),
+    ),
+    "cleanup::cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "cleanup-skill 使用 -d 安全删除，"
+            "不命中 forbidden:destructive_cleanup"
+        ),
+    ),
+
+    # ── doc_catch_up ──
+    "doc_catch_up::doc-catch-up-worker-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description="文档追平：非破坏性文档编辑，在 allowed 范围内",
+    ),
+}
+
+
+# ──────────────────────────────────────────────
+# 默认通用策略 profile（operation 的保守默认）
+# ──────────────────────────────────────────────
+
+DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
+    "observe": PolicyProfile(
+        allowed_rules=["read_only_observation"],
+        needs_approval=False,
+        description="observe 默认：只读观察，安全",
+    ),
+    "schedule": PolicyProfile(
+        allowed_rules=["worktrack_queue_scheduling"],
+        needs_approval=False,
+        description="schedule 默认：队列调度，在允许范围内",
+    ),
+    "verify": PolicyProfile(
+        allowed_rules=["bounded_local_verification"],
+        needs_approval=False,
+        description="verify 默认：限定范围本地验证",
+    ),
+    "dispatch": PolicyProfile(
+        allowed_rules=[],
+        stop_condition_hit=["needs_programmer_judgment"],
+        needs_approval=True,
+        description="dispatch 默认：需要审批",
+    ),
+    "close": PolicyProfile(
+        allowed_rules=[],
+        stop_condition_hit=["protected_branch_policy_hit"],
+        needs_approval=True,
+        description="close 默认：涉及 protected branch，需要审批",
+    ),
+    "recover": PolicyProfile(
+        allowed_rules=[],
+        stop_condition_hit=["needs_programmer_judgment"],
+        needs_approval=True,
+        description="recover 默认：需要审批",
+    ),
+    "change_goal": PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=["goal_change"],
+        stop_condition_hit=["needs_programmer_judgment"],
+        needs_approval=True,
+        blocked_override=False,
+        description="change_goal 默认：目标变更需审批",
+    ),
+    "init_milestone": PolicyProfile(
+        allowed_rules=[],
+        stop_condition_hit=["contract_scope_expansion"],
+        needs_approval=True,
+        description="init_milestone 默认：可能扩大 scope，需要审批",
+    ),
+    "init_worktrack": PolicyProfile(
+        allowed_rules=[],
+        stop_condition_hit=["contract_scope_expansion"],
+        needs_approval=True,
+        description="init_worktrack 默认：可能扩大 scope，需要审批",
+    ),
+    "cleanup": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        needs_approval=False,
+        description="cleanup 默认：安全删除",
+    ),
+    "doc_catch_up": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        needs_approval=False,
+        description="doc_catch_up 默认：非破坏性编辑",
+    ),
+}
+
+
+# ──────────────────────────────────────────────
+# 证据检查 — 基于 operation 判定哪些证据需要存在
+# ──────────────────────────────────────────────
+
+# operation → 必需证据项
+REQUIRED_EVIDENCE: dict[str, list[str]] = {
+    "observe": [
+        "repo_refresh_checkpoint",
+    ],
+    "schedule": [
+        "route_decision",
+        "worktrack_contract_scope",
+    ],
+    "dispatch": [
+        "route_decision",
+        "worktrack_contract_scope",
+        "selected_task_dispatch_packet",
+        "runtime_dispatch_profile",
+    ],
+    "verify": [
+        "validation_evidence",
+        "governance_policy_evidence",
+    ],
+    "close": [
+        "gate_verdict",
+        "closeout_record",
+        "repo_refresh_checkpoint",
+    ],
+    "recover": [
+        "route_decision",
+        "worktrack_contract_scope",
+    ],
+    "change_goal": [
+        "route_decision",
+    ],
+    "init_milestone": [
+        "route_decision",
+    ],
+    "init_worktrack": [
+        "route_decision",
+        "worktrack_contract_scope",
+    ],
+    "cleanup": [
+        "closeout_record",
+    ],
+    "doc_catch_up": [
+        "repo_refresh_checkpoint",
+    ],
+}
+
+
+def resolve_profile(operation: str, skill: str) -> PolicyProfile:
+    """按 operation::skill 精确查找策略 profile，fallback 到 operation 默认。"""
+    key = f"{operation}::{skill}"
+    if key in POLICY_MAP:
+        return POLICY_MAP[key]
+
+    if operation in DEFAULT_OPERATION_PROFILES:
+        profile = DEFAULT_OPERATION_PROFILES[operation]
+        # 补充说明未明确注册的 skill
+        profile.description = (
+            f"[{skill}] 未在 POLICY_MAP 中显式注册，"
+            f"使用 operation={operation} 保守默认。{profile.description}"
+        )
+        return profile
+
+    # 完全未知的 operation → 最保守
+    return PolicyProfile(
+        allowed_rules=[],
+        forbidden_hit=[],
+        stop_condition_hit=[
+            "authority_boundary_unclear",
+            "needs_programmer_judgment",
+        ],
+        needs_approval=True,
+        description=f"未知 operation={operation}，使用最保守默认：需要审批",
+    )
+
+
+# ──────────────────────────────────────────────
+# 证据检查辅助
+# ──────────────────────────────────────────────
+
+def check_evidence(operation: str, control_state_path: str) -> dict[str, Any]:
+    """检查指定 operation 所需的证据是否存在。
+
+    返回 {evidence_required_complete: bool, evidence_missing: [str, ...]}。
+    """
+    required = REQUIRED_EVIDENCE.get(operation, [])
+    if not required:
+        return {
+            "evidence_required_complete": True,
+            "evidence_missing": [],
+        }
+
+    # 检查 control-state.md 是否存在
+    if not os.path.exists(control_state_path):
+        return {
+            "evidence_required_complete": False,
+            "evidence_missing": [
+                f"{item}（control-state.md 缺失）" for item in required
+            ],
+        }
+
+    with open(control_state_path, "r") as f:
+        content = f.read()
+
+    missing: list[str] = []
+    for item in required:
+        found = _check_evidence_item(item, content, control_state_path)
+        if not found:
+            missing.append(f"{item}（{EVIDENCE_REQUIRED.get(item, item)}）")
+
+    return {
+        "evidence_required_complete": len(missing) == 0,
+        "evidence_missing": missing,
+    }
+
+
+def _check_evidence_item(item: str, control_state_content: str,
+                          control_state_path: str) -> bool:
+    """对单个 evidence item 做基本存在性检查。
+
+    直接检查 control-state 中对应字段或关联 artifact 文件是否存在。
+    """
+    repo_dir = os.path.dirname(os.path.dirname(control_state_path))
+    servo_dir = os.path.join(repo_dir, ".servo") if repo_dir else ".servo"
+
+    checks: dict[str, Any] = {
+        "route_decision": lambda: (
+            bool(re.search(r"route_decision|recommended_next_route",
+                          control_state_content, re.IGNORECASE))
+        ),
+        "worktrack_contract_scope": lambda: (
+            os.path.exists(os.path.join(servo_dir, "worktrack", "contract.md"))
+        ),
+        "selected_task_dispatch_packet": lambda: (
+            bool(re.search(r"dispatch_packet|selected_task",
+                          control_state_content, re.IGNORECASE))
+        ),
+        "runtime_dispatch_profile": lambda: (
+            bool(re.search(r"runtime_dispatch_profile|dispatch_profile",
+                          control_state_content, re.IGNORECASE))
+        ),
+        "validation_evidence": lambda: (
+            os.path.exists(os.path.join(servo_dir, "evidence"))
+            or bool(re.search(r"validation_evidence|test_evidence",
+                             control_state_content, re.IGNORECASE))
+        ),
+        "governance_policy_evidence": lambda: (
+            bool(re.search(r"governance_policy|rule_check|policy_check",
+                          control_state_content, re.IGNORECASE))
+        ),
+        "gate_verdict": lambda: (
+            bool(re.search(r"gate_verdict|gate_result|verdict",
+                          control_state_content, re.IGNORECASE))
+        ),
+        "closeout_record": lambda: (
+            bool(re.search(r"closeout_record|closeout",
+                          control_state_content, re.IGNORECASE))
+            or os.path.exists(os.path.join(servo_dir, "closeout"))
+        ),
+        "repo_refresh_checkpoint": lambda: (
+            bool(re.search(r"latest_observed_checkpoint|repo_refresh_checkpoint",
+                          control_state_content, re.IGNORECASE))
+        ),
+    }
+
+    checker = checks.get(item)
+    if checker is None:
+        # 未知 evidence item → 不做自动检测，标记为 missing
+        return False
+    try:
+        return bool(checker())
+    except Exception:
+        return False
+
+
+# ──────────────────────────────────────────────
+# 主逻辑
+# ──────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Autonomy Policy Check — Low-Risk Default-Flow Autonomy Policy"
+    )
+    parser.add_argument(
+        "--operation", required=True,
+        choices=[
+            "observe", "schedule", "dispatch", "verify",
+            "close", "recover", "change_goal",
+            "init_milestone", "init_worktrack",
+            "cleanup", "doc_catch_up",
+        ],
+        help="当前 Harness Function 算子",
+    )
+    parser.add_argument(
+        "--skill", required=True,
+        help="绑定的 Skill 名称",
+    )
+    parser.add_argument(
+        "--control-state", default=".servo/control-state.md",
+        help="Path to .servo/control-state.md",
+    )
+    args = parser.parse_args()
+
+    operation: str = args.operation
+    skill: str = args.skill
+    control_state_path: str = args.control_state
+
+    # ── 1. 策略解析 ──
+    profile = resolve_profile(operation, skill)
+
+    # ── 2. 证据检查 ──
+    evidence = check_evidence(operation, control_state_path)
+
+    # ── 3. 组装结果 ──
+    # allowed = 至少命中一条 allowed 规则
+    is_allowed = len(profile.allowed_rules) > 0
+
+    # blocked = block_override 为 True，或 block_override 为 None 且 forbidden_hit 非空
+    if profile.blocked_override is not None:
+        is_blocked = profile.blocked_override
+    else:
+        is_blocked = len(profile.forbidden_hit) > 0
+
+    reason_parts: list[str] = [profile.description]
+
+    if is_allowed:
+        reason_parts.append(
+            f"allowed 规则命中: {', '.join(profile.allowed_rules)}"
+        )
+    else:
+        reason_parts.append("未命中任何 allowed 规则")
+
+    if profile.forbidden_hit:
+        for rule in profile.forbidden_hit:
+            reason_parts.append(
+                f"forbidden 命中: {rule}（{FORBIDDEN[rule]}）"
+            )
+        if profile.blocked_override is False:
+            reason_parts.append("（blocked_override=false，不硬阻断）")
+
+    if profile.stop_condition_hit:
+        for rule in profile.stop_condition_hit:
+            reason_parts.append(
+                f"stop_condition 命中: {rule}（{STOP_CONDITION[rule]}）"
+            )
+
+    if profile.needs_approval:
+        reason_parts.append("需要审批")
+
+    if not evidence["evidence_required_complete"]:
+        reason_parts.append(
+            f"证据缺失: {', '.join(evidence['evidence_missing'])}"
+        )
+
+    result = {
+        "operation": operation,
+        "skill": skill,
+        "allowed": is_allowed,
+        "blocked": is_blocked,
+        "forbidden_hit": profile.forbidden_hit,
+        "stop_condition_hit": profile.stop_condition_hit,
+        "allowed_rules": profile.allowed_rules,
+        "needs_approval": profile.needs_approval,
+        "evidence_required_complete": evidence["evidence_required_complete"],
+        "evidence_missing": evidence["evidence_missing"],
+        "reason": " | ".join(reason_parts),
+    }
+
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+    # ── 退出码：hard block → exit 1; 通过 → exit 0 ──
+    sys.exit(1 if is_blocked else 0)
+
+
+if __name__ == "__main__":
+    main()

@@ -260,7 +260,7 @@ Layer 3: WorktrackScope（快变量控制）
   │   ├─ 通过 → Close → clean up → 回到 Layer 2
   │   ├─ 失败/阻塞 → Recover（worktrack-recover-skill）
   │   └─ 恢复 → 回到 Observe/Decide 或回到 Layer 2
-  └─ Close: worktrack-close-skill（收尾、合并、清理）
+  └─ Close: worktrack-close-skill（收尾：Self-Review → Single-Acceptance → Closeout Gate → PR → Merge → Doc-Catch-Up → Refresh → Cleanup）
 
     ↓ 任务分解 ↓
 
@@ -285,8 +285,11 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 ```text
 Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
-    → Closeout Gate → PR → Merge → Cleanup (worktrack-cleanup-skill) → Repo Refresh
+    → Closeout Gate → PR → Merge → Doc-Catch-Up (worktrack-doc-catch-up-skill)
+    → Refresh (repo-refresh-skill) → Cleanup (worktrack-cleanup-skill) → return RepoScope
 ```
+
+> **Closeout Gate vs Worktrack Gate**：Closeout Gate 是 Close 阶段内部的二次检查，消费 Self-Review Record + Single-Acceptance Verdict 后判定是否允许 merge。Worktrack Gate（worktrack-gate-skill，Judge 阶段）在前，基于 implementation/validation/policy 三轴证据裁决是否允许进入 Close。两者不同，详见 §8.1。
 
 Self-Review 和 Single-Acceptance 的合约定义分别见 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 和 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。写回动作使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
 
@@ -305,6 +308,10 @@ Harness 不能只有 `Gate`，必须同时有 `Evidence`。
 
 ### 8.1 Worktrack 级 Gate
 
+Worktrack 级有**两层 gate**，分别在不同阶段运行：
+
+**Worktrack Gate（Judge 阶段）**：由 `worktrack-gate-skill` 执行，基于三个正交校验面的证据裁决是否允许进入 Close。
+
 Gate 应汇总**正交校验面**的裁决：
 
 | 校验面 | 判定内容 | 对应 Verify 技能 |
@@ -314,6 +321,8 @@ Gate 应汇总**正交校验面**的裁决：
 | `policy-gate` | 规则、边界、不变量、治理要求 | worktrack-rule-check-skill |
 
 最后由汇总 `worktrack-gate-skill` 生成最终 verdict。
+
+**Closeout Gate（Close 阶段内部）**：在 Worktrack Gate pass 进入 Close 后，Close 阶段内部的 pre-closeout checks 产出 Self-Review Record + Single-Acceptance Verdict，并由 Closeout Gate 消费后判定是否允许 merge。Closeout Gate 是 Close 阶段的组成部分，不是独立的 Judge 算子。详见 §7 closeout pipeline。
 
 ### 8.2 Milestone 级 Gate
 
@@ -353,6 +362,13 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - `.servo/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
    - 入口分流必须在 hydration 之后发生；缺少 artifact 或审批信号时，profile / operator mode 只能降级为 observation / handback / blocked，不得扩大权限。
    - operator mode matrix 只消费 trigger signals 并选择 route estimate 与 stop/approval semantics；它不得创建新的 Scope、Gate、controller 或 not approved scope 的执行权限。
+   - **注意**：control-state 已拆分为两个文件：
+     - `Handback Guard` 等控制字段位于 `.servo/control-state.md`
+     - `Baseline Traceability` 字段（`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`verified_at_history` 等 checkpoints）位于 `.servo/control-state-repo.md`
+     - hydration 时必须同时读取两者
+
+   > 注：`product/` 是源码层，`.agents/` 是部署目标层。修改 product/ 中的 SKILL.md 或 scripts 后，必须同步到 `.agents/`。当前同步方式为手动 cp，未来应通过 deploy script 自动化。
+
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
    - 调用 `branch_context_check.py` 执行确定性分支上下文匹配：
@@ -531,7 +547,7 @@ _已合并入 §10.5。_
 ### 10.7 状态更新阶段
 
 1. 根据裁决结果更新 `Harness Control State`
-2. 如果是 `通过` → 进入 `Close` → 然后 `RepoScope.Refresh`：
+2. 如果是 `通过` → 进入 `Close`（内部执行 Self-Review → Single-Acceptance → Closeout Gate → PR → Merge → Doc-Catch-Up → Refresh → Cleanup）→ 回到 RepoScope
    - **显式绑定 `repo-refresh-skill`**，从已验证 `关卡证据` 刷新 `Repo Snapshot/Status`
    - 刷新完成后，调用 `checkpoint_writeback.py` 写入 observed checkpoint：
 
@@ -711,6 +727,8 @@ Close/Refresh 完成 → 状态更新阶段
 
 检测到以上任一情况时，`harness-skill` 应标记为 `pipeline_corruption_detected` 并执行相应恢复动作。恢复后重新绑定 `milestone-status-skill` 做完整状态评估。若自动恢复失败（如 artifact 文件本身损坏），必须 handback 等待 programmer 介入。
 
+> 注：当前这些恢复动作由 harness-skill 以 LLM 推断方式检测。未来可考虑添加 `milestone_pipeline_check.py` 脚本提供确定性检测，与 §10.2 的 8-guard 链保持一致模式。
+
 ### Work-Collection 专属恢复
 
 work-collection milestone（`milestone_kind == "work-collection"`）在以下场景有专属恢复路径：
@@ -793,7 +811,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 
 ## 十五、硬约束
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close/ChangeGoal/SetGoal 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close/ChangeGoal/SetGoal 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
 
 本技能特有约束：
 
@@ -811,6 +829,31 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 - **稳定交接达成后，运行时唯一合法状态是 `等待交接`**；仅当观测到显式解锁信号时方可退出此状态。
 - **解锁信号必须是程序员显式发出的新指令或实质性新信息**；裸 `重试`、裸 `继续工作` 或重复文字摘要不构成解锁信号。
 - **交接锁激活时，所有控制回路阶段的进入必须被阻断**；仅当有效解锁信号出现后控制回路方可恢复。
+
+**Handback Lock 激活流程**：
+
+1. 每次 handback 时 `harness-skill` 检查 `handback_reaffirmed_rounds`
+2. 若当前 handoff 与前次相同（上下文未变化）→ increment `handback_reaffirmed_rounds`
+3. 若 `handback_reaffirmed_rounds >= stable_handback_threshold` → 设置 `handback_lock_active = true`
+4. Lock 激活后，仅显式 programmer unlock signal 可解除
+5. 若收到新的实质性 programmer 输入（不同上下文）→ reset `handback_reaffirmed_rounds = 0`
+
+**Unlock 验证流程**（在 §10.1 Observe 阶段执行）：
+
+1. 若 `handback_lock_active == true`：检查 `last_unlock_signal`
+2. 有效 unlock signal 条件：programmer 显式发出的新指令或实质性新信息（非裸 `重试`/`继续`/重复摘要）
+3. 验证通过 → 设置 `handback_lock_active = false`，记录 `last_unlock_signal`，清空 `handback_reaffirmed_rounds`
+4. 验证失败 → 保持 lock，返回 blocked
+
+Unlock signal 结构化格式：
+
+```
+- source: "programmer"
+- instruction: "具体的新指令文本"
+- timestamp: "ISO8601"
+- confirmation: "unlock MS-XXXX-XXX" 或等效显式确认
+```
+
 - **技能轮次返回结构化输出是正常控制回路产物**；停止条件仅由 [十一、正式停止条件] 定义的正式条件触发。
 - **Evidence、Verdict 和 NextAction 必须在输出中分节独立呈现**；每节仅包含对应类型的内容，禁止将三者合并为一段叙述。
 - **相邻系统的引用仅当本轮证据确实消费了其输出时才可包含**；否则 `adjacent_system_referenced` 必须为 `false`。
