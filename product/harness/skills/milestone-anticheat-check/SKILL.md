@@ -298,7 +298,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) 中定义的公共约束 C-1 至 C-8。
+遵循 `docs/harness/foundations/skill-common-constraints.md` 中定义的公共约束 C-1 至 C-8。
 
 本技能特有约束：
 

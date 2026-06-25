@@ -304,7 +304,7 @@ composite_verdict:
 
 ## 硬约束
 
-遵循 [docs/harness/foundations/skill-common-constraints.md](../../../../docs/harness/foundations/skill-common-constraints.md) 中定义的公共约束 C-1 至 C-8。
+遵循 `docs/harness/foundations/skill-common-constraints.md` 中定义的公共约束 C-1 至 C-8。
 
 本技能特有约束：
 
@@ -330,5 +330,5 @@ composite_verdict:
 - [Composite Milestone Acceptance](../../../../docs/harness/artifact/control/composite-milestone-acceptance.md) — composite acceptance 的 lane 定义、verdict model 和 fallback 规则。
 - [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — Milestone Gate 聚合合同，定义 composite_lane_rules 和 Layer 2 聚合逻辑。本技能（composite lane check）是 Layer 2 的输入之一。
 - [milestone.md](../../../../docs/harness/artifact/control/milestone.md) — Milestone artifact 合同，定义 aggregation_rules 字段和 composite_acceptance 配置。
-- [Skill 公共约束](../../../../docs/harness/foundations/skill-common-constraints.md) — C-1 至 C-8 公共约束定义。
+- `docs/harness/foundations/skill-common-constraints.md` — C-1 至 C-8 公共约束定义。
 - [Single-Acceptance Verdict](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — per-WT 单体验收结果，定义 single-acceptance verdict 的结构化格式与判定规则。C2 (feature-completeness) lane 应消费其中的 `completion_signals_passed` / `completion_signals_failed` 字段作为预聚合证据。

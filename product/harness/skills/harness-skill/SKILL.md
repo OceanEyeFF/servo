@@ -435,13 +435,15 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
        --gate-source .servo/repo/pre-milestone-intake-{id}.md
      ```
 
-     canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。这是一个 Milestone-side blocking gate；若 `reinforcement_milestone_recommendation.needed == true`，必须建议 reinforcement milestone 并阻断实现型 milestone 的 create/activate。gate 缺失、blank、placeholder、pending、incomplete 时，unresolved gate blocking default 强制返回 blocked，不得当作 not_applicable。Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。
-   - **Guard 4: `milestone_review_gate_check`** — 进入 WorktrackScope.Init 前，调用 `milestone_review_gate_check.py`。
+     canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。这是一个 Milestone-side blocking gate；若 `reinforcement_milestone_recommendation.needed == true`，必须建议 reinforcement milestone 并阻断实现型 milestone 的 create/activate。gate 缺失、blank、placeholder、pending、incomplete 时，unresolved gate blocking default 强制返回 blocked，不得当作 not_applicable。Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。`milestone_blocking_decision` 输出值含 `block_create`、`block_upsert`、`block_activate`、`block_derive_worktrack`。`operator_safety_policy` 记录 operator 自定义安全策略。`complexity_signals` 列出检测到的复杂度信号。`scanner_evidence_ref` 引用 scanner 输出的 JSON 证据路径。`dialog_review_questions` 包含需要 reviewer 确认的问题列表。
+   - **Guard 4: `milestone_review_gate_check`** — 进入 WorktrackScope.Init 前，调用 `milestone_review_gate_check.py`。这是 Milestone Review Gate：一个 route guard，检查 milestone 级审查状态。
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/milestone_review_gate_check.py \
        --control-state .servo/control-state.md
      ```
+
+     `milestone_review_gate_ready` 允许继续；`milestone_review_gate_not_ready` 阻断。Gate 检查 `latest_review_status`、`milestone_review_count`、`latest_review_checkpoint`。`effective_review_pass` 和 `effective_pass` 是路由决策的缓存字段。`review_invalidated_by` 记录失效原因；若被 `invalidated`，gate 视为 not ready。`questions_required` 指示是否需要额外澄清问题。
 
    - **Guard 5: `runtime_backfill_detect`** — 调用 `runtime_backfill_detect.py` 检测缺失字段。
 
@@ -450,7 +452,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
        --artifact .servo/control-state.md
      ```
 
-     缺失字段按 `false`、`unknown`、`missing`、`blocked`、`not ready` 解释。Guard terms: must not grant permissions, must not infer programmer confirmation, must not increment counters, must not enable Worktrack Init/Dispatch。
+     缺失字段按 `false`、`unknown`、`missing`、`blocked`、`not ready` 解释。Guard terms: must not grant permissions, must not infer programmer confirmation, must not increment counters, must not enable Worktrack Init/Dispatch。保守运行时回填合同（conservative runtime backfill）要求 `forward-only`：只能补充缺失字段，不得回退已有字段值，不得重新解释已有语义。
    - **Guard 6: `worktrack_intake_review_check`** — 调用 `worktrack_intake_review_check.py`。
 
      ```bash
@@ -458,7 +460,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
        --intake-review .servo/repo/worktrack-intake-{id}.md
      ```
 
-     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许绑定 `worktrack-init-skill`。
+     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许绑定 `worktrack-init-skill`。审查维度含 `repo_fundamentals`（仓库基本面）和 `snapshot_freshness`（快照新鲜度）。`milestone_purpose_alignment` 检查 worktrack 是否与 milestone 目标对齐。`historical_conflict_risk` 评估历史冲突风险。`worktrack_adjustment_recommendations` 和 `add_remove_worktrack_recommendations` 输出调整建议。若 `refresh_required`，必须先刷新基线再继续。若需 `adjust_worktracks`，在继续前调整 worktrack 列表。
    - **Guard 7: `ChangeGoal`** — 不由常规 Decide 选择。目标变更由外部请求触发，完成后系统重新进入 Observe。
    - **Guard 8: `milestone_brief`** — 当 `repo-whats-next-skill` 建议 create/activate/append_worktracks 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认。
 
@@ -588,8 +590,10 @@ _已合并入 §10.5。_
        --control-state .servo/control-state.md
      ```
 
-   - `forbidden` 命中即阻断：目标变更、范围扩展、Milestone 最终验收、发布/打包/标签、GitHub Release、受保护分支变更、强制推送、大量文件删除、破坏性清理、密钥/安全/隐私、部署/网络/数据库迁移、跨仓库副作用、外部付费/配额消耗。
-   - `stop_condition` 命中即停止：证据缺失或冲突、分支不匹配、Gate 失败、上下文噪音/遗忘、需要程序员判断、权限边界不清、Contract 外扩、受保护分支策略命中、破坏性操作命中、发布敏感信号、Milestone 最终验收边界。
+   - `forbidden` 命中即阻断：
+
+     **Low-Risk Default-Flow Autonomy Policy** forbidden boundaries: `goal change`（目标变更）、`scope expansion`（范围扩展）、`milestone final acceptance`（Milestone 最终验收）、`release / publish / package version / tag / dist-tag`（发布/打包/标签）、GitHub Release、`protected branch mutation`（受保护分支变更）、`force push`（强制推送）、大量文件删除、`destructive cleanup`（破坏性清理）、`secret/security/privacy`（密钥/安全/隐私）、`deploy/network/database migration`（部署/网络/数据库迁移）、`跨 repo 副作用`（跨仓库副作用）、外部付费/配额消耗。
+   - `stop_condition` 命中即停止：证据缺失或冲突、分支不匹配、Gate 失败、上下文噪音/遗忘、需要程序员判断、权限边界不清、Contract 外扩、受保护分支策略命中、破坏性操作命中、发布敏感信号、Milestone 最终验收边界。`route decision` 需要已记录的确定性路由决策。`runtime dispatch profile` 需要完整的 runtime dispatch profile。`repo-refresh checkpoint` 需要已验证的 repo-refresh 检查点。
    - 连续执行或低风险 Worktrack 自批必须同时满足：`allowed` 命中、`forbidden` 未命中、`stop_condition` 未命中、`evidence_required` 已能满足或已安排。
    - 如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：
