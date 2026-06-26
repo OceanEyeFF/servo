@@ -393,7 +393,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/git_hash_check.py \
-       --control-state .servo/control-state.md
+       --control-state .servo/control-state-repo.md
      ```
 
    - 脚本位于 `product/harness/skills/harness-skill/scripts/git_hash_check.py`。
@@ -556,10 +556,10 @@ _已合并入 §10.5。_
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
        --checkpoint-type observed \
-       --control-state .servo/control-state.md
+       --control-state .servo/control-state-repo.md
      ```
 
-   - 此脚本将当前 `git rev-parse HEAD` hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint` 并追加 `verified_at_history` 时间戳。
+   - 此脚本将当前 `git rev-parse HEAD` hash 写入 `.servo/control-state-repo.md` 的 `Baseline Traceability.latest_observed_checkpoint` 并追加 `verified_at_history` 时间戳。
 3. 如果是 `失败/阻塞` → 进入 `Recover`。以下 5 种 recover mode 对应 control-state 迁移：
 
    | recover mode | control-state 迁移 | 触发条件 |
@@ -577,7 +577,7 @@ _已合并入 §10.5。_
    ```bash
    PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
      --checkpoint-type doc-catch-up \
-     --control-state .servo/control-state.md
+     --control-state .servo/control-state-repo.md
    ```
 
 5. **长期权限配置写回**：
@@ -640,7 +640,7 @@ _（保留）_
 
 Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill`。
 
-**存储位置**：`.servo/control-state.md` 的 `Baseline Traceability` 段。
+**存储位置**：`.servo/control-state-repo.md` 的 `Baseline Traceability` 段。`.servo/control-state.md` 只保留 root control fields、路径指针与控制面记忆。
 
 **字段定义**：
 

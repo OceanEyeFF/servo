@@ -1,15 +1,15 @@
 ---
 title: "Harness Control State"
 status: active
-updated: 2026-06-22
+updated: 2026-06-26
 owner: servo-kernel
-last_verified: 2026-06-22
+last_verified: 2026-06-26
 ---
 # Harness Control State
 
 保存控制平面所处模式，不保存业务真相。最少应包含控制级别、活跃 worktrack、`baseline_branch`、下一动作和关联正式文档路径。不替代 `RepoSnapshot/Status` 或 `WorktrackContract`。
 
-Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 与 `Autonomy Ledger`。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
+Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，再进入 `Scope`/`Function` 状态估计。该启动前置读取称为 control config hydration，最少覆盖 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Autonomy Ledger` 与跨 scope 路由记忆；git checkpoint 级 Baseline Traceability 字段从 `.servo/control-state-repo.md` 读取。缺失字段按本文默认值降级解释，缺失不得被解释为扩大权限、放宽审批或启用更多自动性，并在本轮状态估计中记录 `config_hydration_gaps`。
 
 ## Conservative Runtime Backfill
 
@@ -21,7 +21,7 @@ Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，
 
 ## Control State Compaction Contract
 
-`.servo/control-state.md` 可以被安全压缩，但压缩是控制面整理动作，不是权限、路由、历史真相或业务真相的重定义。压缩后的文件必须仍能支持 Harness 启动 hydration、Branch Environment Guard、Milestone/Worktrack 路由、authority 判断和 baseline traceability。
+`.servo/control-state.md` 可以被安全压缩，但压缩是控制面整理动作，不是权限、路由、历史真相或业务真相的重定义。压缩后的文件必须仍能支持 Harness 启动 hydration、Branch Environment Guard、Milestone/Worktrack 路由和 authority 判断；git checkpoint 级 baseline traceability 由 `.servo/control-state-repo.md` 承接。
 
 压缩后必须保留的 hydration-critical 字段组：
 
@@ -33,7 +33,7 @@ Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，
 - Baseline Branch 与 Branch Environment Guard：`baseline_branch`、`baseline_ref`、`current_checkout`、`current_branch_context`、`expected_branch_context`、`branch_context_guard_status`、`branch_context_required_ref`、`worktrack_branch`。
 - Current Next Action 与 Linked Formal Documents：下一路由、下一 scope、当前动作、`repo_snapshot`、`repo_analysis`、`worktrack_contract`、`plan_task_queue`、`gate_evidence`。
 - Approval Boundary、User-Defined Servo Controls、Continuation Authority、Handback Guard、Autonomy Ledger。
-- Baseline Traceability：`last_verified_checkpoint`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`milestone_input_checkpoint`、`milestone_review_gate_checkpoint`、`checkpoint_type`、`checkpoint_ref`、`release_checkpoint_ref`、`previous_observed_checkpoint`、`verified_at`、`if_no_commit_reason`、`alternative_traceability`。
+- Baseline Traceability 指针：`.servo/control-state-repo.md` 持有 git checkpoint 字段（`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`verified_at_history`、checkpoint writeback/read scripts 的目标）；`.servo/control-state.md` 只保留启动 hydration、控制记忆、路由配置与必要 artifact 指针。
 
 可压缩或折叠的内容仅限历史重复行和非当前路由所需的长列表，例如多条旧 `latest_closed_worktrack_commit`、旧 `verified_at`、旧 handback note、旧 closeout 摘要和重复 checkpoint 叙述。压缩时最多保留最近一条当前可路由记录，并用中性 history reference 指向 compaction history artifact。history reference 只能是由 compact 操作显式生成并验证的 artifact；installer-generated backup/update artifacts 不是 history source，不能作为模板默认值、清理输入或 `handback_history_ref` 的默认目标。
 
@@ -42,7 +42,7 @@ Harness 每轮启动时先读取 `.servo/control-state.md` 恢复控制配置，
 1. 先 dry-run，输出将保留、折叠、外部化和拒绝处理的字段列表。
 2. 校验所有 hydration-critical 字段存在；缺失字段只能按 Conservative Runtime Backfill 降级，不能静默补成 ready/allowed/pass。
 3. 写入前保存可恢复的 compaction history artifact；该 artifact 必须由本次 compact 操作生成，并记录 source checkpoint、created_at、tool/skill、preserved field summary 和 externalized sections。
-4. 写入后重新读取 `.servo/control-state.md`，验证 Branch Environment Guard、Milestone Review Gate、Continuation Authority、Handback Guard 和 Baseline Traceability 仍可解析。
+4. 写入后重新读取 `.servo/control-state.md`，验证 Branch Environment Guard、Milestone Review Gate、Continuation Authority、Handback Guard 和控制路由字段仍可解析；如本轮涉及 git checkpoint，还须读取 `.servo/control-state-repo.md` 验证 Baseline Traceability 可解析。
 5. 验证失败时不得提交压缩结果；必须进入 Recover 或 handback，并保留原文件。
 
 停止条件：
@@ -172,9 +172,9 @@ Active Milestone 的执行入口复核路由状态也保存在 Control State，�
 
 以上字段属于 control memory，不替代 `RepoSnapshot/Status`、`WorktrackContract` 或 `GateEvidence`。
 
-此外应保存 Baseline Traceability，用于 `WorktrackScope` 关闭后快速定位已验证基线：`last_verified_checkpoint`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`checkpoint_type`、`checkpoint_ref`、`verified_at`、`if_no_commit_reason`、`alternative_traceability`。
+此外应保存 Baseline Traceability，用于 `WorktrackScope` 关闭后快速定位已验证基线。git checkpoint 字段（`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`verified_at_history` 与 checkpoint writeback/read scripts 的读写目标）属于 `.servo/control-state-repo.md`；`.servo/control-state.md` 保留跨 scope control memory、权限配置、路由状态和路径指针。
 
-其中 `latest_observed_checkpoint` 与 `last_doc_catch_up_checkpoint` 是 git hash 幂等性锚点，分别记录 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill` 上次执行时的 HEAD hash，供 `harness-skill` 启动时对比以跳过重复刷新。
+其中 `latest_observed_checkpoint` 与 `last_doc_catch_up_checkpoint` 是 git hash 幂等性锚点，分别记录 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill` 上次执行时的 HEAD hash，供 `harness-skill` 启动时从 `.servo/control-state-repo.md` 对比以跳过重复刷新。
 
 ## Skill Source Baseline Traceability
 
@@ -183,7 +183,7 @@ Canonical skill 源版本事实由 repo 级 checkpoint 正式对象持有，而�
 - canonical 源根：`product/harness/skills/`
 - docs/catalog 所有者：`docs/harness/catalog/`
 - 当前源 checkpoint 所有者：`.servo/repo/snapshot-status.md`（经 `repo-refresh-skill` 后）
-- 当前控制平面幂等所有者：`.servo/control-state.md` 的 `Baseline Traceability`
+- 当前控制平面幂等所有者：`.servo/control-state-repo.md` 的 `Baseline Traceability`
 
 已验证的 worktrack 变更 canonical skill 源、源侧 skill 索引或文档/源码可追溯性时，closeout 记录将证据与合并提交写入其 closeout 记录，随后 `repo-refresh-skill` 将刷新后的 git HEAD 写入 `latest_observed_checkpoint` 和 `checkpoint_ref`。若同一变更同时更新了 operator-facing 文档或版本事实，`worktrack-doc-catch-up-skill` 将该 HEAD 记录为 `last_doc_catch_up_checkpoint`。
 
