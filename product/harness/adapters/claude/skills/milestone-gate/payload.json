@@ -7,7 +7,9 @@
     "product/harness/skills/milestone-gate/SKILL.md"
   ],
   "target_dir": "milestone-gate",
-  "legacy_target_dirs": [],
+  "legacy_target_dirs": [
+    "aw-milestone-gate"
+  ],
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [

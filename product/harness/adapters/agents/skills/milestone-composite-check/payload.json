@@ -7,7 +7,10 @@
     "product/harness/skills/milestone-composite-check/SKILL.md"
   ],
   "target_dir": "milestone-composite-check",
-  "legacy_target_dirs": [],
+  "legacy_target_dirs": [
+    "servo-milestone-composite-check",
+    "aw-milestone-composite-check"
+  ],
   "target_entry_name": "SKILL.md",
   "payload_policy": "canonical-copy",
   "supported_target_scopes": [
