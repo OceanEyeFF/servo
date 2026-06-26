@@ -1285,6 +1285,7 @@ function validateStaticAssetSource(spec) {
 	return issues;
 }
 
+// weak-doc override: args.weakDocOnboarding → needed: weakDocReinforcementNeeded ? "true" : "false" → recommendation_status: weakDocReinforcementNeeded ? "pending_operator_review" : "not_needed" → blocks_implementation_until_resolved: weakDocReinforcementNeeded ? "true" : "false"
 function resolveKeyedValue(key, selectedTemplateIds, args) {
 	const weakDocReinforcementNeeded = Boolean(args.weakDocOnboarding);
 	const directValues = {
