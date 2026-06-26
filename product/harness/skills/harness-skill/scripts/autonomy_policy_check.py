@@ -96,6 +96,7 @@ class PolicyProfile:
         "stop_condition_hit",
         "needs_approval",
         "blocked_override",
+        "blocking_exception",
         "description",
     )
 
@@ -107,6 +108,7 @@ class PolicyProfile:
         stop_condition_hit: list[str] | None = None,
         needs_approval: bool = False,
         blocked_override: bool | None = None,
+        blocking_exception: str | None = None,
         description: str = "",
     ):
         self.allowed_rules = allowed_rules or []
@@ -114,6 +116,7 @@ class PolicyProfile:
         self.stop_condition_hit = stop_condition_hit or []
         self.needs_approval = needs_approval
         self.blocked_override = blocked_override
+        self.blocking_exception = blocking_exception
         self.description = description
 
 
@@ -227,7 +230,8 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "milestone_final_acceptance_boundary",
         ],
         needs_approval=True,
-        blocked_override=False,  # 有独立审批门，不硬阻断
+        blocked_override=False,
+        blocking_exception="repo-change-goal-skill requires separate programmer approval gate before mutation",
         description=(
             "目标变更命中 forbidden:goal_change，但 repo-change-goal-skill "
             "有独立审批门，标记 needs_approval: true 而非 blocked"
@@ -332,6 +336,7 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
         stop_condition_hit=["needs_programmer_judgment"],
         needs_approval=True,
         blocked_override=False,
+        blocking_exception="change_goal default requires separate programmer approval gate before mutation",
         description="change_goal 默认：目标变更需审批",
     ),
     "init_milestone": PolicyProfile(
@@ -579,11 +584,17 @@ def main() -> None:
     # allowed = 至少命中一条 allowed 规则
     is_allowed = len(profile.allowed_rules) > 0
 
-    # blocked = block_override 为 True，或 block_override 为 None 且 forbidden_hit 非空
+    # blocked = forbidden / stop_condition / missing evidence hard block by default.
+    # A blocked_override=False exception only suppresses forbidden hard-blocking
+    # when the profile documents a separate approval gate. Stop conditions and
+    # missing required evidence remain hard blocks.
     if profile.blocked_override is not None:
-        is_blocked = profile.blocked_override
+        forbidden_blocked = profile.blocked_override
     else:
-        is_blocked = len(profile.forbidden_hit) > 0
+        forbidden_blocked = len(profile.forbidden_hit) > 0
+    stop_condition_blocked = len(profile.stop_condition_hit) > 0
+    evidence_blocked = not evidence["evidence_required_complete"]
+    is_blocked = forbidden_blocked or stop_condition_blocked or evidence_blocked
 
     reason_parts: list[str] = [profile.description]
 
@@ -600,7 +611,9 @@ def main() -> None:
                 f"forbidden 命中: {rule}（{FORBIDDEN[rule]}）"
             )
         if profile.blocked_override is False:
-            reason_parts.append("（blocked_override=false，不硬阻断）")
+            reason_parts.append(
+                f"forbidden blocking exception: {profile.blocking_exception}"
+            )
 
     if profile.stop_condition_hit:
         for rule in profile.stop_condition_hit:
@@ -625,6 +638,7 @@ def main() -> None:
         "stop_condition_hit": profile.stop_condition_hit,
         "allowed_rules": profile.allowed_rules,
         "needs_approval": profile.needs_approval,
+        "blocking_exception": profile.blocking_exception,
         "evidence_required_complete": evidence["evidence_required_complete"],
         "evidence_missing": evidence["evidence_missing"],
         "reason": " | ".join(reason_parts),
