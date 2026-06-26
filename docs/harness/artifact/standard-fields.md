@@ -1,9 +1,9 @@
 ---
 title: "Standard Fields Vocabulary"
 status: active
-updated: "2026-06-05"
+updated: "2026-06-27"
 owner: "servo-kernel"
-last_verified: 2026-06-13
+last_verified: 2026-06-27
 ---
 
 # Standard Fields Vocabulary
@@ -34,6 +34,22 @@ last_verified: 2026-06-13
 | `continuation_ready` | `boolean` | 是否可继续推进 | All |
 | `continuation_blockers` | `string[]` | 继续阻塞项列表 | All |
 | `continuation_decision` | `string` | 继续决策说明 | `harness-skill` |
+
+## Milestone Gate 目标类型与轴适用性字段
+
+| 标准字段名 | 类型 | 说明 | 适用 Skill |
+|-----------|------|------|-----------|
+| `target_type` | `program_code \| non_program_artifact \| mixed \| unknown` | Milestone Gate 目标类型。决定 blackbox / whitebox / anti-cheat / composite 轴的取证方法 | `milestone-gate`, milestone axis skills |
+| `target_type_source` | `programmer_declared \| milestone_artifact \| gate_input \| inferred_from_worktracks \| unknown` | target_type 来源；推断来源必须可追踪 | `milestone-gate`, milestone axis skills |
+| `target_type_confidence` | `high \| medium \| low` | target_type 判定置信度 | `milestone-gate`, milestone axis skills |
+| `axis` | `black_box \| white_box \| anti_cheat \| composite` | Milestone Gate 轴标识 | Milestone axis skills |
+| `axis_verdict` | `pass \| soft_fail \| hard_fail \| blocked \| not_applicable` | 单轴 verdict。`not_applicable` 只能表示轴不适用，不等于 pass | Milestone axis skills |
+| `axis_applicability` | `object` | 四轴适用性封套，按 axis 记录 state、expected_method、substituted_by 与 reason | `milestone-gate` |
+| `axis_applicability_state` | `applicable \| not_applicable \| substituted \| blocked` | 单轴适用性状态；这是路由事实，不是成功 verdict | Milestone axis skills |
+| `axis_applicability_reason` | `string` | 单轴适用或不适用理由 | Milestone axis skills |
+| `expected_method` | `string` | 该轴对当前 target_type 应使用的验收方法，如 `external_behavior_scenario` 或 `structural_internal_analysis` | Milestone axis skills |
+| `substituted_by` | `string \| N/A` | 当 `axis_applicability_state = substituted` 时，记录替代验收来源 | Milestone axis skills |
+| `substitution_evidence_ref` | `string \| N/A` | 替代验收证据引用；缺失时 substituted 不能视为 satisfied | `milestone-gate`, milestone axis skills |
 
 ## 审批 & 权限字段
 
