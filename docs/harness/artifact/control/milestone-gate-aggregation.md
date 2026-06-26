@@ -1,9 +1,9 @@
 ---
 title: "Milestone Gate 证据聚合合同"
 status: active
-updated: 2026-06-23
+updated: 2026-06-27
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-06-27
 ---
 # Milestone Gate 证据聚合合同
 
@@ -15,12 +15,13 @@ last_verified: 2026-06-23
 
 Milestone Gate 不是"全部 WT 都过了 = milestone 过了"的简单布尔 AND。不同 milestone 对证据的要求不同——release milestone 要求所有 critical WT 无矛盾，docs milestone 允许部分 soft-fail，demo milestone 可以接受 limited evidence。
 
-本 artifact 定义 per-milestone 可配置的 `aggregation_rules`，覆盖四个维度：
+本 artifact 定义 per-milestone 可配置的 `aggregation_rules`，覆盖五个维度：
 
 1. **证据权重**（weight_rules）：哪些 WT 的结论对 milestone verdict 贡献更大
 2. **矛盾处理**（contradiction_rules）：两个 critical WT 结论矛盾时的 resolution protocol
-3. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
-4. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
+3. **目标类型路由**（target_type_rules）：program/code 与 non-program 目标的轴适用性和替代验收规则
+4. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
+5. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
 
 ### 与 MS-20260623-002 的接口
 
@@ -35,6 +36,7 @@ aggregation_rules:
   enabled: true | false           # false 时使用退化 AND（§六）
   weight_rules: { ... }
   contradiction_rules: { ... }
+  target_type_rules: { ... }
   composite_lane_rules: { ... }
   degenerate_and_rules: { ... }
 ```
@@ -48,6 +50,7 @@ aggregation_rules:
 | `enabled` | boolean | 否 | `true` |
 | `weight_rules` | object | 是（enabled=true 时） | — |
 | `contradiction_rules` | object | 是（enabled=true 时） | — |
+| `target_type_rules` | object | 否（新 milestone 推荐显式声明） | `target_type: unknown`，不得默认通过 |
 | `composite_lane_rules` | object | 是（enabled=true 时） | — |
 | `degenerate_and_rules` | object | 否 | 见 §六 |
 
@@ -168,7 +171,77 @@ Contradiction block 不能在 aggregation 内部自动解除。合法解除路�
 - 新 verification WT 通过 gate（closeout record 写入）
 - Programmer 在 milestone gate evidence 中显式记录 resolution
 
-## 五、composite_lane_rules：Composite lane 消费
+## 五、target_type_rules：目标类型与轴适用性
+
+### 目的
+
+Milestone Gate 必须先识别当前 milestone 的目标类型，再选择黑盒、白盒、反作弊和复合验收轴的取证方法。程序/代码目标需要真实软件工程验收；非程序目标不能被强行套入运行时测试语义。
+
+### Schema
+
+```yaml
+target_type_rules:
+  target_type: program_code | non_program_artifact | mixed | unknown
+  target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_type_confidence: high | medium | low
+  axis_applicability:
+    black_box:
+      state: applicable | not_applicable | substituted | blocked
+      expected_method: external_behavior_scenario | artifact_acceptance_review | operator_simulation | N/A
+      substituted_by: composite | professional_review | policy_check | N/A
+      reason: string
+    white_box:
+      state: applicable | not_applicable | substituted | blocked
+      expected_method: structural_internal_analysis | artifact_structure_review | policy_structure_review | N/A
+      substituted_by: composite | professional_review | policy_check | N/A
+      reason: string
+    anti_cheat:
+      state: applicable | not_applicable | substituted | blocked
+      expected_method: evidence_integrity_review | N/A
+      substituted_by: N/A
+      reason: string
+    composite:
+      state: applicable | not_applicable | substituted | blocked
+      expected_method: composite_acceptance_lanes | professional_review | N/A
+      substituted_by: N/A
+      reason: string
+  substitution_evidence_required: true
+```
+
+### Target routing matrix
+
+| target_type | black_box | white_box | anti_cheat | composite |
+|-------------|-----------|-----------|------------|-----------|
+| `program_code` | `applicable`; use externally observable behavior scenarios, user-visible workflows, CLI/API responses, integration behavior, or regression scenarios. Must not read full implementation code. | `applicable`; use structural/internal evidence such as control flow, data flow, state transfer, interface contracts, dependency paths, and architecture alignment. May read implementation code. | `applicable`; verify evidence provenance, dispatch/profile integrity, and bypass risk. | `applicable`; consume code-review, feature-completeness, related-influence, intent-completeness, operator-simulation, and professional-review lanes. |
+| `non_program_artifact` | Usually `substituted` or `not_applicable`; use artifact acceptance review, reader/operator simulation, policy conformance, cross-reference validation, or professional review. Do not force runtime scenario tests when no program exists. | Usually `substituted` or `not_applicable`; use artifact structure review, rule consistency, traceability, terminology/interface consistency, or governance conformance. Do not pretend this is code-internal white-box testing. | `applicable`; evidence integrity still matters for docs, skill text, workflow policy, and research artifacts. | `applicable`; composite lanes are often the primary non-program acceptance surface. |
+| `mixed` | Split by worktrack, completion signal, or artifact component. Program/code slices use behavior scenarios; non-program slices use substitute acceptance. | Split by worktrack, completion signal, or artifact component. Program/code slices use structural/internal analysis; non-program slices use artifact structure review. | `applicable` across all slices. | `applicable`; must record slice-level coverage. |
+| `unknown` | `blocked` unless the gate can produce a justified type inference. | `blocked` unless the gate can produce a justified type inference. | `blocked` if evidence boundary is unclear. | `blocked` or `substituted` only with explicit programmer or gate evidence. |
+
+### Applicability state is not verdict
+
+`axis_applicability.state` is a routing fact, not a pass/fail verdict:
+
+- `applicable` means the axis must run and produce its normal verdict.
+- `not_applicable` means the axis does not apply to this target type; aggregation must record it separately and must not coerce it to `pass`.
+- `substituted` means the axis's usual software-testing method is replaced by an artifact-appropriate method; aggregation may treat the axis as satisfied only when the substitute evidence is present and accepted.
+- `blocked` means the milestone gate cannot legally complete until target type, evidence, or substitute method is clarified.
+
+### Final verdict interaction
+
+Milestone Gate final verdict must evaluate each axis through an `axis_satisfied` predicate instead of raw verdict equality:
+
+```text
+axis_satisfied(axis) =
+  axis.applicability.state == applicable
+    AND axis.verdict == pass
+  OR axis.applicability.state == substituted
+    AND axis.substitute_verdict == pass
+    AND axis.substitution_evidence_present == true
+```
+
+`not_applicable` can remove an axis from mandatory pass calculation only when the target type and reason are explicit. It does not create positive evidence and must remain visible in `composite_lane_verdicts`.
+
+## 六、composite_lane_rules：Composite lane 消费
 
 ### 目的
 
@@ -213,9 +286,9 @@ composite_lane_rules:
   final_verdict:
     pass_condition: |
       per_WT_aggregation_verdict == pass
-      AND black_box_verdict == pass
-      AND white_box_verdict == pass
-      AND anti_cheat_verdict == pass
+      AND axis_satisfied(black_box)
+      AND axis_satisfied(white_box)
+      AND axis_satisfied(anti_cheat)
       AND composite_verdict != hard_fail
 ```
 
@@ -229,7 +302,7 @@ composite_lane_rules:
 
 WT3 将 worktrack 的 implementation-validation-policy 三轴映射到 milestone 的 black-box-white-box-anti-cheat-composite 四轴。本 artifact 定义的 `lane_axes` 的 aggregate 逻辑是 WT3 映射的消费方。
 
-## 六、degenerate_and_rules：退化 AND 判定
+## 七、degenerate_and_rules：退化 AND 判定
 
 ### 触发条件
 
@@ -242,6 +315,7 @@ degenerate_and_rules:
       - no_contradiction_detected: true       # 无任何矛盾
       - no_anti_cheat_high_severity: true      # 无反作弊高严重信号
       - all_lanes_consistent: true             # 所有 lane 一致（无 lane 级矛盾）
+      - axis_applicability_resolved: true      # 所有轴均有 applicable / substituted / not_applicable / blocked 之一，且无 blocked
       - no_weight_override_applied: true        # 无手动权重覆盖
       - all_critical_wt_pass: true             # 所有 weight ≥ 4 的 WT 均 pass
   recording_required: true
@@ -261,7 +335,7 @@ degenerate_and_rules:
 
 退化 AND 不是静止跳过：如果将来任何退化条件不再满足（如新 WT 引入了矛盾），退化解锁，正常规则重新激活。退化理由记录确保 audit trail 可解释"为什么这次 milestone gate 看起来是简单 AND"。
 
-## 七、与 WT2（evidence-aggregator）的交接
+## 八、与 WT2（evidence-aggregator）的交接
 
 ### aggregator 的输入
 
@@ -278,6 +352,7 @@ aggregator_input:
         anti_cheat: pass | high_severity
         composite: pass | soft_fail | hard_fail
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
+  target_type_rules: { ... }              # target_type 与 axis_applicability
 ```
 
 ### aggregator 的输出
@@ -291,10 +366,22 @@ aggregator_output:
     blocked: true | false
     resolution_path: new_verification_worktrack | programmer_resolution | none
   composite_lane_verdicts:                 # 四轴聚合结论
-    black_box: pass | soft_fail | hard_fail
-    white_box: pass | soft_fail | hard_fail
-    anti_cheat: pass | high_severity
-    composite: pass | soft_fail | hard_fail
+    black_box:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | blocked
+      substituted_by: string | N/A
+    white_box:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | blocked
+      substituted_by: string | N/A
+    anti_cheat:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | blocked
+      substituted_by: string | N/A
+    composite:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | blocked
+      substituted_by: string | N/A
   degenerate_and_applied: true | false
   degenerate_and_reason: string | N/A
   aggregation_summary: string
@@ -302,11 +389,11 @@ aggregator_output:
 
 ### WT2 实现时需注意
 
-- `per_worktrack_weights` 的计算顺序：先取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
+- `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
 - block lift 不可自动：aggregator 检测到之前在同一 milestone 下的 contradiction resolution（新 verification WT 的 closeout），自动重算但保留 block 直到 resolution 的 evidence 满足 block_lift_condition
 
-## 八、示例：Release Milestone 的 aggregation_rules
+## 九、示例：Release Milestone 的 aggregation_rules
 
 ```yaml
 aggregation_rules:
@@ -330,6 +417,15 @@ aggregation_rules:
         - path_id: programmer_resolution
     partial_contradiction:
       handling: record_as_risk
+  target_type_rules:
+    target_type: program_code
+    target_type_source: milestone_artifact
+    target_type_confidence: high
+    axis_applicability:
+      black_box: { state: applicable, expected_method: external_behavior_scenario }
+      white_box: { state: applicable, expected_method: structural_internal_analysis }
+      anti_cheat: { state: applicable, expected_method: evidence_integrity_review }
+      composite: { state: applicable, expected_method: composite_acceptance_lanes }
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
@@ -343,7 +439,7 @@ aggregation_rules:
     recording_required: true
 ```
 
-## 九、示例：Docs Milestone 的 aggregation_rules
+## 十、示例：Docs Milestone 的 aggregation_rules
 
 ```yaml
 aggregation_rules:
@@ -360,6 +456,25 @@ aggregation_rules:
         weight_both_are_at_least: 2       # 但阈值更低（docs WT 默认 weight=3）
     resolution:
       default_action: block
+  target_type_rules:
+    target_type: non_program_artifact
+    target_type_source: milestone_artifact
+    target_type_confidence: high
+    axis_applicability:
+      black_box:
+        state: substituted
+        expected_method: artifact_acceptance_review
+        substituted_by: operator_simulation
+      white_box:
+        state: substituted
+        expected_method: artifact_structure_review
+        substituted_by: professional_review
+      anti_cheat:
+        state: applicable
+        expected_method: evidence_integrity_review
+      composite:
+        state: applicable
+        expected_method: composite_acceptance_lanes
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
@@ -379,22 +494,26 @@ aggregation_rules:
 - docs 的 white-box（review quality）有 veto power，但 black-box 没有
 - 这体现了"不同 milestone 对证据的要求不同"
 
-## 十、约束与保证
+## 十一、约束与保证
 
 ### 不变式
 
 - **Contradiction block 不可自动解除**：aggregator 不能因为"后来的 WT 都过了"就静默消解之前的矛盾
 - **Weight 不超过 node_type 的语义边界**：docs WT 的 weight 不能超过 feature WT（overrides 除外，需显式理由）
 - **Veto power 不可被 per-WT aggregation 覆盖**：black-box fail 即 milestone blocked，无论其他 WT 如何
+- **Target type 先于轴 verdict**：未解析 target_type 或 axis_applicability 时，不得把黑盒/白盒轴默认为 pass
+- **not_applicable 不是 pass**：`not_applicable` 只能移出 mandatory pass 计算，不能提供正向完成证据
+- **substituted 必须有证据**：`substituted` 只有在替代验收证据存在并通过时才可视为 axis satisfied
 - **退化 AND 必须记录**：即使当前 evidence 状态简单到不需要聚合规则，也必须说明"为什么简单"而不是"跳过了规则"
 
 ### 向后兼容
 
 - 已完成的 milestone（completed/superseded）不需要补充 aggregation_rules
 - 活跃 milestone 如果尚未声明 aggregation_rules，默认使用 `enabled: false`（退化 AND），但必须在 milestone gate evidence 中标记 `aggregation_rules_missing: true` 作为 warning
+- 旧 milestone 缺少 `target_type_rules` 时，Milestone Gate 必须在 evidence 中记录 `target_type: unknown` 或一个有来源的 runtime inference；不得把缺失解释为 program_code、non_program_artifact 或 pass
 - 此行为确保 MS-20260623-003 合入后不影响正在执行的 other milestones
 
-## 十一、相关文档
+## 十二、相关文档
 
 - [Single-Acceptance Contract](../worktrack/single-acceptance-contract.md) — 被消费的 verdict 格式
 - [Worktrack Contract](../worktrack/contract.md) — worktrack 级 gate 定义
