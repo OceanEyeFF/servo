@@ -102,7 +102,7 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
 
 ## 硬约束
 
-遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 - 充分证据必须来自可复现的自动化检查、明确关联验收标准的测试结果或可验证的命令输出；自称完成的手动检查、一个绿色差异、或模糊的信心表述本身不能作为充分证据出现在输出中。
 - 唯一合法行为是复用新鲜度依据明确标记且未过期的验证证据；新鲜度依据不明确的验证证据必须被标记为 `未知` 并禁止复用。

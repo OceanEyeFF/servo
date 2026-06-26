@@ -1,0 +1,22 @@
+{
+  "payload_version": "agents-skill-payload.v1",
+  "backend": "agents",
+  "skill_id": "milestone-anticheat-check",
+  "canonical_dir": "product/harness/skills/milestone-anticheat-check",
+  "canonical_paths": [
+    "product/harness/skills/milestone-anticheat-check/SKILL.md"
+  ],
+  "target_dir": "milestone-anticheat-check",
+  "legacy_target_dirs": [],
+  "target_entry_name": "SKILL.md",
+  "payload_policy": "canonical-copy",
+  "supported_target_scopes": [
+    "local"
+  ],
+  "reference_distribution": "copy-listed-canonical-paths",
+  "required_payload_files": [
+    "SKILL.md",
+    "payload.json",
+    "aw.marker"
+  ]
+}

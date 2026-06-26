@@ -7,11 +7,11 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
 
 ## 概览
 
-本技能实现 `Milestone Gate` 四轴检查中的 **composite acceptance** 轴。它是 Layer 1 四个独立 SubAgent skill 中的一个，与其他三轴（[milestone-blackbox-check](../milestone-blackbox-check/SKILL.md)、[milestone-whitebox-check](../milestone-whitebox-check/SKILL.md)、[milestone-anticheat-check](../milestone-anticheat-check/SKILL.md)）并行运行、轴间不可见、各自产出独立的 `composite_verdict`。
+本技能实现 `Milestone Gate` 四轴检查中的 **composite acceptance** 轴。它是 Layer 1 四个独立 SubAgent skill 中的一个，与其他三轴（milestone-blackbox-check、milestone-whitebox-check、milestone-anticheat-check）并行运行、轴间不可见、各自产出独立的 `composite_verdict`。
 
 与其他三轴不同，本轴**不生成新的代码检查**。它消费每个已闭环 worktrack 上已经产出的 composite acceptance lane 报告，聚合并审查其完整性和可信度，最终形成 milestone 级的复合验收结论。
 
-本技能在隔离的 SubAgent 上运行，接收限定范围输入包，不得读取其他轴的 verdict。架构位置定义见 [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) Layer 1 / composite_lane_rules。
+本技能在隔离的 SubAgent 上运行，接收限定范围输入包，不得读取其他轴的 verdict。架构位置定义见 milestone-gate-aggregation.md Layer 1 / composite_lane_rules。
 
 ## 何时使用
 
@@ -304,8 +304,6 @@ composite_verdict:
 
 ## 硬约束
 
-遵循 `docs/harness/foundations/skill-common-constraints.md` 中定义的公共约束 C-1 至 C-8。
-
 本技能特有约束：
 
 1. **权限边界**：只读操作。消费现有的 per-WT lane 报告。禁止修改任何代码、禁止生成新的 review 内容、禁止重新执行代码检查。本轴聚合已有报告，不产生新的代码级发现。
@@ -326,9 +324,9 @@ composite_verdict:
 
 ## 资源
 
-- [Milestone Gate 证据聚合合同](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — §五 composite_lane_rules：composite acceptance lanes 在 milestone 级的消费规则和 veto power 定义。
-- [Composite Milestone Acceptance](../../../../docs/harness/artifact/control/composite-milestone-acceptance.md) — composite acceptance 的 lane 定义、verdict model 和 fallback 规则。
-- [milestone-gate-aggregation.md](../../../../docs/harness/artifact/control/milestone-gate-aggregation.md) — Milestone Gate 聚合合同，定义 composite_lane_rules 和 Layer 2 聚合逻辑。本技能（composite lane check）是 Layer 2 的输入之一。
-- [milestone.md](../../../../docs/harness/artifact/control/milestone.md) — Milestone artifact 合同，定义 aggregation_rules 字段和 composite_acceptance 配置。
-- `docs/harness/foundations/skill-common-constraints.md` — C-1 至 C-8 公共约束定义。
-- [Single-Acceptance Verdict](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md) — per-WT 单体验收结果，定义 single-acceptance verdict 的结构化格式与判定规则。C2 (feature-completeness) lane 应消费其中的 `completion_signals_passed` / `completion_signals_failed` 字段作为预聚合证据。
+- Milestone Gate 证据聚合合同 — §五 composite_lane_rules：composite acceptance lanes 在 milestone 级的消费规则和 veto power 定义。
+- Composite Milestone Acceptance — composite acceptance 的 lane 定义、verdict model 和 fallback 规则。
+- milestone-gate-aggregation.md — Milestone Gate 聚合合同，定义 composite_lane_rules 和 Layer 2 聚合逻辑。本技能（composite lane check）是 Layer 2 的输入之一。
+- milestone.md — Milestone artifact 合同，定义 aggregation_rules 字段和 composite_acceptance 配置。
+- Skill 公共约束已内联于 §硬约束
+- Single-Acceptance Verdict — per-WT 单体验收结果，定义 single-acceptance verdict 的结构化格式与判定规则。C2 (feature-completeness) lane 应消费其中的 `completion_signals_passed` / `completion_signals_failed` 字段作为预聚合证据。

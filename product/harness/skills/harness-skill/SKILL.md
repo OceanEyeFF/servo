@@ -291,7 +291,7 @@ Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-cont
 
 > **Closeout Gate vs Worktrack Gate**：Closeout Gate 是 Close 阶段内部的二次检查，消费 Self-Review Record + Single-Acceptance Verdict 后判定是否允许 merge。Worktrack Gate（worktrack-gate-skill，Judge 阶段）在前，基于 implementation/validation/policy 三轴证据裁决是否允许进入 Close。两者不同，详见 §8.1。
 
-Self-Review 和 Single-Acceptance 的合约定义分别见 [docs/harness/artifact/worktrack/self-review-contract.md](../../../../docs/harness/artifact/worktrack/self-review-contract.md) 和 [docs/harness/artifact/worktrack/single-acceptance-contract.md](../../../../docs/harness/artifact/worktrack/single-acceptance-contract.md)。写回动作使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
+Self-Review 和 Single-Acceptance 的合约定义分别见 Self-Review Contract 和 Single-Acceptance Contract。写回动作使用 repo-writeback-skill 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
 
 对于 active milestone，这个闭环以当前 worktrack 为单位反复运行：一个 worktrack 完成一次完整闭环，milestone 才聚合一次已验证进度；下一次派生从新的 current worktrack 重新开始，持续形成清晰的逐项执行轨迹。
 
@@ -333,7 +333,7 @@ Milestone Gate 拆分为两层，由 `milestone-gate` skill 统一承载：
 - **Layer 1（四轴隔离检查）**：`milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check`，在隔离 SubAgent 上并行执行、轴间不可见。
 - **Layer 2（可配置聚合器）**：按 milestone 的 `aggregation_rules` 执行 weight → contradiction → composite_lane → degenerate 四步，产出 `milestone_gate_verdict`。
 
-Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate` skill（推荐 SubAgent delegated）；milestone-status-skill 负责准备输入包。详见 `product/harness/skills/milestone-gate/SKILL.md` 和 `docs/harness/artifact/control/milestone-gate-aggregation.md`。
+Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate` skill（推荐 SubAgent delegated）；milestone-status-skill 负责准备输入包。详见 milestone-gate skill。
 
 ---
 
@@ -357,7 +357,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
 1. **现有 `.servo` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.servo/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
    - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `harness-set-goal-skill`，不得凭当前对话临时假设长期配置。
    - 必读控制配置段包括 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 和 `Autonomy Ledger`。
-   - 缺失控制字段按最保守默认值解释：权限/自动性为未授权，状态为 `unknown` / `missing` / `blocked` / `not ready`，列表为空，布尔值为 `false`；同时在状态估计中记录 `config_hydration_gaps`。缺失不能静默扩大权限或自动性。Source-side authoring trace: `docs/harness/artifact/control/control-state.md`。
+   - 缺失控制字段按最保守默认值解释：权限/自动性为未授权，状态为 `unknown` / `missing` / `blocked` / `not ready`，列表为空，布尔值为 `false`；同时在状态估计中记录 `config_hydration_gaps`。缺失不能静默扩大权限或自动性。
    - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 source-side control-state contract 与初始化模板。
    - `.servo/control-state.md` 只保存控制配置、路径指针与控制面记忆，不得写入 Repo 目标、Worktrack 业务真相或未验证结论。
    - 入口分流必须在 hydration 之后发生；缺少 artifact 或审批信号时，profile / operator mode 只能降级为 observation / handback / blocked，不得扩大权限。
@@ -511,7 +511,7 @@ _已合并入 §10.4 前置段落。_
      ```
 
    - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
-4. `auto` 表示按 §2 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。Source-side authoring trace: `docs/harness/foundations/dispatch-decision-policy.md`
+4. `auto` 表示按 §2 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
@@ -606,7 +606,7 @@ _已合并入 §10.5。_
      ```
 
    - `writeback_bridge.py` 将 `writeback_instructions` 翻译为 `repo-writeback-skill` 可消费的多步指令格式。
-   - 写回动作使用 [repo-writeback-skill](../repo-writeback-skill/SKILL.md) 作为 orchestrator 执行，不再使用 ad-hoc 字段写入。
+   - 写回动作使用 repo-writeback-skill 作为 orchestrator 执行，不再使用 ad-hoc 字段写入。
    - 收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
 
    **Gate 状态透传**：`milestone-status-skill` 输出中的 gate 特定字段来自 `milestone-gate` skill 产出，由 sensor skill 透传到 writeback_instructions。Harness 按 writeback_instructions 逐字段写入，不自行解释 gate 语义。
@@ -815,7 +815,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 
 ## 十五、硬约束
 
-遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close/ChangeGoal/SetGoal 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。Source-side authoring trace: docs/harness/foundations/skill-common-constraints.md。
+遵循本包内最小公共约束 C-1 至 C-8：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close/ChangeGoal/SetGoal 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
 
 本技能特有约束：
 
