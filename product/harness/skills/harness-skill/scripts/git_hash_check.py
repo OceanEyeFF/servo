@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Git Hash Check — Git Commit Hash 基线对比（幂等性守卫）。
 
-比较 control-state 记录的 latest_observed_checkpoint 与当前 HEAD，
+比较 control-state-repo 记录的 latest_observed_checkpoint 与当前 HEAD，
 判定是否需要刷新 repo 基线。
 
 用法:
   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/git_hash_check.py \\
-    --control-state .servo/control-state.md
+    --control-state .servo/control-state-repo.md
 
 输出: JSON (status, current_head, checkpoint, repo_baseline_unchanged, repo_baseline_changed)
 """
@@ -20,7 +20,7 @@ from typing import Optional
 from _git_utils import git_rev_parse_head
 
 def read_checkpoint(path: str) -> Optional[str]:
-    """从 control-state.md 读取 latest_observed_checkpoint。"""
+    """从 control-state-repo.md 读取 latest_observed_checkpoint。"""
     if not os.path.exists(path):
         return None
     with open(path) as f:
@@ -35,7 +35,13 @@ def read_checkpoint(path: str) -> Optional[str]:
 def main():
     parser = argparse.ArgumentParser(description="Git Hash Check — 幂等性守卫")
     parser.add_argument(
-        "--control-state", required=True, help="Path to .servo/control-state.md"
+        "--control-state",
+        default=".servo/control-state-repo.md",
+        help=(
+            "Path to repo checkpoint state "
+            "(default: .servo/control-state-repo.md; legacy alias may point "
+            "to .servo/control-state.md)"
+        ),
     )
     args = parser.parse_args()
 

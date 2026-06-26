@@ -2,7 +2,8 @@
 """Complex Project Entry Gate Check — 核心阻塞条件的确定性检查。
 
 检查 complex_project_entry_gate 中的 entry_verdict 和 milestone_blocking_decision。
-边缘情况（blank/placeholder/incomplete）标记 needs_llm_review。
+边缘情况（missing/blank/placeholder/incomplete）按 unresolved gate blocking
+default 阻断。低风险不适用路径必须通过 --not-applicable-reason 显式声明。
 
 用法:
   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complex_project_entry_gate_check.py \\
@@ -43,33 +44,64 @@ def main():
         "--gate-source", required=True,
         help="Path to file containing complex_project_entry_gate (e.g. intake review)"
     )
+    parser.add_argument(
+        "--not-applicable-reason",
+        help=(
+            "Explicit machine-readable reason for a low-risk not-applicable "
+            "path when the gate source/section is intentionally absent"
+        ),
+    )
     args = parser.parse_args()
 
     if not os.path.exists(args.gate_source):
+        if args.not_applicable_reason:
+            result = {
+                "ready": True,
+                "blocked": False,
+                "not_applicable": True,
+                "not_applicable_reason": args.not_applicable_reason,
+                "reason": "gate source 文件不存在，显式声明 not_applicable — 跳过",
+                "needs_llm_review": False,
+                "checked_fields": {},
+            }
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            sys.exit(0)
         result = {
-            "ready": True,
-            "blocked": False,
-            "reason": "gate source 文件不存在，认为无 complex-project trigger — 跳过",
-            "needs_llm_review": False,
+            "ready": False,
+            "blocked": True,
+            "reason": "gate source 文件不存在 — 按 unresolved gate blocking default 阻断",
+            "needs_llm_review": True,
             "checked_fields": {},
         }
         print(json.dumps(result, indent=2, ensure_ascii=False))
-        sys.exit(0)
+        sys.exit(1)
 
     with open(args.gate_source) as f:
         content = f.read()
 
     # 检测是否存在 complex_project_entry_gate 段
     if "complex_project_entry_gate" not in content.lower():
+        if args.not_applicable_reason:
+            result = {
+                "ready": True,
+                "blocked": False,
+                "not_applicable": True,
+                "not_applicable_reason": args.not_applicable_reason,
+                "reason": "gate source 中无 complex_project_entry_gate，显式声明 not_applicable — 跳过",
+                "needs_llm_review": False,
+                "checked_fields": {},
+            }
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            sys.exit(0)
         result = {
-            "ready": True,
-            "blocked": False,
-            "reason": "gate source 中无 complex_project_entry_gate — 跳过",
-            "needs_llm_review": False,
+            "ready": False,
+            "blocked": True,
+            "reason": "gate source 中无 complex_project_entry_gate — 按 unresolved gate blocking default 阻断",
+            "needs_llm_review": True,
             "checked_fields": {},
         }
         print(json.dumps(result, indent=2, ensure_ascii=False))
-        sys.exit(0)
+        sys.exit(1)
 
     # 隔离 complex_project_entry_gate YAML 块（避免从全文解析导致字段冲突）
     gate_match = re.search(
