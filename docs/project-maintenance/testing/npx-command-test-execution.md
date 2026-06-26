@@ -59,6 +59,8 @@ RC channel pin:
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
 
+2026-06-26 post-publish verification for `servo-installer@next` passed after `0.7.0-rc.1` publication. `next -> 0.7.0-rc.1`, `latest -> 0.6.1`, registry npx smoke passed.
+
 2026-06-17 post-publish verification for stable `servo-installer` passed in `--skip-remote` mode after `0.6.1` publication. Evidence was kept in `/tmp/servo-installer-stable-npx-smoke-20260617/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used default selector `servo-installer -> 0.6.1`, confirmed `next -> 0.6.1-rc.5`, temporary targets passed, existing-work fixture files were preserved, and no remote mutation was performed by the smoke.
 
 2026-06-15 post-publish verification for `servo-installer@next` passed in `--skip-remote` mode after `0.6.1-rc.4` publication. Evidence was kept in `/tmp/servo-installer-registry-npx-smoke-MVeICq/report.md` during release closeout, and only the selector/version outcome is retained here as long-term fact. The smoke used `next -> 0.6.1-rc.4`, confirmed `latest -> 0.5.8`, temporary targets passed, and no remote mutation was performed by the smoke.
@@ -178,6 +180,7 @@ npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo
 ### 非收敛示例（rc.4 已知问题）
 
 `servo-installer@next`（`0.6.1-rc.4`）在 registry-only 模式下不收敛：
+
 - 首次 dry-run：84 changes，含 60 个 blank value field、27 个 blank Task List append_field
 - apply 后第二次 dry-run：7 changes（仍有 blank Task List append_field）
 - 这表明 rc.4 的 reconcile helper/template 在已发布 tarball 中存在非幂等 bug
@@ -196,6 +199,7 @@ npx --yes --package servo-installer@<channel> -- servo-installer reconcile-servo
 | **发布 gate 角色** | **必须项**：证明已发布包面质量 | **补充项**：说明已知 bug 在 source HEAD 是否已修复 |
 
 **关键规则**：
+
 - 不要用 local-source-root pass 声称 "registry package surface 无问题"
 - 如果 registry-only lane 失败，说明已发布包面有问题，需要修复后发布新 RC 再验证
 - local-source-root pass 可以写成 "fix is in HEAD"，但必须同时说明 "published package still carries the bug"
