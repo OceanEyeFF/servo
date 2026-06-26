@@ -34,8 +34,8 @@
   },
   "servoInstallerRelease": {
     "realPublishApproval": "approved",
-    "approvedVersion": "0.7.0-rc.0",
-    "approvedGitTag": "v0.7.0-rc.0",
+    "approvedVersion": "0.7.0-rc.1",
+    "approvedGitTag": "v0.7.0-rc.1",
     "approvedChannel": "next"
   },
   "engines": {
