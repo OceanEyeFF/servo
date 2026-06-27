@@ -44,8 +44,8 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
 - [milestone-init-skill/](./milestone-init-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
-- [milestone-gate/](./milestone-gate/) — Milestone Gate 两层集成验收编排器（Layer 1 四轴 SubAgent 分派 + Layer 2 aggregation_rules 聚合）
-  - Milestone Gate 四轴检查（Layer 1 独立 SubAgent skills）：
+- [milestone-gate/](./milestone-gate/) — Milestone Gate 聚合器（消费顶层 Harness sibling axis reports + aggregation_rules 聚合）
+  - Milestone Gate 四轴检查（由顶层 Harness 作为 sibling axis carriers 分派）：
     - [milestone-blackbox-check/](./milestone-blackbox-check/) — 外部视角检查（跨 WT 集成、用户承诺、回归风险、外部一致性、覆盖缺口）
     - [milestone-whitebox-check/](./milestone-whitebox-check/) — 内部实现视角检查（接口契约、状态流转、依赖图、架构对齐、实现质量）
     - [milestone-anticheat-check/](./milestone-anticheat-check/) — 反作弊检查（mock abuse、证据复用、部分验证、gate 绕过、过期证据、自审偏见、假阳性风险）
