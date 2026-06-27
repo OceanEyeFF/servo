@@ -1,9 +1,9 @@
 ---
 title: "Standard Fields Vocabulary"
 status: active
-updated: "2026-06-27"
+updated: "2026-06-28"
 owner: "servo-kernel"
-last_verified: 2026-06-27
+last_verified: 2026-06-28
 ---
 
 # Standard Fields Vocabulary
@@ -65,6 +65,14 @@ last_verified: 2026-06-27
 | `slice_coverage` | `object[]` | mixed target 的逐切片覆盖记录，至少包含 slice_id、slice_target_type、axis、applicability_state、expected_method、substitute_method、evidence_ref 和 verdict | `milestone-gate` |
 | `veto_triggered` | `boolean` | Milestone Gate lane 是否触发 veto-power 阻断 | `milestone-gate` |
 | `weight_modifier_applied` | `boolean` | Milestone Gate lane finding 是否已对对应 WT 权重应用修饰 | `milestone-gate` |
+| `axis_reports` | `object` | 顶层 Harness sibling axis dispatch 产出的四轴显式报告封套，供 `milestone-gate` 聚合消费 | `harness-skill`, `milestone-gate` |
+| `axis_report_status` | `object` | 每个 axis report 的状态：present / missing / stale / contaminated / blocked | `milestone-gate` |
+| `axis_dispatch_profile` | `object` | 四轴 sibling dispatch 的运行时画像，记录 dispatch owner、dispatch model、per-axis delegation attempt、same-carrier fallback 与 runtime gap | `harness-skill`, `milestone-gate` |
+| `milestone_gate_execution_model` | `object` | Milestone Gate 执行模型，区分 top-level axis dispatch 与 `milestone-gate` aggregation，且记录是否尝试 nested dispatch | `milestone-gate` |
+| `nested_axis_dispatch_attempted` | `boolean` | `milestone-gate` 是否尝试在内部继续分派四轴；新合同下必须为 false | `milestone-gate` |
+| `same_carrier_cross_axis` | `boolean` | 四轴是否在同一 carrier 上顺序执行，若为 true 不满足真实四轴隔离 | `harness-skill`, `milestone-gate`, milestone axis skills |
+| `manual_exception` | `object` | Programmer final acceptance override 记录；只描述验收例外，不改写 gate verdict | `harness-skill`, `milestone-gate` |
+| `accepted_gate_verdict_preserved_as` | `pass \| soft_fail \| hard_fail \| blocked \| N/A` | manual exception 中保留的真实 Gate verdict | `harness-skill`, `milestone-gate` |
 
 ## 审批 & 权限字段
 
