@@ -1,39 +1,44 @@
 ---
 name: milestone-gate
-description: 当 worktrack_list_finished 后需要运行 Milestone Gate 两层集成验收时使用这个技能。它是 Gate Orchestrator：Layer 1 分派 4 个隔离 SubAgent 轴技能（blackbox/whitebox/anticheat/composite），Layer 2 按 per-milestone 可配置 aggregation_rules 运行聚合器→milestone_gate_verdict。由 milestone-status-skill 在确认 worktrack 列表 finished 后调用。
+description: 当 worktrack_list_finished 后，且顶层 Harness 已为 Milestone Gate 产出 blackbox/whitebox/anticheat/composite sibling axis reports 时使用这个技能。它是 Milestone Gate Aggregator：消费显式 axis_reports、axis_dispatch_profile、closed worktrack facts、target_type_rules 与 aggregation_rules，聚合产出 milestone_gate_verdict；不得创建或唤起轴 SubAgent。
 ---
 
 # Milestone Gate 技能
 
 ## 概览
 
-本技能实现 Milestone Gate 的 **两层集成验收**，是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
+本技能实现 Milestone Gate 的 **聚合层**，是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
 
-它是 **Gate Orchestrator**：不自己做轴检查，而是分派 4 个隔离 SubAgent 轴技能（Layer 1），收集各轴 verdict 后按 per-milestone 可配置 `aggregation_rules` 运行聚合器（Layer 2），最终产出 `milestone_gate_verdict`。
+它是 **Gate Aggregator**：不自己做轴检查，也不继续分派 SubAgent；顶层 Harness 必须先把 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check` 作为 sibling axis carriers 执行，并把四个显式 `axis_reports` 与 `axis_dispatch_profile` 交给本技能。本技能只验证输入完整性、解析适用性、运行聚合规则，并产出 `milestone_gate_verdict`。
 
 调用关系：
 
 ```
 milestone-status-skill（sensor）
-  └─ worktrack_list_finished → 调用 milestone-gate-skill（本技能）
-       ├─ Layer 1: dispatch 4 axis skills (SubAgent × 4, parallel)
-       └─ Layer 2: aggregator → milestone_gate_verdict
+  └─ worktrack_list_finished → 顶层 Harness sibling axis dispatch
+       ├─ milestone-blackbox-check  → blackbox axis_report
+       ├─ milestone-whitebox-check  → whitebox axis_report
+       ├─ milestone-anticheat-check → anticheat axis_report
+       └─ milestone-composite-check → composite axis_report
+            ↓
+       milestone-gate（本技能）aggregator → milestone_gate_verdict
 ```
 
-聚合规则合同（已详述于本技能 §Layer 2 聚合器）。本技能不替代各 worktrack 自己的 gate，也不把上层集成失败回写成单个 worktrack gate 的通过。
+聚合规则合同（已详述于本技能 §聚合器）。本技能不替代各 worktrack 自己的 gate，也不把上层集成失败回写成单个 worktrack gate 的通过。
 
 ## 何时使用
 
 当满足以下条件时使用这个技能：
 
 - 当前 milestone 下所有 worktrack 已闭环（`worktrack_list_finished == true`），由 milestone-status-skill 确认
-- 需要运行 Milestone Gate 两层集成验收，产出 `milestone_gate_verdict`
-- 4 个轴检查技能（servo-milestone-{blackbox,whitebox,anticheat,composite}-check）已部署
-- 运行时支持 SubAgent dispatch（推荐）或接受 current-carrier fallback
+- 顶层 Harness 已经产出四个 axis reports：blackbox / whitebox / anticheat / composite
+- 需要聚合 closed worktrack facts、axis reports、axis dispatch profile、target type rules 与 aggregation rules，产出 `milestone_gate_verdict`
+- 需要判断 missing report、not applicable axis、substituted axis、blocked axis、same-carrier contamination、manual exception 事实对 Gate verdict 的影响
 
 以下情况不适用：
 
 - worktrack 未全部闭环 → 应返回 `not_ready`
+- 尚未产出 axis reports → 返回 `blocked`，要求顶层 Harness 先完成 sibling axis dispatch
 - 需要单个 WT 的 gate 判定 → 使用 `worktrack-gate-skill`
 - 需要进度计数 / handback 信号 → 使用 `milestone-status-skill`
 - 需要修改代码 / evidence → 禁止（只读）
@@ -44,17 +49,21 @@ milestone-status-skill（sensor）
    - `milestone_id`
    - `closed_worktrack_list`：已闭环 WT 列表，每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`
    - `aggregation_rules`：milestone artifact 的 `aggregation_rules` 字段（缺失时退化 AND）
-2. **验证就绪**：确认 `closed_worktrack_list` 非空。若为空，返回 `blocked`。
-3. **Layer 1：分派 4 轴**（见下文）
-4. **Layer 2：聚合器**（见下文）
+   - `target_type_rules`：目标类型与轴适用性规则
+   - `axis_reports`：顶层 Harness 提供的 blackbox / whitebox / anticheat / composite 报告
+   - `axis_dispatch_profile`：顶层 Harness 对四轴 carrier 的分派与隔离记录
+   - `manual_exception`：仅可表示 programmer final acceptance override 的输入事实，不能改写 Gate pass
+2. **验证就绪**：确认 `closed_worktrack_list`、`axis_reports`、`axis_dispatch_profile` 非空且结构完整。若缺失或污染，返回 `blocked`。
+3. **Axis report input validation**（见下文）
+4. **聚合器**（见下文）
 5. **产出最终 verdict**：`milestone_gate_verdict` + 聚合状态字段
 6. **停止**：不得进入 purpose_achieved 判定或代码修改
 
 ---
 
-## Layer 1：四轴独立 SubAgent 分派
+## Axis Reports 输入合同
 
-将 milestone 级集成验收分解为 4 个**隔离轴检查**，每个轴由独立 SubAgent 承载、并行执行、轴间不可见。
+顶层 Harness 负责将 milestone 级集成验收分解为 4 个**隔离轴检查**。本技能只消费结果，不创建新的 axis carrier。
 
 ### 轴定义
 
@@ -65,19 +74,12 @@ milestone-status-skill（sensor）
 | **anticheat** | `milestone-anticheat-check` | 证据可信度视角 | Mock abuse、evidence 复用、局部验证、gate bypass、过期 evidence、self-review bias、false positive risk（A1-A7）。**不评判代码正确性，只评判证据可信度。** |
 | **composite** | `milestone-composite-check` | 复合验收视角 | 消费 per-WT lane 报告（code-review 等 C1-C6）并聚合成 milestone 级复合验收结论。**不生成新代码检查。** |
 
-### 分派规则
+### 必需输入字段
 
-1. **并行 SubAgent 分派**：若运行时支持 SubAgent dispatch，4 个轴作为 SubAgent **并行分派**。每个 SubAgent 的任务包只包含该轴独享的输入材料，**不得包含其他轴的 verdict 或检查结果**。
-2. **超时处理**：若任一轴 SubAgent 失败或超时，该轴标记 `verdict: blocked` 并记录失败原因。已完成的轴 verdict 正常收集。
-3. **SubAgent 不可用降级**：若运行时完全不支持 SubAgent dispatch，降级为 current-carrier **顺序执行** 4 个轴技能。此时必须标记 `carrier_isolation_broken: true`，并在 `isolation_guarantee` 中记录降级原因。顺序执行时，每个轴的检查必须在完全独立的上下文中进行。
-4. **隔离约束**：收到各轴输出后，若任一侧标记 `isolation_guarantee: false`，记录到聚合状态但继续聚合（隔离破坏本身不自动阻断——由裁决逻辑决定影响）。
-
-### 各轴输出格式
-
-每个轴技能产出结构化 YAML verdict：
+`axis_reports` 必须包含四个键：`blackbox`、`whitebox`、`anticheat`、`composite`。每个轴报告至少包含：
 
 ```yaml
-{axis}_verdict:
+axis_report:
   axis: blackbox | whitebox | anticheat | composite
   verdict: pass | soft_fail | hard_fail | blocked
   severity: low | medium | high
@@ -85,20 +87,53 @@ milestone-status-skill（sensor）
   carrier: subagent | current-carrier
   isolation_guarantee: true | false
   carrier_isolation_broken: true | false
+  report_ref: ".servo/milestone/...#axis"
+  observed_git_hash: "<hash>"
+  target_type: program_code | non_program_artifact | mixed | unknown
+  axis_applicability: applicable | not_applicable | substituted | blocked
+  substitute_method: string | N/A
+  substitution_evidence_ref: string | N/A
+  substitute_verdict: pass | soft_fail | hard_fail | blocked | N/A
+  evidence_covers_completion_signal: true | false | N/A
 ```
 
 各轴的完整 checklist（B1-B5、W1-W5、A1-A7、C1-C6）和 verdict 推导规则定义在各自 SKILL.md 中。
 
+`axis_dispatch_profile` 至少包含：
+
+- `dispatch_model`: `sibling_delegated` / `mixed` / `current_carrier_fallback` / `missing`
+- `required_axes`: blackbox / whitebox / anticheat / composite
+- `completed_axes`
+- `missing_axes`
+- `same_carrier_cross_axis`: boolean
+- `carrier_isolation_broken_any`: boolean
+- `dispatch_gap_reason`: string | N/A
+- `per_axis_runtime_dispatch_profile`: object
+- `nested_axis_dispatch_attempted`: false
+
+### Axis Report Status
+
+本技能必须先产出 `axis_report_status`：
+
+- `complete`: 四个报告齐全、结构完整、report refs 可追踪、且隔离记录未显示污染。
+- `missing`: 任一 required axis report 缺失。
+- `contaminated`: 任一 report 的输入含其他轴 verdict / 检查结果，或 `same_carrier_cross_axis == true` 且没有合法隔离证据。
+- `isolation_broken`: `carrier_isolation_broken_any == true` 或任一轴 `isolation_guarantee == false`。
+- `blocked_axis`: 任一 mandatory axis report verdict 为 `blocked`。
+
+`missing`、`contaminated`、`isolation_broken`、`blocked_axis` 都是 non-pass Gate facts。它们不能被聚合器改写为 `pass`；若 programmer 后续选择手动接受，只能记录为 final acceptance `manual_exception`，并保留原始 `milestone_gate_verdict`。
+
 ---
 
-## Layer 2：可配置聚合器（Aggregator）
+## 可配置聚合器（Aggregator）
 
-本层在收集齐全 4 轴 verdict 后执行。聚合器消费四类输入：
+本层在验证 axis reports 后执行。聚合器消费五类输入：
 
 1. **per-WT single-acceptance verdicts**：每个已闭环 WT 的 `verdict`、`node_type`、`critical_failure`
-2. **4 轴 verdicts**：Layer 1 产出的 4 个结构化 verdict
+2. **axis_reports**：顶层 Harness sibling axis carriers 产出的 4 个结构化报告
 3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与轴适用性字段
 4. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
+5. **axis_dispatch_profile / axis_report_status**：顶层 Harness 分派与隔离证据
 
 聚合分五步执行，顺序不可颠倒。Step 0 必须先完成；后续步骤不得把 `not_applicable` 或 `substituted` 当成原始 `pass` 使用。
 
@@ -190,6 +225,7 @@ axis_satisfied(axis) =
 
 | 优先级 | 条件 | verdict |
 |--------|------|---------|
+| -1 | `axis_report_status` 为 `missing` / `contaminated` / `isolation_broken` / `blocked_axis`，或 `nested_axis_dispatch_attempted == true` | `blocked` |
 | 0 | target type unknown、`axis_applicability_resolved == false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
 | 1 | veto-power 轴适用且 hard_fail/blocked，或 mandatory substituted 轴 `axis_satisfied == false` | `blocked` |
 | 2 | contradiction_blocked | `blocked` |
@@ -210,6 +246,11 @@ axis_satisfied(axis) =
 
 - `milestone_gate_verdict`：pass / soft-fail / hard-fail / blocked — 最终判定
 - `milestone_gate_summary`：聚合摘要
+- `milestone_gate_execution_model`：`axis_report_aggregation`
+- `nested_axis_dispatch_attempted`：false
+- `axis_reports`：object — blackbox / whitebox / anticheat / composite 原始报告引用与压缩摘要
+- `axis_report_status`：complete / missing / contaminated / isolation_broken / blocked_axis
+- `axis_dispatch_profile`：object — dispatch_model、missing_axes、same_carrier_cross_axis、carrier_isolation_broken_any、dispatch_gap_reason、per_axis_runtime_dispatch_profile
 - `aggregation_rules_applied`：boolean
 - `aggregation_rules_missing`：boolean
 - `aggregation_rules_source`：string
@@ -226,7 +267,10 @@ axis_satisfied(axis) =
 - `degenerate_and_applied`：boolean
 - `degenerate_and_reason`：string | N/A
 - `carrier_isolation_broken`：boolean
+- `same_carrier_cross_axis`：boolean
 - `isolation_note`：string
+- `manual_exception`：object | N/A — 只记录 programmer final acceptance override 的输入事实；不得把 Gate verdict 改写为 pass
+- `accepted_gate_verdict_preserved_as`：string | N/A
 
 ## 硬约束
 
@@ -234,16 +278,18 @@ axis_satisfied(axis) =
 
 1. **只读**：不修改任何代码、evidence、artifact。只产出结构化 verdict。
 2. **不得替代 worktrack gate**：Milestone Gate 位于所有 worktrack closeout 之后，不替代单个 WT 的 gate。
-3. **轴间隔离**：分派 SubAgent 时，任务包不得包含其他轴的 verdict。
-4. **SubAgent 降级显式记录**：SubAgent 不可用时降级为 current-carrier，标记 `carrier_isolation_broken: true`。
+3. **不得创建轴 carrier**：本技能不得调用、模拟调用或继续唤起 blackbox / whitebox / anticheat / composite axis skills。`nested_axis_dispatch_attempted` 必须为 false；若本技能尝试创建轴 carrier，最终 verdict 必须为 `blocked`。
+4. **轴间隔离只消费证据**：轴间隔离由顶层 Harness 的 `axis_dispatch_profile` 和各 axis reports 证明；本技能只能验证和聚合这些证据。
 5. **聚合顺序不可颠倒**：target_type / axis_applicability → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
-6. **缺失输入必须暴露**：aggregation_rules 缺失时标记 `aggregation_rules_missing: true`，不可静默假设。
+6. **缺失输入必须暴露**：axis_reports、axis_dispatch_profile 或 aggregation_rules 缺失时必须标记对应缺口；axis report 缺失或隔离缺口不可静默假设。
 7. **不得进入后续阶段**：产出 verdict 后停止。purpose_achieved 判定和 writeback 由 milestone-status-skill 负责。
 8. **阻断必须显式**：veto / contradiction / critical fail 导致的 block 必须记录具体原因和可追溯证据。
 9. **轴适用性先于轴裁决**：未解析 `target_type_rules` / `axis_applicability` 时，不得把 raw axis verdict 聚合成 pass。
 10. **not_applicable 不是 pass**：`not_applicable` 只能在 target type 和 reason 明确时移出 mandatory pass 计算，不能贡献 positive evidence、completion-signal coverage 或 weight bonus。
 11. **substituted 必须有证据**：`substituted` 轴缺少 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict: pass` 或 `evidence_covers_completion_signal: true` 时，`axis_satisfied(axis)` 必须为 false；若该轴 mandatory/veto-power，则 milestone verdict 为 `blocked`。
 12. **mixed 目标必须逐 slice 覆盖**：`target_type: mixed` 缺少 `slice_coverage` 或任一 slice 缺少对应适用轴证据时，不能用其他 slice 的 pass 补位，最终 verdict 必须为 `blocked` 或显式非 pass。
+13. **same-carrier fallback 不是隔离 pass**：`same_carrier_cross_axis == true`、`carrier_isolation_broken_any == true` 或 `dispatch_model: current_carrier_fallback` 只能作为 blocked/non-pass Gate evidence，不能被声明为 true isolation pass。
+14. **manual exception 不改写 Gate verdict**：manual exception 只属于 programmer final acceptance override。若 Gate verdict 因隔离或报告缺口 blocked，输出必须保留 blocked，并通过 `manual_exception` / `accepted_gate_verdict_preserved_as` 记录后续人工接受事实。
 
 ## 资源
 
