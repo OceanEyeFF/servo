@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-23
+updated: 2026-06-27
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-06-27
 ---
 
 # Milestone Artifact
@@ -42,6 +42,9 @@ last_verified: 2026-06-23
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
 | depends_on_milestones | array | 前置 Milestone 列表 |
 | aggregation_rules | object | Per-milestone 可配置的证据聚合规则；字段合同见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md)。未声明时默认使用退化 AND 并在 milestone gate evidence 中标记 `aggregation_rules_missing: true` |
+| target_type | enum | Milestone Gate 目标类型：`program_code` / `non_program_artifact` / `mixed` / `unknown`。用于决定黑盒、白盒、反作弊与复合验收轴的适用性 |
+| target_type_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
+| gate_axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
 | updated | date | 最后更新时间 |
 | `priority` | integer | Pipeline 中的优先级（数值越小优先级越高） |
 | `activation_rules` | string | 自动激活条件（optional，harness-inferred）；描述 harness 可自动激活的前提，空值表示仅 manual |
@@ -140,6 +143,65 @@ Conservative runtime backfill applies when older `.servo/milestone/*.md` artifac
 Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
 
 该 gate 只阻断 milestone 进入 Worktrack 工作，不自动改变 milestone purpose、验收标准或 final acceptance 结论。
+
+## Milestone Gate Target Type
+
+`target_type` 是 goal-driven milestone 的 Milestone Gate 前置路由字段。它回答“这个 milestone 最终交付物是什么类型”，从而决定黑盒、白盒、反作弊与复合验收轴应该如何取证。该字段不创建第三 Scope，不替代 `milestone_kind`，也不替代 Worktrack Contract。
+
+Canonical values:
+
+| target_type | 适用场景 | Milestone Gate 路由 |
+|-------------|----------|---------------------|
+| `program_code` | 可运行程序、CLI、API、库、adapter、脚本、前端/后端功能、测试工具等会产生运行时行为的目标 | blackbox 必须使用外部可观察行为场景；whitebox 必须使用结构/内部实现分析；anti-cheat 与 composite 仍按证据可信度和复合验收执行 |
+| `non_program_artifact` | 文档、治理规则、skill 文本、workflow policy、研究报告、计划或其他非运行时代码交付物 | 不强制作软件运行测试；blackbox/whitebox 可声明 `substituted` 或 `not_applicable`，并使用 artifact review、policy conformance、reader/operator simulation、professional review 等替代验收 |
+| `mixed` | 同一 milestone 同时包含可运行程序和非程序 artifact | 必须按 worktrack 或 completion signal 拆分适用性；不能把整项 milestone 一概视为 program 或 non-program |
+| `unknown` | 目标类型缺失、矛盾或证据不足 | Milestone Gate 不得把任何轴默认为 pass；必须记录 `blocked`、`needs_programmer_review` 或 conservative fallback |
+
+`gate_axis_applicability` 记录四轴适用性。每个轴的 `state` 只能是：
+
+- `applicable`: 该轴按自身语义执行并产出 verdict。
+- `not_applicable`: 该轴对当前 target type 不适用；必须写明原因，且不能被聚合器当成 pass。
+- `substituted`: 该轴的软件测试语义被 artifact-appropriate 验收替代；必须写明 `substituted_by`、替代方法和证据引用。
+- `blocked`: 目标类型或输入不足，无法合法判定适用性。
+
+Program/code target 的最低约束：
+
+- blackbox 轴必须从外部用户/调用者可观察行为出发，构造或引用 scenario acceptance；不得阅读完整实现代码来补判断。
+- whitebox 轴必须从内部结构、控制流、数据流、接口拼接、状态传递、依赖关系或架构路径等结构性证据出发；需要读取实现代码时由 whitebox 负责。
+
+Non-program target 的最低约束：
+
+- 不得为了模拟软件工程术语而强制运行不存在的程序测试。
+- 替代验收必须贴合 artifact 类型，例如文档可读性/完整性审查、governance rule conformance、operator simulation、cross-reference validation、professional review 或 research evidence review。
+- `not_applicable` 和 `substituted` 都是适用性状态，不是成功 verdict。聚合器必须分别记录它们，并检查替代证据是否满足该 milestone 的 acceptance criteria。
+
+Non-program substitute acceptance 的最低证据合同：
+
+| substitute_method | 适用 artifact | 最低证据 |
+|-------------------|---------------|----------|
+| `artifact_acceptance_review` | 文档、skill 文本、workflow policy、计划 artifact | 对照 purpose / completion signals / acceptance criteria 的覆盖记录，列出满足项、缺口和阻断项 |
+| `policy_conformance` | governance rule、运行协议、adapter/deploy 规则文本 | 指向被检查规则和承接文档，说明目标 artifact 是否符合必须/不得/例外条件 |
+| `reader_operator_simulation` | 面向人类或 operator 执行的说明、runbook、skill 提问交互 | 从外部读者或 operator 视角走读预期流程，记录可理解性、可执行性、歧义和失败点 |
+| `cross_reference_validation` | 含路径、链接、字段名或上下游引用的 artifact | 验证引用目标存在、语义未漂移，并记录不再有效的引用 |
+| `traceability_review` | completion signal、acceptance criteria、worktrack evidence 的映射 | 逐项把完成信号/验收标准映射到具体章节、字段或 evidence ref；缺口不得被 `substituted` 掩盖 |
+| `professional_review` | 需要领域判断的研究报告、策略、交互设计或复杂治理文本 | 记录 reviewer 视角、判断依据、结论和残留风险；不能只写“已审查” |
+| `research_evidence_review` | 研究结论、外部事实、方案比较 | 记录来源质量、证据边界、反例/限制和结论是否足以支撑 milestone purpose |
+| `artifact_structure_review` | 结构化文档、schema、字段合同、skill 输出合同 | 检查结构完整性、字段一致性、术语一致性、内部引用和上下游接口拼接 |
+
+`substituted` 只有在同时满足以下条件时，才可被 `axis_satisfied` 视为满足：
+
+- `substitute_method` 属于 artifact-appropriate 方法，并与该 axis 的 `expected_method` 匹配。
+- `substitution_evidence_ref` 指向具体 evidence、文件章节、命令输出或 reviewer 记录。
+- `substitute_verdict = pass`，且 evidence 明确覆盖对应 completion signal 或 acceptance criterion。
+- evidence 中保留未覆盖项、残留风险和 reviewer/operator 视角，不把“未运行软件测试”写成 pass。
+
+`not_applicable` 只能说明某个软件测试轴对目标类型不适用。它可以从 mandatory pass calculation 中移除该轴，但不能产生正向完成证据；对应 completion signal 仍必须由 composite、professional review、artifact review 或其他适配方法证明。
+
+Mixed target 的最低约束：
+
+- 必须记录 slice-level coverage，最小粒度可以是 worktrack、completion signal、artifact component 或交付物路径。
+- 每个 slice 至少记录 `slice_id`、`slice_target_type`、适用 axis、`axis_applicability_state`、`substitute_method` 或正常测试方法、`evidence_ref` 与 verdict。
+- program_code slice 仍使用真实黑盒场景和白盒结构/内部分析；non_program_artifact slice 使用替代验收；不得用某一类 slice 的 pass 覆盖另一类 slice 的缺证。
 
 ## 生命周期
 
@@ -284,7 +346,7 @@ goal-driven milestone 完成判定必须满足以下顺序约束：
 
 其中：
 
-- `Milestone Gate` 是独立的 milestone 级验证层，最少包含黑盒测试、白盒测试、反作弊检测，以及 goal-driven milestone 的 [Composite Milestone Acceptance](./composite-milestone-acceptance.md) lanes。
+- `Milestone Gate` 是独立的 milestone 级验证层，最少包含 target-type-aware 黑盒验收、白盒验收、反作弊检测，以及 goal-driven milestone 的 [Composite Milestone Acceptance](./composite-milestone-acceptance.md) lanes。程序/代码目标使用真实黑盒行为场景和白盒结构/内部分析；非程序目标使用 artifact-appropriate 替代验收，并显式记录轴适用性。
 - `signal_satisfaction_pct` = 已满足的 `completion_signals` 数 / 总 `completion_signals` 数。
 - `criteria_pass_pct` = 已通过的 `acceptance_criteria` 数 / 总 `acceptance_criteria` 数。
 - `purpose_achieved == true` 仅当 `signal_satisfaction_pct >= completion_threshold_pct` 且 `criteria_pass_pct >= completion_threshold_pct`。默认阈值 `completion_threshold_pct = 100`。

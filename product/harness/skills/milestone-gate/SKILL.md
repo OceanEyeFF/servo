@@ -93,13 +93,44 @@ milestone-status-skill（sensor）
 
 ## Layer 2：可配置聚合器（Aggregator）
 
-本层在收集齐全 4 轴 verdict 后执行。聚合器消费三类输入：
+本层在收集齐全 4 轴 verdict 后执行。聚合器消费四类输入：
 
 1. **per-WT single-acceptance verdicts**：每个已闭环 WT 的 `verdict`、`node_type`、`critical_failure`
 2. **4 轴 verdicts**：Layer 1 产出的 4 个结构化 verdict
-3. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
+3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与轴适用性字段
+4. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
 
-聚合分四步执行，顺序不可颠倒。
+聚合分五步执行，顺序不可颠倒。Step 0 必须先完成；后续步骤不得把 `not_applicable` 或 `substituted` 当成原始 `pass` 使用。
+
+### Step 0：target_type_rules / axis_applicability resolution（目标类型与轴适用性解析）
+
+先解析 milestone 的 `target_type_rules`、每个轴 verdict 中的 `target_type` / `axis_applicability`，以及非程序替代验收字段：
+
+- `target_type` 允许表达 `program_code`、`non_program_artifact`、`mixed` 或 `unknown`。
+- `axis_applicability` 至少区分 `applicable`、`not_applicable`、`substituted`、`blocked`。
+- `not_applicable` 必须带有 `target_type` 与明确原因；它只能把该轴从 mandatory pass 计算中移除，不能产生正向 evidence、不能覆盖 completion signal、不能等价为 `pass`。
+- `substituted` 必须带有 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict`、`evidence_covers_completion_signal`。只有 `substitute_verdict: pass` 且 `evidence_covers_completion_signal: true` 时，替代轴才可被判为 satisfied。
+- `mixed` 目标必须提供 `slice_coverage`，每个 slice 记录 `slice_target_type`、适用轴、使用方法、证据引用和 verdict。程序/代码 slice 的 pass 不能覆盖非程序 slice 的替代证据缺失；非程序 substitute pass 也不能覆盖程序/代码 slice 的 blackbox/whitebox 缺失。
+- 目标类型未知、适用性字段互相矛盾、替代证据缺失、`slice_coverage` 缺失或无法映射 completion signal 时，设置 `axis_applicability_resolved: false`，最终 verdict 必须为 `blocked`。
+
+聚合器必须产出 `axis_satisfaction`，并用以下谓词代替原始 `verdict == pass`：
+
+```text
+axis_satisfied(axis) =
+  applicable:
+    axis.verdict == pass
+  substituted:
+    substitute_method is present
+    and substitution_evidence_ref is present
+    and substitute_verdict == pass
+    and evidence_covers_completion_signal == true
+  not_applicable:
+    false, but axis may be excluded from mandatory pass only when target_type and reason are explicit
+  blocked or missing:
+    false
+```
+
+`axis_satisfied(axis)` 是轴满足度，不是轴 verdict 改写；原始轴 verdict、applicability state、替代方法和证据引用必须保留在输出中。
 
 ### Step 1：weight_rules（证据权重计算）
 
@@ -132,22 +163,26 @@ milestone-status-skill（sensor）
 
 消费模式：`independent_axes_with_weight_modifier`
 
-- **Veto power**：blackbox / whitebox / anticheat 的 veto_power=true（默认）→ hard_fail 或 blocked 时 milestone 直接 blocked
+- **Applicability first**：先读取 Step 0 的 `axis_satisfaction`，不得直接用 raw verdict 判定轴通过。
+- **Veto power**：blackbox / whitebox / anticheat 的 veto_power=true（默认）。当适用轴 hard_fail / blocked，或替代轴缺少合格 substitute evidence 导致 `axis_satisfied == false` 时，milestone 直接 blocked。
+- **not_applicable**：若目标类型证明该轴不适用，记录 `applicability_state: not_applicable` 和 reason；该轴不触发 veto，也不得贡献 pass 或 positive evidence。
 - **composite 轴**：veto_power=false，fail 记录 risk 不自动 block
 - per-milestone 可配置各轴 veto_power
 - **Weight modifier**：anticheat 或 blackbox 发现 high severity → 涉及 WT 的 final_weight=0
 
-产出：`composite_lane_verdicts { blackbox, whitebox, anticheat, composite }`
+产出：`composite_lane_verdicts { blackbox, whitebox, anticheat, composite }`。每个轴至少包含 `{ verdict, severity, veto_power, applicability_state, axis_satisfied, veto_triggered, weight_modifier_applied, substitute_method, substitution_evidence_ref, substitute_verdict, evidence_covers_completion_signal }`。
 
 ### Step 4：degenerate_and_rules（退化 AND 判定）
 
 全部满足时触发：
 
+- `axis_applicability_resolved == true`
 - `no_contradiction_detected == true`
 - `no_anti_cheat_high_severity == true`
 - `all_lanes_consistent == true`
 - `no_weight_override_applied == true`
 - `all_critical_wt_pass == true`（所有 final_weight ≥ 4 的 WT pass）
+- 所有 mandatory applicable / substituted veto-power axes 满足 `axis_satisfied(axis) == true`
 
 触发后：`degenerate_and_applied: true` + 退化理由，判定=简单 AND
 
@@ -155,12 +190,13 @@ milestone-status-skill（sensor）
 
 | 优先级 | 条件 | verdict |
 |--------|------|---------|
-| 1 | veto-power 轴 hard_fail/blocked | `blocked` |
+| 0 | target type unknown、`axis_applicability_resolved == false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
+| 1 | veto-power 轴适用且 hard_fail/blocked，或 mandatory substituted 轴 `axis_satisfied == false` | `blocked` |
 | 2 | contradiction_blocked | `blocked` |
-| 3a | 所有 weight ≥ 3 的 WT pass | `pass` |
+| 3a | 所有 weight ≥ 3 的 WT pass，且所有 mandatory applicable / substituted axes 满足 `axis_satisfied(axis) == true`，显式 `not_applicable` 轴均有 target_type reason | `pass` |
 | 3b | 任一 weight ≥ 3 的 WT hard-fail，无 critical fail | `soft-fail` |
 | 3c | 任一 weight ≥ 4 的 WT hard-fail | `hard-fail` |
-| 4 | 退化 AND | `pass`（标记 degenerate_and_applied） |
+| 4 | 退化 AND，且 Step 0 适用性解析完成 | `pass`（标记 degenerate_and_applied） |
 
 可能值：`pass / soft-fail / hard-fail / blocked`
 
@@ -177,10 +213,16 @@ milestone-status-skill（sensor）
 - `aggregation_rules_applied`：boolean
 - `aggregation_rules_missing`：boolean
 - `aggregation_rules_source`：string
+- `target_type`：program_code / non_program_artifact / mixed / unknown
+- `target_type_source`：string
+- `axis_applicability_resolved`：boolean
+- `axis_satisfaction`：object — 每轴包含 `applicability_state`、`axis_satisfied`、reason 和 evidence refs
+- `slice_coverage`：array | N/A — mixed target 时必须列出每个 slice 的 target type、适用轴、方法、证据和 verdict
+- `substitution_evidence_summary`：object — 每个 substituted 轴的 substitute method、evidence ref、substitute verdict 和 completion-signal coverage
 - `per_worktrack_weights`：array — `{ worktrack_id, node_type, base_weight, final_weight, overridden, override_reason }`
 - `contradiction_findings`：array — `{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }`
 - `contradiction_blocked`：boolean
-- `composite_lane_verdicts`：object — `{ blackbox, whitebox, anticheat, composite }`，每轴含 `{ verdict, severity, veto_power, veto_triggered, weight_modifier_applied }`
+- `composite_lane_verdicts`：object — `{ blackbox, whitebox, anticheat, composite }`，每轴含 `{ verdict, severity, veto_power, applicability_state, axis_satisfied, veto_triggered, weight_modifier_applied, substitute_method, substitution_evidence_ref, substitute_verdict, evidence_covers_completion_signal }`
 - `degenerate_and_applied`：boolean
 - `degenerate_and_reason`：string | N/A
 - `carrier_isolation_broken`：boolean
@@ -194,10 +236,14 @@ milestone-status-skill（sensor）
 2. **不得替代 worktrack gate**：Milestone Gate 位于所有 worktrack closeout 之后，不替代单个 WT 的 gate。
 3. **轴间隔离**：分派 SubAgent 时，任务包不得包含其他轴的 verdict。
 4. **SubAgent 降级显式记录**：SubAgent 不可用时降级为 current-carrier，标记 `carrier_isolation_broken: true`。
-5. **聚合顺序不可颠倒**：weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
+5. **聚合顺序不可颠倒**：target_type / axis_applicability → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
 6. **缺失输入必须暴露**：aggregation_rules 缺失时标记 `aggregation_rules_missing: true`，不可静默假设。
 7. **不得进入后续阶段**：产出 verdict 后停止。purpose_achieved 判定和 writeback 由 milestone-status-skill 负责。
 8. **阻断必须显式**：veto / contradiction / critical fail 导致的 block 必须记录具体原因和可追溯证据。
+9. **轴适用性先于轴裁决**：未解析 `target_type_rules` / `axis_applicability` 时，不得把 raw axis verdict 聚合成 pass。
+10. **not_applicable 不是 pass**：`not_applicable` 只能在 target type 和 reason 明确时移出 mandatory pass 计算，不能贡献 positive evidence、completion-signal coverage 或 weight bonus。
+11. **substituted 必须有证据**：`substituted` 轴缺少 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict: pass` 或 `evidence_covers_completion_signal: true` 时，`axis_satisfied(axis)` 必须为 false；若该轴 mandatory/veto-power，则 milestone verdict 为 `blocked`。
+12. **mixed 目标必须逐 slice 覆盖**：`target_type: mixed` 缺少 `slice_coverage` 或任一 slice 缺少对应适用轴证据时，不能用其他 slice 的 pass 补位，最终 verdict 必须为 `blocked` 或显式非 pass。
 
 ## 资源
 

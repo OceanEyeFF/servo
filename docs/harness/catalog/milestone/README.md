@@ -1,9 +1,9 @@
 ---
 title: "Milestone Skills"
 status: active
-updated: 2026-06-23
+updated: 2026-06-27
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-06-27
 ---
 # Milestone Skills
 
@@ -15,9 +15,9 @@ last_verified: 2026-06-23
 |------|-------|-------|----------|
 | [milestone-init-skill.md](./milestone-init-skill.md) | Init Milestone Skill | RepoScope | Milestone 初始化/注册算子 |
 | [milestone-status-skill.md](./milestone-status-skill.md) | Milestone Status Skill | RepoScope | Milestone 聚合观测/验收分析器（Sensor） |
-| — | milestone-gate | RepoScope | Milestone Gate 两层集成验收（Orchestrator） |
-| — | milestone-blackbox-check | RepoScope | Gate Layer 1 — blackbox 轴检查 |
-| — | milestone-whitebox-check | RepoScope | Gate Layer 1 — whitebox 轴检查 |
+| — | milestone-gate | RepoScope | Milestone Gate 两层集成验收（target_type / axis_applicability 先于聚合的 Orchestrator） |
+| — | milestone-blackbox-check | RepoScope | Gate Layer 1 — blackbox 轴检查：程序目标使用外部可观察行为场景，非程序目标使用替代验收或不适用记录 |
+| — | milestone-whitebox-check | RepoScope | Gate Layer 1 — whitebox 轴检查：程序目标使用内部结构/实现分析，非程序目标使用结构替代审查或不适用记录 |
 | — | milestone-anticheat-check | RepoScope | Gate Layer 1 — anticheat 轴检查 |
 | — | milestone-composite-check | RepoScope | Gate Layer 1 — composite 轴检查 |
 
@@ -43,6 +43,8 @@ milestone-init-skill                    milestone-status-skill (Sensor)
                           │  ├─ anticheat-check      │
                           │  └─ composite-check      │
                           │ Layer 2: Aggregator      │
+                          │  target_type             │
+                          │  →axis_applicability     │
                           │  weight→contradiction    │
                           │  →composite_lane         │
                           │  →degenerate             │
@@ -52,8 +54,10 @@ milestone-init-skill                    milestone-status-skill (Sensor)
 
 - **milestone-init-skill**：写操作，创建和激活 milestone
 - **milestone-status-skill**：读操作，观测和分析 milestone 状态（Sensor）
-- **milestone-gate**：Gate orchestrator，仅在 worktrack_list_finished 时触发
-- **4 轴检查**：Layer 1 隔离 SubAgent，并行执行、轴间不可见
+- **milestone-gate**：Gate orchestrator，仅在 worktrack_list_finished 时触发；Layer 2 必须先解析 `target_type_rules` / `axis_applicability`，再按 `axis_satisfied` 聚合 verdict。
+- **blackbox 轴**：程序目标检查用户/operator 可观察行为场景；非程序目标记录 artifact-appropriate 替代验收或 `not_applicable`，不得把不适用当作 pass。
+- **whitebox 轴**：程序目标检查内部结构、控制流、数据流、状态传递、接口、依赖和架构路径；非程序目标使用结构替代审查或 `not_applicable`，不得把外部行为场景当作白盒通过依据。
+- **4 轴检查**：Layer 1 隔离 SubAgent，并行执行、轴间不可见。
 
 ## Canonical 入口
 
