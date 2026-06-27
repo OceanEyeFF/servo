@@ -50,6 +50,14 @@ last_verified: 2026-06-27
 | `expected_method` | `string` | 该轴对当前 target_type 应使用的验收方法，如 `external_behavior_scenario` 或 `structural_internal_analysis` | Milestone axis skills |
 | `substituted_by` | `string \| N/A` | 当 `axis_applicability_state = substituted` 时，记录替代验收来源 | Milestone axis skills |
 | `substitution_evidence_ref` | `string \| N/A` | 替代验收证据引用；缺失时 substituted 不能视为 satisfied | `milestone-gate`, milestone axis skills |
+| `substitute_method` | `artifact_acceptance_review \| policy_conformance \| reader_operator_simulation \| cross_reference_validation \| traceability_review \| professional_review \| research_evidence_review \| artifact_structure_review \| string` | 非程序 artifact 替代验收方法；必须贴合 artifact 类型和 axis 语义 | `milestone-gate`, milestone axis skills |
+| `substitute_verdict` | `pass \| soft_fail \| hard_fail \| blocked \| not_applicable` | 替代验收自身的 verdict；只有 `pass` 且 evidence 完整时，`substituted` 才可视为 satisfied | `milestone-gate`, milestone axis skills |
+| `substitution_evidence_present` | `boolean` | 替代证据是否存在且非占位；为 `false` 时不得把 `substituted` 视为通过 | `milestone-gate`, milestone axis skills |
+| `substitution_evidence_summary` | `string` | 替代验收检查内容、覆盖范围、缺口和残留风险摘要 | `milestone-gate`, milestone axis skills |
+| `evidence_covers_completion_signal` | `boolean` | 替代证据是否覆盖对应 completion signal 或 acceptance criterion | `milestone-gate`, milestone axis skills |
+| `slice_id` | `string` | mixed target 的切片标识；切片可对应 worktrack、completion signal、artifact component 或交付路径 | `milestone-gate`, milestone axis skills |
+| `slice_target_type` | `program_code \| non_program_artifact \| unknown` | mixed target 中单个切片的目标类型 | `milestone-gate`, milestone axis skills |
+| `slice_coverage` | `object[]` | mixed target 的逐切片覆盖记录，至少包含 slice_id、slice_target_type、axis、applicability_state、expected_method、substitute_method、evidence_ref 和 verdict | `milestone-gate` |
 
 ## 审批 & 权限字段
 
