@@ -329,9 +329,12 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 goal-driven milestone 的 `completed` 写入分两层理解：
 
 - `milestone-status-skill` 输出 `milestone_acceptance_verdict == achieved` 且 `milestone_gate_verdict == pass`，表示该 milestone 已达到可交给 programmer final acceptance 的状态。
+- `milestone_gate_verdict != pass` 时，自动路径不得把 milestone 视为 achieved。若 programmer 明确选择带例外接受，写回的是 `milestone_acceptance_verdict: accepted_with_manual_exception`（或等价 final acceptance override），并必须保留 `milestone_gate_verdict`、`accepted_gate_verdict_preserved_as`、`manual_exception.reason` 和相关 axis/anti-cheat findings。
 - programmer 明确接受后，`harness-skill` 才执行 final acceptance writeback，把验收事实持久化为 runtime control-plane 状态。
 
 final acceptance writeback 是一个逻辑事务，不是只改某一个文件。事务最小写入集合包括 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，必要时还包括 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 状态的归一化。写回前必须校验输入状态，写回后必须复核 artifact 一致性；失败时进入 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞，不得把 milestone 伪装成已完成。
+
+Manual exception 不改变证据层含义。尤其是反作弊轴发现的 evidence reuse、gate bypass、same-carrier contamination、stale checkpoint 或 self-review bias，不能因为 programmer 接受 milestone 而被从 Gate report 中删除、降级或改写为 pass。后续 status/cleanup/history 读者必须能同时看到：原始 Gate verdict、人工接受原因、被保留的 anti-cheat finding 和任何 follow-up milestone/worktrack 引用。
 
 ## Latest Override 语义
 
