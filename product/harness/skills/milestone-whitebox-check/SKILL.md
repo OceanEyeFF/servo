@@ -256,7 +256,7 @@ whitebox_verdict:
 - `检查清单执行结果`（W1-W5 每项独立结果）
 - `依赖图`
 - `整体判定结果`
-- `返回 Milestone Gate Orchestrator`
+- `返回顶层 Harness / Milestone Gate Aggregator`
 
 结果中至少应包含以下字段或等价表达：
 

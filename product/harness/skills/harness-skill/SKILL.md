@@ -275,7 +275,14 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 `Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
 
-当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段**追加绑定 `milestone-gate` skill**（推荐 SubAgent delegated），接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。Sensor skill 负责准备 gate skill 的输入包。Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法委派 gate skill（SubAgent 不可用），降级为 current-carrier 并标记 `carrier_isolation_broken: true`。若无活跃 Milestone，跳过此额外绑定。
+当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段运行扁平化 Milestone Gate：
+
+1. 顶层 Harness 准备四份 sibling axis input package。
+2. 顶层 Harness 分别绑定 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check`，作为互相不可见的 sibling axis carriers 执行，并记录每轴 `runtime_dispatch_profile`。
+3. 顶层 Harness 将四个显式 `axis_reports` 和 `axis_dispatch_profile` 传给 `milestone-gate` skill。
+4. `milestone-gate` 只执行 aggregation，接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。
+
+Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法真实创建 sibling axis carriers，Harness 必须记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`carrier_isolation_broken_any: true` 或 `dispatch_gap_reason`。这种运行时缺口不能被 `milestone-gate` 改写为 pass；只可作为 blocked/non-pass Gate evidence 或 programmer final acceptance manual exception 的事实来源。若无活跃 Milestone，跳过此额外绑定。
 
 当存在活跃 goal-driven milestone 且仍有待执行 worktrack 时，Harness 以逐 worktrack 推进的方式运行当前 milestone：每次只派生一个当前 worktrack，为其建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪；完成当前 worktrack 的闭环后，再回到 RepoScope 选择下一个 current worktrack。
 
@@ -328,12 +335,12 @@ Gate 应汇总**正交校验面**的裁决：
 
 对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
 
-Milestone Gate 拆分为两层，由 `milestone-gate` skill 统一承载：
+Milestone Gate 拆分为两层，但不再由 `milestone-gate` skill 统一承载：
 
-- **Layer 1（四轴隔离检查）**：`milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check`，在隔离 SubAgent 上并行执行、轴间不可见。
-- **Layer 2（可配置聚合器）**：按 milestone 的 `aggregation_rules` 执行 weight → contradiction → composite_lane → degenerate 四步，产出 `milestone_gate_verdict`。
+- **Layer 1（四轴隔离检查）**：由顶层 Harness 将 `milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check` 作为 sibling axis carriers 分派，轴间不可见。
+- **Layer 2（可配置聚合器）**：由 `milestone-gate` skill 消费显式 `axis_reports`，按 milestone 的 `aggregation_rules` 执行 target_type → weight → contradiction → composite_lane → degenerate，产出 `milestone_gate_verdict`。
 
-Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate` skill（推荐 SubAgent delegated）；milestone-status-skill 负责准备输入包。详见 milestone-gate skill。
+Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis skills，再绑定 `milestone-gate` skill 聚合。`milestone-status-skill` 负责观察 finished 状态并准备 closed worktrack 输入事实；Harness 负责 axis carrier dispatch；`milestone-gate` 负责 aggregation。
 
 ---
 
@@ -517,7 +524,7 @@ _已合并入 §10.4 前置段落。_
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
 9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 §10.4 步骤 3 列出的 11 个必填字段。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
-10. **Milestone Gate 分派偏好**：当绑定 `milestone-gate` skill 时，Harness 推荐使用 `delegated`（SubAgent 委派），因为 gate skill 内部还要并行分派 4 个轴 SubAgent——重型操作在隔离载体上运行更安全。若运行时不支持 SubAgent，降级为 current-carrier 并标记 `carrier_isolation_broken: true`。分派决策记录在 `runtime_dispatch_profile.delegation_attempted` 中。
+10. **Milestone Gate 四轴分派偏好**：当 goal-driven milestone 的 `worktrack_list_finished == true` 时，Harness 推荐把四个 axis skills 作为 sibling delegated carriers 分派，并为每轴记录 `runtime_dispatch_profile`。`milestone-gate` 本身是 aggregation carrier，不应再在内部继续分派四轴。若运行时不支持 sibling carrier dispatch，记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`same_carrier_cross_axis` 和 `carrier_isolation_broken_any`；该缺口必须传入 `milestone-gate`，不得静默宣称四轴隔离达成。
 
 ### 10.5 证据收集与裁决
 

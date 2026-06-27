@@ -50,7 +50,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 读取 Milestone artifact 的 `milestone_kind` 字段，默认值 `goal-driven`
    - **goal-driven**：执行完整双重验收
      - **worktrack_list_finished**：声明的 worktrack 列表是否全部处理（已完成 / 被明确移出 / 阻塞有决策）
-     - **Milestone Gate**（`worktrack_list_finished == true` 时）：准备输入包并**调用 `milestone-gate` skill**。Gate skill 内部执行两层架构——Layer 1 分派 4 个隔离 SubAgent 轴技能，Layer 2 按 milestone 的 `aggregation_rules` 运行聚合器，产出 `milestone_gate_verdict`。本技能消费 gate skill 返回的 verdict，纳入 `purpose_achieved` 判定。Gate 必须在 `purpose_achieved` 判定前完成。
+     - **Milestone Gate**（`worktrack_list_finished == true` 时）：准备 closed worktrack 输入事实并要求 Harness 先执行四个 sibling axis carriers，再调用 `milestone-gate` skill 聚合显式 `axis_reports`。`milestone-gate` 不在内部继续分派 axis SubAgent；它只按 milestone 的 `aggregation_rules` 运行聚合器，产出 `milestone_gate_verdict`。本技能消费 gate skill 返回的 verdict，纳入 `purpose_achieved` 判定。Gate 必须在 `purpose_achieved` 判定前完成。
      - **purpose_achieved**：Milestone 原始目的是否经聚合 evidence 证明达成（对照 `completion_signals`、`acceptance_criteria` 和 `completion_threshold_pct`，按 `purpose_achieved 操作化判定` 章节逐条验证）
    - **work-collection**：执行单重验收
      - **worktrack_list_finished**：同上
@@ -105,7 +105,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - Milestone Review Gate 缺失、`milestone_review_count < 1`、`latest_review_status` 不是 `effective_pass`、`latest_review_checkpoint` 为空，或 intake 状态为 `skipped` / `questions_required` / `blocked` / `missing` / `stale` / `invalidated`
 - Conservative runtime backfill 后仍为 missing/blocked/not ready 的 additive `.servo` 字段，或任何需要 approval、dispatch、review pass、effective pass 的字段缺少 verified evidence / programmer confirmation
 - `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化使 Milestone Review Gate checkpoint 失效
-- `Milestone Gate` 所需的 black-box / white-box / anti-cheat / composite acceptance lane 证据缺失、过期或互相冲突，导致无法做出可信集成判定
+- `Milestone Gate` 所需的 black-box / white-box / anti-cheat / composite axis reports 缺失、过期、隔离被破坏或互相冲突，导致无法做出可信集成判定
 - `Milestone Gate` 命中 `soft-fail` / `hard-fail` / `blocked` 或反作弊告警，且当前轮无合法自动恢复路径
 - 双重验收检查中 `purpose_achieved` 的判断需要 developer 主观裁定，且无足够的自动判定依据
 - 聚合 evidence 不足以支撑 purpose_achieved 判定，且无法通过限定范围探查补全
@@ -239,18 +239,20 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
    - 若本轮 `Milestone Gate` 未 `pass`，不得把 `purpose_achieved` 视为可用于 closeout 的完成信号
 6. **记录明细**：在 `aggregated_evidence_summary` 中记录每条 signal/criterion 的判定结果、覆盖率、threshold 和依据，供 developer 复核。
 
-## `Milestone Gate` 调用
+## `Milestone Gate` 输入与聚合调用
 
 `Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代各 worktrack 自己的 gate。它只在 `worktrack_list_finished == true` 后生效。
 
-**本技能不直接运行 Milestone Gate**。当 `worktrack_list_finished == true` 时，本技能负责：
+**本技能不直接运行 Milestone Gate，也不分派四个 axis carrier**。当 `worktrack_list_finished == true` 时，本技能负责：
 
-1. 准备输入包：`milestone_id` + `closed_worktrack_list`（每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`）+ `aggregation_rules`（来自 milestone artifact）
-2. **调用** `milestone-gate` skill（推荐 SubAgent delegated）
-3. **消费** gate skill 返回的 `milestone_gate_verdict` 和聚合状态字段
-4. 将 gate verdict 纳入 `purpose_achieved` 判定和 milestone 状态报告
+1. 准备 closed worktrack 输入包：`milestone_id` + `closed_worktrack_list`（每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`）+ `aggregation_rules`（来自 milestone artifact）+ target type hints。
+2. 向 Harness 暴露 `milestone_gate_axis_dispatch_required: true`，并列出四个 required axes：blackbox / whitebox / anticheat / composite。
+3. 等 Harness 顶层分派四个 sibling axis carriers，产出 `axis_reports` 和 `axis_dispatch_profile`。
+4. **调用或消费** `milestone-gate` skill 聚合结果。`milestone-gate` 的输入必须包含 closed worktrack facts、`axis_reports`、`axis_dispatch_profile`、`aggregation_rules` 和 `target_type_rules`。
+5. **消费** gate skill 返回的 `milestone_gate_verdict` 和聚合状态字段。
+6. 将 gate verdict 纳入 `purpose_achieved` 判定和 milestone 状态报告。
 
-Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2 运行 aggregator。详见 milestone-gate skill。
+`milestone-gate` skill 只运行 aggregator。若 Harness 无法提供四个可信 axis reports，`milestone-gate` 必须保留 blocked / non-pass verdict；programmer manual exception 只能出现在 final acceptance override 中，不能把 gate verdict 改写为 pass。
 
 **阻断语义**：`milestone_gate_verdict != "pass"` 时，必须阻断 milestone closeout，返回 `milestone_acceptance_verdict = "blocked"`，设置 `handback_required = true`。
 
@@ -259,6 +261,7 @@ Gate skill 内部执行两层架构——Layer 1 分派 4 轴 SubAgent + Layer 2
 以下字段由 `milestone-gate` skill 产出，本技能透传到 milestone 状态报告中：
 
 - `milestone_gate_verdict`、`aggregation_rules_applied`、`aggregation_rules_missing`、`per_worktrack_weights`、`contradiction_findings`、`contradiction_blocked`、`composite_lane_verdicts`、`degenerate_and_applied`、`degenerate_and_reason`、`carrier_isolation_broken`
+- `axis_reports`、`axis_report_status`、`axis_dispatch_profile`、`milestone_gate_execution_model`、`manual_exception`
 
 详细格式见 `product/harness/skills/milestone-gate/SKILL.md#预期输出`。
 
