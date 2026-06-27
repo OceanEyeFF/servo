@@ -1,15 +1,15 @@
 ---
 name: milestone-blackbox-check
-description: 当 milestoone gate 需要从外部视角（用户可观察行为、跨 WT 集成、回归风险）对 milestone 做隔离检查，且不得阅读完整实现代码时，使用这个技能。它是 Milestone Gate 四轴架构中 Layer 1 的 blackbox 轴，运行在隔离 SubAgent 中。
+description: 当 milestone gate 需要按 target_type 从外部视角（用户可观察行为场景、跨 WT 集成、回归风险，或非程序产物的替代验收）对 milestone 做隔离检查，且不得阅读完整实现代码时，使用这个技能。它是 Milestone Gate 四轴架构中 Layer 1 的 blackbox 轴，运行在隔离 SubAgent 中。
 ---
 
 # Milestone Blackbox 检查技能
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 Milestone Gate 四轴 Skills 与两层编排设计 定义的四个独立轴检查 Skill 之一。它从 **milstone 外部视角**检查：最终用户看到的结果、跨 worktrack 集成行为、回归风险。
+本技能实现 Milestone Gate 四轴架构中 Layer 1 的 **blackbox 轴**检查，是 Milestone Gate 四轴 Skills 与两层编排设计定义的四个独立轴检查 Skill 之一。它先识别 milestone 的 `target_type`，再从 **milestone 外部视角**选择验收方法：程序目标检查最终用户看到的结果、跨 worktrack 集成行为和回归风险；非程序目标记录替代验收或不适用结论，而不是假装执行了软件黑盒测试。
 
-核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary 和 diff summary（文件变更摘要），不做代码级审查。代码级审查由 whitebox 轴（`milestone-whitebox-check`）负责。
+核心原则：**不阅读完整实现代码**。本技能只消费 WT 的 contract、evidence、closeout summary、diff summary（文件变更摘要）和可观察行为证据，不做代码级审查。代码级审查由 whitebox 轴（`milestone-whitebox-check`）负责。
 
 本技能与 `milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check` 共同构成 Milestone Gate 的四轴检查层。四轴之间**严格隔离**——每个轴的 SubAgent 任务包不得包含其他轴的 verdict。
 
@@ -21,7 +21,7 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 
 - 当前 milestone 下所有 active WT 已闭环（每个 WT 有 single-acceptance verdict + closeout record）
 - `milestone-status-skill` 确认 worktrack 列表 finished，可以进入 milestone gate 检查
-- 需要从外部用户视角评估：跨 WT 集成是否一致、completion_signals 是否有对应产出、是否有回归风险
+- 需要按 `target_type` 从外部用户或 operator 视角评估：跨 WT 集成是否一致、completion_signals 是否有对应产出、是否有回归风险
 - 检查必须隔离运行，不能看到其他轴的 verdict
 - 不需要阅读完整实现代码——如果检查需要理解代码内部，应委托给 whitebox 轴
 
@@ -34,89 +34,123 @@ description: 当 milestoone gate 需要从外部视角（用户可观察行为�
 - 需要对单个 WT 做 gate 判定 → 应使用 `worktrack-gate-skill`
 - 当前处于 worktrack scope 而非 milestone scope → 不适用
 
+## Target-Type 路由
+
+Blackbox 轴不得把所有 milestone 都当成可运行软件来验收。每次运行必须先读取或推断 `target_type`、`target_type_source` 与 blackbox 轴适用性，并记录在输出中。
+
+| target_type | blackbox 处理方式 |
+|-------------|-------------------|
+| `program_code` | 适用。必须构建外部可观察行为场景，再用这些场景检查程序是否能以用户、operator、CLI、API 或集成面可见的方式满足验收。 |
+| `non_program_artifact` | 通常不执行软件黑盒测试。改为输出 `substituted` 或 `not_applicable`，并说明替代验收方法，例如文档/合同审阅、operator simulation、政策一致性检查、交叉引用完整性或专业审查。 |
+| `mixed` | 分片处理。对程序切片执行外部行为场景检查；对非程序切片记录替代验收或不适用结论；整体 verdict 不得把非程序不适用项计为程序测试通过。 |
+| `unknown` | 默认 `blocked`。只有在 milestone artifact、WT contract 或 closeout 中有可追溯证据支持类型推断时，才允许记录 `target_type_source` 后继续。 |
+
+`target_type` 不改变轴间边界：blackbox 只能检查外部可观察行为和交付表面。内部结构、代码路径、接口拼接细节、状态传递、依赖方向和实现一致性属于 whitebox 轴。
+
 ## 工作流
 
 1. **验证就绪状态**：确认 milestone 下所有 WT 已闭环。若有 active WT，返回 `not_ready` 并列出未闭环 WT。
-2. **载入最小输入集**：精确载入 milestone artifact、所有闭环 WT 的 closeout record、single-acceptance verdict、和 WT diff summary。不得载入完整 diff 或实现代码。
+2. **载入最小输入集**：精确载入 milestone artifact、`target_type` / `axis_applicability` 信息、所有闭环 WT 的 closeout record、single-acceptance verdict、WT diff summary 和外部可观察行为证据。不得载入完整 diff 或实现代码。
 3. **建立隔离上下文**：确认当前运行环境（SubAgent 或 current-carrier）。记录 `carrier` 和 `isolation_guarantee`。如果检测到其他轴 verdict 注入上下文，立即标记 `isolation_guarantee: false` 并记录泄漏来源。
-4. **执行五项 blackbox 检查**（见下文「检查 checklist」）：
+4. **执行 target_type 路由**：记录 `target_type_source`、blackbox 轴适用性和预期方法。`program_code` 进入行为场景检查；`non_program_artifact` 进入替代/不适用验收；`mixed` 分片；`unknown` 缺少可追溯推断时 `blocked`。
+5. **为程序目标构建外部行为场景矩阵**：每个场景至少包含 `scenario_id`、触发者、输入/前置条件、可观察表面、期望输出、证据引用、回归期待和覆盖 WT。场景必须来自 milestone 的 completion_signals / acceptance_criteria / WT closeout，不得从实现代码倒推。
+6. **执行五项 blackbox 检查**（见下文「检查 checklist」）：
    - B1: Cross-WT integration consistency
-   - B2: End-user promise fulfillment
-   - B3: Regression risk assessment
+   - B2: External behavior scenario coverage
+   - B3: External regression scenario assessment
    - B4: External consistency with repo conventions
    - B5: Completeness gap analysis
-5. **为每项检查收集证据**：每条 finding 必须附带 `evidence_refs`（引用的文件路径或 artifact ref）。缺失证据必须显式暴露，不能当作隐式通过。
-6. **产生分项 verdict**：每项检查独立给出 `pass | soft_fail | hard_fail | blocked`。`blocked` 表示该检查无法执行（如输入缺失），需要上层干预。
-7. **综合整体 verdict**：按以下规则从五项分项 verdict 推导整体 blackbox verdict：
+7. **为每项检查收集证据**：每条 finding 必须附带 `evidence_refs`（引用的文件路径或 artifact ref）。缺失证据必须显式暴露，不能当作隐式通过。
+8. **产生分项 verdict**：每项检查独立给出 `pass | soft_fail | hard_fail | blocked | substituted | not_applicable`。`blocked` 表示该检查无法执行（如输入缺失），需要上层干预；`substituted` 和 `not_applicable` 只用于 target_type 路由允许的非程序切片。
+9. **综合整体 verdict**：按以下规则从五项分项 verdict 推导整体 blackbox verdict：
    - 任何一项 `blocked` → 整体 `blocked`
    - 任何一项 `hard_fail` → 整体 `hard_fail`
    - 任一项 `soft_fail` → 整体 `soft_fail`（除非已有 `hard_fail` 或 `blocked`）
-   - 全部 `pass` → 整体 `pass`
-8. **产出结构化输出**：按「预期输出」格式生成 `blackbox_verdict`。
-9. **在响应中停止**：不得进入 aggregator 计算、gate 判定、恢复决策或代码修改。
+   - `substituted` / `not_applicable` 不能单独推导为 `pass`；只有适用切片全部 pass 且替代验收无失败时，整体才可为 `pass`
+   - 全部适用项 `pass` → 整体 `pass`
+10. **产出结构化输出**：按「预期输出」格式生成 `blackbox_verdict`。
+11. **在响应中停止**：不得进入 aggregator 计算、gate 判定、恢复决策或代码修改。
 
 ## 检查 Checklist
 
-### B1: Cross-WT Integration Consistency
+对 `program_code`，B1-B5 必须消费外部行为场景矩阵。对 `non_program_artifact`，B2/B3 等运行时行为项应按路由结果输出 `substituted` 或 `not_applicable`，并说明替代验收证据；不得把不适用项写成测试通过。
 
-**问题**：WT 之间的接口是否一致？
+### B1: Cross-WT Observable Integration Consistency
 
-如果一个 WT-A 定义了合约（contract/interface）、另一个 WT-B 消费了该合约，B 的实现是否在接口层面与 A 的约定保持一致？
+**问题**：WT 之间对外暴露的 contract、入口或交付表面是否一致？
+
+如果一个 WT-A 定义了外部 contract、入口、CLI/API 表面、operator workflow 或 artifact 输出，另一个 WT-B 消费了该交付，B 的可观察行为是否与 A 的约定保持一致？本项只使用声明合约、closeout 摘要和可观察证据，不审查内部调用链。
 
 **判据**：
 
-- 扫描所有 WT 的 contract 中的 `interface_contracts` 或 `module_contracts` 字段
-- 对比 WT-A 的合约定义（声明的接口、文件路径、数据结构）与 WT-B closeout record 中的 `changed_files` / `diff_summary`
-- 检查是否存在：WT-B 未消费 WT-A 声明的接口、WT-B 消费了 WT-A 未声明的接口、接口签名不一致
+- 扫描所有 WT 的 contract 中的 `interface_contracts`、`module_contracts`、`external_surfaces` 或等价字段
+- 对比 WT-A 的合约定义（声明入口、文件路径、数据结构、CLI/API 响应或 artifact 输出）与 WT-B closeout record 中的 `changed_files` / `diff_summary` / observable evidence
+- 对 `program_code`，把跨 WT 合约映射到 B2 的行为场景，确认消费者场景能观察到生产者声明的交付
+- 检查是否存在：WT-B 未覆盖 WT-A 声明的外部表面、WT-B 消费了 WT-A 未声明的表面、声明响应/输出与可观察证据不一致
 
 **证据来源**：
 
 - WT contract（`interface_contracts`、`module_contracts`）
 - WT closeout record（`changed_files`、`diff_summary`）
 - Milestone artifact（`worktrack_dependencies` 或等价依赖声明）
+- B2 behavior scenario matrix（仅限 `program_code` 或 `mixed` 的程序切片）
 
 **分项 verdict 规则**：
 
-- `pass`：所有声明的跨 WT 接口一致，无遗漏消费，无未声明消费
-- `soft_fail`：存在轻微不一致（如命名差异但不影响行为），或依赖 WT 的 contract 未显式声明接口但 closeout 显示合理消费
-- `hard_fail`：存在接口断裂（WT-A 定义接口但 WT-B 未消费、或消费了不存在/不匹配的接口）
+- `pass`：所有声明的跨 WT 外部表面一致，无遗漏消费，无未声明消费；程序场景能观察到声明交付
+- `soft_fail`：存在轻微不一致（如命名差异但不影响行为），或依赖 WT 的 contract 未显式声明外部表面但 closeout 显示合理消费
+- `hard_fail`：存在外部集成断裂（WT-A 定义入口/输出但 WT-B 未覆盖、或消费了不存在/不匹配的入口/输出）
 - `blocked`：缺少必要的 contract 文件或 closeout record，无法完成检查
 
-### B2: End-User Promise Fulfillment
+### B2: External Behavior Scenario Coverage
 
-**问题**：从用户视角，milestone 声明的 completion_signals 是否已经有对应的可观察产出？
+**问题**：从用户或 operator 视角，milestone 声明的 completion_signals 是否已经被外部可观察行为场景覆盖，并且每个场景都有可追溯证据？
 
-Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变化"。本检查验证每个 signal 是否有一条或多条 WT 的 closeout 实际产出了对应变更。
+Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么变化"。当 `target_type=program_code` 时，本检查必须把每个 signal 转成一个或多个行为场景，用场景输入和可观察输出验证程序交付，而不是只统计文件变更覆盖。
 
 **判据**：
 
-- 提取 milestone artifact 中的 `completion_signals` 列表
-- 为每个 signal 建立 WT 覆盖映射：列出哪些 WT 的 closeout record 中包含了与该 signal 对应的文件变更或行为变更
-- 检查覆盖缺口：是否存在 signal 没有任何 WT 覆盖
+- 提取 milestone artifact 中的 `target_type`、`completion_signals`、`acceptance_criteria` 和 WT closeout 的 `completion_signals_trace`
+- 对 `program_code`，为每个 signal 建立行为场景，场景必须包含：
+  - `scenario_id`
+  - `user_or_operator_trigger`
+  - `input_or_precondition`
+  - `observable_surface`（UI / CLI / API / log / file output / integration behavior 等）
+  - `expected_observable_result`
+  - `evidence_refs`
+  - `regression_expectation`
+  - `covered_by_wt`
+- 检查每个场景是否有外部证据支撑，例如命令输出、API 响应、截图、日志片段、验收测试摘要、operator simulation 记录或 closeout 中明确列出的可观察行为
+- 对 `non_program_artifact`，记录替代验收方法和证据；若没有可运行软件表面，输出 `substituted` 或 `not_applicable`
+- 对 `mixed`，分别输出程序切片场景和非程序切片替代验收
 
 **证据来源**：
 
 - Milestone artifact（`purpose`、`completion_signals`、`acceptance_criteria`）
 - 每个 WT 的 closeout record（`changed_files`、`completion_signals_trace`）
 - 每个 WT 的 single-acceptance verdict（`verdict`、`critical_failure`）
+- WT gate evidence 中的外部验证摘要（命令输出、截图、CLI/API 示例、operator simulation 结果等）
 
 **分项 verdict 规则**：
 
-- `pass`：所有 completion_signals 至少有一个 WT 覆盖，且覆盖 WT 的 single-acceptance verdict 为 pass
-- `soft_fail`：所有 signals 有覆盖，但部分覆盖 WT 的 single-acceptance 为 soft_fail
-- `hard_fail`：存在 completion_signal 没有任何 WT 覆盖（空洞），或覆盖 WT 的 single-acceptance 为 hard_fail
-- `blocked`：milestone artifact 缺少 completion_signals 字段，或所有 WT closeout 缺少 completion_signals_trace
+- `pass`：所有适用的程序 completion_signals 都有外部行为场景，场景证据可追溯，且覆盖 WT 的 single-acceptance verdict 为 pass
+- `soft_fail`：所有适用 signals 有场景覆盖，但部分场景证据偏弱、间接，或覆盖 WT 的 single-acceptance 为 soft_fail
+- `hard_fail`：存在适用的程序 completion_signal 没有行为场景覆盖，或场景期望与实际可观察结果冲突，或覆盖 WT 的 single-acceptance 为 hard_fail
+- `blocked`：缺少 `target_type`、completion_signals、acceptance_criteria 或 WT closeout 中的必要 trace，且无法做可追溯推断
+- `substituted`：非程序切片已用 artifact-appropriate 方法验收，并有替代证据
+- `not_applicable`：非程序切片没有可运行黑盒表面，且已说明不适用原因
 
-### B3: Regression Risk Assessment
+### B3: External Regression Scenario Assessment
 
-**问题**：任一 WT 的变更是否可能破坏其他 WT 的结果？
+**问题**：任一 WT 的变更是否可能破坏其他 WT 已声明的外部可观察结果？
 
-检查每个 WT 的变更文件集是否与 milestone 下其他 WT 的依赖面存在交集，评估潜在的回归风险。
+检查每个 WT 的变更文件集、依赖声明和行为场景是否存在交叉影响，评估潜在的外部回归风险。本检查可以使用文件摘要定位风险面，但不得通过阅读完整实现代码判断内部正确性。
 
 **判据**：
 
 - 为每个 WT 构建变更文件集（从 closeout record 的 `changed_files` 或 diff summary 提取）
 - 构建跨 WT 引用矩阵：对于每个文件，列出哪些 WT 变更了它、哪些 WT 依赖它
+- 对 `program_code`，把风险映射回 B2 的行为场景，确认共享文件、依赖文件或基础设施变更是否可能改变 CLI/API 响应、用户流程、日志/文件输出或集成行为
 - 检测风险模式：
   - **共享文件变更**：同一文件被多个 WT 修改 → 可能有 merge 冲突或逻辑覆盖
   - **依赖文件变更**：WT-A 变更了 WT-B 的依赖文件 → 可能破坏 B 的行为
@@ -131,9 +165,9 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 
 **分项 verdict 规则**：
 
-- `pass`：没有任何文件被多个 WT 修改，且所有变更文件不被其他 WT 依赖
-- `soft_fail`：存在共享文件变更或多 WT 依赖同一文件，但经分析属于非冲突性变更（如不同函数、不同配置项）
-- `hard_fail`：存在明确的冲突风险——同一逻辑单元/接口/配置项被多个 WT 以不同方向修改
+- `pass`：没有任何文件被多个 WT 修改，且所有变更文件不被其他 WT 依赖；程序场景没有外部回归风险
+- `soft_fail`：存在共享文件变更或多 WT 依赖同一文件，但外部行为场景证据显示风险可控或非冲突
+- `hard_fail`：存在明确的外部回归风险——同一逻辑单元/接口/配置项被多个 WT 以不同方向修改，且会影响 CLI/API 响应、用户流程、operator 工作流或集成行为
 - `blocked`：closeout record 缺少 changed_files，无法完成文件级分析
 
 ### B4: External Consistency with Repo Conventions
@@ -167,16 +201,17 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 
 ### B5: Completeness Gap Analysis
 
-**问题**：是否存在 completion_signals 声明了但没有任何 WT 覆盖的空洞？是否存在 milestone 级的缺失证据？
+**问题**：是否存在 completion_signals 声明了但没有程序行为场景、WT 覆盖或替代验收证据的空洞？是否存在 milestone 级的缺失证据？
 
-本检查构建 signal → WT 覆盖矩阵，并检测跨维度缺失。B5 与 B2 互补：B2 关注"用户能否看到"，B5 关注"架构上是否完整"。
+本检查构建 signal → WT / scenario / substitute 覆盖矩阵，并检测跨维度缺失。B5 与 B2 互补：B2 关注"用户能否看到"，B5 关注"验收覆盖是否完整"。
 
 **判据**：
 
-- 构建 signal → WT 覆盖矩阵：行为 completion_signal 一行，列为每个 WT 是否覆盖该 signal
+- 构建 signal → WT / scenario / substitute 覆盖矩阵：行为 completion_signal 一行，列为每个 WT、行为场景或替代验收是否覆盖该 signal
 - 检测：
   - **空行**：某个 signal 无任何 WT 覆盖
-  - **弱覆盖**：某个 signal 只有低权重 WT（如 docs）覆盖，但 milestone 要求更高权重
+  - **弱覆盖**：某个 signal 只有低权重 WT（如 docs）覆盖，但 milestone 要求更高权重或程序行为场景
+  - **替代缺口**：非程序 signal 声明了 substituted，但缺少替代方法、替代证据或验收结果
   - **证据缺口**：覆盖 WT 的 gate evidence 中是否有缺失维度（如某个 WT 没有 test evidence）
 - 按 milestone 的 `aggregation_rules.weight_rules` 检查覆盖 WT 的权重是否满足该 signal 的最低要求
 
@@ -186,13 +221,16 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 - 所有 WT 的 closeout record（`completion_signals_trace`）
 - 所有 WT 的 single-acceptance verdict（`verdict`）
 - 所有 WT 的 gate evidence（`implementation_gate`、`validation_gate`、`policy_gate`——仅读取 verdict 结论，不展开完整内容）
+- B2 behavior scenario matrix 或替代验收说明
 
 **分项 verdict 规则**：
 
-- `pass`：所有 signals 有充分覆盖（覆盖 WT 权重满足 milestone 要求），无跨维度证据缺口
-- `soft_fail`：所有 signals 有覆盖但部分覆盖 WT 权重偏低，或存在非关键的证据维度缺失
-- `hard_fail`：存在 completion_signal 完全空覆盖，或关键 signal 的覆盖 WT 存在 gate evidence 缺口
-- `blocked`：缺少 aggregation_rules 或 completion_signals 定义，无法完成分析
+- `pass`：所有适用 signals 有充分覆盖（程序 signal 有行为场景，非程序 signal 有替代验收证据），覆盖 WT 权重满足 milestone 要求，无跨维度证据缺口
+- `soft_fail`：所有 signals 有覆盖但部分覆盖 WT 权重偏低、场景证据偏弱，或存在非关键的证据维度缺失
+- `hard_fail`：存在 completion_signal 完全空覆盖，关键程序 signal 无行为场景，或关键非程序 signal 缺少替代证据
+- `blocked`：缺少 `target_type`、aggregation_rules 或 completion_signals 定义，无法完成分析
+- `substituted`：该项只覆盖非程序切片，且替代验收证据完整
+- `not_applicable`：该项对当前目标类型无意义，且原因明确；不得计为 pass
 
 ## Blackbox 检查约定
 
@@ -201,9 +239,10 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 ### Blackbox 检查任务简报
 
 - `触发条件`：milestone 下所有 WT 已闭环
-- `检查目标`：从外部视角验证 milestone 的跨 WT 集成质量
+- `检查目标`：按 target_type 从外部视角验证 milestone 的跨 WT 集成质量、程序行为场景或非程序替代验收
 - `当前里程碑`：milestone ID 和 purpose 摘要
-- `检查范围`：所有闭环 WT 的 contract、evidence、closeout record、diff summary
+- `target_type 路由`：`program_code | non_program_artifact | mixed | unknown`，来源、适用性和预期方法
+- `检查范围`：所有闭环 WT 的 contract、evidence、closeout record、diff summary、可观察行为证据和替代验收证据
 - `排除范围`：完整实现代码、其他轴 verdict、单个 WT 的代码质量（属 whitebox）、单个证据可信度（属 anticheat）
 - `检查项`：B1-B5
 - `隔离约束`：不得接收或读取其他轴 verdict
@@ -212,11 +251,14 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 ### Blackbox 检查信息包
 
 - `输入产物`：milestone artifact、所有闭环 WT 的 contract / single-acceptance verdict / gate evidence / closeout record / diff summary
+- `target_type 信息`：`target_type`、`target_type_source`、`axis_applicability.blackbox`、`expected_method`
 - `里程碑约定摘要`：milestone 的 purpose、completion_signals、acceptance_criteria
 - `WT 列表`：所有闭环 WT 的 ID、node_type、verdict 摘要
 - `依赖关系`：WT 之间的声明依赖（从 contract 的 dependencies 字段提取）
 - `文件变更矩阵`：每个 WT → 变更文件列表（从 closeout record 和 diff summary 提取）
 - `信号覆盖矩阵`：每个 completion_signal → 覆盖的 WT 列表
+- `行为场景矩阵`：对 `program_code` 和 `mixed` 的程序切片列出 scenario_id、触发、输入、可观察表面、期望输出、证据、回归期待和覆盖 WT
+- `替代验收说明`：对 `non_program_artifact` 和 `mixed` 的非程序切片列出 substituted / not_applicable 状态、替代方法和证据
 - `路径分层规则引用`：已知的 repo 分层规则
 - `已知风险`：从 milestone artifact 或 WT closeout 中已声明风险
 
@@ -240,6 +282,10 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 6. **缺失输入必须暴露**：缺少完成检查所必需的任何输入（如 milestone 无 completion_signals、WT 无 closeout record 等）时，唯一合法行为是将对应检查项标记为 `blocked` 并说明缺失内容。假定缺失数据为 pass 的行为必须返回 `blocked`。
 7. **证据引用必须具体**：每条 finding 的 `evidence_refs` 必须是可追溯的文件路径或 artifact ref（如 `WT-xxx/closeout-record.md`、`milestone-artifact.md#completion_signals`）。不得出现无法定位的模糊引用（如"综合所有 WT 来看"）。
 8. **输出必须包含完整的五项检查结果**：即使某项检查因输入不足被 `blocked`，也必须显式输出该项的 verdict 和 finding，不得省略。跳过某项检查的行为必须返回 `blocked`。
+9. **target_type 必须显式化**：输出必须包含 `target_type`、`target_type_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 且无法从已批准产物可追溯推断时，整体 verdict 必须为 `blocked`。
+10. **程序目标必须有行为场景**：当 `target_type=program_code` 或 `mixed` 的程序切片存在时，B2 必须输出 behavior scenario matrix。只有文件变更覆盖、代码路径解释或内部实现摘要，不足以让 B2 通过。
+11. **非程序目标不得伪装成运行时测试**：当 `target_type=non_program_artifact` 或 `mixed` 的非程序切片存在时，运行时黑盒项只能输出 `substituted` / `not_applicable` 或失败/阻塞。`not_applicable` 不等于 `pass`，不得被当作测试通过计入整体结论。
+12. **白盒边界不可跨越**：如果判断需要内部结构、完整代码、调用链、状态传递或依赖方向分析，必须标记为 `blocked` 或把风险建议交给 whitebox 轴；不得在 blackbox 轴内补做白盒审查。
 
 ## 预期输出
 
@@ -247,8 +293,10 @@ Milstone artifact 中的 `completion_signals` 声明了"用户能看到什么变
 
 - `Blackbox 检查目标`
 - `输入接收状态`（哪些输入已就绪、哪些缺失）
+- `Target-Type 路由结果`（类型、来源、适用性、预期方法、替代/不适用说明）
 - `轴间隔离声明`（isolation guarantee、是否检测到泄漏）
-- `分项检查结果`（B1-B5，每项包含 verdict、evidence_refs、finding）
+- `行为场景矩阵或替代验收说明`（程序目标列场景，非程序目标列替代方法）
+- `分项检查结果`（B1-B5，每项包含 verdict、evidence_refs、finding，适用时包含 scenario_results）
 - `整体 Blackbox Verdict`
 - `风险摘要与建议`
 
@@ -259,33 +307,58 @@ blackbox_verdict:
   axis: blackbox
   verdict: pass | soft_fail | hard_fail | blocked
   severity: low | medium | high
+  target_type: program_code | non_program_artifact | mixed | unknown
+  target_type_source: "milestone-artifact.md#target_type"
+  axis_applicability_state: applicable | substituted | not_applicable | split | blocked
+  expected_method: external_behavior_scenario | artifact_appropriate_review | split_by_slice | blocked_pending_type
+  substituted_by:
+    - method: "operator_simulation | artifact_review | policy_conformance | cross_reference_review | professional_review"
+      scope: "non-program slice or N/A"
+      evidence_refs:
+        - "path/to/evidence.md"
+  scenario_results:
+    - scenario_id: "BB-SCENARIO-001"
+      target_slice: "program_code"
+      user_or_operator_trigger: "用户或 operator 执行动作"
+      input_or_precondition: "输入、环境或前置条件"
+      observable_surface: "UI | CLI | API | log | file output | integration behavior"
+      expected_observable_result: "外部可观察的期望结果"
+      actual_observable_result: "证据中显示的实际结果，未知时写 N/A"
+      regression_expectation: "该场景保护的回归期待"
+      covered_by_wt:
+        - "WT-xxx"
+      evidence_refs:
+        - "path/to/wt-xxx-closeout.md#completion_signals_trace"
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
   checklist_results:
     - check_id: B1
-      verdict: pass | soft_fail | hard_fail | blocked
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
       evidence_refs:
         - "path/to/wt-a-contract.md"
         - "path/to/wt-b-closeout.md"
       finding: "具体发现描述。WT-A 定义了接口 X（contract.md#L12），WT-B 在 closeout 中显示消费了接口 X 但签名存在差异：A 期望 Y 参数，B 传入 Z。"
     - check_id: B2
-      verdict: pass | soft_fail | hard_fail | blocked
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
       evidence_refs:
         - "path/to/milestone-artifact.md#completion_signals"
         - "path/to/wt-xxx-closeout.md#completion_signals_trace"
-      finding: "具体发现描述。Signal '用户可配置超时时间' 由 WT-002 覆盖（config 变更），产出文件为 product/config/timeout.yaml。Signal '超时后自动重试' 无任何 WT 覆盖——缺失。"
+      scenario_results:
+        - "BB-SCENARIO-001"
+      finding: "具体发现描述。Signal '用户可配置超时时间' 被场景 BB-SCENARIO-001 覆盖：operator 通过 CLI 传入 timeout=30，期望 API 响应中 timeout_policy=30；证据来自 WT-002 closeout。Signal '超时后自动重试' 无任何行为场景覆盖——缺失。"
     - check_id: B3
-      verdict: pass | soft_fail | hard_fail | blocked
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
       evidence_refs:
         - "path/to/wt-a-closeout.md#changed_files"
         - "path/to/wt-b-closeout.md#changed_files"
       finding: "具体发现描述。文件 shared/config.go 被 WT-A 和 WT-B 同时修改，A 修改了连接池大小配置，B 修改了超时配置——不同配置项，无冲突。"
     - check_id: B4
-      verdict: pass | soft_fail | hard_fail | blocked
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
       evidence_refs:
         - "path/to/wt-xxx-closeout.md#new_files"
         - 路径分层规则文档
       finding: "具体发现描述。WT-003 新增文件 .servo/custom-config.yaml——.servo/ 为 state layer，业务代码产出不应落在此目录。"
     - check_id: B5
-      verdict: pass | soft_fail | hard_fail | blocked
+      verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
       evidence_refs:
         - "path/to/milestone-artifact.md#completion_signals"
         - "path/to/wt-xxx-closeout.md#completion_signals_trace"
@@ -300,9 +373,15 @@ blackbox_verdict:
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `verdict` | enum | 整体 blackbox 判定。`blocked`：输入不足无法完成检查。`hard_fail`：存在 hard_fail 项。`soft_fail`：存在 soft_fail 项且无 hard_fail。`pass`：全部 pass |
+| `verdict` | enum | 整体 blackbox 判定。`blocked`：输入不足或 target_type 未解析。`hard_fail`：存在 hard_fail 项。`soft_fail`：存在 soft_fail 项且无 hard_fail。`pass`：所有适用项通过，且 substituted 项有替代证据；`not_applicable` 不提供正向通过证据 |
 | `severity` | enum | 对 milestone 的影响严重度。`low`：发现不影响交付（仅为 soft_fail 低权重项）。`medium`：存在实质性但可修复的问题。`high`：存在 hard_fail 或 blocked，里程碑交付受阻 |
-| `checklist_results[*].verdict` | enum | 分项判定。`blocked`：检查无法执行（输入缺失） |
+| `target_type` | enum | Milestone 交付目标类型：`program_code`、`non_program_artifact`、`mixed` 或 `unknown` |
+| `target_type_source` | string | 类型来源或可追溯推断来源 |
+| `axis_applicability_state` | enum | blackbox 轴适用性状态：`applicable`、`substituted`、`not_applicable`、`split` 或 `blocked`；这是路由事实，不是成功 verdict |
+| `expected_method` | enum | 当前类型下 blackbox 轴应使用的方法 |
+| `substituted_by` | list | 替代验收方法和证据。仅在 `axis_applicability_state = substituted` 或 `split` 时有效 |
+| `scenario_results` | list | 程序目标或 mixed 程序切片的外部行为场景结果 |
+| `checklist_results[*].verdict` | enum | 分项判定。`blocked`：检查无法执行（输入缺失）。`substituted`：该项用替代验收承接。`not_applicable`：该项明确不适用，不能计为 pass |
 | `checklist_results[*].evidence_refs` | list | 引用的文件路径或 artifact ref，用于追溯 |
 | `checklist_results[*].finding` | string | 具体发现描述，包含对比细节和结论 |
 | `carrier` | enum | 运行载体：`subagent`（隔离 SubAgent）或 `current-carrier`（降级） |
@@ -314,7 +393,7 @@ blackbox_verdict:
 
 - `high`：任一 check_id verdict 为 `hard_fail` 或 `blocked` → milestone 存在严重外部可见问题或无法完成检查
 - `medium`：存在多个 `soft_fail` 项，或单个 `soft_fail` 涉及高权重 WT（weight ≥ 4）的产出
-- `low`：仅有单个 `soft_fail` 且涉及低权重 WT（weight ≤ 2），或所有项 pass 但有注记性发现
+- `low`：仅有单个 `soft_fail` 且涉及低权重 WT（weight ≤ 2），或所有适用项 pass / substituted 证据完整但有注记性发现
 
 ## 资源
 
