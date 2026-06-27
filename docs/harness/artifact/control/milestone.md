@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-27
+updated: 2026-06-28
 owner: servo-kernel
-last_verified: 2026-06-27
+last_verified: 2026-06-28
 ---
 
 # Milestone Artifact
@@ -45,6 +45,8 @@ last_verified: 2026-06-27
 | target_type | enum | Milestone Gate 目标类型：`program_code` / `non_program_artifact` / `mixed` / `unknown`。用于决定黑盒、白盒、反作弊与复合验收轴的适用性 |
 | target_type_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
 | gate_axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
+| gate_axis_reports | object | Milestone Gate 四个 sibling axis carrier 产出的显式报告引用与状态；每轴至少记录 `report_ref`、`axis_verdict`、`carrier`、`runtime_dispatch_profile`、`isolation_guarantee`、`carrier_isolation_broken` 与缺失/污染状态 |
+| gate_axis_dispatch_profile | object | 顶层 Harness 四轴分派画像；记录 `dispatch_owner: top_level_harness`、`dispatch_model`、per-axis delegation attempts、same-carrier fallback、runtime gap 和隔离破坏事实 |
 | updated | date | 最后更新时间 |
 | `priority` | integer | Pipeline 中的优先级（数值越小优先级越高） |
 | `activation_rules` | string | 自动激活条件（optional，harness-inferred）；描述 harness 可自动激活的前提，空值表示仅 manual |
@@ -144,9 +146,37 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 
 该 gate 只阻断 milestone 进入 Worktrack 工作，不自动改变 milestone purpose、验收标准或 final acceptance 结论。
 
-## Milestone Gate Target Type
+## Milestone Gate Target Type And Axis Reports
 
 `target_type` 是 goal-driven milestone 的 Milestone Gate 前置路由字段。它回答“这个 milestone 最终交付物是什么类型”，从而决定黑盒、白盒、反作弊与复合验收轴应该如何取证。该字段不创建第三 Scope，不替代 `milestone_kind`，也不替代 Worktrack Contract。
+
+Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gate` skill 只消费顶层 Harness 提供的 `gate_axis_reports` 并运行 aggregation；它不得在自身内部继续唤起 blackbox/whitebox/anticheat/composite SubAgent。这样可以避免依赖某个 SubAgent 是否还能继续创建子 SubAgent。
+
+`gate_axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
+
+- `dispatch_owner: top_level_harness`
+- `dispatch_model: sibling_axis_carriers | current_carrier_fallback | missing`
+- `delegation_attempted_by_axis`
+- `carrier_isolation_broken_any`
+- `same_carrier_cross_axis`
+- `dispatch_gap_reason`
+
+`gate_axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
+
+- `axis`: `black_box` / `white_box` / `anti_cheat` / `composite`
+- `report_ref`
+- `axis_verdict`
+- `target_type`
+- `axis_applicability_state`
+- `expected_method`
+- `carrier`
+- `runtime_dispatch_profile`
+- `isolation_guarantee`
+- `carrier_isolation_broken`
+- `checklist_results`
+- `missing_evidence`
+
+缺失 axis report、same-carrier 四轴污染、运行时无法证明 sibling carrier、或 `carrier_isolation_broken_any: true` 时，Milestone Gate 不能声明真实 pass。程序员可以在 final acceptance 阶段手动接受一个 blocked Gate 作为 override，但该 override 必须记录为 `milestone_acceptance_verdict: accepted_with_manual_exception` 或等价字段，不得把 `milestone_gate_verdict` 改写成 `pass`。
 
 Canonical values:
 

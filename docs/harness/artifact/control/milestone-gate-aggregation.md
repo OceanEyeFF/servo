@@ -1,13 +1,13 @@
 ---
 title: "Milestone Gate 证据聚合合同"
 status: active
-updated: 2026-06-27
+updated: 2026-06-28
 owner: servo-kernel
-last_verified: 2026-06-27
+last_verified: 2026-06-28
 ---
 # Milestone Gate 证据聚合合同
 
-> 定义从 N 个 worktrack gate evidence 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 `milestone-gate` Layer 2 aggregator 的输入/输出合同。
+> 定义从 N 个 worktrack gate evidence 与四个显式 axis reports 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 `milestone-gate` Layer 2 aggregator 的输入/输出合同。
 
 ## 一、概述
 
@@ -15,17 +15,45 @@ last_verified: 2026-06-27
 
 Milestone Gate 不是"全部 WT 都过了 = milestone 过了"的简单布尔 AND。不同 milestone 对证据的要求不同——release milestone 要求所有 critical WT 无矛盾，docs milestone 允许部分 soft-fail，demo milestone 可以接受 limited evidence。
 
+Milestone Gate 分为两个职责面：
+
+- **Axis dispatch**：由顶层 Harness 在 `worktrack_list_finished == true` 后执行。Harness 准备四份 sibling input package，并把 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check` 和 `milestone-composite-check` 作为同级 axis carrier 分派。四个 axis carrier 互相不可见。
+- **Aggregation**：由 `milestone-gate` skill 执行。它只消费显式 `axis_reports`、closed worktrack verdicts、`target_type_rules` 与 `aggregation_rules`，不得在内部继续分派 SubAgent 或补跑 axis checks。
+
+这个扁平化编排避免依赖"SubAgent 内部继续唤起 SubAgent"的运行时能力。若顶层 Harness 不能真实分派 sibling axis carrier，必须把运行时缺口写入 axis dispatch evidence；`milestone-gate` 只能据此产出 `blocked` / non-pass verdict，不能把 same-carrier 四轴执行声明为真实 pass。
+
 本 artifact 定义 per-milestone 可配置的 `aggregation_rules`，覆盖五个维度：
 
 1. **证据权重**（weight_rules）：哪些 WT 的结论对 milestone verdict 贡献更大
 2. **矛盾处理**（contradiction_rules）：两个 critical WT 结论矛盾时的 resolution protocol
 3. **目标类型路由**（target_type_rules）：program/code 与 non-program 目标的轴适用性和替代验收规则
 4. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
-5. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
+5. **轴报告输入**（axis_reports）：四个 sibling axis carrier 的显式报告、隔离与运行时证据
+6. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
 
 ### 与 Worktrack single-acceptance 的接口
 
 本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
+
+### 与四轴报告的接口
+
+四轴报告不是 `milestone-gate` 内部临时产物，而是顶层 Harness dispatch 的正式输入。每个 axis report 至少需要包含：
+
+- `axis`: `black_box` / `white_box` / `anti_cheat` / `composite`
+- `report_ref`: 稳定 evidence ref 或内联报告位置
+- `axis_verdict`: `pass` / `soft_fail` / `hard_fail` / `blocked` / `not_applicable`
+- `severity`
+- `target_type`
+- `axis_applicability_state`
+- `expected_method`
+- `carrier`
+- `runtime_dispatch_profile`
+- `isolation_guarantee`
+- `carrier_isolation_broken`
+- `checklist_results`
+- `missing_evidence`
+
+`milestone-gate` 必须把缺失 axis report、隔离被破坏、或运行时无法证明 sibling carrier 的情况作为聚合输入处理，不得在聚合阶段自行创建新 axis verdict。
 
 ## 二、aggregation_rules schema
 
@@ -406,7 +434,19 @@ degenerate_and_rules:
 
 退化 AND 不是静止跳过：如果将来任何退化条件不再满足（如新 WT 引入了矛盾），退化解锁，正常规则重新激活。退化理由记录确保 audit trail 可解释"为什么这次 milestone gate 看起来是简单 AND"。
 
-## 八、与 milestone-gate aggregator 的交接
+## 八、顶层四轴分派与 milestone-gate aggregator 交接
+
+### 顶层 Harness axis dispatch contract
+
+当 `worktrack_list_finished == true` 且 goal-driven milestone 需要 Milestone Gate 时，顶层 Harness 必须先执行四轴 sibling dispatch，再调用 `milestone-gate` 聚合。推荐流程：
+
+1. 从 milestone-status-skill 的观察结果准备共享 facts：`milestone_id`、closed worktrack list、milestone artifact refs、target type hints、aggregation rules、closeout/evidence refs。
+2. 为四个 axis 生成互相隔离的 input package。每份 package 只包含该 axis 需要的输入，不包含其他 axis 的 verdict、finding 或 report ref。
+3. 使用 `dispatch_mode_recommend.py` 和 runtime dispatch profile 记录实际载体选择。若 `runtime_dispatch_mode = delegated` 且不能真实分派，axis dispatch 必须返回 runtime gap，不得自动降级成聚合通过。
+4. 将四个 axis report 写入稳定 evidence refs，或以内联结构传入 `milestone-gate`，但二者都必须保留每轴的 `runtime_dispatch_profile` 和 `isolation_guarantee`。
+5. 调用 `milestone-gate` 时传入 `axis_reports`。`milestone-gate` 只聚合，不重新执行 axis skill。
+
+同一当前载体顺序运行四轴只能作为 fallback evidence 或 manual exception 的事实来源，不能满足真实四轴隔离。若 milestone 最终由 programmer 手动接受，必须记录为 acceptance override，而不是把 `milestone_gate_verdict` 改写为 `pass`。
 
 ### aggregator 的输入
 
@@ -422,8 +462,42 @@ aggregator_input:
         white_box: pass | soft_fail | hard_fail
         anti_cheat: pass | high_severity
         composite: pass | soft_fail | hard_fail
+  axis_reports:
+    black_box:
+      axis: black_box
+      report_ref: string
+      axis_verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      severity: low | medium | high
+      carrier: subagent | current-carrier | human | missing
+      runtime_dispatch_profile: { ... }
+      isolation_guarantee: true | false
+      carrier_isolation_broken: true | false
+      target_type: program_code | non_program_artifact | mixed | unknown
+      axis_applicability_state: applicable | not_applicable | substituted | blocked
+      expected_method: string
+      checklist_results: [ ... ]
+      missing_evidence: [ ... ]
+    white_box: { ... }
+    anti_cheat: { ... }
+    composite: { ... }
+  axis_dispatch_profile:
+    dispatch_owner: top_level_harness
+    dispatch_model: sibling_axis_carriers | current_carrier_fallback | missing
+    delegation_attempted_by_axis:
+      black_box: true | false
+      white_box: true | false
+      anti_cheat: true | false
+      composite: true | false
+    carrier_isolation_broken_any: true | false
+    same_carrier_cross_axis: true | false
+    dispatch_gap_reason: string | N/A
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
   target_type_rules: { ... }              # target_type 与 axis_applicability
+  manual_exception:
+    present: true | false
+    exception_type: programmer_acceptance_override | N/A
+    reason: string | N/A
+    accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
 ```
 
 ### aggregator 的输出
@@ -431,6 +505,17 @@ aggregator_input:
 ```yaml
 aggregator_output:
   milestone_gate_verdict: pass | soft_fail | hard_fail | blocked
+  milestone_gate_execution_model:
+    dispatch_owner: top_level_harness
+    aggregation_owner: milestone-gate
+    axis_dispatch_consumed: true | false
+    nested_axis_dispatch_attempted: false
+  axis_report_status:
+    black_box: present | missing | stale | contaminated | blocked
+    white_box: present | missing | stale | contaminated | blocked
+    anti_cheat: present | missing | stale | contaminated | blocked
+    composite: present | missing | stale | contaminated | blocked
+  axis_dispatch_profile: { ... }
   aggregation_rules_applied: true | false
   aggregation_rules_missing: true | false
   aggregation_rules_source: string
@@ -527,11 +612,19 @@ aggregator_output:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
   degenerate_and_applied: true | false
   degenerate_and_reason: string | N/A
+  manual_exception:
+    present: true | false
+    exception_type: programmer_acceptance_override | N/A
+    gate_verdict_preserved: pass | soft_fail | hard_fail | blocked | N/A
+    reason: string | N/A
   aggregation_summary: string
 ```
 
 ### Aggregator 实现时需注意
 
+- `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
+- `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
+- `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
 - block lift 不可自动：aggregator 检测到之前在同一 milestone 下的 contradiction resolution（新 verification WT 的 closeout），自动重算但保留 block 直到 resolution 的 evidence 满足 block_lift_condition
@@ -645,6 +738,8 @@ aggregation_rules:
 - **Weight 不超过 node_type 的语义边界**：docs WT 的 weight 不能超过 feature WT（overrides 除外，需显式理由）
 - **Veto power 不可被 per-WT aggregation 覆盖**：black-box fail 即 milestone blocked，无论其他 WT 如何
 - **Target type 先于轴 verdict**：未解析 target_type 或 axis_applicability 时，不得把黑盒/白盒轴默认为 pass
+- **Axis report 先于聚合 verdict**：未收到四轴显式报告时，`milestone-gate` 不得在内部补跑轴检查或制造默认 axis verdict
+- **Same-carrier fallback 不是隔离 pass**：current-carrier 顺序执行四轴只能产生运行时缺口或 manual exception evidence，不能满足 sibling axis isolation
 - **not_applicable 不是 pass**：`not_applicable` 只能移出 mandatory pass 计算，不能提供正向完成证据
 - **substituted 必须有证据**：`substituted` 只有在替代验收证据存在并通过时才可视为 axis satisfied
 - **退化 AND 必须记录**：即使当前 evidence 状态简单到不需要聚合规则，也必须说明"为什么简单"而不是"跳过了规则"
@@ -661,6 +756,6 @@ aggregation_rules:
 - [Single-Acceptance Contract](../worktrack/single-acceptance-contract.md) — 被消费的 verdict 格式
 - [Worktrack Contract](../worktrack/contract.md) — worktrack 级 gate 定义
 - [Milestone Artifact Control](../control/milestone.md) — milestone gate 的上级定义
-- [milestone-gate](../../../../product/harness/skills/milestone-gate/SKILL.md) — 可执行两层 Gate orchestrator
+- [milestone-gate](../../../../product/harness/skills/milestone-gate/SKILL.md) — 可执行 Gate aggregator，消费顶层 Harness 提供的显式四轴报告
 - [milestone-blackbox-check](../../../../product/harness/skills/milestone-blackbox-check/SKILL.md) — 外部行为场景与非程序替代验收轴
 - [milestone-whitebox-check](../../../../product/harness/skills/milestone-whitebox-check/SKILL.md) — 内部结构分析与非程序结构替代审查轴

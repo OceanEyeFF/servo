@@ -1,9 +1,9 @@
 ---
 title: "Milestone Status Skill"
 status: active
-updated: 2026-06-23
+updated: 2026-06-28
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-06-28
 ---
 
 # Milestone Status Skill
@@ -25,7 +25,7 @@ canonical executable source：
 
 - 读取 Milestone artifact 和关联的 worktrack 状态
 - 计算 progress counter
-- 对 goal-driven milestone，在 `worktrack_list_finished == true` 时**调用 `milestone-gate` skill**（两层架构：Layer 1 四轴 SubAgent + Layer 2 aggregator），消费返回的 `milestone_gate_verdict`
+- 对 goal-driven milestone，在 `worktrack_list_finished == true` 时要求顶层 Harness 先分派四个 sibling axis carriers，再调用 `milestone-gate` skill 聚合显式 `axis_reports`，消费返回的 `milestone_gate_verdict`
 - 在 Milestone Gate 通过后判定 `purpose_achieved`
 - 消费 composite acceptance report，覆盖 code review、feature completeness、related influence、intent completeness、operator simulation 和 professional review lanes
 - 按 `completion_threshold_pct` 计算 `signal_satisfaction_pct` / `criteria_pass_pct`
