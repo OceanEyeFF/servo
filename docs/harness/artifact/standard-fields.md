@@ -42,12 +42,17 @@ last_verified: 2026-06-27
 | `target_type` | `program_code \| non_program_artifact \| mixed \| unknown` | Milestone Gate 目标类型。决定 blackbox / whitebox / anti-cheat / composite 轴的取证方法 | `milestone-gate`, milestone axis skills |
 | `target_type_source` | `programmer_declared \| milestone_artifact \| gate_input \| inferred_from_worktracks \| unknown` | target_type 来源；推断来源必须可追踪 | `milestone-gate`, milestone axis skills |
 | `target_type_confidence` | `high \| medium \| low` | target_type 判定置信度 | `milestone-gate`, milestone axis skills |
+| `target_type_rules` | `object` | Milestone Gate 目标类型、来源、置信度、轴适用性、替代验收要求和 mixed slice 覆盖的封套；聚合器必须先解析它再聚合 verdict | `milestone-gate` |
 | `axis` | `black_box \| white_box \| anti_cheat \| composite` | Milestone Gate 轴标识 | Milestone axis skills |
 | `axis_verdict` | `pass \| soft_fail \| hard_fail \| blocked \| not_applicable` | 单轴 verdict。`not_applicable` 只能表示轴不适用，不等于 pass | Milestone axis skills |
 | `axis_applicability` | `object` | 四轴适用性封套，按 axis 记录 state、expected_method、substituted_by 与 reason | `milestone-gate` |
+| `axis_applicability_resolved` | `boolean` | 四轴适用性是否已解析完成；为 `false` 时 Milestone Gate 最终 verdict 必须阻断 | `milestone-gate` |
 | `axis_applicability_state` | `applicable \| not_applicable \| substituted \| blocked` | 单轴适用性状态；这是路由事实，不是成功 verdict | Milestone axis skills |
 | `axis_applicability_reason` | `string` | 单轴适用或不适用理由 | Milestone axis skills |
+| `applicability_state` | `applicable \| not_applicable \| substituted \| blocked` | `composite_lane_verdicts` 和 `slice_coverage` 内的 lane-local 适用性状态字段；语义等同 `axis_applicability_state`，不代表 pass | `milestone-gate` |
 | `expected_method` | `string` | 该轴对当前 target_type 应使用的验收方法，如 `external_behavior_scenario` 或 `structural_internal_analysis` | Milestone axis skills |
+| `axis_satisfaction` | `object` | 聚合器输出的轴满足度封套，按 axis 记录 applicability_state、axis_satisfied、reason 和 evidence refs | `milestone-gate` |
+| `axis_satisfied` | `boolean` | 轴满足度谓词结果；`applicable` 轴要求 raw verdict pass，`substituted` 轴要求合格替代证据，`not_applicable` 本身为 false | `milestone-gate` |
 | `substituted_by` | `string \| N/A` | 当 `axis_applicability_state = substituted` 时，记录替代验收来源 | Milestone axis skills |
 | `substitution_evidence_ref` | `string \| N/A` | 替代验收证据引用；缺失时 substituted 不能视为 satisfied | `milestone-gate`, milestone axis skills |
 | `substitute_method` | `artifact_acceptance_review \| policy_conformance \| reader_operator_simulation \| cross_reference_validation \| traceability_review \| professional_review \| research_evidence_review \| artifact_structure_review \| string` | 非程序 artifact 替代验收方法；必须贴合 artifact 类型和 axis 语义 | `milestone-gate`, milestone axis skills |
@@ -58,6 +63,8 @@ last_verified: 2026-06-27
 | `slice_id` | `string` | mixed target 的切片标识；切片可对应 worktrack、completion signal、artifact component 或交付路径 | `milestone-gate`, milestone axis skills |
 | `slice_target_type` | `program_code \| non_program_artifact \| unknown` | mixed target 中单个切片的目标类型 | `milestone-gate`, milestone axis skills |
 | `slice_coverage` | `object[]` | mixed target 的逐切片覆盖记录，至少包含 slice_id、slice_target_type、axis、applicability_state、expected_method、substitute_method、evidence_ref 和 verdict | `milestone-gate` |
+| `veto_triggered` | `boolean` | Milestone Gate lane 是否触发 veto-power 阻断 | `milestone-gate` |
+| `weight_modifier_applied` | `boolean` | Milestone Gate lane finding 是否已对对应 WT 权重应用修饰 | `milestone-gate` |
 
 ## 审批 & 权限字段
 

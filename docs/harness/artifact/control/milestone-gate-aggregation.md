@@ -7,7 +7,7 @@ last_verified: 2026-06-27
 ---
 # Milestone Gate 证据聚合合同
 
-> 定义从 N 个 worktrack gate evidence 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 WT2（aggregator implementation）的输入合同。
+> 定义从 N 个 worktrack gate evidence 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 `milestone-gate` Layer 2 aggregator 的输入/输出合同。
 
 ## 一、概述
 
@@ -23,9 +23,9 @@ Milestone Gate 不是"全部 WT 都过了 = milestone 过了"的简单布尔 AND
 4. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
 5. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
 
-### 与 MS-20260623-002 的接口
+### 与 Worktrack single-acceptance 的接口
 
-本 artifact 消费 MS-20260623-002 定义的 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
+本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
 
 ## 二、aggregation_rules schema
 
@@ -289,6 +289,28 @@ axis_satisfied(axis) =
 
 `not_applicable` can remove an axis from mandatory pass calculation only when the target type and reason are explicit. It does not create positive evidence and must remain visible in `composite_lane_verdicts`.
 
+### Aggregator execution order and final verdict priority
+
+Aggregator 必须按固定顺序执行，不能先看 raw axis verdict 再回填 target type：
+
+1. 解析 `target_type_rules`、`axis_applicability`、替代验收字段与 mixed `slice_coverage`。
+2. 计算 `weight_rules`。
+3. 检测 `contradiction_rules`。
+4. 消费 `composite_lane_rules`，并使用 `axis_satisfied(axis)` 判断 mandatory applicable / substituted 轴是否满足。
+5. 在 Step 0 已解析完成的前提下，才允许触发 `degenerate_and_rules`。
+
+最终 verdict 的阻断优先级：
+
+| 优先级 | 条件 | verdict |
+|--------|------|---------|
+| 0 | `target_type = unknown`、`axis_applicability_resolved = false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
+| 1 | veto-power 轴适用且 hard_fail / blocked，或 mandatory substituted 轴 `axis_satisfied = false` | `blocked` |
+| 2 | `contradiction_blocked = true` | `blocked` |
+| 3a | 所有 weight ≥ 3 的 WT pass，所有 mandatory applicable / substituted axes 满足 `axis_satisfied = true`，显式 `not_applicable` 轴均有 target_type reason | `pass` |
+| 3b | 任一 weight ≥ 3 的 WT hard-fail，且无 critical fail | `soft-fail` |
+| 3c | 任一 weight ≥ 4 的 WT hard-fail | `hard-fail` |
+| 4 | 退化 AND 条件全部满足，且 Step 0 适用性解析完成 | `pass`（标记 `degenerate_and_applied`） |
+
 ## 六、composite_lane_rules：Composite lane 消费
 
 ### 目的
@@ -346,9 +368,9 @@ composite_lane_rules:
 - **Veto power**：black-box 测试失败就是失败，不应被其他 WT 的 pass 覆盖
 - **有限 B 降级**：anti-cheat finding 可以将特定 WT 的权重清零，防止 cheating WT 的 pass 拉高聚合分数
 
-### 与 WT3（三轴→四轴映射）的交接
+### 与 Worktrack composite lane 的交接
 
-WT3 将 worktrack 的 implementation-validation-policy 三轴映射到 milestone 的 black-box-white-box-anti-cheat-composite 四轴。本 artifact 定义的 `lane_axes` 的 aggregate 逻辑是 WT3 映射的消费方。
+Worktrack 级 implementation / validation / policy 证据会被 closeout 和 composite acceptance lane 汇总后输入 Milestone Gate 四轴。本 artifact 定义的 `lane_axes` aggregate 逻辑是这些 lane 结论在 milestone 级的消费方。
 
 ## 七、degenerate_and_rules：退化 AND 判定
 
@@ -364,6 +386,7 @@ degenerate_and_rules:
       - no_anti_cheat_high_severity: true      # 无反作弊高严重信号
       - all_lanes_consistent: true             # 所有 lane 一致（无 lane 级矛盾）
       - axis_applicability_resolved: true      # 所有轴均有 applicable / substituted / not_applicable / blocked 之一，且无 blocked
+      - all_mandatory_axes_satisfied: true     # mandatory applicable / substituted 轴均满足 axis_satisfied
       - no_weight_override_applied: true        # 无手动权重覆盖
       - all_critical_wt_pass: true             # 所有 weight ≥ 4 的 WT 均 pass
   recording_required: true
@@ -383,7 +406,7 @@ degenerate_and_rules:
 
 退化 AND 不是静止跳过：如果将来任何退化条件不再满足（如新 WT 引入了矛盾），退化解锁，正常规则重新激活。退化理由记录确保 audit trail 可解释"为什么这次 milestone gate 看起来是简单 AND"。
 
-## 八、与 WT2（evidence-aggregator）的交接
+## 八、与 milestone-gate aggregator 的交接
 
 ### aggregator 的输入
 
@@ -408,6 +431,41 @@ aggregator_input:
 ```yaml
 aggregator_output:
   milestone_gate_verdict: pass | soft_fail | hard_fail | blocked
+  aggregation_rules_applied: true | false
+  aggregation_rules_missing: true | false
+  aggregation_rules_source: string
+  target_type: program_code | non_program_artifact | mixed | unknown
+  target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  axis_applicability_resolved: true | false
+  axis_satisfaction:
+    black_box:
+      applicability_state: applicable | not_applicable | substituted | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    white_box:
+      applicability_state: applicable | not_applicable | substituted | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    anti_cheat:
+      applicability_state: applicable | not_applicable | substituted | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    composite:
+      applicability_state: applicable | not_applicable | substituted | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+  substitution_evidence_summary:
+    by_axis:
+      black_box | white_box | anti_cheat | composite:
+        substitute_method: string | N/A
+        substitution_evidence_ref: string | N/A
+        substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+        evidence_covers_completion_signal: true | false | N/A
+        checked_scope: string
   per_worktrack_weights: { ... }          # 每个 WT 的最终权重（含 overrides）
   contradiction_findings: [...]           # 已检测到的矛盾
   contradiction_resolution_status:         # 若有矛盾
@@ -418,30 +476,46 @@ aggregator_output:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
       substitute_method: string | N/A
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
     white_box:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
       substitute_method: string | N/A
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
     anti_cheat:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
       substitute_method: string | N/A
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
     composite:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
       substitute_method: string | N/A
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
   slice_coverage:                         # required for target_type = mixed
     - slice_id: string
       slice_target_type: program_code | non_program_artifact | unknown
@@ -456,7 +530,7 @@ aggregator_output:
   aggregation_summary: string
 ```
 
-### WT2 实现时需注意
+### Aggregator 实现时需注意
 
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
@@ -578,13 +652,15 @@ aggregation_rules:
 ### 向后兼容
 
 - 已完成的 milestone（completed/superseded）不需要补充 aggregation_rules
-- 活跃 milestone 如果尚未声明 aggregation_rules，默认使用 `enabled: false`（退化 AND），但必须在 milestone gate evidence 中标记 `aggregation_rules_missing: true` 作为 warning
+- 活跃 milestone 如果尚未声明 aggregation_rules，默认使用 `enabled: false`（退化 AND），但必须在 milestone gate evidence 中标记 `aggregation_rules_missing: true`。当缺失规则导致 target type 或 axis applicability 无法解释时，最终 verdict 必须为 `blocked`；只有适用性已由其他可追踪输入解析完成时，它才是 warning。
 - 旧 milestone 缺少 `target_type_rules` 时，Milestone Gate 必须在 evidence 中记录 `target_type: unknown` 或一个有来源的 runtime inference；不得把缺失解释为 program_code、non_program_artifact 或 pass
-- 此行为确保 MS-20260623-003 合入后不影响正在执行的 other milestones
+- 此行为确保新 Gate 语义不会静默改变旧 milestone 的目标类型判断。
 
 ## 十二、相关文档
 
 - [Single-Acceptance Contract](../worktrack/single-acceptance-contract.md) — 被消费的 verdict 格式
 - [Worktrack Contract](../worktrack/contract.md) — worktrack 级 gate 定义
 - [Milestone Artifact Control](../control/milestone.md) — milestone gate 的上级定义
-- [harness-skill §8](../../../../product/harness/skills/harness-skill/SKILL.md) — 三轴 Gate 模型
+- [milestone-gate](../../../../product/harness/skills/milestone-gate/SKILL.md) — 可执行两层 Gate orchestrator
+- [milestone-blackbox-check](../../../../product/harness/skills/milestone-blackbox-check/SKILL.md) — 外部行为场景与非程序替代验收轴
+- [milestone-whitebox-check](../../../../product/harness/skills/milestone-whitebox-check/SKILL.md) — 内部结构分析与非程序结构替代审查轴
