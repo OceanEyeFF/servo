@@ -15,10 +15,10 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 |----|---------|---------|
 | A1 | Mock abuse | 证据是否依赖 mock/stub/fake 而非真实集成路径 |
 | A2 | Evidence reuse | 同一份证据是否被多个 WT 重复引用且缺乏独立验证 |
-| A3 | Partial validation | WT 是否仅在自身范围内验证，从未跨 WT 集成验证 |
+| A3 | Partial validation | 存在真实跨 WT 集成/共享行为/完成依赖时，WT 是否只做了自身范围验证 |
 | A4 | Gate bypass | WT 是否跳过了标准 gate 步骤（self-review / gate evidence / closeout record） |
-| A5 | Stale evidence | 证据是否来自过期基线（与当前 milestone 分支 HEAD 不一致） |
-| A6 | Self-review bias | 同一载体是否同时担任实现者与审查者 |
+| A5 | Stale evidence | 证据是否来自过期基线（优先依据 source refs / checkpoint / observed hash） |
+| A6 | Self-review bias | 同一载体或证据来源是否造成 evidence credibility bias |
 | A7 | False positive risk | governance check 全 pass 但实际全部配置为 warning 而非 error |
 
 当 `Harness` 处于 milestone composite acceptance 阶段，已收集该 milestone 所有已闭环 WT 的 single-acceptance verdict、gate evidence、closeout record、self-review record 与 dispatch profile，且需要产出 anti-cheat lane verdict 以供 `milestone-gate-aggregation` 的 composite verdict 综合时，使用这个技能。
@@ -82,24 +82,35 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
    - 检查每个引用 WT 的 scope 是否真的与该证据相关
    - 若证据产生于 WT-A，被 WT-B 引用但 WT-B 的 scope 与该证据无直接关系 → `hard_fail`
    - 若证据是共享的 milestone 级 baseline（如 verifier 脚本），且各 WT 均独立运行之 → `pass`
-4. 判定规则：
+6. 判定规则：
    - 存在至少一个不可解释的复用 → 至少 `soft_fail`
    - 存在 3 个以上不可解释的复用，或复用覆盖所有 critical WT → `hard_fail`
    - 无复用或所有复用均可解释 → `pass`
 
 ### A3 — Partial Validation Detection
 
-**检测目标**：检测 WT 是否仅在自身 scope 内验证，从未覆盖跨 WT 集成点。
+**检测目标**：检测在存在真实跨 WT 集成、共享行为或完成依赖时，WT 是否仅在自身 scope 内验证，从未覆盖跨 WT 集成点。若 milestone 的 WT 彼此独立（如 docs-only、单模块、无共享行为/状态/接口、无完成依赖），A3 不应 hard-fail。
 
 **检测方法**：
 
-1. 对该 milestone 下所有 WT 的 `completion_signals` 做交叉对比。
-2. 检查每个 WT 的 gate evidence 中是否包含对**其他 WT scope** 的引用或测试。
-3. 判定规则：
-   - 所有 WT 的 gate evidence 均只覆盖自身 scope，没有任何跨 WT 引用 → `hard_fail`
-   - 至少存在 1 个 WT 覆盖了跨 WT 集成验证且该覆盖可信 → `pass`
-   - 部分 WT 有跨 WT 验证但覆盖不完整 → `soft_fail`
-   - 若该 milestone 仅含 1 个 WT → `N/A`（无需跨 WT 验证）
+1. 先判定 `cross_wt_integration_required`，依据 WT contract、`completion_signals`、`impacted_modules`、changed paths、milestone purpose、`aggregation_rules` 与 closeout record。
+2. 以下情况视为需要跨 WT 集成验证：
+   - 某 WT 的 deliverable 依赖另一 WT 的输出、状态或接口。
+   - 多个 WT 共同修改 shared interface、shared config、control state、canonical skill entrypoint、deploy path 或同一用户可观察 workflow。
+   - milestone acceptance 明确要求 integrated workflow、end-to-end path、operator path 或跨 WT 行为。
+   - closeout / gate evidence 明确声明 `merge_required`、`integration_target_ref` 或完成依赖。
+3. 以下情况可以判定 `cross_wt_integration_required: false`：
+   - 所有 WT 均为 docs-only 或彼此独立的单模块文本/配置调整。
+   - WT 之间没有共享运行时行为、公共接口、共同入口、状态传递或完成依赖。
+   - 每个 WT 的 acceptance signal 可在自身 scope 内被完整证明，且 milestone purpose 不要求集成路径。
+4. 若 `cross_wt_integration_required: false`，A3 verdict 应为 `N/A` 或 `pass_with_rationale`，必须记录 rationale 与 source refs；不得因缺少跨 WT 引用直接 hard-fail。
+5. 若 `cross_wt_integration_required: true`，再检查 gate evidence 是否包含可信跨 WT 集成引用、测试、smoke/dogfood 记录、operator path 证据或合并后验证。
+6. 判定规则：
+   - `cross_wt_integration_required: true` 且所有 WT 的 gate evidence 均只覆盖自身 scope，没有任何跨 WT 引用 → `hard_fail`
+   - `cross_wt_integration_required: true` 且至少存在 1 个可信跨 WT 集成验证覆盖所有关键依赖 → `pass`
+   - `cross_wt_integration_required: true` 但覆盖不完整或只覆盖低风险依赖 → `soft_fail`
+   - 无法判定是否存在真实跨 WT 依赖 → `blocked`，记录缺失字段，不得默认 hard-fail
+   - milestone 仅含 1 个 WT → `N/A`（无需跨 WT 验证）
 
 ### A4 — Gate Bypass Detection
 
@@ -119,22 +130,26 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ### A5 — Stale Evidence Detection
 
-**检测目标**：检测证据是否基于过期基线产生。
+**检测目标**：检测证据是否基于过期基线产生。A5 的主证据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。
 
 **检测方法**：
 
-1. 获取当前 milestone 分支的 HEAD commit timestamp。
-2. 获取每个 WT 的 closeout commit timestamp。
-3. 对比每个 WT 的 evidence 文件最后修改时间与 HEAD timestamp。
+1. 获取当前 milestone 分支的 HEAD commit 与 `milestone_input_checkpoint`。
+2. 获取每个 WT 的 `checkpoint_base_ref`、`observed_git_hash`、`closeout_commit`、`merge_commit`、evidence source refs 与 evidence freshness label。
+3. 先比较 ref/hash 关系：证据声称覆盖的 commit 是否等于或包含当前 milestone 聚合所要求的 checkpoint。
+4. 再比较 closeout/merge timeline：证据是否产生于 WT closeout 之前、merge 之前，或是否在后续 WT merge 后仍被错误标记为覆盖全 milestone。
+5. 最后才使用文件系统 mtime 作为辅助交叉检查。mtime 与 ref/hash 冲突时，优先相信 git/source ref 并记录 mtime discrepancy。
 4. 判定规则：
-   - 任何 evidence 的最后修改时间早于当前 milestone 分支 HEAD 且该 evidence 被 WT 标记为 `fresh` → `hard_fail`（时效性标签造假）
-   - evidence 被标记为 `reused` 或 `mixed` 但超过 7 天未刷新 → `soft_fail`
-   - 所有 evidence 时效性标签与时间戳一致 → `pass`
-   - 若无法获取文件时间戳（例如 evidence 为内联记录而非文件）→ 标记该 check 为 `blocked`，记录缺失数据
+   - 任何 evidence 的 `observed_git_hash` / source ref 明确早于所声称覆盖的 checkpoint，且被标记为 `fresh` 或 full milestone coverage → `hard_fail`
+   - evidence 只覆盖某 WT closeout commit，却被复用为后续 WT merge 后的 milestone-level fresh evidence → `hard_fail`
+   - evidence 被标记为 `reused` 或 `mixed`，source refs 清楚但缺少后续刷新说明 → `soft_fail`
+   - source refs / checkpoint / observed hash 与 freshness 标签一致 → `pass`
+   - 缺少 ref/hash/source checkpoint 导致无法判断 → `blocked`，记录缺失字段
+   - 仅文件 mtime 早于 milestone branch HEAD，但 ref/hash 能证明证据覆盖正确 checkpoint → 不得 hard-fail；记录 `mtime_auxiliary_only: true`
 
 ### A6 — Self-Review Bias Detection
 
-**检测目标**：检测同一载体是否同时承担实现和审查角色。
+**检测目标**：检测同一载体或证据来源是否同时承担实现、审查、gate 或证据生产角色，从而造成 evidence credibility bias。A6 关注的是证据可信度偏倚与 provenance 风险，不负责衡量独立 review 覆盖完整性；独立 review 覆盖由 composite C1 判定。
 
 **检测方法**：
 
@@ -146,7 +161,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
    - `implementer == reviewer` → `self-review overlap: true`
    - `implementer == gate_judge` → `self-gate overlap: true`
 3. 判定规则：
-   - 任一 WT 存在 `self-review overlap` → 至少 `soft_fail`
+   - 任一 WT 存在 `self-review overlap` 且该 self-review 被用作唯一可信度证据 → 至少 `soft_fail`
    - 同一 carrier 出现在该 milestone 下 3 个以上 WT 的 implementer 位置且从不出现在 reviewer 位置 → `pass`（专一角色，无偏倚）
    - 存在 `self-gate overlap` → `hard_fail`（gate 裁决必须独立）
    - 所有 WT 实现者与审查者严格分离 → `pass`
@@ -160,6 +175,8 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
        overlap: true
        overlap_type: "self-review" | "self-gate"
    ```
+
+**边界说明**：A6 可以报告 `self-review overlap`、`self-gate overlap`、`evidence_producer == reviewer`、同一 carrier 反复产出并审查同类证据等 provenance 风险；但不得因为缺少独立 reviewer 覆盖而单独 hard-fail。若问题是“有没有独立 review 覆盖每个 WT”，应在 composite C1 中判定，并在 A6 中只记录为相关背景或 `see_composite_C1`。
 
 ### A7 — False Positive Risk Detection
 
@@ -305,7 +322,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。
 4. **Anti-cheat is NOT code review**：本技能不评判代码正确性、性能、安全性或架构质量。它只评判证据的可信度。即使所有代码从技术角度正确，若检测到 fake evidence 信号，仍必须报告 `hard_fail` 且不可被其他轴覆盖。
 5. **False positive handling**：若某条检测看起来命中反作弊 pattern 但存在可解释的合法理由（如 `A1` 中 test-type WT 合理使用 mock），其 verdict 应记录为 `pass` 并附带解释。不得压制检测结果或静默降级 — 合法理由必须显式记录在 `finding` 字段中。
-6. **Stale evidence 时效性**：A5 比较的基线是 milestone 分支 HEAD，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 以最晚 HEAD 为准，但在 finding 中解释时间线。
+6. **Stale evidence 时效性**：A5 的主判断依据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；milestone 分支 HEAD 是目标基线，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 应基于 ref/hash 关系解释时间线。文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。
 7. **Veto power 不可被稀释**：anti-cheat lane 有 veto_power，任何 `hard_fail` 或 `blocked` 必须导致 milestone gate 综合时为 `blocked`。per-WT aggregation 的 pass 不可覆盖 anti-cheat 的 hard_fail — 此行为由 `milestone-gate-aggregation.md` 保证，本技能只负责产出准确的 lane verdict。
 8. **数据缺失不可视为通过**：若某 WT 缺失 `dispatch_profile`、`closeout_record` 或 `gate_evidence`，导致 A1-A7 中某项无法检测，该项 verdict 必须为 `blocked`（而非 `pass` 或静默跳过）。`blocked` 项必须显式暴露缺失数据及影响的 check_id。
 9. **跨 WT 矛盾与 A2 的区别**：A2 检测证据复用但未独立验证。若两 WT 的 single-acceptance verdict 互相矛盾（如一个 pass 一个 hard-fail 但共享同一 evidence），A2 标记为复用风险，而矛盾本身应由 `contradiction_rules`（聚合规则的矛盾检测）处理。本技能不负责矛盾裁决 — 只负责指出证据复用可能掩盖了矛盾。

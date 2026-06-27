@@ -32,13 +32,13 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
    - 所有已闭环 WT 的 composite acceptance lane 报告（如存在）
    - milestone 的 `composite_acceptance` 配置（来自 milestone artifact 的 `composite_acceptance` 字段或聚合合同中的 `composite_lane_rules`）
    - milestone 的 `purpose` 和 `acceptance_criteria`
-4. **判定 review depth**：读取 milestone 的 composite_acceptance 配置中的 `review_depth`（`standard` / `deep`），并结合 mandatory trigger table 判定当前深度。若配置缺失，按 deep trigger table 保守判定。
+4. **判定 review depth**：读取 milestone 的 composite_acceptance 配置中的 `review_depth`（`standard` / `deep`），并结合 mandatory trigger table 判定当前深度。若配置缺失，先根据 milestone `target_type`、purpose、node_types、changed paths、risk boundary 与 acceptance criteria 做目标/风险分类；分类命中 deep trigger 才进入 deep，分类明确为普通低风险则进入 standard，分类无法完成时返回 `blocked` / `questions_required`，不得无依据盲目默认 deep。
 5. **逐 lane 检查**：对六条 composite acceptance lane 分别执行检查：
-   - **C1 (code-review)**：检查每项 WT 是否有独立代码审查（非 self-review）。交叉对比每个 WT 的 carrier 身份与 reviewer 身份，检查 dispatch profile 或 closeout record 中的审查者信息。
+   - **C1 (code-review)**：检查每项 WT 是否有独立代码审查覆盖（非 self-review）。它回答 review coverage 是否存在且覆盖关键 WT，不判定 evidence credibility bias；carrier/provenance 偏倚由 anticheat A6 判定。
    - **C2 (feature-completeness)**：检查所有 `completion_signals` 是否都有对应的证据。对 milestone 的每条 completion_signal，回溯到各 WT 的 evidence，构建 signal→evidence 映射表。
    - **C3 (related-influence)**：检查每项 WT 是否考虑了对相邻系统的影响。读取各 WT 的 `impacted_modules` 或 `related_influence` 字段，检查是否有相邻模块影响分析。
    - **C4 (intent-completeness)**：检查实现是否忠实于原始 purpose。对比每项 WT 的 deliverables 与 milestone purpose，检查是否有偏离或遗漏。
-   - **C5 (operator-simulation)**：从 operator 视角检查是否存在可用性缺陷。模拟 milestone 产出的用户/操作员体验路径（如 workflow、CLI、配置流程），检查是否有断裂、模糊或缺失步骤。
+   - **C5 (operator-simulation)**：审计已有 operator-simulation lane 报告、runbook/workflow/CLI/config 证据与操作路径记录，判断 operator path 是否完整。C5 不生成新的 blackbox 行为场景、不运行 CLI/API、不替代 blackbox 轴的用户可观察行为测试。
    - **C6 (professional-review)**：检查是否有领域专家或同行复核信号。查找外部/独立 review 证据（如 programmer review 记录、外部 reviewer 签名、peer review 记录）。
 6. **判定 mandatory lanes**：根据 mandatory/deep trigger table 判定当前 milestone 场景下哪些 lane 为 mandatory：
    - 若命中 deep trigger（release / installer/deploy / migration / authority changes / destructive operation / path governance / security/privacy / cross-WT integration / release-prep）：所有 6 条 lane 均为 mandatory
@@ -215,12 +215,14 @@ composite_verdict:
 
 | 维度 | 内容 |
 |------|------|
-| **判据** | 每项已闭环 WT 是否有独立代码审查（非 self-review）？检查每个 WT 的 carrier 身份与 reviewer 身份是否分离。 |
-| **检查方法** | 读取每个 WT 的 closeout record 中的 self-review record（`self-review-contract`），检查 `reviewer` 字段与 `implementer` 字段是否指向不同实体；若只有 self-review 标记（implementer == reviewer）且无独立 review 记录，则为缺失。 |
+| **判据** | 每项已闭环 WT 是否有独立代码审查覆盖（非 self-review），且 critical WT 是否被覆盖？ |
+| **检查方法** | 读取每个 WT 的 closeout record 或 composite lane report 中的 code-review / self-review record，检查是否存在独立 reviewer、programmer review、peer review 或等效复核记录；若只有 self-review 标记（implementer == reviewer）且无独立 review 记录，则为 coverage 缺失。 |
 | **pass 条件** | 所有已闭环 WT 均有独立 reviewer 记录，或 self-review 记录中声明了独立复核（如 programmer review）。 |
 | **soft_fail 条件** | 部分低权重 WT（weight ≤ 2）缺失独立 review，但所有 critical WT（weight ≥ 3）均有独立 review。 |
 | **hard_fail 条件** | 任一 critical WT 缺失独立 review 且无合理解释。 |
 | **blocked 条件** | lane 数据完全缺失，无法判断。 |
+
+**边界说明**：C1 只回答“是否存在独立 review 覆盖”，不把 carrier identity 重叠本身当成反作弊结论。若发现 reviewer / implementer / gate_judge / evidence producer 的身份重叠，应在 C1 中记录 coverage 影响，并把 evidence credibility bias 留给 anticheat A6。C1 的 hard_fail 来源是 critical WT 缺少独立 review 覆盖，而不是 provenance 风险本身。
 
 ### C2: feature-completeness
 
@@ -259,12 +261,14 @@ composite_verdict:
 
 | 维度 | 内容 |
 |------|------|
-| **判据** | 从 operator 视角模拟使用——是否有可用性缺陷？模拟 milestone 产出在真实使用场景下的操作路径。 |
-| **检查方法** | 基于 WT 的产出物（workflow、CLI、配置、文档），构建 operator 操作路径；检查是否有断裂点、模糊步骤、错误恢复路径缺失、边界条件未处理。 |
+| **判据** | 已有 operator-simulation 证据是否覆盖真实 operator path，是否暴露或遗漏可用性断裂？ |
+| **检查方法** | 读取已有 per-WT operator-simulation lane 报告、runbook、workflow、CLI/config 证据和 closeout 记录中的操作路径；审计这些记录是否覆盖关键步骤、恢复路径和边界条件。不得新建 blackbox 行为场景或实际运行 CLI/API。 |
 | **pass 条件** | operator 操作路径完整、可执行，所有关键步骤有明确的操作指南或自动化支持。 |
 | **soft_fail 条件** | 操作路径可用但有低严重度的可用性瑕疵（如某些边缘情况的文档不完整）。 |
 | **hard_fail 条件** | 操作路径存在断裂（如某步骤缺乏必要的前置配置说明、错误恢复路径缺失导致不可恢复状态）。 |
 | **blocked 条件** | 无法构建 operator 操作路径（产出物不足以支撑模拟）。 |
+
+**边界说明**：C5 的“operator-simulation”是对已有 operator-path 证据的复合验收审计，不是新的 blackbox execution lane。需要从外部用户视角构建场景、运行 CLI/API、检查用户可观察行为或回归路径时，应由 milestone-blackbox-check 承担；C5 只能把缺失或不充分的 operator evidence 记录为 `blocked` / `soft_fail` / `hard_fail`。
 
 ### C6: professional-review
 
@@ -296,9 +300,11 @@ composite_verdict:
 
 **判定优先级**：
 
-1. 先检查 milestone artifact 的 `composite_acceptance.review_depth` 是否显式声明为 `deep`。若 `deep`，所有 6 条 lane 为 mandatory。
-2. 再检查是否命中上述 trigger table 中的任一 deep trigger 场景。若命中，所有 6 条 lane 为 mandatory。
-3. 否则为 standard：C1 (code-review) + C2 (feature-completeness) 为 mandatory，C3-C6 为 optional。
+1. 先检查 milestone artifact 的 `composite_acceptance.review_depth` 是否显式声明为 `deep` 或 `standard`。若显式声明为 `deep`，所有 6 条 lane 为 mandatory；若显式声明为 `standard`，仍需检查是否命中不可降级 deep trigger。
+2. 若 `composite_acceptance` 配置缺失，不得直接默认 deep。必须先基于 `target_type`、purpose、node_types、changed paths、risk boundary、acceptance criteria 与 known risks 分类当前 milestone。
+3. 若分类命中上述 trigger table 中任一 deep trigger 场景，所有 6 条 lane 为 mandatory，并记录 `deep_review_reason`。
+4. 若分类明确不命中 deep trigger，按 standard：C1 (code-review) + C2 (feature-completeness) 为 mandatory，C3-C6 为 optional。
+5. 若配置缺失且目标/风险分类无法完成，返回 `blocked` 并记录 `questions_required`、`missing_inputs` 与 `composite_acceptance_config_missing: true`；不得为了保守而无证据扩大为 deep，也不得静默降级为 standard。
 
 **判定记录**：无论是否命中 deep trigger，都必须在输出中记录 `deep_review_triggered`（true/false）和 `deep_review_reason`（命中场景或 `N/A`）。
 
@@ -318,9 +324,13 @@ composite_verdict:
 
 6. **不生成新检查**：本轴不执行代码审查、不运行测试、不扫描漏洞、不分析依赖。所有判断必须基于已有的 per-WT lane 报告内容。如果某 lane 报告不存在或不完整，唯一合法行为是记录缺失——不得自行补充分析。本约束是本轴与其他三轴的本质区分：blackbox / whitebox / anticheat 可以生成新发现，composite 只能聚合已有报告。
 
-7. **Lane verdict 审计链**：每条 lane 的 verdict 必须有明确的证据引用（`evidence_refs`）。不得给出无证据引用的 verdict。如果证据指向的文件路径与 WT 的 closeout record 不一致，必须标记并记录差异。
+7. **缺失配置不得盲目 deep**：当 `composite_acceptance` 配置缺失时，必须先做 target/risk classification。分类依据不足时返回 `blocked` / `questions_required`，而不是无条件 deep review。只有存在可引用 deep trigger 证据时，才允许将缺失配置场景升级为 deep。
 
-8. **输出协议**：先生成完整的 checklist_results（6 条 lane 各自完整的 per-WT 评估），再提取 composite_verdict。空字段使用 `N/A` 或省略。重复上下文使用 artifact 引用，不得内联全文复制。
+8. **边界不重复**：C1 负责 independent review coverage，A6 负责 evidence credibility bias；C5 负责审计已有 operator path 证据，blackbox 负责生成和执行用户可观察行为/场景测试。Composite 不得用 C1/C5 复制 anticheat 或 blackbox 的主动检查职责。
+
+9. **Lane verdict 审计链**：每条 lane 的 verdict 必须有明确的证据引用（`evidence_refs`）。不得给出无证据引用的 verdict。如果证据指向的文件路径与 WT 的 closeout record 不一致，必须标记并记录差异。
+
+10. **输出协议**：先生成完整的 checklist_results（6 条 lane 各自完整的 per-WT 评估），再提取 composite_verdict。空字段使用 `N/A` 或省略。重复上下文使用 artifact 引用，不得内联全文复制。
 
 ## 资源
 
