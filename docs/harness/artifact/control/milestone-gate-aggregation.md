@@ -206,6 +206,20 @@ target_type_rules:
       substituted_by: N/A
       reason: string
   substitution_evidence_required: true
+  substitution_evidence_contract:
+    substitute_method: artifact_acceptance_review | policy_conformance | reader_operator_simulation | cross_reference_validation | traceability_review | professional_review | research_evidence_review | artifact_structure_review
+    substitution_evidence_ref: string | N/A
+    substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+    evidence_covers_completion_signal: true | false
+  slice_coverage:                 # required when target_type = mixed
+    - slice_id: string
+      slice_target_type: program_code | non_program_artifact | unknown
+      axis: black_box | white_box | anti_cheat | composite
+      applicability_state: applicable | not_applicable | substituted | blocked
+      expected_method: string
+      substitute_method: string | N/A
+      evidence_ref: string | N/A
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
 ```
 
 ### Target routing matrix
@@ -226,6 +240,37 @@ target_type_rules:
 - `substituted` means the axis's usual software-testing method is replaced by an artifact-appropriate method; aggregation may treat the axis as satisfied only when the substitute evidence is present and accepted.
 - `blocked` means the milestone gate cannot legally complete until target type, evidence, or substitute method is clarified.
 
+### Substitute acceptance evidence contract
+
+For non-program artifact slices, `substituted` is valid only when the substitute method matches the artifact and the evidence is concrete enough for a later reviewer to replay the judgment. The allowed substitute methods are:
+
+| substitute_method | Primary use | Required evidence |
+|-------------------|-------------|-------------------|
+| `artifact_acceptance_review` | docs, skill text, workflow policy, planning artifacts | purpose / completion signal / acceptance criterion mapping with explicit pass, gap, or blocked status |
+| `policy_conformance` | governance rules, run protocols, adapter or deploy policy text | checked rule refs, applicable must/must-not clauses, outcome, and exceptions |
+| `reader_operator_simulation` | user-facing or operator-facing instructions and interactive prompts | reader/operator path walked, expected action, observed ambiguity, failure point, and outcome |
+| `cross_reference_validation` | artifact with links, paths, field names, or upstream/downstream refs | reference target, existence/semantic check result, stale or missing refs |
+| `traceability_review` | completion signals, criteria, evidence linkage | per-signal or per-criterion evidence refs and uncovered items |
+| `professional_review` | research, policy, UX/interaction, or domain-specific judgment | reviewer perspective, judgment basis, verdict, and residual risk |
+| `research_evidence_review` | research claims and option analysis | source quality, claim boundary, counterevidence/limitations, and supported conclusion |
+| `artifact_structure_review` | schemas, field contracts, structured docs, skill output contracts | required sections/fields, internal consistency, terminology/interface consistency, and downstream fit |
+
+Minimal fields for every substituted axis:
+
+- `substitute_method`: one of the artifact-appropriate methods above.
+- `substitution_evidence_ref`: stable reference to evidence, a changed file section, command output, or reviewer record.
+- `substitute_verdict`: `pass`, `soft_fail`, `hard_fail`, `blocked`, or `not_applicable`.
+- `evidence_covers_completion_signal`: boolean, or an equivalent per-signal trace.
+- `substitution_evidence_summary`: short statement of what was checked and what remains uncovered.
+
+`substitute_verdict = pass` is required before aggregation may treat a substituted axis as satisfied. `soft_fail`, `hard_fail`, `blocked`, missing evidence, placeholder evidence, or evidence that does not cover the relevant completion signal must keep the axis unsatisfied or blocked according to milestone policy.
+
+### Mixed target slice coverage
+
+When `target_type = mixed`, aggregation must evaluate slices before producing a milestone-level verdict. A slice can be a worktrack, completion signal, artifact component, or delivery path. Each slice records `slice_id`, `slice_target_type`, `axis`, `applicability_state`, `expected_method`, `substitute_method`, `evidence_ref`, and verdict.
+
+Program/code slices keep normal software validation semantics: black-box behavior scenarios and white-box structural/internal analysis. Non-program slices use substitute acceptance. Anti-cheat and composite remain applicable across slices unless their evidence boundary is explicitly blocked. A pass on one slice type cannot cover missing evidence on another slice type.
+
 ### Final verdict interaction
 
 Milestone Gate final verdict must evaluate each axis through an `axis_satisfied` predicate instead of raw verdict equality:
@@ -235,8 +280,11 @@ axis_satisfied(axis) =
   axis.applicability.state == applicable
     AND axis.verdict == pass
   OR axis.applicability.state == substituted
+    AND axis.substitute_method is artifact_appropriate
+    AND axis.substitution_evidence_ref != N/A
     AND axis.substitute_verdict == pass
     AND axis.substitution_evidence_present == true
+    AND axis.evidence_covers_completion_signal == true
 ```
 
 `not_applicable` can remove an axis from mandatory pass calculation only when the target type and reason are explicit. It does not create positive evidence and must remain visible in `composite_lane_verdicts`.
@@ -370,18 +418,39 @@ aggregator_output:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
     white_box:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
     anti_cheat:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
     composite:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       applicability_state: applicable | not_applicable | substituted | blocked
       substituted_by: string | N/A
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+  slice_coverage:                         # required for target_type = mixed
+    - slice_id: string
+      slice_target_type: program_code | non_program_artifact | unknown
+      axis: black_box | white_box | anti_cheat | composite
+      applicability_state: applicable | not_applicable | substituted | blocked
+      expected_method: string
+      substitute_method: string | N/A
+      evidence_ref: string | N/A
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
   degenerate_and_applied: true | false
   degenerate_and_reason: string | N/A
   aggregation_summary: string
