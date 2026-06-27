@@ -73,6 +73,10 @@ last_verified: 2026-06-28
 | `same_carrier_cross_axis` | `boolean` | 四轴是否在同一 carrier 上顺序执行，若为 true 不满足真实四轴隔离 | `harness-skill`, `milestone-gate`, milestone axis skills |
 | `manual_exception` | `object` | Programmer final acceptance override 记录；只描述验收例外，不改写 gate verdict | `harness-skill`, `milestone-gate` |
 | `accepted_gate_verdict_preserved_as` | `pass \| soft_fail \| hard_fail \| blocked \| N/A` | manual exception 中保留的真实 Gate verdict | `harness-skill`, `milestone-gate` |
+| `milestone_gate_verdict` | `pass \| soft_fail \| hard_fail \| blocked` | Milestone Gate 证据层 verdict；manual exception 不得把它改写为 pass | `milestone-gate`, `milestone-status-skill` |
+| `milestone_acceptance_verdict` | `achieved \| blocked \| accepted \| accepted_with_manual_exception \| N/A` | Final acceptance 层结论；可记录 programmer override，但不得反写 Gate verdict | `milestone-status-skill`, `harness-skill` |
+| `anti_cheat_findings_preserved` | `boolean` | manual exception 后是否保留原 anti-cheat finding、severity、evidence refs 与 affected scope；必须为 true 才能审计 | `milestone-gate`, `milestone-anticheat-check` |
+| `manual_exception_followup_ref` | `string \| N/A` | manual exception 产生的后续 milestone/worktrack/evidence 引用；无 follow-up 时必须显式 N/A | `harness-skill`, `milestone-status-skill` |
 
 ## 审批 & 权限字段
 

@@ -625,6 +625,8 @@ aggregator_output:
 - `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
+- `anti_cheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs 和 `axis_report_status` 必须原样保留。
+- `milestone_gate_verdict` 与 `milestone_acceptance_verdict` 是两层不同结论：前者回答 Gate 是否通过，后者回答 programmer 是否在看到 Gate 结果后接受 milestone。`accepted_with_manual_exception` 只能出现在 final acceptance 层，不能反向改变 Gate verdict、axis verdict 或 anti-cheat verdict。
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
 - block lift 不可自动：aggregator 检测到之前在同一 milestone 下的 contradiction resolution（新 verification WT 的 closeout），自动重算但保留 block 直到 resolution 的 evidence 满足 block_lift_condition
@@ -740,6 +742,8 @@ aggregation_rules:
 - **Target type 先于轴 verdict**：未解析 target_type 或 axis_applicability 时，不得把黑盒/白盒轴默认为 pass
 - **Axis report 先于聚合 verdict**：未收到四轴显式报告时，`milestone-gate` 不得在内部补跑轴检查或制造默认 axis verdict
 - **Same-carrier fallback 不是隔离 pass**：current-carrier 顺序执行四轴只能产生运行时缺口或 manual exception evidence，不能满足 sibling axis isolation
+- **Manual exception 不是 anti-cheat 消音器**：programmer 可以接受 blocked Gate 的业务风险，但不得删除、降级或改写 anti-cheat finding；证据可信度 verdict 必须保留给后续审计和 follow-up milestone。
+- **Acceptance verdict 不反写 Gate verdict**：`milestone_acceptance_verdict: accepted_with_manual_exception` 不等价于 `milestone_gate_verdict: pass`。任何读者必须同时读取 preserved Gate verdict 和 acceptance override，不能只看最终 completed 状态。
 - **not_applicable 不是 pass**：`not_applicable` 只能移出 mandatory pass 计算，不能提供正向完成证据
 - **substituted 必须有证据**：`substituted` 只有在替代验收证据存在并通过时才可视为 axis satisfied
 - **退化 AND 必须记录**：即使当前 evidence 状态简单到不需要聚合规则，也必须说明"为什么简单"而不是"跳过了规则"
