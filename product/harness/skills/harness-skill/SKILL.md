@@ -284,6 +284,8 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法真实创建 sibling axis carriers，Harness 必须记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`carrier_isolation_broken_any: true` 或 `dispatch_gap_reason`。这种运行时缺口不能被 `milestone-gate` 改写为 pass；只可作为 blocked/non-pass Gate evidence 或 programmer final acceptance manual exception 的事实来源。若无活跃 Milestone，跳过此额外绑定。
 
+若 programmer 在 final acceptance 层手动接受 non-pass Milestone Gate，Harness 写回时必须保留 `milestone_gate_verdict` 原值，并随 `manual_exception` 一起记录 `accepted_gate_verdict_preserved_as`、`anti_cheat_findings_preserved` 与 `manual_exception_followup_ref`。manual exception 只能表示验收层 override，不能删除、降级或改写 anticheat 轴的原始 finding。
+
 当存在活跃 goal-driven milestone 且仍有待执行 worktrack 时，Harness 以逐 worktrack 推进的方式运行当前 milestone：每次只派生一个当前 worktrack，为其建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪；完成当前 worktrack 的闭环后，再回到 RepoScope 选择下一个 current worktrack。
 
 **控制目标**：维护 Repo 的长期基线稳定，判断是否需要进入局部执行。

@@ -39,9 +39,9 @@ Milestone Gate 分为两个职责面：
 
 四轴报告不是 `milestone-gate` 内部临时产物，而是顶层 Harness dispatch 的正式输入。每个 axis report 至少需要包含：
 
-- `axis`: `black_box` / `white_box` / `anti_cheat` / `composite`
+- `axis`: `blackbox` / `whitebox` / `anticheat` / `composite`
 - `report_ref`: 稳定 evidence ref 或内联报告位置
-- `axis_verdict`: `pass` / `soft_fail` / `hard_fail` / `blocked` / `not_applicable`
+- `verdict`: `pass` / `soft_fail` / `hard_fail` / `blocked` / `not_applicable`
 - `severity`
 - `target_type`
 - `axis_applicability_state`
@@ -213,17 +213,17 @@ target_type_rules:
   target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
   target_type_confidence: high | medium | low
   axis_applicability:
-    black_box:
+    blackbox:
       state: applicable | not_applicable | substituted | blocked
       expected_method: external_behavior_scenario | artifact_acceptance_review | operator_simulation | N/A
       substituted_by: composite | professional_review | policy_check | N/A
       reason: string
-    white_box:
+    whitebox:
       state: applicable | not_applicable | substituted | blocked
       expected_method: structural_internal_analysis | artifact_structure_review | policy_structure_review | N/A
       substituted_by: composite | professional_review | policy_check | N/A
       reason: string
-    anti_cheat:
+    anticheat:
       state: applicable | not_applicable | substituted | blocked
       expected_method: evidence_integrity_review | N/A
       substituted_by: N/A
@@ -242,7 +242,7 @@ target_type_rules:
   slice_coverage:                 # required when target_type = mixed
     - slice_id: string
       slice_target_type: program_code | non_program_artifact | unknown
-      axis: black_box | white_box | anti_cheat | composite
+      axis: blackbox | whitebox | anticheat | composite
       applicability_state: applicable | not_applicable | substituted | blocked
       expected_method: string
       substitute_method: string | N/A
@@ -252,7 +252,7 @@ target_type_rules:
 
 ### Target routing matrix
 
-| target_type | black_box | white_box | anti_cheat | composite |
+| target_type | blackbox | whitebox | anticheat | composite |
 |-------------|-----------|-----------|------------|-----------|
 | `program_code` | `applicable`; use externally observable behavior scenarios, user-visible workflows, CLI/API responses, integration behavior, or regression scenarios. Must not read full implementation code. | `applicable`; use structural/internal evidence such as control flow, data flow, state transfer, interface contracts, dependency paths, and architecture alignment. May read implementation code. | `applicable`; verify evidence provenance, dispatch/profile integrity, and bypass risk. | `applicable`; consume code-review, feature-completeness, related-influence, intent-completeness, operator-simulation, and professional-review lanes. |
 | `non_program_artifact` | Usually `substituted` or `not_applicable`; use artifact acceptance review, reader/operator simulation, policy conformance, cross-reference validation, or professional review. Do not force runtime scenario tests when no program exists. | Usually `substituted` or `not_applicable`; use artifact structure review, rule consistency, traceability, terminology/interface consistency, or governance conformance. Do not pretend this is code-internal white-box testing. | `applicable`; evidence integrity still matters for docs, skill text, workflow policy, and research artifacts. | `applicable`; composite lanes are often the primary non-program acceptance surface. |
@@ -359,13 +359,13 @@ Composite acceptance lanes（black-box / white-box / anti-cheat / composite）�
 composite_lane_rules:
   consumption_mode: independent_axes_with_weight_modifier
   lane_axes:
-    black_box:
+    blackbox:
       aggregate: "lane-level verdict = AND of all WT black-box lane findings"
       veto_power: true   # black-box fail → milestone blocked，无论 per-WT aggregation 结果
-    white_box:
+    whitebox:
       aggregate: "lane-level verdict = AND of all WT white-box lane findings"
       veto_power: true
-    anti_cheat:
+    anticheat:
       aggregate: "lane-level verdict = AND of all WT anti-cheat signals; any high-severity finding → lane fail"
       veto_power: true   # cheating signal → milestone blocked
     composite:
@@ -375,18 +375,18 @@ composite_lane_rules:
     # 有限 B 降级：lane finding 可调整特定 WT 的权重，但不替代四轴判定
     enabled: true
     rules:
-      - lane: anti_cheat
+      - lane: anticheat
         finding: high_severity
         target_wt_weight: 0        # cheating signal 将对应 WT 的权重清零
-      - lane: black_box
+      - lane: blackbox
         finding: high_severity
         target_wt_weight: 0        # black-box 严重缺陷将对应 WT 权重清零
   final_verdict:
     pass_condition: |
       per_WT_aggregation_verdict == pass
-      AND axis_satisfied(black_box)
-      AND axis_satisfied(white_box)
-      AND axis_satisfied(anti_cheat)
+      AND axis_satisfied(blackbox)
+      AND axis_satisfied(whitebox)
+      AND axis_satisfied(anticheat)
       AND composite_verdict != hard_fail
 ```
 
@@ -411,7 +411,7 @@ degenerate_and_rules:
   trigger_conditions:
     all_satisfied:
       - no_contradiction_detected: true       # 无任何矛盾
-      - no_anti_cheat_high_severity: true      # 无反作弊高严重信号
+      - no_anticheat_high_severity: true      # 无反作弊高严重信号
       - all_lanes_consistent: true             # 所有 lane 一致（无 lane 级矛盾）
       - axis_applicability_resolved: true      # 所有轴均有 applicable / substituted / not_applicable / blocked 之一，且无 blocked
       - all_mandatory_axes_satisfied: true     # mandatory applicable / substituted 轴均满足 axis_satisfied
@@ -458,35 +458,35 @@ aggregator_input:
       gate_evidence: { ... }              # implementation/validation/policy gate verdicts
       closeout_record: { ... }
       composite_lane_findings:            # per-WT composite lane findings
-        black_box: pass | soft_fail | hard_fail
-        white_box: pass | soft_fail | hard_fail
-        anti_cheat: pass | high_severity
+        blackbox: pass | soft_fail | hard_fail
+        whitebox: pass | soft_fail | hard_fail
+        anticheat: pass | high_severity
         composite: pass | soft_fail | hard_fail
   axis_reports:
-    black_box:
-      axis: black_box
+    blackbox:
+      axis: blackbox
       report_ref: string
-      axis_verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
       severity: low | medium | high
       carrier: subagent | current-carrier | human | missing
       runtime_dispatch_profile: { ... }
       isolation_guarantee: true | false
       carrier_isolation_broken: true | false
       target_type: program_code | non_program_artifact | mixed | unknown
-      axis_applicability_state: applicable | not_applicable | substituted | blocked
+      axis_applicability_state: applicable | not_applicable | substituted | split | blocked
       expected_method: string
       checklist_results: [ ... ]
       missing_evidence: [ ... ]
-    white_box: { ... }
-    anti_cheat: { ... }
+    whitebox: { ... }
+    anticheat: { ... }
     composite: { ... }
   axis_dispatch_profile:
     dispatch_owner: top_level_harness
-    dispatch_model: sibling_axis_carriers | current_carrier_fallback | missing
+    dispatch_model: sibling_delegated | current_carrier_fallback | missing
     delegation_attempted_by_axis:
-      black_box: true | false
-      white_box: true | false
-      anti_cheat: true | false
+      blackbox: true | false
+      whitebox: true | false
+      anticheat: true | false
       composite: true | false
     carrier_isolation_broken_any: true | false
     same_carrier_cross_axis: true | false
@@ -498,6 +498,8 @@ aggregator_input:
     exception_type: programmer_acceptance_override | N/A
     reason: string | N/A
     accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
+    anti_cheat_findings_preserved: true | false | N/A
+    manual_exception_followup_ref: string | N/A
 ```
 
 ### aggregator 的输出
@@ -510,10 +512,11 @@ aggregator_output:
     aggregation_owner: milestone-gate
     axis_dispatch_consumed: true | false
     nested_axis_dispatch_attempted: false
-  axis_report_status:
-    black_box: present | missing | stale | contaminated | blocked
-    white_box: present | missing | stale | contaminated | blocked
-    anti_cheat: present | missing | stale | contaminated | blocked
+  axis_report_status: complete | missing | contaminated | isolation_broken | blocked_axis
+  axis_report_status_by_axis:
+    blackbox: present | missing | stale | contaminated | blocked
+    whitebox: present | missing | stale | contaminated | blocked
+    anticheat: present | missing | stale | contaminated | blocked
     composite: present | missing | stale | contaminated | blocked
   axis_dispatch_profile: { ... }
   aggregation_rules_applied: true | false
@@ -523,29 +526,29 @@ aggregator_output:
   target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
   axis_applicability_resolved: true | false
   axis_satisfaction:
-    black_box:
-      applicability_state: applicable | not_applicable | substituted | blocked
+    blackbox:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       axis_satisfied: true | false
       reason: string
       evidence_refs: [string]
-    white_box:
-      applicability_state: applicable | not_applicable | substituted | blocked
+    whitebox:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       axis_satisfied: true | false
       reason: string
       evidence_refs: [string]
-    anti_cheat:
-      applicability_state: applicable | not_applicable | substituted | blocked
+    anticheat:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       axis_satisfied: true | false
       reason: string
       evidence_refs: [string]
     composite:
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       axis_satisfied: true | false
       reason: string
       evidence_refs: [string]
   substitution_evidence_summary:
     by_axis:
-      black_box | white_box | anti_cheat | composite:
+      blackbox | whitebox | anticheat | composite:
         substitute_method: string | N/A
         substitution_evidence_ref: string | N/A
         substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
@@ -557,9 +560,9 @@ aggregator_output:
     blocked: true | false
     resolution_path: new_verification_worktrack | programmer_resolution | none
   composite_lane_verdicts:                 # 四轴聚合结论
-    black_box:
+    blackbox:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       substituted_by: string | N/A
       axis_satisfied: true | false
       veto_triggered: true | false
@@ -568,9 +571,9 @@ aggregator_output:
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
       evidence_covers_completion_signal: true | false | N/A
-    white_box:
+    whitebox:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       substituted_by: string | N/A
       axis_satisfied: true | false
       veto_triggered: true | false
@@ -579,9 +582,9 @@ aggregator_output:
       substitution_evidence_ref: string | N/A
       substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
       evidence_covers_completion_signal: true | false | N/A
-    anti_cheat:
+    anticheat:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       substituted_by: string | N/A
       axis_satisfied: true | false
       veto_triggered: true | false
@@ -604,8 +607,8 @@ aggregator_output:
   slice_coverage:                         # required for target_type = mixed
     - slice_id: string
       slice_target_type: program_code | non_program_artifact | unknown
-      axis: black_box | white_box | anti_cheat | composite
-      applicability_state: applicable | not_applicable | substituted | blocked
+      axis: blackbox | whitebox | anticheat | composite
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       expected_method: string
       substitute_method: string | N/A
       evidence_ref: string | N/A
@@ -617,6 +620,9 @@ aggregator_output:
     exception_type: programmer_acceptance_override | N/A
     gate_verdict_preserved: pass | soft_fail | hard_fail | blocked | N/A
     reason: string | N/A
+  accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
+  anti_cheat_findings_preserved: true | false | N/A
+  manual_exception_followup_ref: string | N/A
   aggregation_summary: string
 ```
 
@@ -625,7 +631,7 @@ aggregator_output:
 - `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
-- `anti_cheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs 和 `axis_report_status` 必须原样保留。
+- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true`。
 - `milestone_gate_verdict` 与 `milestone_acceptance_verdict` 是两层不同结论：前者回答 Gate 是否通过，后者回答 programmer 是否在看到 Gate 结果后接受 milestone。`accepted_with_manual_exception` 只能出现在 final acceptance 层，不能反向改变 Gate verdict、axis verdict 或 anti-cheat verdict。
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
@@ -660,16 +666,16 @@ aggregation_rules:
     target_type_source: milestone_artifact
     target_type_confidence: high
     axis_applicability:
-      black_box: { state: applicable, expected_method: external_behavior_scenario }
-      white_box: { state: applicable, expected_method: structural_internal_analysis }
-      anti_cheat: { state: applicable, expected_method: evidence_integrity_review }
+      blackbox: { state: applicable, expected_method: external_behavior_scenario }
+      whitebox: { state: applicable, expected_method: structural_internal_analysis }
+      anticheat: { state: applicable, expected_method: evidence_integrity_review }
       composite: { state: applicable, expected_method: composite_acceptance_lanes }
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
-      black_box: { veto_power: true }
-      white_box: { veto_power: true }
-      anti_cheat: { veto_power: true }
+      blackbox: { veto_power: true }
+      whitebox: { veto_power: true }
+      anticheat: { veto_power: true }
       composite: { veto_power: false }
     weight_modifier:
       enabled: true
@@ -699,15 +705,15 @@ aggregation_rules:
     target_type_source: milestone_artifact
     target_type_confidence: high
     axis_applicability:
-      black_box:
+      blackbox:
         state: substituted
         expected_method: artifact_acceptance_review
         substituted_by: operator_simulation
-      white_box:
+      whitebox:
         state: substituted
         expected_method: artifact_structure_review
         substituted_by: professional_review
-      anti_cheat:
+      anticheat:
         state: applicable
         expected_method: evidence_integrity_review
       composite:
@@ -716,9 +722,9 @@ aggregation_rules:
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
-      black_box: { veto_power: false }    # docs milestone 不强依赖 black-box
-      white_box: { veto_power: true }
-      anti_cheat: { veto_power: false }
+      blackbox: { veto_power: false }    # docs milestone 不强依赖 black-box
+      whitebox: { veto_power: true }
+      anticheat: { veto_power: false }
       composite: { veto_power: false }
     weight_modifier:
       enabled: false                      # docs milestone 不需要权重修饰

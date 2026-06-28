@@ -7,7 +7,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴复合验收中的 **anti-cheat lane**（反作弊轴），对应 `milestone-gate-aggregation.md` 中定义的 `composite_lane_rules.lane_axes.anti_cheat`。它不评判代码是否正确，只评判**证据是否可信**。
+本技能实现 Milestone Gate 四轴复合验收中的 **anti-cheat lane**（反作弊轴），对应 `milestone-gate-aggregation.md` 中定义的 `composite_lane_rules.lane_axes.anticheat`。它不评判代码是否正确，只评判**证据是否可信**。
 
 本技能检查以下 7 个反作弊维度（A1-A7），针对当前 milestone 下所有已闭环的 worktrack，逐条检测 fake-pass 信号：
 
@@ -45,7 +45,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
    - 每个 WT 的 `closeout_record`
    - 每个 WT 的 `self_review_record`（来自 `self-review-contract.md`）
    - 每个 WT 的 `dispatch_profile`（carrier identity、SubAgent 标记、模型标识）
-3. 载入当前 milestone 的 `aggregation_rules`（若声明），特别是 `composite_lane_rules.anti_cheat` 段。
+3. 载入当前 milestone 的 `aggregation_rules`（若声明），特别是 `composite_lane_rules.anticheat` 段。
 4. 对 A1-A7 逐项执行反作弊检测。
 5. 将每条检测结果归类为 `pass` / `soft_fail` / `hard_fail` / `blocked`，并记录对应的 `severity`、`evidence_refs` 和 `finding`。
 6. 综合 7 项检测结果产出 `anticheat_verdict`。
@@ -219,7 +219,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 根据 `milestone-gate-aggregation.md` 的 `composite_lane_rules`：
 
-- 本 lane 的 `verdict` 作为 `lane_axes.anti_cheat.aggregate verdict` 输出
+- 本 lane 的 `verdict` 作为 `lane_axes.anticheat.aggregate verdict` 输出
 - 本 lane 有 `veto_power: true`：`hard_fail` 或 `blocked` → milestone blocked，无论其他轴结果
 - 任何 `high` severity finding → 触发 `weight_modifier`：将对应 WT 的权重清零（cheating signal 使该 WT 失去对 milestone verdict 的贡献权重）
 

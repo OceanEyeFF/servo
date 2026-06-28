@@ -261,7 +261,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 以下字段由 `milestone-gate` skill 产出，本技能透传到 milestone 状态报告中：
 
 - `milestone_gate_verdict`、`aggregation_rules_applied`、`aggregation_rules_missing`、`per_worktrack_weights`、`contradiction_findings`、`contradiction_blocked`、`composite_lane_verdicts`、`degenerate_and_applied`、`degenerate_and_reason`、`carrier_isolation_broken`
-- `axis_reports`、`axis_report_status`、`axis_dispatch_profile`、`milestone_gate_execution_model`、`manual_exception`
+- `axis_reports`、`axis_report_status`、`axis_dispatch_profile`、`milestone_gate_execution_model`、`manual_exception`、`accepted_gate_verdict_preserved_as`、`anti_cheat_findings_preserved`、`manual_exception_followup_ref`
 
 详细格式见 `product/harness/skills/milestone-gate/SKILL.md#预期输出`。
 
@@ -275,6 +275,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
   - 更新 `updated` 时间戳
   - 写入 `milestone_gate_verdict` 和 `milestone_gate_summary`（来自 `milestone-gate` 输出）
   - 若 `aggregation_rules_applied == true`：透传 `milestone-gate` 输出的聚合状态字段到 milestone artifact
+  - 若存在 programmer final acceptance override：透传 `accepted_gate_verdict_preserved_as`、`anti_cheat_findings_preserved`、`manual_exception_followup_ref`，不得只写 `manual_exception` 而丢失原始 Gate/anticheat 证据保真字段
 - **Control State**（`.servo/control-state.md`）：
   - 写入 `milestone_input_checkpoint` 到 `Baseline Traceability`
   - 更新 `milestone_status`（若发生变化）
