@@ -9,6 +9,8 @@ description: 当 worktrack_list_finished 后，且顶层 Harness 已为 Mileston
 
 本技能实现 Milestone Gate 的 **聚合层**，是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
 
+在两层 Milestone Gate 模型中，**Layer 1** 由顶层 Harness 执行 sibling axis dispatch，产出 blackbox / whitebox / anticheat / composite 四份隔离报告；**Layer 2** 由本技能执行 aggregation，只消费显式 `axis_reports` 和 `axis_dispatch_profile`，不得补跑或继续分派轴检查。
+
 它是 **Gate Aggregator**：不自己做轴检查，也不继续分派 SubAgent；顶层 Harness 必须先把 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check` 作为 sibling axis carriers 执行，并把四个显式 `axis_reports` 与 `axis_dispatch_profile` 交给本技能。本技能只验证输入完整性、解析适用性、运行聚合规则，并产出 `milestone_gate_verdict`。
 
 调用关系：
@@ -90,7 +92,8 @@ axis_report:
   report_ref: ".servo/milestone/...#axis"
   observed_git_hash: "<hash>"
   target_type: program_code | non_program_artifact | mixed | unknown
-  axis_applicability: applicable | not_applicable | substituted | blocked
+  axis_applicability_state: applicable | not_applicable | substituted | split | blocked
+  axis_applicability_reason: string
   substitute_method: string | N/A
   substitution_evidence_ref: string | N/A
   substitute_verdict: pass | soft_fail | hard_fail | blocked | N/A
@@ -131,7 +134,7 @@ axis_report:
 
 1. **per-WT single-acceptance verdicts**：每个已闭环 WT 的 `verdict`、`node_type`、`critical_failure`
 2. **axis_reports**：顶层 Harness sibling axis carriers 产出的 4 个结构化报告
-3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与轴适用性字段
+3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与四轴适用性封套
 4. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
 5. **axis_dispatch_profile / axis_report_status**：顶层 Harness 分派与隔离证据
 
@@ -139,13 +142,13 @@ axis_report:
 
 ### Step 0：target_type_rules / axis_applicability resolution（目标类型与轴适用性解析）
 
-先解析 milestone 的 `target_type_rules`、每个轴 verdict 中的 `target_type` / `axis_applicability`，以及非程序替代验收字段：
+先解析 milestone 的 `target_type_rules`、每个轴报告中的 `target_type` / `axis_applicability_state`，以及非程序替代验收字段：
 
 - `target_type` 允许表达 `program_code`、`non_program_artifact`、`mixed` 或 `unknown`。
-- `axis_applicability` 至少区分 `applicable`、`not_applicable`、`substituted`、`blocked`。
+- 轴报告内的 `axis_applicability_state` 至少区分 `applicable`、`not_applicable`、`substituted`、`split`、`blocked`；`axis_applicability` 仅保留给 milestone/target_type_rules 的四轴封套使用。
 - `not_applicable` 必须带有 `target_type` 与明确原因；它只能把该轴从 mandatory pass 计算中移除，不能产生正向 evidence、不能覆盖 completion signal、不能等价为 `pass`。
 - `substituted` 必须带有 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict`、`evidence_covers_completion_signal`。只有 `substitute_verdict: pass` 且 `evidence_covers_completion_signal: true` 时，替代轴才可被判为 satisfied。
-- `mixed` 目标必须提供 `slice_coverage`，每个 slice 记录 `slice_target_type`、适用轴、使用方法、证据引用和 verdict。程序/代码 slice 的 pass 不能覆盖非程序 slice 的替代证据缺失；非程序 substitute pass 也不能覆盖程序/代码 slice 的 blackbox/whitebox 缺失。
+- `split` 或 `mixed` 目标必须提供 `slice_coverage`，每个 slice 记录 `slice_target_type`、适用轴、使用方法、证据引用和 verdict。程序/代码 slice 的 pass 不能覆盖非程序 slice 的替代证据缺失；非程序 substitute pass 也不能覆盖程序/代码 slice 的 blackbox/whitebox 缺失。
 - 目标类型未知、适用性字段互相矛盾、替代证据缺失、`slice_coverage` 缺失或无法映射 completion signal 时，设置 `axis_applicability_resolved: false`，最终 verdict 必须为 `blocked`。
 
 聚合器必须产出 `axis_satisfaction`，并用以下谓词代替原始 `verdict == pass`：
@@ -213,7 +216,7 @@ axis_satisfied(axis) =
 
 - `axis_applicability_resolved == true`
 - `no_contradiction_detected == true`
-- `no_anti_cheat_high_severity == true`
+- `no_anticheat_high_severity == true`
 - `all_lanes_consistent == true`
 - `no_weight_override_applied == true`
 - `all_critical_wt_pass == true`（所有 final_weight ≥ 4 的 WT pass）
@@ -271,6 +274,8 @@ axis_satisfied(axis) =
 - `isolation_note`：string
 - `manual_exception`：object | N/A — 只记录 programmer final acceptance override 的输入事实；不得把 Gate verdict 改写为 pass
 - `accepted_gate_verdict_preserved_as`：string | N/A
+- `anti_cheat_findings_preserved`：boolean | N/A — manual exception 后是否完整保留 anticheat 原始 finding、severity、affected evidence refs 与 affected scope
+- `manual_exception_followup_ref`：string | N/A — manual exception 产生的后续 milestone/worktrack/evidence 引用；无 follow-up 时必须显式 N/A
 
 ## 硬约束
 
@@ -280,16 +285,16 @@ axis_satisfied(axis) =
 2. **不得替代 worktrack gate**：Milestone Gate 位于所有 worktrack closeout 之后，不替代单个 WT 的 gate。
 3. **不得创建轴 carrier**：本技能不得调用、模拟调用或继续唤起 blackbox / whitebox / anticheat / composite axis skills。`nested_axis_dispatch_attempted` 必须为 false；若本技能尝试创建轴 carrier，最终 verdict 必须为 `blocked`。
 4. **轴间隔离只消费证据**：轴间隔离由顶层 Harness 的 `axis_dispatch_profile` 和各 axis reports 证明；本技能只能验证和聚合这些证据。
-5. **聚合顺序不可颠倒**：target_type / axis_applicability → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
+5. **聚合顺序不可颠倒**：target_type / axis_applicability_state → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
 6. **缺失输入必须暴露**：axis_reports、axis_dispatch_profile 或 aggregation_rules 缺失时必须标记对应缺口；axis report 缺失或隔离缺口不可静默假设。
 7. **不得进入后续阶段**：产出 verdict 后停止。purpose_achieved 判定和 writeback 由 milestone-status-skill 负责。
 8. **阻断必须显式**：veto / contradiction / critical fail 导致的 block 必须记录具体原因和可追溯证据。
-9. **轴适用性先于轴裁决**：未解析 `target_type_rules` / `axis_applicability` 时，不得把 raw axis verdict 聚合成 pass。
+9. **轴适用性先于轴裁决**：未解析 `target_type_rules` / axis report 的 `axis_applicability_state` 时，不得把 raw axis verdict 聚合成 pass。
 10. **not_applicable 不是 pass**：`not_applicable` 只能在 target type 和 reason 明确时移出 mandatory pass 计算，不能贡献 positive evidence、completion-signal coverage 或 weight bonus。
 11. **substituted 必须有证据**：`substituted` 轴缺少 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict: pass` 或 `evidence_covers_completion_signal: true` 时，`axis_satisfied(axis)` 必须为 false；若该轴 mandatory/veto-power，则 milestone verdict 为 `blocked`。
 12. **mixed 目标必须逐 slice 覆盖**：`target_type: mixed` 缺少 `slice_coverage` 或任一 slice 缺少对应适用轴证据时，不能用其他 slice 的 pass 补位，最终 verdict 必须为 `blocked` 或显式非 pass。
 13. **same-carrier fallback 不是隔离 pass**：`same_carrier_cross_axis == true`、`carrier_isolation_broken_any == true` 或 `dispatch_model: current_carrier_fallback` 只能作为 blocked/non-pass Gate evidence，不能被声明为 true isolation pass。
-14. **manual exception 不改写 Gate verdict**：manual exception 只属于 programmer final acceptance override。若 Gate verdict 因隔离或报告缺口 blocked，输出必须保留 blocked，并通过 `manual_exception` / `accepted_gate_verdict_preserved_as` 记录后续人工接受事实。
+14. **manual exception 不改写 Gate verdict**：manual exception 只属于 programmer final acceptance override。若 Gate verdict 因隔离或报告缺口 blocked，输出必须保留 blocked，并通过 `manual_exception` / `accepted_gate_verdict_preserved_as` / `anti_cheat_findings_preserved` / `manual_exception_followup_ref` 记录后续人工接受事实与保留证据。
 
 ## 资源
 

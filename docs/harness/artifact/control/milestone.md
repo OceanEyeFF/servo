@@ -44,9 +44,9 @@ last_verified: 2026-06-28
 | aggregation_rules | object | Per-milestone 可配置的证据聚合规则；字段合同见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md)。未声明时默认使用退化 AND 并在 milestone gate evidence 中标记 `aggregation_rules_missing: true` |
 | target_type | enum | Milestone Gate 目标类型：`program_code` / `non_program_artifact` / `mixed` / `unknown`。用于决定黑盒、白盒、反作弊与复合验收轴的适用性 |
 | target_type_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
-| gate_axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
-| gate_axis_reports | object | Milestone Gate 四个 sibling axis carrier 产出的显式报告引用与状态；每轴至少记录 `report_ref`、`axis_verdict`、`carrier`、`runtime_dispatch_profile`、`isolation_guarantee`、`carrier_isolation_broken` 与缺失/污染状态 |
-| gate_axis_dispatch_profile | object | 顶层 Harness 四轴分派画像；记录 `dispatch_owner: top_level_harness`、`dispatch_model`、per-axis delegation attempts、same-carrier fallback、runtime gap 和隔离破坏事实 |
+| axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
+| axis_reports | object | Milestone Gate 四个 sibling axis carrier 产出的显式报告引用与状态；每轴至少记录 `report_ref`、`verdict`、`carrier`、`runtime_dispatch_profile`、`isolation_guarantee`、`carrier_isolation_broken` 与缺失/污染状态 |
+| axis_dispatch_profile | object | 顶层 Harness 四轴分派画像；记录 `dispatch_owner: top_level_harness`、`dispatch_model`、per-axis delegation attempts、same-carrier fallback、runtime gap 和隔离破坏事实 |
 | updated | date | 最后更新时间 |
 | `priority` | integer | Pipeline 中的优先级（数值越小优先级越高） |
 | `activation_rules` | string | 自动激活条件（optional，harness-inferred）；描述 harness 可自动激活的前提，空值表示仅 manual |
@@ -150,22 +150,22 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 
 `target_type` 是 goal-driven milestone 的 Milestone Gate 前置路由字段。它回答“这个 milestone 最终交付物是什么类型”，从而决定黑盒、白盒、反作弊与复合验收轴应该如何取证。该字段不创建第三 Scope，不替代 `milestone_kind`，也不替代 Worktrack Contract。
 
-Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gate` skill 只消费顶层 Harness 提供的 `gate_axis_reports` 并运行 aggregation；它不得在自身内部继续唤起 blackbox/whitebox/anticheat/composite SubAgent。这样可以避免依赖某个 SubAgent 是否还能继续创建子 SubAgent。
+Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gate` skill 只消费顶层 Harness 提供的 `axis_reports` 并运行 aggregation；它不得在自身内部继续唤起 blackbox/whitebox/anticheat/composite SubAgent。这样可以避免依赖某个 SubAgent 是否还能继续创建子 SubAgent。
 
-`gate_axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
+`axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
 
 - `dispatch_owner: top_level_harness`
-- `dispatch_model: sibling_axis_carriers | current_carrier_fallback | missing`
+- `dispatch_model: sibling_delegated | current_carrier_fallback | missing`
 - `delegation_attempted_by_axis`
 - `carrier_isolation_broken_any`
 - `same_carrier_cross_axis`
 - `dispatch_gap_reason`
 
-`gate_axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
+`axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
 
-- `axis`: `black_box` / `white_box` / `anti_cheat` / `composite`
+- `axis`: `blackbox` / `whitebox` / `anticheat` / `composite`
 - `report_ref`
-- `axis_verdict`
+- `verdict`
 - `target_type`
 - `axis_applicability_state`
 - `expected_method`
@@ -187,7 +187,7 @@ Canonical values:
 | `mixed` | 同一 milestone 同时包含可运行程序和非程序 artifact | 必须按 worktrack 或 completion signal 拆分适用性；不能把整项 milestone 一概视为 program 或 non-program |
 | `unknown` | 目标类型缺失、矛盾或证据不足 | Milestone Gate 不得把任何轴默认为 pass；必须记录 `blocked`、`needs_programmer_review` 或 conservative fallback |
 
-`gate_axis_applicability` 记录四轴适用性。每个轴的 `state` 只能是：
+`axis_applicability` 记录四轴适用性。每个轴的 `state` 只能是：
 
 - `applicable`: 该轴按自身语义执行并产出 verdict。
 - `not_applicable`: 该轴对当前 target type 不适用；必须写明原因，且不能被聚合器当成 pass。
@@ -230,7 +230,7 @@ Non-program substitute acceptance 的最低证据合同：
 Mixed target 的最低约束：
 
 - 必须记录 slice-level coverage，最小粒度可以是 worktrack、completion signal、artifact component 或交付物路径。
-- 每个 slice 至少记录 `slice_id`、`slice_target_type`、适用 axis、`axis_applicability_state`、`substitute_method` 或正常测试方法、`evidence_ref` 与 verdict。
+- 每个 slice 至少记录 `slice_id`、`slice_target_type`、适用 axis、`applicability_state`、`substitute_method` 或正常测试方法、`evidence_ref` 与 verdict。
 - program_code slice 仍使用真实黑盒场景和白盒结构/内部分析；non_program_artifact slice 使用替代验收；不得用某一类 slice 的 pass 覆盖另一类 slice 的缺证。
 
 ## 生命周期
@@ -329,7 +329,7 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 goal-driven milestone 的 `completed` 写入分两层理解：
 
 - `milestone-status-skill` 输出 `milestone_acceptance_verdict == achieved` 且 `milestone_gate_verdict == pass`，表示该 milestone 已达到可交给 programmer final acceptance 的状态。
-- `milestone_gate_verdict != pass` 时，自动路径不得把 milestone 视为 achieved。若 programmer 明确选择带例外接受，写回的是 `milestone_acceptance_verdict: accepted_with_manual_exception`（或等价 final acceptance override），并必须保留 `milestone_gate_verdict`、`accepted_gate_verdict_preserved_as`、`manual_exception.reason` 和相关 axis/anti-cheat findings。
+- `milestone_gate_verdict != pass` 时，自动路径不得把 milestone 视为 achieved。若 programmer 明确选择带例外接受，写回的是 `milestone_acceptance_verdict: accepted_with_manual_exception`（或等价 final acceptance override），并必须保留 `milestone_gate_verdict`、`accepted_gate_verdict_preserved_as`、`manual_exception.reason`、`anti_cheat_findings_preserved`、`manual_exception_followup_ref` 和相关 axis/anticheat findings。
 - programmer 明确接受后，`harness-skill` 才执行 final acceptance writeback，把验收事实持久化为 runtime control-plane 状态。
 
 final acceptance writeback 是一个逻辑事务，不是只改某一个文件。事务最小写入集合包括 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，必要时还包括 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 状态的归一化。写回前必须校验输入状态，写回后必须复核 artifact 一致性；失败时进入 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞，不得把 milestone 伪装成已完成。

@@ -12,6 +12,7 @@ Milestone Gate 聚合治理测试
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -31,6 +32,14 @@ def read_skill(path: str) -> str:
     full = SKILLS_DIR / path / "SKILL.md"
     if not full.exists():
         fail(f"missing SKILL.md: {path}")
+        return ""
+    return full.read_text(encoding="utf-8")
+
+
+def read_repo_file(path: str) -> str:
+    full = REPO_ROOT / path
+    if not full.exists():
+        fail(f"missing file: {path}")
         return ""
     return full.read_text(encoding="utf-8")
 
@@ -182,6 +191,243 @@ def compute_verdict(
     if degenerate_applied:
         return "pass"
     return "pass"
+
+
+# ---------- 2. Axis report schema validation ----------
+
+CANONICAL_AXIS_IDS = {"blackbox", "whitebox", "anticheat", "composite"}
+LEGACY_AXIS_IDS = {"black_box", "white_box", "anti_cheat"}
+VALID_AXIS_APPLICABILITY_STATES = {
+    "applicable",
+    "not_applicable",
+    "substituted",
+    "split",
+    "blocked",
+}
+VALID_DISPATCH_MODELS = {
+    "sibling_delegated",
+    "mixed",
+    "current_carrier_fallback",
+    "missing",
+}
+REQUIRED_AXIS_REPORT_FIELDS = {
+    "axis",
+    "verdict",
+    "severity",
+    "checklist_results",
+    "carrier",
+    "isolation_guarantee",
+    "carrier_isolation_broken",
+    "report_ref",
+    "observed_git_hash",
+    "target_type",
+    "axis_applicability_state",
+    "axis_applicability_reason",
+}
+MANUAL_EXCEPTION_PRESERVATION_FIELDS = {
+    "accepted_gate_verdict_preserved_as",
+    "anti_cheat_findings_preserved",
+    "manual_exception_followup_ref",
+}
+CONTRACT_SCHEMA_FILES = [
+    "product/harness/skills/milestone-gate/SKILL.md",
+    "product/harness/skills/milestone-status-skill/SKILL.md",
+    "product/harness/skills/harness-skill/SKILL.md",
+    "docs/harness/artifact/standard-fields.md",
+    "docs/harness/artifact/control/milestone.md",
+    "docs/harness/artifact/control/milestone-gate-aggregation.md",
+]
+FORBIDDEN_SCHEMA_TOKENS = {
+    "gate_axis_reports",
+    "gate_axis_dispatch_profile",
+    "gate_axis_applicability",
+    "black_box",
+    "white_box",
+    "sibling_axis_carriers",
+}
+FORBIDDEN_SCHEMA_PATTERNS = [
+    re.compile(r"(?<![A-Za-z0-9_])axis_verdict(?![A-Za-z0-9_])"),
+]
+
+
+def validate_axis_report_bundle(payload: dict) -> list[str]:
+    errors: list[str] = []
+    reports = payload.get("axis_reports")
+    if not isinstance(reports, dict):
+        return ["axis_reports must be an object"]
+
+    report_keys = set(reports)
+    legacy_keys = sorted(report_keys & LEGACY_AXIS_IDS)
+    if legacy_keys:
+        errors.append(f"legacy axis ids present: {legacy_keys}")
+
+    missing_axes = sorted(CANONICAL_AXIS_IDS - report_keys)
+    if missing_axes:
+        errors.append(f"missing canonical axis reports: {missing_axes}")
+
+    unexpected_axes = sorted(report_keys - CANONICAL_AXIS_IDS - LEGACY_AXIS_IDS)
+    if unexpected_axes:
+        errors.append(f"unexpected axis report keys: {unexpected_axes}")
+
+    for axis, report in reports.items():
+        if not isinstance(report, dict):
+            errors.append(f"{axis}: report must be an object")
+            continue
+        if axis in CANONICAL_AXIS_IDS and report.get("axis") != axis:
+            errors.append(f"{axis}: axis field must equal report key")
+        if report.get("axis") in LEGACY_AXIS_IDS:
+            errors.append(f"{axis}: legacy axis value {report.get('axis')!r}")
+        if "axis_verdict" in report:
+            errors.append(f"{axis}: use verdict, not axis_verdict")
+        if "axis_applicability" in report:
+            errors.append(f"{axis}: report uses axis_applicability instead of axis_applicability_state")
+        missing_fields = sorted(REQUIRED_AXIS_REPORT_FIELDS - set(report))
+        if axis in CANONICAL_AXIS_IDS and missing_fields:
+            errors.append(f"{axis}: missing fields {missing_fields}")
+        state = report.get("axis_applicability_state")
+        if state is not None and state not in VALID_AXIS_APPLICABILITY_STATES:
+            errors.append(f"{axis}: invalid axis_applicability_state {state!r}")
+
+    profile = payload.get("axis_dispatch_profile", {})
+    if not isinstance(profile, dict):
+        errors.append("axis_dispatch_profile must be an object")
+    else:
+        dispatch_model = profile.get("dispatch_model")
+        if dispatch_model == "sibling_axis_carriers":
+            errors.append("dispatch_model uses legacy sibling_axis_carriers")
+        if dispatch_model not in VALID_DISPATCH_MODELS:
+            errors.append(f"invalid dispatch_model {dispatch_model!r}")
+
+    manual_exception = payload.get("manual_exception", {})
+    if isinstance(manual_exception, dict) and manual_exception.get("present") is True:
+        missing_preservation = [
+            field
+            for field in sorted(MANUAL_EXCEPTION_PRESERVATION_FIELDS)
+            if field not in payload and field not in manual_exception
+        ]
+        if missing_preservation:
+            errors.append(
+                f"manual exception missing preservation fields {missing_preservation}"
+            )
+        preserved = payload.get(
+            "anti_cheat_findings_preserved",
+            manual_exception.get("anti_cheat_findings_preserved"),
+        )
+        if preserved is not True:
+            errors.append("manual exception must preserve anti-cheat findings")
+
+    return errors
+
+
+def make_axis_report_bundle() -> dict:
+    reports = {}
+    for axis in sorted(CANONICAL_AXIS_IDS):
+        reports[axis] = {
+            "axis": axis,
+            "verdict": "pass",
+            "severity": "low",
+            "checklist_results": [],
+            "carrier": "subagent",
+            "isolation_guarantee": True,
+            "carrier_isolation_broken": False,
+            "report_ref": f".servo/milestone/MS-xxx.md#{axis}",
+            "observed_git_hash": "abc1234",
+            "target_type": "program_code",
+            "axis_applicability_state": "applicable",
+            "axis_applicability_reason": "program_code target",
+        }
+    return {
+        "axis_reports": reports,
+        "axis_dispatch_profile": {
+            "dispatch_owner": "top_level_harness",
+            "dispatch_model": "sibling_delegated",
+            "required_axes": sorted(CANONICAL_AXIS_IDS),
+            "completed_axes": sorted(CANONICAL_AXIS_IDS),
+            "missing_axes": [],
+            "same_carrier_cross_axis": False,
+            "carrier_isolation_broken_any": False,
+            "dispatch_gap_reason": "N/A",
+            "nested_axis_dispatch_attempted": False,
+        },
+        "manual_exception": {"present": False},
+        "accepted_gate_verdict_preserved_as": "N/A",
+        "anti_cheat_findings_preserved": "N/A",
+        "manual_exception_followup_ref": "N/A",
+    }
+
+
+def test_axis_report_schema_complete_bundle():
+    payload = make_axis_report_bundle()
+    errors = validate_axis_report_bundle(payload)
+    assert not errors, f"expected valid bundle, got {errors}"
+    print("  PASS: axis_report_schema_complete_bundle")
+
+
+def test_axis_report_schema_rejects_missing_axis():
+    payload = make_axis_report_bundle()
+    del payload["axis_reports"]["anticheat"]
+    errors = validate_axis_report_bundle(payload)
+    assert any("missing canonical axis reports" in e for e in errors), errors
+    print("  PASS: axis_report_schema_missing_axis")
+
+
+def test_axis_report_schema_rejects_legacy_aliases():
+    payload = make_axis_report_bundle()
+    legacy = payload["axis_reports"].pop("blackbox")
+    legacy["axis"] = "black_box"
+    legacy["axis_verdict"] = legacy.pop("verdict")
+    payload["axis_reports"]["black_box"] = legacy
+    payload["axis_dispatch_profile"]["dispatch_model"] = "sibling_axis_carriers"
+    errors = validate_axis_report_bundle(payload)
+    assert any("legacy axis ids present" in e for e in errors), errors
+    assert any("legacy axis value" in e for e in errors), errors
+    assert any("axis_verdict" in e for e in errors), errors
+    assert any("legacy sibling_axis_carriers" in e for e in errors), errors
+    print("  PASS: axis_report_schema_legacy_aliases")
+
+
+def test_axis_report_schema_requires_manual_exception_preservation():
+    payload = make_axis_report_bundle()
+    payload["manual_exception"] = {
+        "present": True,
+        "exception_type": "programmer_acceptance_override",
+        "reason": "manual acceptance after blocked gate",
+    }
+    for field in MANUAL_EXCEPTION_PRESERVATION_FIELDS:
+        payload.pop(field, None)
+    errors = validate_axis_report_bundle(payload)
+    assert any("missing preservation fields" in e for e in errors), errors
+    assert any("must preserve anti-cheat findings" in e for e in errors), errors
+
+    payload["accepted_gate_verdict_preserved_as"] = "blocked"
+    payload["anti_cheat_findings_preserved"] = True
+    payload["manual_exception_followup_ref"] = "WT-followup"
+    errors = validate_axis_report_bundle(payload)
+    assert not errors, f"expected valid manual exception preservation, got {errors}"
+    print("  PASS: axis_report_schema_manual_exception_preservation")
+
+
+def test_contract_docs_use_canonical_axis_schema():
+    anticheat_alias = re.compile(r"(?<![A-Za-z0-9_])anti_cheat(?!_findings_preserved)")
+    for path in CONTRACT_SCHEMA_FILES:
+        text = read_repo_file(path)
+        for token in FORBIDDEN_SCHEMA_TOKENS:
+            assert token not in text, f"{path}: forbidden legacy token {token}"
+        for pattern in FORBIDDEN_SCHEMA_PATTERNS:
+            assert not pattern.search(text), f"{path}: forbidden legacy axis_verdict field"
+        assert not anticheat_alias.search(text), f"{path}: forbidden anti_cheat axis alias"
+
+    gate_text = read_repo_file("product/harness/skills/milestone-gate/SKILL.md")
+    assert "axis_applicability_state" in gate_text
+    assert "axis_applicability: applicable" not in gate_text
+    assert "anti_cheat_findings_preserved" in gate_text
+
+    aggregation_text = read_repo_file(
+        "docs/harness/artifact/control/milestone-gate-aggregation.md"
+    )
+    assert "axis_report_status_by_axis" in aggregation_text
+    assert "dispatch_model: sibling_delegated" in aggregation_text
+    print("  PASS: contract_docs_canonical_axis_schema")
 
 
 def test_aggregator_all_pass():
@@ -374,7 +620,7 @@ def test_aggregator_override():
     print("  PASS: weight_override")
 
 
-# ---------- 2. Axis skill structure validation ----------
+# ---------- 3. Axis skill structure validation ----------
 
 AXIS_SKILLS = [
     "milestone-blackbox-check",
@@ -411,7 +657,7 @@ def test_axis_skills_have_permission_boundary():
     print("  PASS: axis_permission_boundary")
 
 
-# ---------- 3. Routing validation ----------
+# ---------- 4. Routing validation ----------
 
 
 def test_gate_skill_exists():
@@ -455,6 +701,19 @@ def main() -> int:
         test_aggregator_weight_modifier,
         test_aggregator_degenerate_and,
         test_aggregator_override,
+    ]:
+        try:
+            test()
+        except AssertionError as e:
+            fail(f"{test.__name__}: {e}")
+
+    print("\n--- Axis report schema tests ---")
+    for test in [
+        test_axis_report_schema_complete_bundle,
+        test_axis_report_schema_rejects_missing_axis,
+        test_axis_report_schema_rejects_legacy_aliases,
+        test_axis_report_schema_requires_manual_exception_preservation,
+        test_contract_docs_use_canonical_axis_schema,
     ]:
         try:
             test()
