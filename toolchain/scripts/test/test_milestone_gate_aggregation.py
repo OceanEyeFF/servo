@@ -276,8 +276,33 @@ VALID_AXIS_REPORT_STATUS_BY_AXIS = {
 MANUAL_EXCEPTION_PRESERVATION_FIELDS = {
     "accepted_gate_verdict_preserved_as",
     "anti_cheat_findings_preserved",
+    "historical_gap_preserved",
     "manual_exception_followup_ref",
 }
+ANTICHEAT_SEVERITY_DEFAULTS = {
+    "A1": "high",
+    "A2": "high",
+    "A3": "high",
+    "A4": "high",
+    "A5": "high",
+    "A6": "medium",
+    "A7": "high",
+}
+ANTICHEAT_SEVERITY_REQUIRED_FIELDS = {
+    "default_severity",
+    "soft_fail_triggers",
+    "hard_fail_triggers",
+    "blocking_triggers",
+    "aggregation_impact",
+}
+ANTICHEAT_HISTORICAL_GAP_REQUIRED_TERMS = [
+    "historical_gap is visible non-positive evidence",
+    "distinct from missing, incomplete, and contaminated",
+    "not a waiver",
+    "not a pass",
+    "manual exception",
+    "historical_gap_preserved",
+]
 CONTRACT_SCHEMA_FILES = [
     "product/harness/skills/milestone-gate/SKILL.md",
     "product/harness/skills/milestone-status-skill/SKILL.md",
@@ -639,6 +664,12 @@ def validate_axis_report_bundle(payload: dict) -> list[str]:
         )
         if preserved is not True:
             errors.append("manual exception must preserve anti-cheat findings")
+        historical_gap_preserved = payload.get(
+            "historical_gap_preserved",
+            manual_exception.get("historical_gap_preserved"),
+        )
+        if historical_gap_preserved is not True:
+            errors.append("manual exception must preserve historical_gap fields")
 
     return errors
 
@@ -1206,10 +1237,125 @@ def test_axis_report_schema_requires_manual_exception_preservation():
 
     payload["accepted_gate_verdict_preserved_as"] = "blocked"
     payload["anti_cheat_findings_preserved"] = True
+    payload["historical_gap_preserved"] = True
     payload["manual_exception_followup_ref"] = "WT-followup"
     errors = validate_axis_report_bundle(payload)
     assert not errors, f"expected valid manual exception preservation, got {errors}"
     print("  PASS: axis_report_schema_manual_exception_preservation")
+
+
+def _extract_anticheat_severity_config(text: str) -> str:
+    match = re.search(
+        r"```yaml\nanticheat_severity_config:\n(?P<body>.*?)\n```",
+        text,
+        re.S,
+    )
+    assert match, "missing anticheat_severity_config yaml block"
+    return "anticheat_severity_config:\n" + match.group("body")
+
+
+def _extract_check_config(config: str, check_id: str) -> str:
+    match = re.search(
+        rf"    {check_id}:\n(?P<body>.*?)(?=\n    A[1-7]:|\n```|\Z)",
+        config,
+        re.S,
+    )
+    assert match, f"missing severity config for {check_id}"
+    return match.group("body")
+
+
+def test_anticheat_severity_config_contract_terms():
+    skill_text = read_skill("milestone-anticheat-check")
+    config = _extract_anticheat_severity_config(skill_text)
+
+    for check_id, expected_severity in ANTICHEAT_SEVERITY_DEFAULTS.items():
+        check_config = _extract_check_config(config, check_id)
+        for field in ANTICHEAT_SEVERITY_REQUIRED_FIELDS:
+            assert field in check_config, f"{check_id}: missing {field}"
+        assert f"default_severity: {expected_severity}" in check_config, (
+            f"{check_id}: default severity weakened or changed"
+        )
+        assert "hard_fail_veto" in check_config, f"{check_id}: missing hard_fail veto"
+        assert "blocked_veto" in check_config, f"{check_id}: missing blocked veto"
+        if expected_severity == "high":
+            assert "high_severity_weight_modifier" in check_config, (
+                f"{check_id}: missing high severity weight modifier"
+            )
+
+    assert "veto_power: true" in config
+    assert "target_wt_weight: 0" in config
+    assert "severity_source" in skill_text
+    assert "trigger_type" in skill_text
+    assert "explicit_override" in skill_text
+
+    aggregation_text = read_repo_file(
+        "docs/harness/artifact/control/milestone-gate-aggregation.md"
+    )
+    for token in (
+        "anticheat_severity_config",
+        "required_check_ids: [A1, A2, A3, A4, A5, A6, A7]",
+        "default_severity",
+        "soft_fail_triggers",
+        "hard_fail_triggers",
+        "blocking_triggers",
+        "weight_modifier.enabled=true; target_wt_weight=0",
+    ):
+        assert token in aggregation_text, f"aggregation contract missing {token}"
+    print("  PASS: anticheat_severity_config_contract_terms")
+
+
+def test_historical_gap_preservation_contract_terms():
+    paths = [
+        "product/harness/skills/milestone-anticheat-check/SKILL.md",
+        "docs/harness/artifact/control/milestone-gate-aggregation.md",
+        "docs/harness/artifact/worktrack/closeout-evidence-bundle.md",
+    ]
+    for path in paths:
+        text = read_repo_file(path)
+        lower_text = text.lower().replace("`", "")
+        for term in ANTICHEAT_HISTORICAL_GAP_REQUIRED_TERMS:
+            assert term.lower() in lower_text, (
+                f"{path}: missing historical_gap term {term!r}"
+            )
+        assert "synthetic pass evidence" in lower_text, (
+            f"{path}: missing synthetic pass preservation guard"
+        )
+    print("  PASS: historical_gap_preservation_contract_terms")
+
+
+def test_docs_milestone_example_preserves_anticheat_defaults():
+    text = read_repo_file("docs/harness/artifact/control/milestone-gate-aggregation.md")
+    match = re.search(
+        r"## 十、示例：Docs Milestone 的 aggregation_rules(?P<section>.*?)(?=\n## 十一、)",
+        text,
+        re.S,
+    )
+    assert match, "missing docs milestone aggregation example"
+    section = match.group("section")
+    guard_patterns = (
+        re.compile(r"bounded manual exception", re.I),
+        re.compile(r"manual[- ]exception", re.I),
+        re.compile(r"bounded[- ]override", re.I),
+        re.compile(r"不得删除、降级或覆盖"),
+    )
+
+    risky_patterns = [
+        re.compile(r"anticheat:\s*\{\s*veto_power:\s*false\s*\}"),
+        re.compile(r"weight_modifier\.enabled:\s*false"),
+        re.compile(r"weight_modifier:\n(?:[^\n]*\n){0,6}?\s+enabled:\s*false"),
+    ]
+    for pattern in risky_patterns:
+        for finding in pattern.finditer(text):
+            window = text[max(0, finding.start() - 500) : finding.end() + 500]
+            assert any(guard.search(window) for guard in guard_patterns), (
+                "aggregation doc contains anti-cheat default override "
+                f"{finding.group(0)!r} without an explicit manual exception or "
+                "bounded override guard"
+            )
+
+    assert "anticheat: { veto_power: true }" in section
+    assert "enabled: true" in section
+    print("  PASS: docs_milestone_example_preserves_anticheat_defaults")
 
 
 def test_contract_docs_use_canonical_axis_schema():
@@ -1535,6 +1681,9 @@ def main() -> int:
         test_axis_report_schema_requires_dispatch_profile_axis_maps,
         test_axis_report_schema_requires_status_and_report_fields,
         test_axis_report_schema_requires_manual_exception_preservation,
+        test_anticheat_severity_config_contract_terms,
+        test_historical_gap_preservation_contract_terms,
+        test_docs_milestone_example_preserves_anticheat_defaults,
         test_contract_docs_use_canonical_axis_schema,
     ]:
         try:

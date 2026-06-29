@@ -368,9 +368,23 @@ composite_lane_rules:
     anticheat:
       aggregate: "lane-level verdict = AND of all WT anti-cheat signals; any high-severity finding → lane fail"
       veto_power: true   # cheating signal → milestone blocked
+      severity_config_ref: "product/harness/skills/milestone-anticheat-check/SKILL.md#Severity-Configuration-Contract"
     composite:
       aggregate: "lane-level verdict = AND of all WT composite lane findings"
       veto_power: false  # composite lane 是总体判断，不单独 block
+  anticheat_severity_config:
+    schema_version: "anticheat-severity-config/v1"
+    required_check_ids: [A1, A2, A3, A4, A5, A6, A7]
+    required_fields:
+      - default_severity
+      - soft_fail_triggers
+      - hard_fail_triggers
+      - blocking_triggers
+      - aggregation_impact
+    aggregation_impact_contract:
+      hard_fail: "veto_power=true; milestone_gate_verdict=blocked"
+      blocked: "veto_power=true; milestone_gate_verdict=blocked"
+      high_severity: "weight_modifier.enabled=true; target_wt_weight=0"
   weight_modifier:
     # 有限 B 降级：lane finding 可调整特定 WT 的权重，但不替代四轴判定
     enabled: true
@@ -510,6 +524,7 @@ aggregator_input:
     reason: string | N/A
     accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
     anti_cheat_findings_preserved: true | false | N/A
+    historical_gap_preserved: true | false | N/A
     manual_exception_followup_ref: string | N/A
 ```
 
@@ -633,6 +648,7 @@ aggregator_output:
     reason: string | N/A
   accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
   anti_cheat_findings_preserved: true | false | N/A
+  historical_gap_preserved: true | false | N/A
   manual_exception_followup_ref: string | N/A
   aggregation_summary: string
 ```
@@ -643,7 +659,8 @@ aggregator_output:
 - `closeout_evidence_bundle_ref` 缺失、bundle 不完整、bundle contaminated，或只有 prose closeout summary 时，不得后验合成 self-review、dispatch provenance 或 composite lane evidence。该 worktrack 必须以 `missing` / `incomplete` / `contaminated` / `historical_gap` 状态进入 axis checks 和 aggregation。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
-- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true`。
+- `historical_gap` is visible non-positive evidence, distinct from `missing`, `incomplete`, and `contaminated`; it is not a waiver and not a pass. Aggregation may let programmer final acceptance acknowledge the legacy gap, but it must preserve the original `historical_gap` status and must not synthesize positive evidence or synthetic pass evidence from it.
+- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass、self-review bias 或 `historical_gap`，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、historical gap fields、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true` 与 `historical_gap_preserved: true`。
 - `milestone_gate_verdict` 与 `milestone_acceptance_verdict` 是两层不同结论：前者回答 Gate 是否通过，后者回答 programmer 是否在看到 Gate 结果后接受 milestone。`accepted_with_manual_exception` 只能出现在 final acceptance 层，不能反向改变 Gate verdict、axis verdict 或 anti-cheat verdict。
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
@@ -736,10 +753,10 @@ aggregation_rules:
     lane_axes:
       blackbox: { veto_power: false }    # docs milestone 不强依赖 black-box
       whitebox: { veto_power: true }
-      anticheat: { veto_power: false }
+      anticheat: { veto_power: true }    # evidence credibility finding 仍可 block
       composite: { veto_power: false }
     weight_modifier:
-      enabled: false                      # docs milestone 不需要权重修饰
+      enabled: true                       # anti-cheat high severity 仍将对应 WT 权重清零
   degenerate_and_rules:
     recording_required: true
 ```
@@ -747,7 +764,8 @@ aggregation_rules:
 注意 release vs docs milestone 的区别：
 
 - release 的 black-box 和 anti-cheat 有 veto power
-- docs 的 white-box（review quality）有 veto power，但 black-box 没有
+- docs 的 white-box（review quality）和 anti-cheat 有 veto power，但 black-box 没有
+- 若 operator 手动偏离 anti-cheat veto 或 weight modifier 默认值，必须作为 bounded manual exception 记录，且不得删除、降级或覆盖 anti-cheat findings、severity、affected evidence refs 或 `historical_gap` 字段
 - 这体现了"不同 milestone 对证据的要求不同"
 
 ## 十一、约束与保证

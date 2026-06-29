@@ -52,6 +52,75 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 7. 在综合前，确认没有跨轴泄露：若本轴上下文被注入了其他轴的 verdict，在 verdict 中显式记录。
 8. 返回结构化 `anti-cheat lane report`。在 milestone gate 综合之前停止。
 
+## Severity Configuration Contract
+
+每次运行本技能时，必须把实际使用的 `anticheat_severity_config` 暴露在报告中，或用 `severity_config_ref` 指向本节。A1-A7 的 default severity、soft/hard/blocking triggers 和聚合影响不得只藏在 prose 推理中。
+
+```yaml
+anticheat_severity_config:
+  schema_version: "anticheat-severity-config/v1"
+  aggregation_defaults:
+    veto_power: true
+    hard_fail_impact: "milestone_gate_verdict=blocked"
+    blocked_impact: "milestone_gate_verdict=blocked"
+    high_severity_weight_modifier:
+      enabled: true
+      target_wt_weight: 0
+  checks:
+    A1:
+      default_severity: high
+      soft_fail_triggers: ["mock_or_fixture_present_with_real_integration_evidence"]
+      hard_fail_triggers: ["feature_or_release_all_mock_based_without_real_integration"]
+      blocking_triggers: ["validation_evidence_missing_or_unreadable"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A2:
+      default_severity: high
+      soft_fail_triggers: ["unexplained_reuse_without_critical_coverage"]
+      hard_fail_triggers: ["reuse_across_three_or_more_wt_or_all_critical_wt"]
+      blocking_triggers: ["evidence_refs_missing_or_hash_unavailable"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A3:
+      default_severity: high
+      soft_fail_triggers: ["cross_wt_integration_required_but_coverage_incomplete"]
+      hard_fail_triggers: ["cross_wt_integration_required_and_no_cross_wt_evidence"]
+      blocking_triggers: ["cannot_determine_cross_wt_integration_requirement"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A4:
+      default_severity: high
+      soft_fail_triggers: ["required_gate_sections_present_but_empty_or_placeholder"]
+      hard_fail_triggers: ["self_review_gate_evidence_or_closeout_gate_verdict_missing"]
+      blocking_triggers: ["closeout_record_unavailable_for_required_wt"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A5:
+      default_severity: high
+      soft_fail_triggers: ["reused_or_mixed_evidence_with_clear_refs_but_no_refresh_note"]
+      hard_fail_triggers: ["source_ref_older_than_claimed_checkpoint_marked_fresh"]
+      blocking_triggers: ["source_ref_checkpoint_or_observed_hash_missing"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A6:
+      default_severity: medium
+      soft_fail_triggers: ["self_review_overlap_used_as_only_credibility_evidence"]
+      hard_fail_triggers: ["self_gate_overlap"]
+      blocking_triggers: ["dispatch_profile_or_carrier_identity_missing"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "medium_severity_records_risk"]
+    A7:
+      default_severity: high
+      soft_fail_triggers: ["governance_rule_severity_config_unreadable"]
+      hard_fail_triggers: ["all_governance_rules_warning_no_error_rules"]
+      blocking_triggers: ["policy_evidence_required_but_missing"]
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+```
+
+报告中的 `checklist_results[]` 必须记录 `check_id`、`verdict`、`severity`、`severity_source`（`default` / `explicit_override`）、`trigger_type`（`soft_fail_trigger` / `hard_fail_trigger` / `blocking_trigger` / `not_triggered`）、`aggregation_impact` 和 `evidence_refs`。任何 override 必须给出 source ref；无 source ref 的 override 无效。
+
+## Historical Gap Policy
+
+`historical_gap` is visible non-positive evidence. It is distinct from `missing`, `incomplete`, and `contaminated`: `missing` means evidence should exist under the current contract, `incomplete` means a linked record lacks required fields, `contaminated` means present evidence is unreliable, and `historical_gap` means an older Worktrack predates the capture contract.
+
+`historical_gap` is not a waiver and not a pass. It must remain in `missing_evidence`, `checklist_results[].evidence_state`, `bundle_completeness.historical_gap_fields`, or equivalent structured output so later reviewers can distinguish legacy absence from current process failure.
+
+Manual exception may accept the residual delivery risk, but it must preserve `historical_gap` fields and anti-cheat findings. When manual exception is present, the report must record `historical_gap_preserved: true`. It must not erase, rewrite, or convert historical gaps into synthetic pass evidence.
+
 ## 逐项检测细则
 
 ### A1 — Mock Abuse Detection
