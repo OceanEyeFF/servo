@@ -93,7 +93,10 @@ axis_report:
   observed_git_hash: "<hash>"
   target_type: program_code | non_program_artifact | mixed | unknown
   axis_applicability_state: applicable | not_applicable | substituted | split | blocked
+  expected_method: string
   axis_applicability_reason: string
+  runtime_dispatch_profile: { ... }
+  missing_evidence: [...]
   substitute_method: string | N/A
   substitution_evidence_ref: string | N/A
   substitute_verdict: pass | soft_fail | hard_fail | blocked | N/A
@@ -104,10 +107,12 @@ axis_report:
 
 `axis_dispatch_profile` 至少包含：
 
+- `dispatch_owner`: `top_level_harness`
 - `dispatch_model`: `sibling_delegated` / `mixed` / `current_carrier_fallback` / `missing`
 - `required_axes`: blackbox / whitebox / anticheat / composite
 - `completed_axes`
 - `missing_axes`
+- `delegation_attempted_by_axis`: object
 - `same_carrier_cross_axis`: boolean
 - `carrier_isolation_broken_any`: boolean
 - `dispatch_gap_reason`: string | N/A
@@ -253,7 +258,7 @@ axis_satisfied(axis) =
 - `nested_axis_dispatch_attempted`：false
 - `axis_reports`：object — blackbox / whitebox / anticheat / composite 原始报告引用与压缩摘要
 - `axis_report_status`：complete / missing / contaminated / isolation_broken / blocked_axis
-- `axis_dispatch_profile`：object — dispatch_model、missing_axes、same_carrier_cross_axis、carrier_isolation_broken_any、dispatch_gap_reason、per_axis_runtime_dispatch_profile
+- `axis_dispatch_profile`：object — dispatch_owner、dispatch_model、required_axes、completed_axes、missing_axes、delegation_attempted_by_axis、same_carrier_cross_axis、carrier_isolation_broken_any、dispatch_gap_reason、per_axis_runtime_dispatch_profile、nested_axis_dispatch_attempted
 - `aggregation_rules_applied`：boolean
 - `aggregation_rules_missing`：boolean
 - `aggregation_rules_source`：string

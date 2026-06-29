@@ -484,15 +484,24 @@ aggregator_input:
     composite: { ... }
   axis_dispatch_profile:
     dispatch_owner: top_level_harness
-    dispatch_model: sibling_delegated | current_carrier_fallback | missing
+    dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing
+    required_axes: [blackbox, whitebox, anticheat, composite]
+    completed_axes: [blackbox, whitebox, anticheat, composite]
+    missing_axes: []
     delegation_attempted_by_axis:
       blackbox: true | false
       whitebox: true | false
       anticheat: true | false
       composite: true | false
+    per_axis_runtime_dispatch_profile:
+      blackbox: { ... }
+      whitebox: { ... }
+      anticheat: { ... }
+      composite: { ... }
     carrier_isolation_broken_any: true | false
     same_carrier_cross_axis: true | false
     dispatch_gap_reason: string | N/A
+    nested_axis_dispatch_attempted: false
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
   target_type_rules: { ... }              # target_type 与 axis_applicability
   manual_exception:
