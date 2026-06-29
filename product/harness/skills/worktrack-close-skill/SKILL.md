@@ -117,9 +117,22 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
   - `worktrack_gate_evidence`
   - `closeout_gate_evidence`
   - `dispatch_provenance`
+    - `status`
+    - `runtime_dispatch_record_ref`
+    - `subagent_dispatch_record_refs`
+    - `missing_dispatch_record_refs`
+    - `dispatch_result_status`
+    - `resolved_runtime_dispatch_status`
   - `composite_lane_records`
   - `repo_refresh_checkpoint`
   - `bundle_completeness`
+- `dispatch_provenance_summary`
+  - `dispatch_provenance.status`
+  - `runtime_dispatch_record_ref`
+  - `subagent_dispatch_record_refs`
+  - `missing_dispatch_record_refs`
+  - `dispatch_result_status`
+  - `resolved_runtime_dispatch_status`
 - `closeout_evidence_bundle_ref`
 - `closeout_bundle_status`: complete / incomplete / contaminated / historical_gap
 - `基准分支`
@@ -192,7 +205,8 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 - `代码仓库刷新交接` 的基线追溯字段必须显式填充。省略基线追溯字段的行为必须被阻断
 - `closeout_record` 不单独写入新的长期 Worktrack artifact；它必须作为 `关闭工作追踪报告` 与 `代码仓库刷新交接` 的结构化 section 输出，并由 repo-refresh 后续写入 repo 级 backlog / snapshot。省略 `decision_refs` 或闭环状态字段的行为必须显式说明原因
 - `closeout_evidence_bundle` 是 closeout report / repo-refresh handoff 中的结构化 evidence envelope。若某项 evidence 未在执行时捕获，必须写为 `missing`；若历史 Worktrack 因旧合同未捕获，必须写为 `historical_gap`；不得后验合成 self-review、dispatch provenance 或 composite lane evidence。
-- `dispatch_provenance` 的唯一合法正向证据是 linked `runtime_dispatch_record_ref` 与 `subagent_dispatch_record_refs`。Close 可以保留、转写和标记这些 refs 的状态，并必须携带 `dispatch_provenance_status`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；不得从 closeout prose、carrier 自述、模型名或 touched files 推断 delegated SubAgent execution。
+- `dispatch_provenance` 的唯一合法正向证据是 linked `runtime_dispatch_record_ref` 与 `subagent_dispatch_record_refs`。Close 可以保留、转写和标记这些 refs 的状态，并必须在 `closeout_evidence_bundle.dispatch_provenance` 和 `代码仓库刷新交接.dispatch_provenance_summary` 中原样携带 `dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；不得从 closeout prose、carrier 自述、模型名或 touched files 推断 delegated SubAgent execution。
+- 如果 Close 无法 dereference 预期的 dispatch record，必须将 `dispatch_provenance.status` 标记为 `missing` / `incomplete` / `historical_gap` / `contaminated` 之一，并设置对应的 `resolved_runtime_dispatch_status`；不得把 `current_carrier_fallback`、`delegated`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked`、`historical_gap` 压缩成 prose summary 或 generic failure。
 - `代码仓库刷新交接` 必须同时填充节点策略字段，并说明 expected baseline 与 actual checkpoint 是否匹配
 - 重复性上下文（如 worktrack contract 摘要）的唯一合法呈现形式是文件路径引用 `[.servo/worktrack/contract.md#section]`。内联全文的行为禁止发生
 - 如果某个字段无实质内容，唯一合法行为是使用 `N/A` 或省略。用占位符填充的行为必须被阻断
