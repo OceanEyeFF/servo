@@ -155,11 +155,16 @@ Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gat
 `axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
 
 - `dispatch_owner: top_level_harness`
-- `dispatch_model: sibling_delegated | current_carrier_fallback | missing`
+- `dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing`
+- `required_axes`
+- `completed_axes`
+- `missing_axes`
 - `delegation_attempted_by_axis`
+- `per_axis_runtime_dispatch_profile`
 - `carrier_isolation_broken_any`
 - `same_carrier_cross_axis`
 - `dispatch_gap_reason`
+- `nested_axis_dispatch_attempted: false`
 
 `axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
 

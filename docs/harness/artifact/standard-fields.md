@@ -68,7 +68,7 @@ last_verified: 2026-06-28
 | `axis_reports` | `object` | 顶层 Harness sibling axis dispatch 产出的四轴显式报告封套，供 `milestone-gate` 聚合消费 | `harness-skill`, `milestone-gate` |
 | `axis_report_status` | `complete \| missing \| contaminated \| isolation_broken \| blocked_axis` | 四轴报告封套的整体状态；任何非 `complete` 值都属于 non-pass Gate fact | `milestone-gate` |
 | `axis_report_status_by_axis` | `object` | 每个 axis report 的明细状态：present / missing / stale / contaminated / blocked | `milestone-gate` |
-| `axis_dispatch_profile` | `object` | 四轴 sibling dispatch 的运行时画像，记录 dispatch owner、dispatch model、per-axis delegation attempt、same-carrier fallback 与 runtime gap | `harness-skill`, `milestone-gate` |
+| `axis_dispatch_profile` | `object` | 四轴 sibling dispatch 的运行时画像，记录 dispatch owner/model、required/completed/missing axes、per-axis delegation/runtime profile、same-carrier fallback、runtime gap 与 nested dispatch attempt | `harness-skill`, `milestone-gate` |
 | `milestone_gate_execution_model` | `object` | Milestone Gate 执行模型，区分 top-level axis dispatch 与 `milestone-gate` aggregation，且记录是否尝试 nested dispatch | `milestone-gate` |
 | `nested_axis_dispatch_attempted` | `boolean` | `milestone-gate` 是否尝试在内部继续分派四轴；新合同下必须为 false | `milestone-gate` |
 | `same_carrier_cross_axis` | `boolean` | 四轴是否在同一 carrier 上顺序执行，若为 true 不满足真实四轴隔离 | `harness-skill`, `milestone-gate`, milestone axis skills |
