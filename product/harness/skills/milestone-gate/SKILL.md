@@ -49,13 +49,13 @@ milestone-status-skill（sensor）
 
 1. **接收输入**：从 milestone-status-skill 接收：
    - `milestone_id`
-   - `closed_worktrack_list`：已闭环 WT 列表，每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref }`
+   - `closed_worktrack_list`：已闭环 WT 列表，每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref, closeout_evidence_bundle_ref, closeout_bundle_status }`
    - `aggregation_rules`：milestone artifact 的 `aggregation_rules` 字段（缺失时退化 AND）
    - `target_type_rules`：目标类型与轴适用性规则
    - `axis_reports`：顶层 Harness 提供的 blackbox / whitebox / anticheat / composite 报告
    - `axis_dispatch_profile`：顶层 Harness 对四轴 carrier 的分派与隔离记录
    - `manual_exception`：仅可表示 programmer final acceptance override 的输入事实，不能改写 Gate pass
-2. **验证就绪**：确认 `closed_worktrack_list`、`axis_reports`、`axis_dispatch_profile` 非空且结构完整。若缺失或污染，返回 `blocked`。
+2. **验证就绪**：确认 `closed_worktrack_list`、`axis_reports`、`axis_dispatch_profile` 非空且结构完整。若缺失或污染，返回 `blocked`。每个 closed worktrack 必须携带 `closeout_evidence_bundle_ref` 和 `closeout_bundle_status`；`missing`、`incomplete`、`contaminated` 或未解释的 `historical_gap` 都必须作为 non-pass evidence 暴露给 axes 和聚合输出，不得从 closeout prose summary 补造 bundle。
 3. **Axis report input validation**（见下文）
 4. **聚合器**（见下文）
 5. **产出最终 verdict**：`milestone_gate_verdict` + 聚合状态字段
@@ -132,7 +132,7 @@ axis_report:
 
 本层在验证 axis reports 后执行。聚合器消费五类输入：
 
-1. **per-WT single-acceptance verdicts**：每个已闭环 WT 的 `verdict`、`node_type`、`critical_failure`
+1. **per-WT closeout evidence bundles**：每个已闭环 WT 的 `closeout_evidence_bundle_ref`、`closeout_bundle_status`、`verdict`、`node_type`、`critical_failure`
 2. **axis_reports**：顶层 Harness sibling axis carriers 产出的 4 个结构化报告
 3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与四轴适用性封套
 4. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
@@ -264,6 +264,9 @@ axis_satisfied(axis) =
 - `slice_coverage`：array | N/A — mixed target 时必须列出每个 slice 的 target type、适用轴、方法、证据和 verdict
 - `substitution_evidence_summary`：object — 每个 substituted 轴的 substitute method、evidence ref、substitute verdict 和 completion-signal coverage
 - `per_worktrack_weights`：array — `{ worktrack_id, node_type, base_weight, final_weight, overridden, override_reason }`
+- `closeout_bundle_status_by_worktrack`：object — 每个 WT 的 `closeout_evidence_bundle_ref` 与 `complete / incomplete / contaminated / historical_gap / missing` 状态
+- `missing_closeout_bundle_refs`：array — 缺少 bundle ref 或 bundle 不可追溯的 WT
+- `historical_gap_worktracks`：array — 明确标记 historical_gap 且未被合成 evidence 的 WT
 - `contradiction_findings`：array — `{ wt_a_id, verdict_a, wt_b_id, verdict_b, severity, recommended_resolution }`
 - `contradiction_blocked`：boolean
 - `composite_lane_verdicts`：object — `{ blackbox, whitebox, anticheat, composite }`，每轴含 `{ verdict, severity, veto_power, applicability_state, axis_satisfied, veto_triggered, weight_modifier_applied, substitute_method, substitution_evidence_ref, substitute_verdict, evidence_covers_completion_signal }`
@@ -287,6 +290,7 @@ axis_satisfied(axis) =
 4. **轴间隔离只消费证据**：轴间隔离由顶层 Harness 的 `axis_dispatch_profile` 和各 axis reports 证明；本技能只能验证和聚合这些证据。
 5. **聚合顺序不可颠倒**：target_type / axis_applicability_state → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
 6. **缺失输入必须暴露**：axis_reports、axis_dispatch_profile 或 aggregation_rules 缺失时必须标记对应缺口；axis report 缺失或隔离缺口不可静默假设。
+6a. **Closeout bundle 不得后验合成**：closed worktrack 缺少 `closeout_evidence_bundle_ref`、bundle 字段不完整或只存在 prose summary 时，必须记录为 `missing` / `incomplete` / `historical_gap`。Milestone Gate 可以聚合该缺口，但不能把缺口改写为 pass evidence。
 7. **不得进入后续阶段**：产出 verdict 后停止。purpose_achieved 判定和 writeback 由 milestone-status-skill 负责。
 8. **阻断必须显式**：veto / contradiction / critical fail 导致的 block 必须记录具体原因和可追溯证据。
 9. **轴适用性先于轴裁决**：未解析 `target_type_rules` / axis report 的 `axis_applicability_state` 时，不得把 raw axis verdict 聚合成 pass。
