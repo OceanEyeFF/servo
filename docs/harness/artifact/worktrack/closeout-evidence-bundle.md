@@ -137,4 +137,8 @@ Rules:
 
 ## Producer Responsibilities
 
-`worktrack-close-skill` is responsible for producing the bundle in its closeout report and repo-refresh handoff. `repo-refresh-skill` may write the stable reference into repo-level backlog or milestone closeout records. `milestone-status-skill` prepares closed Worktrack inputs using the bundle reference; `milestone-gate` consumes the prepared status but does not create missing bundle evidence.
+`worktrack-close-skill` is responsible for producing the bundle in its closeout report and repo-refresh handoff. The handoff must carry `dispatch_provenance.status`, `runtime_dispatch_record_ref`, `subagent_dispatch_record_refs`, `missing_dispatch_record_refs`, raw `dispatch_result_status`, and `resolved_runtime_dispatch_status` as structured fields, not as prose.
+
+`repo-refresh-skill` and `repo-writeback-skill` may preserve stable references in repo-level backlog or milestone closeout records, but they must treat dispatch provenance as passthrough evidence. If they cannot dereference an expected record, they mark the field `missing`, `incomplete`, `historical_gap`, or `contaminated`; they do not synthesize `delegated`, fallback, blocked, or historical states from summaries.
+
+`milestone-status-skill` prepares closed Worktrack inputs using the bundle reference; `milestone-gate` consumes the prepared status but does not create missing bundle evidence.
