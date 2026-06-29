@@ -61,12 +61,60 @@ closeout_evidence_bundle:
     gate_judge_carrier_ref: string | N/A
     independence_summary: independent | same_carrier | unknown | historical_gap
   composite_lane_records:
-    code_review_ref: string | N/A
-    feature_completeness_ref: string | N/A
-    related_influence_ref: string | N/A
-    intent_completeness_ref: string | N/A
-    operator_simulation_ref: string | N/A
-    professional_review_ref: string | N/A
+    code_review:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: code-review
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
+    feature_completeness:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: feature-completeness
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
+    related_influence:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: related-influence
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
+    intent_completeness:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: intent-completeness
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
+    operator_simulation:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: operator-simulation
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
+    professional_review:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+      record_ref: string | N/A
+      lane_id: professional-review
+      validation_ref: string | N/A
+      producer_ref: string | N/A
+      missing_required_fields: []
+      contaminated_reason: string | N/A
+      not_applicable_reason: string | N/A
   repo_refresh_checkpoint:
     status: captured | linked | missing | historical_gap | not_applicable
     checkpoint_ref: string | N/A
@@ -101,7 +149,7 @@ The bundle may require evidence produced by other records. It must link to those
 
 - `runtime_dispatch_record_ref` points to a `runtime_dispatch_record` defined in [dispatch-evidence-records.md](./dispatch-evidence-records.md). It records the parent dispatch decision: inputs, deterministic recommendation, override source, final carrier, fallback reason, `dispatch_result_status`, and profile validation.
 - `subagent_dispatch_record_refs` point to `subagent_dispatch_record` children defined in [dispatch-evidence-records.md](./dispatch-evidence-records.md). They record delegated carrier execution facts: carrier identity, task package, isolation boundary, returned payload, completion status, and cleanup/close status.
-- composite lane refs point to explicit lane records, not a single prose review bucket.
+- `composite_lane_records.*.record_ref` points to `composite_lane_record` entries defined in [composite-lane-records.md](./composite-lane-records.md). The bundle carries link state for all six lanes: `code-review`, `feature-completeness`, `related-influence`, `intent-completeness`, `operator-simulation`, and `professional-review`. The linked lane records carry lane verdicts, findings, absorbed issue refs, residual risks, producer refs, validation refs, carrier/fallback facts, and freshness.
 
 `dispatch_provenance.dispatch_result_status` preserves the raw parent `runtime_dispatch_record.dispatch_result_status` when the parent record is readable. `dispatch_provenance.resolved_runtime_dispatch_status` is the propagated consumer field: it must equal the parent status when available, or `missing` / `incomplete` / `historical_gap` / `contaminated` when the parent record cannot be trusted as complete evidence. Consumers must not collapse `current_carrier_fallback`, `runtime_gap`, `permission_blocked`, `dispatch_package_unsafe`, `blocked`, `historical_gap`, or `delegated`.
 
@@ -125,6 +173,25 @@ closed_worktrack:
   dispatch_provenance_status: captured | linked | incomplete | missing | historical_gap | contaminated
   dispatch_result_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | N/A
   resolved_runtime_dispatch_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | incomplete | missing | contaminated
+  composite_lane_records:
+    code_review:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+    feature_completeness:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+    related_influence:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+    intent_completeness:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+    operator_simulation:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+    professional_review:
+      record_ref: string | N/A
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
 ```
 
 Rules:
@@ -133,12 +200,13 @@ Rules:
 - `incomplete`, `contaminated`, `missing`, and unaccepted `historical_gap` must be visible to blackbox / whitebox / anticheat / composite axes.
 - A missing bundle must not be reconstructed from summaries.
 - Dispatch provenance fields must be copied from the bundle or dereferenced linked dispatch records. Milestone Gate preparation must preserve both `dispatch_result_status` and `resolved_runtime_dispatch_status`; it must not downgrade distinct parent statuses into a generic missing/failed bucket.
+- Composite lane record refs and statuses must be copied from the bundle or dereferenced linked lane records. Milestone Gate preparation must preserve lane statuses including `incomplete`, `missing`, `historical_gap`, `contaminated`, and `not_applicable`; it must not infer lane verdicts, findings, absorbed issue refs, or residual risks from prose closeout summaries.
 - Programmer manual exception can accept residual risk at final acceptance, but it must preserve the original bundle status and anti-cheat findings.
 
 ## Producer Responsibilities
 
-`worktrack-close-skill` is responsible for producing the bundle in its closeout report and repo-refresh handoff. The handoff must carry `dispatch_provenance.status`, `runtime_dispatch_record_ref`, `subagent_dispatch_record_refs`, `missing_dispatch_record_refs`, raw `dispatch_result_status`, and `resolved_runtime_dispatch_status` as structured fields, not as prose.
+`worktrack-close-skill` is responsible for producing the bundle in its closeout report and repo-refresh handoff. The handoff must carry `dispatch_provenance.status`, `runtime_dispatch_record_ref`, `subagent_dispatch_record_refs`, `missing_dispatch_record_refs`, raw `dispatch_result_status`, and `resolved_runtime_dispatch_status` as structured fields, not as prose. It must also carry all six `composite_lane_records` entries with status, `record_ref`, `lane_id`, `producer_ref`, `validation_ref`, missing field lists, contamination reason, and not-applicable reason. If only a prose composite review exists, Close marks the lane `missing`, `historical_gap`, or `incomplete`; it does not rewrite the prose into a passable lane record.
 
 `repo-refresh-skill` and `repo-writeback-skill` may preserve stable references in repo-level backlog or milestone closeout records, but they must treat dispatch provenance as passthrough evidence. If they cannot dereference an expected record, they mark the field `missing`, `incomplete`, `historical_gap`, or `contaminated`; they do not synthesize `delegated`, fallback, blocked, or historical states from summaries.
 
-`milestone-status-skill` prepares closed Worktrack inputs using the bundle reference; `milestone-gate` consumes the prepared status but does not create missing bundle evidence.
+`milestone-status-skill` prepares closed Worktrack inputs using the bundle reference; `milestone-gate` consumes the prepared status but does not create missing bundle evidence. Both consumers preserve composite lane record refs/statuses and do not synthesize lane evidence from closeout prose.
