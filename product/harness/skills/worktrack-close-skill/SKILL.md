@@ -36,7 +36,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
      - `critical_failure (upstream)`：blocking 原因源于上游依赖（如上游 WT 未合并、milestone baseline 未就绪、外部 contract 不满足）→ 记录阻断来源，可选 defer 到上游解决后重试（非本 WT 的责任范围）。
    - 两步均 clear 后，进入收尾阶段判定。
    - 更新后的 closeout pipeline 顺序：`Self-Review → Single-Acceptance → Closeout Gate → 准备合并请求 → PR → Merge → Doc-Catch-Up → Refresh → Cleanup → return RepoScope`
-   - closeout 输出必须同时形成 `closeout_evidence_bundle`，字段合同见 `docs/harness/artifact/worktrack/closeout-evidence-bundle.md`。该 bundle 记录 self-review、single-acceptance、Worktrack Gate、Closeout Gate、dispatch provenance、composite lane refs、repo-refresh checkpoint 与 historical gap 状态；不得用 prose closeout summary 替代。
+   - closeout 输出必须同时形成 `closeout_evidence_bundle`，字段合同见 `docs/harness/artifact/worktrack/closeout-evidence-bundle.md`。该 bundle 记录 self-review、single-acceptance、Worktrack Gate、Closeout Gate、dispatch provenance、composite lane refs、repo-refresh checkpoint 与 historical gap 状态；其中 dispatch provenance 必须链接 `docs/harness/artifact/worktrack/dispatch-evidence-records.md` 定义的 `runtime_dispatch_record` / `subagent_dispatch_record` refs；不得用 prose closeout summary 替代。
 5. 判断当前收尾阶段：
    - `准备合并请求`
    - `合并请求已开`
@@ -192,6 +192,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 - `代码仓库刷新交接` 的基线追溯字段必须显式填充。省略基线追溯字段的行为必须被阻断
 - `closeout_record` 不单独写入新的长期 Worktrack artifact；它必须作为 `关闭工作追踪报告` 与 `代码仓库刷新交接` 的结构化 section 输出，并由 repo-refresh 后续写入 repo 级 backlog / snapshot。省略 `decision_refs` 或闭环状态字段的行为必须显式说明原因
 - `closeout_evidence_bundle` 是 closeout report / repo-refresh handoff 中的结构化 evidence envelope。若某项 evidence 未在执行时捕获，必须写为 `missing`；若历史 Worktrack 因旧合同未捕获，必须写为 `historical_gap`；不得后验合成 self-review、dispatch provenance 或 composite lane evidence。
+- `dispatch_provenance` 的唯一合法正向证据是 linked `runtime_dispatch_record_ref` 与 `subagent_dispatch_record_refs`。Close 可以保留、转写和标记这些 refs 的状态，并必须携带 `dispatch_provenance_status`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；不得从 closeout prose、carrier 自述、模型名或 touched files 推断 delegated SubAgent execution。
 - `代码仓库刷新交接` 必须同时填充节点策略字段，并说明 expected baseline 与 actual checkpoint 是否匹配
 - 重复性上下文（如 worktrack contract 摘要）的唯一合法呈现形式是文件路径引用 `[.servo/worktrack/contract.md#section]`。内联全文的行为禁止发生
 - 如果某个字段无实质内容，唯一合法行为是使用 `N/A` 或省略。用占位符填充的行为必须被阻断

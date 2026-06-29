@@ -50,8 +50,12 @@ closeout_evidence_bundle:
     evidence_ref: string | N/A
     verdict: pass | soft-fail | hard-fail | blocked | N/A
   dispatch_provenance:
+    status: captured | linked | incomplete | missing | historical_gap | contaminated
     runtime_dispatch_record_ref: string | N/A
     subagent_dispatch_record_refs: []
+    missing_dispatch_record_refs: []
+    dispatch_result_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | N/A
+    resolved_runtime_dispatch_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | incomplete | missing | contaminated
     implementer_carrier: string | N/A
     reviewer_carrier_refs: []
     gate_judge_carrier_ref: string | N/A
@@ -83,6 +87,7 @@ Use these state values consistently:
 | --- | --- | --- |
 | `captured` | Evidence was generated during the relevant control step and is present in the bundle. | May satisfy the corresponding evidence requirement. |
 | `linked` | Evidence exists in another stable record and the bundle carries a reference. | May satisfy the requirement if the linked record is readable and fresh. |
+| `incomplete` | A linked structured record exists but required fields are absent, unreadable, or internally incomplete. | Non-pass evidence; consumers must preserve the incomplete field list or status. |
 | `missing` | Required evidence should exist for this Worktrack but was not captured. | Non-pass evidence; Milestone Gate preparation must report the missing field. |
 | `historical_gap` | Older Worktrack did not capture this evidence because the contract did not exist yet. | Must remain visible; cannot be converted into synthetic pass evidence. |
 | `contaminated` | Evidence is stale, reused, cross-axis polluted, same-carrier without disclosure, or otherwise unreliable. | Non-pass evidence; anti-cheat/composite axes must preserve the finding. |
@@ -94,11 +99,13 @@ Use these state values consistently:
 
 The bundle may require evidence produced by other records. It must link to those records instead of inlining or summarizing them:
 
-- `runtime_dispatch_record_ref` records the parent dispatch decision: inputs, deterministic recommendation, override source, final carrier, fallback reason, and profile validation.
-- `subagent_dispatch_record_refs` record delegated carrier execution facts: carrier identity, task package, isolation boundary, returned payload, completion status, and cleanup/close status.
+- `runtime_dispatch_record_ref` points to a `runtime_dispatch_record` defined in [dispatch-evidence-records.md](./dispatch-evidence-records.md). It records the parent dispatch decision: inputs, deterministic recommendation, override source, final carrier, fallback reason, `dispatch_result_status`, and profile validation.
+- `subagent_dispatch_record_refs` point to `subagent_dispatch_record` children defined in [dispatch-evidence-records.md](./dispatch-evidence-records.md). They record delegated carrier execution facts: carrier identity, task package, isolation boundary, returned payload, completion status, and cleanup/close status.
 - composite lane refs point to explicit lane records, not a single prose review bucket.
 
-If a linked record is expected but absent, the bundle records `missing`. If the Worktrack predates the contract, it records `historical_gap`.
+`dispatch_provenance.dispatch_result_status` preserves the raw parent `runtime_dispatch_record.dispatch_result_status` when the parent record is readable. `dispatch_provenance.resolved_runtime_dispatch_status` is the propagated consumer field: it must equal the parent status when available, or `missing` / `incomplete` / `historical_gap` / `contaminated` when the parent record cannot be trusted as complete evidence. Consumers must not collapse `current_carrier_fallback`, `runtime_gap`, `permission_blocked`, `dispatch_package_unsafe`, `blocked`, `historical_gap`, or `delegated`.
+
+If a linked record is expected but absent, `dispatch_provenance.status` records `missing`, `resolved_runtime_dispatch_status` records `missing`, and `missing_dispatch_record_refs` lists the absent refs or expected roles. If the Worktrack predates the contract, both fields record `historical_gap`. If only prose describes dispatch, the bundle must not reconstruct the record; it records `missing` or `historical_gap`.
 
 ## Milestone Gate Consumption
 
@@ -112,14 +119,20 @@ closed_worktrack:
   critical_failure: true | false
   closeout_record_ref: string
   closeout_evidence_bundle_ref: string
-  closeout_bundle_status: complete | incomplete | contaminated | historical_gap
+  closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing
+  runtime_dispatch_record_ref: string | N/A
+  subagent_dispatch_record_refs: []
+  dispatch_provenance_status: captured | linked | incomplete | missing | historical_gap | contaminated
+  dispatch_result_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | N/A
+  resolved_runtime_dispatch_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | incomplete | missing | contaminated
 ```
 
 Rules:
 
 - `complete` may be consumed by axis checks and aggregation.
-- `incomplete`, `contaminated`, and unaccepted `historical_gap` must be visible to blackbox / whitebox / anticheat / composite axes.
+- `incomplete`, `contaminated`, `missing`, and unaccepted `historical_gap` must be visible to blackbox / whitebox / anticheat / composite axes.
 - A missing bundle must not be reconstructed from summaries.
+- Dispatch provenance fields must be copied from the bundle or dereferenced linked dispatch records. Milestone Gate preparation must preserve both `dispatch_result_status` and `resolved_runtime_dispatch_status`; it must not downgrade distinct parent statuses into a generic missing/failed bucket.
 - Programmer manual exception can accept residual risk at final acceptance, but it must preserve the original bundle status and anti-cheat findings.
 
 ## Producer Responsibilities
