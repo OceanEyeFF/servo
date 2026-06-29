@@ -33,7 +33,7 @@ Milestone Gate 分为两个职责面：
 
 ### 与 Worktrack single-acceptance 的接口
 
-本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
+本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 与 [closeout evidence bundle](../worktrack/closeout-evidence-bundle.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记、`completion_signals_trace`、`closeout_evidence_bundle_ref` 和 `closeout_bundle_status` 是 aggregation_rules 的输入。
 
 ### 与四轴报告的接口
 
@@ -457,6 +457,8 @@ aggregator_input:
       single_acceptance_verdict: { ... }  # from single-acceptance-contract.md
       gate_evidence: { ... }              # implementation/validation/policy gate verdicts
       closeout_record: { ... }
+      closeout_evidence_bundle_ref: ".servo/milestone/...#WT-xxx-Closeout-Evidence-Bundle"
+      closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing
       composite_lane_findings:            # per-WT composite lane findings
         blackbox: pass | soft_fail | hard_fail
         whitebox: pass | soft_fail | hard_fail
@@ -629,6 +631,7 @@ aggregator_output:
 ### Aggregator 实现时需注意
 
 - `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
+- `closeout_evidence_bundle_ref` 缺失、bundle 不完整、bundle contaminated，或只有 prose closeout summary 时，不得后验合成 self-review、dispatch provenance 或 composite lane evidence。该 worktrack 必须以 `missing` / `incomplete` / `contaminated` / `historical_gap` 状态进入 axis checks 和 aggregation。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
 - `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true`。
