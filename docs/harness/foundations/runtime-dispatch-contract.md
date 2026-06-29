@@ -109,3 +109,15 @@ ClaudeCodeCLI / Deepseek compatibility lane 的关键规则：如果 `backend_ru
 发生 fallback 时，输出必须记录 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。没有真实创建分派载体时，不得声称已经使用 SubAgent。
 
 `auto` 模式下未分派也必须产生可审计证据：`runtime_dispatch_profile`、`decision_inputs`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`selection_reason` 和 `fallback_reason`。如果 `parallel_value` 高且任务可安全拆包，但 `subagent_dispatch_shell` 可用，缺少分派尝试或缺少不分派理由的 dispatch result 必须视为 blocked。
+
+## Linked Dispatch Evidence Records
+
+每轮 Dispatch 必须产出或链接一个 `runtime_dispatch_record`。字段合同由 [dispatch-evidence-records.md](../artifact/worktrack/dispatch-evidence-records.md) 承接；本 runtime contract 只固定边界语义。
+
+规则：
+
+- `runtime_dispatch_record` 是 parent record，记录 `decision_inputs`、deterministic recommendation、override source、runtime dispatch profile、final carrier、fallback reason、dispatch result status 与 profile validation。
+- 只有真实创建 delegated carrier 时，才允许产生 `subagent_dispatch_record` child record；current-carrier fallback 不得合成 child record。
+- `subagent_dispatch_record` 必须链接 parent runtime record、task package refs、returned payload refs、completion status、cleanup/close status 和 closeout bundle ref。
+- Closeout bundle 的 `dispatch_provenance` 只能保存这些 linked refs 与状态；不得从 prose closeout summary 合成缺失的 dispatch evidence。
+- `delegated`、`current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked` 和 `historical_gap` 必须作为不同证据状态保留。
