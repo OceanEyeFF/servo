@@ -141,7 +141,9 @@ Use these state values consistently:
 | `contaminated` | Evidence is stale, reused, cross-axis polluted, same-carrier without disclosure, or otherwise unreliable. | Non-pass evidence; anti-cheat/composite axes must preserve the finding. |
 | `not_applicable` | Evidence is not required for this node type or closeout path, with a reason. | Does not contribute positive evidence. |
 
-`historical_gap` is not a waiver. It is an honest marker that lets future gates distinguish old missing evidence from current process failure.
+`historical_gap` is visible non-positive evidence. It is distinct from `missing`, `incomplete`, and `contaminated`: it records that the Worktrack predates the capture contract, not that the evidence was found, accepted, or waived.
+
+`historical_gap` is not a waiver and not a pass. It is an honest marker that lets future gates distinguish old missing evidence from current process failure. Manual exception may accept residual risk at final acceptance, but it must preserve the historical gap fields and must not erase, rewrite, or convert them into synthetic pass evidence.
 
 ## Linked Record Boundary
 
@@ -201,7 +203,7 @@ Rules:
 - A missing bundle must not be reconstructed from summaries.
 - Dispatch provenance fields must be copied from the bundle or dereferenced linked dispatch records. Milestone Gate preparation must preserve both `dispatch_result_status` and `resolved_runtime_dispatch_status`; it must not downgrade distinct parent statuses into a generic missing/failed bucket.
 - Composite lane record refs and statuses must be copied from the bundle or dereferenced linked lane records. Milestone Gate preparation must preserve lane statuses including `incomplete`, `missing`, `historical_gap`, `contaminated`, and `not_applicable`; it must not infer lane verdicts, findings, absorbed issue refs, or residual risks from prose closeout summaries.
-- Programmer manual exception can accept residual risk at final acceptance, but it must preserve the original bundle status and anti-cheat findings.
+- Programmer manual exception can accept residual risk at final acceptance, but it must preserve the original bundle status, `historical_gap` fields, and anti-cheat findings; consumers should record `historical_gap_preserved: true` alongside `anti_cheat_findings_preserved: true`.
 
 ## Producer Responsibilities
 
