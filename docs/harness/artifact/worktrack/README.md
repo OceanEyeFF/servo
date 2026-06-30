@@ -1,9 +1,9 @@
 ---
 title: "Harness Artifact / Worktrack"
 status: active
-updated: 2026-06-13
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-30
 ---
 # Harness Artifact / Worktrack
 
@@ -29,3 +29,5 @@ Worktrack `closeout_record` 不单独新增长期 artifact。Closeout 的运行�
 Closeout record 词汇至少覆盖：`worktrack_id`、`branch`、`base_ref`、`head_ref`、`merge_commit`、`pr`、`files_changed`、`acceptance_result`、`gate_verdict`、`evidence_refs`、`decision_refs`、`docs_updated`、`snapshot_refreshed`、`backlog_updated`、`cleanup_done`、`remaining_risks`、`next_repo_scope_action`。
 
 Closeout evidence bundle 的稳定字段由 [closeout-evidence-bundle.md](./closeout-evidence-bundle.md) 承接。Dispatch provenance 的 linked record 字段由 [dispatch-evidence-records.md](./dispatch-evidence-records.md) 承接。Composite acceptance lane evidence 的 linked record 字段由 [composite-lane-records.md](./composite-lane-records.md) 承接。Milestone Gate 准备输入时应优先消费 `closeout_evidence_bundle_ref`，并保留 `complete / incomplete / contaminated / historical_gap` 状态；不得从 prose summary 合成 dispatch record 或 composite lane record。
+
+`.servo/worktrack/contract.md`、`.servo/worktrack/plan-task-queue.md`、`.servo/worktrack/gate-evidence.md` 这类滚动 Worktrack runtime 文件，在历史引用依赖它们之前，必须生成 snapshot、bundle 或 archive 副本。Worktrack Evidence / Findings / Discovery 的 Worktrack closeout、Milestone 结束清理与 Repo cleanup 生命周期，见 [../runtime-artifact-lifecycle.md](../runtime-artifact-lifecycle.md)。
