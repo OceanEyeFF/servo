@@ -548,6 +548,9 @@ CLEANUP_CONTRACT_REQUIRED_TERMS = [
     "milestone-cleanup-skill",
     # Closeout pipeline terms: only checked in harness-skill (closeout pipeline authority)
 ]
+CLEANUP_CONTRACT_FORBIDDEN_TERMS = [
+    "在非交互模式下，low-risk 清理（仅 backlog 清理）可自动执行",
+]
 REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS = [
     "product/harness/skills/repo-whats-next-skill/SKILL.md",
     "product/harness/skills/repo-whats-next-skill/references/overview-fallback-mode.md",
@@ -2327,6 +2330,12 @@ def check_cleanup_contract(repo_root: Path, report: SemanticReport) -> None:
             if term not in text:
                 report.add_failure(
                     f"cleanup contract missing required term {term!r}: {relative_path}"
+                )
+        for term in CLEANUP_CONTRACT_FORBIDDEN_TERMS:
+            if term in text:
+                report.add_failure(
+                    f"cleanup contract contains stale auto-apply term {term!r}: "
+                    f"{relative_path}"
                 )
     report.add_info(f"checked {checked} cleanup contract sources")
 
