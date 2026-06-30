@@ -283,6 +283,40 @@ def test_autonomy_policy_stop_condition_and_missing_evidence_hard_block(tmp_path
     assert payload["evidence_required_complete"] is False
 
 
+def test_autonomy_policy_cleanup_skills_use_explicit_non_destructive_profiles(
+    tmp_path: Path,
+) -> None:
+    control_state = tmp_path / ".servo/control-state.md"
+    control_state.parent.mkdir(parents=True)
+    control_state.write_text(
+        "# Control State\n\n- closeout_record: .servo/milestone/closeout.md\n",
+        encoding="utf-8",
+    )
+
+    for skill in ("milestone-cleanup-skill", "worktrack-cleanup-skill"):
+        result = run_script(
+            "autonomy_policy_check.py",
+            [
+                "--operation",
+                "cleanup",
+                "--skill",
+                skill,
+                "--control-state",
+                str(control_state),
+            ],
+            tmp_path,
+        )
+        payload = parse_stdout_json(result)
+
+        assert result.returncode == 0, result.stderr
+        assert payload["allowed"] is True
+        assert payload["blocked"] is False
+        assert payload["needs_approval"] is False
+        assert payload["forbidden_hit"] == []
+        assert payload["stop_condition_hit"] == []
+        assert "未在 POLICY_MAP" not in str(payload["reason"])
+
+
 def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> None:
     result = run_script(
         "dispatch_mode_recommend.py",
