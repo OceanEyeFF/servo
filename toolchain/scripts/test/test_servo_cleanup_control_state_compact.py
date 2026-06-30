@@ -246,6 +246,39 @@ def test_apply_generates_history_and_updates_handback_ref(tmp_path: Path) -> Non
     assert "2026-06-21T20:37:35+08:00" not in compacted
 
 
+def test_apply_is_idempotent_after_first_compaction(tmp_path: Path) -> None:
+    control_state = tmp_path / ".servo" / "control-state.md"
+    control_state.parent.mkdir()
+    control_state.write_text(sample_control_state(), encoding="utf-8")
+
+    first_result = run_helper(
+        "--control-state",
+        str(control_state),
+        "--apply",
+        "--json",
+        cwd=tmp_path,
+    )
+    second_result = run_helper(
+        "--control-state",
+        str(control_state),
+        "--apply",
+        "--json",
+        cwd=tmp_path,
+    )
+
+    assert first_result.returncode == 0, first_result.stderr
+    assert second_result.returncode == 0, second_result.stderr
+    first_payload = json.loads(first_result.stdout)
+    second_payload = json.loads(second_result.stdout)
+    assert first_payload["changed"] is True
+    assert first_payload["history_artifact_ref"].startswith(".servo/history/control-state/")
+    assert second_payload["would_change"] is False
+    assert second_payload["changed"] is False
+    assert second_payload["externalized_sections"] == []
+    assert second_payload["history_artifact_ref"] == "N/A"
+    assert second_payload["post_verify_verdict"] == "pass"
+
+
 def test_missing_required_field_blocks_without_writing(tmp_path: Path) -> None:
     control_state = tmp_path / ".servo" / "control-state.md"
     control_state.parent.mkdir()
