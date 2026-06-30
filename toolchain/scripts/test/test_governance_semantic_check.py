@@ -3026,6 +3026,7 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
                 "`.autoworkflow/`",
                 "`.spec-workflow/`",
                 "`.logs/`",
+                "`.ruff_cache/`",
                 "`**/__pycache__/`",
                 "`.pytest_cache/`",
                 "`*.pyc`",
@@ -3483,6 +3484,32 @@ def test_check_runtime_artifact_consistency_flags_suspended_primary_status(
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("invalid primary status 'suspended'" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_ignores_milestone_sidecar_artifacts(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(tmp_path)
+    write_doc(
+        tmp_path / ".servo/milestone/MS-001-gate-verdict.md",
+        "\n".join(
+            [
+                "# Gate Verdict",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-001"',
+                "",
+                "## status",
+                'status: "pass"',
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(

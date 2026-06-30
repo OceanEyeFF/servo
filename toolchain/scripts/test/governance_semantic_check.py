@@ -25,6 +25,9 @@ from path_governance_check import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+PRIMARY_MILESTONE_ARTIFACT_PATTERN = re.compile(
+    r"^MS-(?:\d{8}-\d{3}|\d{3}|LEGACY)\.md$"
+)
 FOUNDATIONS_DIR = "docs/project-maintenance/foundations"
 REQUIRED_TEMPLATE_PATHS = [
     "docs/harness/artifact/worktrack/contract.md",
@@ -3218,7 +3221,7 @@ def check_runtime_artifact_consistency(repo_root: Path, report: SemanticReport) 
     milestone_artifacts: dict[str, dict[str, object]] = {}
     if milestone_dir.exists():
         for milestone_path in sorted(milestone_dir.glob("MS-*.md")):
-            if milestone_path.name.endswith("-composite-acceptance-report.md"):
+            if not PRIMARY_MILESTONE_ARTIFACT_PATTERN.fullmatch(milestone_path.name):
                 continue
             milestone = _parse_milestone_artifact(
                 milestone_path.read_text(encoding="utf-8")

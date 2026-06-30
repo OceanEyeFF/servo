@@ -61,6 +61,82 @@ def test_cleanup_skill_runtime_sweep_helper_is_report_first(tmp_path: Path) -> N
     assert "rolling_evidence_reuse" in payload["counts_by_type"]
 
 
+def test_cleanup_skill_runtime_sweep_reports_milestone_backlog_history_gaps(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(
+        servo / "control-state.md",
+        "# Harness Control State\n\n"
+        "## Milestone Pipeline\n"
+        "- active_milestone: MS-20260630-003\n"
+        "- milestone_status: active\n",
+    )
+    write_doc(
+        servo / "repo" / "worktrack-backlog.md",
+        "- worktrack_id: WT-001\n"
+        "  - milestone_id: MS-20260630-001\n"
+        "  - status: done\n"
+        "  - evidence_ref: .servo/worktrack/gate-evidence.md\n",
+    )
+    write_doc(
+        servo / "repo" / "milestone-backlog.md",
+        "- milestone_id: MS-20260630-001\n"
+        "  - status: completed\n"
+        "  - worktrack_list:\n"
+        "    - WT-001 (completed)\n"
+        "\n"
+        "- milestone_id: MS-20260630-002\n"
+        "  - status: completed\n"
+        "  - worktrack_list:\n"
+        "    - WT-002 (completed)\n"
+        "\n"
+        "- milestone_id: MS-20260630-003\n"
+        "  - status: planned\n"
+        "  - worktrack_list:\n"
+        "    - WT-003 (planned)\n",
+    )
+    write_doc(
+        servo / "repo" / "milestone-history.md",
+        "- milestone_id: MS-20260630-001\n"
+        "  - status: completed\n"
+        "  - worktrack_list:\n"
+        "    - WT-001 (completed)\n"
+        "\n"
+        "- milestone_id: MS-20260630-004\n"
+        "  - status: active\n"
+        "  - worktrack_list:\n"
+        "    - WT-004 (active)\n",
+    )
+    write_doc(
+        servo / "milestone" / "MS-20260630-005.md",
+        "# Completed Milestone\n\n"
+        "## milestone_id\n"
+        "milestone_id: \"MS-20260630-005\"\n\n"
+        "## status\n"
+        "status: \"completed\"\n",
+    )
+    write_doc(servo / "worktrack" / "gate-evidence.md", "# Rolling Evidence\n")
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    counts = payload["counts_by_type"]
+    assert counts["milestone_live_history_status"] == 2
+    assert counts["milestone_live_history_overlap"] == 1
+    assert counts["milestone_missing_history_record"] == 2
+    assert counts["milestone_history_live_status"] == 1
+    assert counts["milestone_active_pointer_non_active"] == 1
+
+
 def test_cleanup_skill_payloads_include_runtime_sweep_and_exclude_generated_cache() -> None:
     for payload_path in PAYLOADS:
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
