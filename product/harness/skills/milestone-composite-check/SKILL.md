@@ -331,7 +331,7 @@ composite_verdict:
 
 2. **轴间隔离**：禁止接收或读取其他三轴（blackbox / whitebox / anticheat）的 verdict。如果输入包中注入了其他轴的 verdict 或判断，必须标记 `isolation_guarantee: false`，记录泄漏详情到 `isolation_leak_detail`，并在该约束被打破的条件下继续完成本轴检查（标记但不阻断——阻断交由 orchestrator 判定）。
 
-3. **SubAgent 要求**：本技能设计为在隔离 SubAgent 上运行。当 SubAgent 不可用时，降级为 current-carrier 执行，但必须在输出中标记 `carrier_isolation_broken: true` 并记录 `carrier_isolation_broken_reason`。标记 `carrier: current-carrier` 的同时不得声称 `isolation_guarantee: true`。
+3. **SubAgent 要求**：本技能设计为在隔离 SubAgent 上运行。当 SubAgent 不可用时，降级为 current-carrier 执行，但必须在输出中标记 `carrier_isolation_broken: true` 并记录 `carrier_isolation_broken_reason`。标记 `carrier: current-carrier` 的同时不得声称 `isolation_guarantee: true`。若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 
 4. **Lane fallback 记录**：如果某条 lane 无法由 SubAgent 执行而 fallback 到 current-carrier 或 human，必须记录该 lane 名称、fallback 类型和 fallback 原因。缺失 lane 且无 fallback 记录 → 该 lane 的 verdict 必须为 `blocked`。不得在无证据的情况下将缺失 lane 标记为 `pass`。
 

@@ -97,6 +97,7 @@ axis_report:
   axis_applicability_reason: string
   runtime_dispatch_profile: { ... }
   missing_evidence: [...]
+  input_gap_classification: { ... }   # blackbox required; optional N/A for other axes
   substitute_method: string | N/A
   substitution_evidence_ref: string | N/A
   substitute_verdict: pass | soft_fail | hard_fail | blocked | N/A
@@ -118,6 +119,10 @@ axis_report:
 - `dispatch_gap_reason`: string | N/A
 - `per_axis_runtime_dispatch_profile`: object
 - `nested_axis_dispatch_attempted`: false
+
+每个 `runtime_dispatch_profile` 若声称 `attempted_carrier: SubAgent`、`carrier_decision: delegated_subagent` 或等价 spawned SubAgent，必须同时携带 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 SubAgent claim 必须被视为 ambiguous spawned-axis claim；若实际执行载体是 current-carrier，除非存在明确 `boundary_violation_recorded: true` 或等价运行时边界缺口记录，否则不得把它聚合为真实 sibling SubAgent 隔离。
+
+Blackbox 轴的 `input_gap_classification` 必须区分输入缺口与真实行为失败，至少包含 `input_gap_status`、`missing_target_type`、`missing_aggregation_rules`、`missing_completion_signals_trace`、`missing_scenario_inputs`、`behavior_failure_present` 和 `classification_reason`。缺少 target_type、aggregation_rules、completion_signals_trace 或 scenario inputs 时，应标记 `input_gap` / non-pass，而不是报告为行为场景执行失败或 pass。
 
 ### Axis Report Status
 
@@ -300,6 +305,7 @@ axis_satisfied(axis) =
 4. **轴间隔离只消费证据**：轴间隔离由顶层 Harness 的 `axis_dispatch_profile` 和各 axis reports 证明；本技能只能验证和聚合这些证据。
 5. **聚合顺序不可颠倒**：target_type / axis_applicability_state → weight → contradiction → composite_lane → degenerate 顺序必须执行，不可跳过。
 6. **缺失输入必须暴露**：axis_reports、axis_dispatch_profile 或 aggregation_rules 缺失时必须标记对应缺口；axis report 缺失或隔离缺口不可静默假设。
+6c. **Axis input package clean-room lint 必须保真**：若上游传入的 axis input package 或 axis report summary 显示读取了 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，该轴必须标记为 `contaminated` 或对应 `input_gap` / non-pass。聚合器不得把污染输入产出的 report 视为 clean-room axis evidence。
 6a. **Closeout bundle / dispatch records 不得后验合成**：closed worktrack 缺少 `closeout_evidence_bundle_ref`、bundle 字段不完整、缺少 `runtime_dispatch_record_ref`，或只存在 prose summary 时，必须记录为 `missing` / `incomplete` / `historical_gap`。当 parent runtime record 的 `dispatch_result_status` 表示 `delegated` 时，缺少 `subagent_dispatch_record_refs` 也是缺失证据；当 parent record 明确表示 `current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked` 或 `historical_gap` 时，空 child refs 必须保留为该状态而不是合成缺失 delegated execution。Milestone Gate 必须 preserve 或 dereference 出 `dispatch_result_status`，并在输出中传播 `resolved_runtime_dispatch_status`；可以聚合这些缺口，但不能把缺口改写为 pass evidence，也不能凭 prose synthesis 声称真实 delegated SubAgent execution。
 6b. **Composite lane records 不得后验合成**：closed worktrack 缺少 `composite_lane_records`、某条 lane 缺少 `record_ref`、lane status 为 `missing` / `incomplete` / `historical_gap` / `contaminated`，或只存在 prose composite summary 时，必须保留原状态并在输出中列出 affected `{ worktrack_id, lane_id }`。`not_applicable` 必须保留 reason 且不得贡献 positive evidence。Milestone Gate 可以聚合 composite axis verdict，但不能把 closeout prose、milestone summary、旧式 lane paragraph 或 operator narrative 改写为 lane record、lane finding、absorbed issue refs、residual risks 或 validation refs。
 7. **不得进入后续阶段**：产出 verdict 后停止。purpose_achieved 判定和 writeback 由 milestone-status-skill 负责。

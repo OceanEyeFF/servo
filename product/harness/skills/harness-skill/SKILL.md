@@ -277,7 +277,7 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段运行扁平化 Milestone Gate：
 
-1. 顶层 Harness 准备四份 sibling axis input package。
+1. 顶层 Harness 准备四份 sibling axis input package，并先执行 clean-room lint。每份 package 必须列出 `context_refs`、`allowed_ref_categories`、`forbidden_ref_categories` 和 `input_gap_classification`。若 `context_refs` 包含 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，必须拒绝该 package 或将对应轴标记为 `input_gap` / non-pass；不得把污染输入交给 sibling axis carrier。
 2. 顶层 Harness 分别绑定 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check`，作为互相不可见的 sibling axis carriers 执行，并记录每轴 `runtime_dispatch_profile`。
 3. 顶层 Harness 将四个显式 `axis_reports` 和 `axis_dispatch_profile` 传给 `milestone-gate` skill。
 4. `milestone-gate` 只执行 aggregation，接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。
@@ -519,14 +519,15 @@ _已合并入 §10.4 前置段落。_
        --profile-json '<json>'
      ```
 
-   - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
+  - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
+  - 若 profile 声称 spawned SubAgent 或 `carrier_decision: delegated_subagent`，还必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少 parent runtime dispatch linkage、child SubAgent record 或 concrete carrier instance 时，不得声称 SubAgent 隔离成立。若尝试委派 SubAgent 后实际使用 current-carrier，必须记录 `boundary_violation_recorded: true` 或等价运行时边界缺口。
 4. `auto` 表示按 §2 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
 9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 §10.4 步骤 3 列出的 11 个必填字段。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
-10. **Milestone Gate 四轴分派偏好**：当 goal-driven milestone 的 `worktrack_list_finished == true` 时，Harness 推荐把四个 axis skills 作为 sibling delegated carriers 分派，并为每轴记录 `runtime_dispatch_profile`。`milestone-gate` 本身是 aggregation carrier，不应再在内部继续分派四轴。若运行时不支持 sibling carrier dispatch，记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`same_carrier_cross_axis` 和 `carrier_isolation_broken_any`；该缺口必须传入 `milestone-gate`，不得静默宣称四轴隔离达成。
+10. **Milestone Gate 四轴分派偏好**：当 goal-driven milestone 的 `worktrack_list_finished == true` 时，Harness 推荐把四个 axis skills 作为 sibling delegated carriers 分派，并为每轴记录 `runtime_dispatch_profile`。`milestone-gate` 本身是 aggregation carrier，不应再在内部继续分派四轴。若运行时不支持 sibling carrier dispatch，记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`same_carrier_cross_axis` 和 `carrier_isolation_broken_any`；该缺口必须传入 `milestone-gate`，不得静默宣称四轴隔离达成。当前载体或 ambiguous spawned-axis claims 不能 masquerade 为真实 SubAgent；只有存在 parent runtime dispatch record、spawned SubAgent record、concrete carrier instance 和 isolation boundary 时，才能声明 spawned SubAgent carrier。
 
 ### 10.5 证据收集与裁决
 
