@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Closeout Refresh
 status: active
-updated: 2026-06-05
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-30
 ---
 
 # Harness Runtime Closeout Refresh
@@ -46,6 +46,12 @@ Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量�
 - next legal route
 
 刷新完成后，Harness 记录当前 `git rev-parse HEAD` 到 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint`，作为下轮跳过重复 refresh 的幂等性锚点。Milestone-derived Worktrack 的本轮 checkpoint 可以落在 Milestone integration branch；servo-managed baseline branch 只在 Milestone final acceptance 后更新。
+
+## Runtime Artifact Maintenance
+
+Worktrack closeout and milestone final acceptance may create stale, superseded, or rolling runtime artifacts. Maintenance is a report-first cycle: inventory runtime artifacts, classify preserve/promote/archive/stale/superseded/expired candidates, promote verified long-term facts to their docs or implementation owners, and request separate approval before deletion or destructive cleanup.
+
+The runtime artifact lifecycle policy is defined in [../artifact/runtime-artifact-lifecycle.md](../artifact/runtime-artifact-lifecycle.md). Closeout and refresh must preserve Gate verdicts, closeout records, manual exception records, dispatch records, and any evidence cited by milestone history or docs truth.
 
 ## Milestone Progress
 

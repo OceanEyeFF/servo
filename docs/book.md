@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-06-19
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-19
+last_verified: 2026-06-30
 ---
 # Docs Book Spine
 
@@ -82,36 +82,37 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 #### 2.3 正式对象（Artifact）
 
 1. [harness/artifact/README.md](./harness/artifact/README.md)
-2. [harness/artifact/standard-fields.md](./harness/artifact/standard-fields.md)
-3. [harness/artifact/repo/README.md](./harness/artifact/repo/README.md)
-4. [harness/artifact/repo/discovery-input.md](./harness/artifact/repo/discovery-input.md)
-5. [harness/artifact/repo/complex-project-entry-gate.md](./harness/artifact/repo/complex-project-entry-gate.md)
-6. [harness/artifact/repo/goal-charter.md](./harness/artifact/repo/goal-charter.md)
-7. [harness/artifact/repo/repo-analysis.md](./harness/artifact/repo/repo-analysis.md)
-8. [harness/artifact/repo/snapshot-status.md](./harness/artifact/repo/snapshot-status.md)
-9. [harness/artifact/repo/worktrack-backlog.md](./harness/artifact/repo/worktrack-backlog.md)
-10. [harness/artifact/repo/decision-log.md](./harness/artifact/repo/decision-log.md)
-11. [harness/artifact/repo/milestone-backlog.md](./harness/artifact/repo/milestone-backlog.md)
-12. [harness/artifact/repo/milestone-history.md](./harness/artifact/repo/milestone-history.md)
-13. [harness/artifact/worktrack/README.md](./harness/artifact/worktrack/README.md)
-14. [harness/artifact/worktrack/contract.md](./harness/artifact/worktrack/contract.md)
-15. [harness/artifact/worktrack/self-review-contract.md](./harness/artifact/worktrack/self-review-contract.md)
-16. [harness/artifact/worktrack/single-acceptance-contract.md](./harness/artifact/worktrack/single-acceptance-contract.md)
-17. [harness/artifact/worktrack/closeout-evidence-bundle.md](./harness/artifact/worktrack/closeout-evidence-bundle.md)
-18. [harness/artifact/worktrack/dispatch-evidence-records.md](./harness/artifact/worktrack/dispatch-evidence-records.md)
-19. [harness/artifact/worktrack/composite-lane-records.md](./harness/artifact/worktrack/composite-lane-records.md)
-20. [harness/artifact/worktrack/plan-task-queue.md](./harness/artifact/worktrack/plan-task-queue.md)
-21. [harness/artifact/worktrack/dispatch-packet.md](./harness/artifact/worktrack/dispatch-packet.md)
-22. [harness/artifact/worktrack/gate-evidence.md](./harness/artifact/worktrack/gate-evidence.md)
-23. [harness/artifact/worktrack/debug-evidence.md](./harness/artifact/worktrack/debug-evidence.md)
-24. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
-25. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
-26. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
-27. [harness/artifact/control/milestone-gate-aggregation.md](./harness/artifact/control/milestone-gate-aggregation.md)
-28. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
-29. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
-30. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
-31. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
+2. [harness/artifact/runtime-artifact-lifecycle.md](./harness/artifact/runtime-artifact-lifecycle.md)
+3. [harness/artifact/standard-fields.md](./harness/artifact/standard-fields.md)
+4. [harness/artifact/repo/README.md](./harness/artifact/repo/README.md)
+5. [harness/artifact/repo/discovery-input.md](./harness/artifact/repo/discovery-input.md)
+6. [harness/artifact/repo/complex-project-entry-gate.md](./harness/artifact/repo/complex-project-entry-gate.md)
+7. [harness/artifact/repo/goal-charter.md](./harness/artifact/repo/goal-charter.md)
+8. [harness/artifact/repo/repo-analysis.md](./harness/artifact/repo/repo-analysis.md)
+9. [harness/artifact/repo/snapshot-status.md](./harness/artifact/repo/snapshot-status.md)
+10. [harness/artifact/repo/worktrack-backlog.md](./harness/artifact/repo/worktrack-backlog.md)
+11. [harness/artifact/repo/decision-log.md](./harness/artifact/repo/decision-log.md)
+12. [harness/artifact/repo/milestone-backlog.md](./harness/artifact/repo/milestone-backlog.md)
+13. [harness/artifact/repo/milestone-history.md](./harness/artifact/repo/milestone-history.md)
+14. [harness/artifact/worktrack/README.md](./harness/artifact/worktrack/README.md)
+15. [harness/artifact/worktrack/contract.md](./harness/artifact/worktrack/contract.md)
+16. [harness/artifact/worktrack/self-review-contract.md](./harness/artifact/worktrack/self-review-contract.md)
+17. [harness/artifact/worktrack/single-acceptance-contract.md](./harness/artifact/worktrack/single-acceptance-contract.md)
+18. [harness/artifact/worktrack/closeout-evidence-bundle.md](./harness/artifact/worktrack/closeout-evidence-bundle.md)
+19. [harness/artifact/worktrack/dispatch-evidence-records.md](./harness/artifact/worktrack/dispatch-evidence-records.md)
+20. [harness/artifact/worktrack/composite-lane-records.md](./harness/artifact/worktrack/composite-lane-records.md)
+21. [harness/artifact/worktrack/plan-task-queue.md](./harness/artifact/worktrack/plan-task-queue.md)
+22. [harness/artifact/worktrack/dispatch-packet.md](./harness/artifact/worktrack/dispatch-packet.md)
+23. [harness/artifact/worktrack/gate-evidence.md](./harness/artifact/worktrack/gate-evidence.md)
+24. [harness/artifact/worktrack/debug-evidence.md](./harness/artifact/worktrack/debug-evidence.md)
+25. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
+26. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
+27. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
+28. [harness/artifact/control/milestone-gate-aggregation.md](./harness/artifact/control/milestone-gate-aggregation.md)
+29. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
+30. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
+31. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
+32. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
 
 #### 2.4 技能目录（Catalog）
 

@@ -1,9 +1,9 @@
 ---
 title: "Harness Artifact"
 status: active
-updated: 2026-06-13
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-30
 ---
 # Harness Artifact
 
@@ -14,4 +14,5 @@ last_verified: 2026-06-13
 - [repo/README.md](./repo/README.md)：`RepoScope` 的长期基线对象
 - [worktrack/README.md](./worktrack/README.md)：`WorktrackScope` 的局部转移对象，包含 contract、queue、dispatch、gate 与 debug evidence
 - [control/README.md](./control/README.md)：Harness supervisor 自身依赖的控制对象
+- [runtime-artifact-lifecycle.md](./runtime-artifact-lifecycle.md)：`.servo/` runtime artifact 的保留、归档、晋升、维护周期与 report-first cleanup 合同
 - [standard-fields.md](./standard-fields.md)：所有 Skill 结构化输出的标准字段词汇表
