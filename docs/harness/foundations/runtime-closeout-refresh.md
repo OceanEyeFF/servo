@@ -49,9 +49,11 @@ Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量�
 
 ## Runtime Artifact Maintenance
 
-Worktrack closeout and milestone final acceptance may create stale, superseded, or rolling runtime artifacts. Maintenance is a report-first cycle: inventory runtime artifacts, classify preserve/promote/archive/stale/superseded/expired candidates, promote verified long-term facts to their docs or implementation owners, and request separate approval before deletion or destructive cleanup.
+Worktrack closeout 与 Milestone final acceptance 都可能留下 stale、superseded 或滚动 runtime artifact。维护周期必须是 report-first：先盘点 runtime artifact 和引用链，再分类 preserve / promote / archive / stale / superseded / expired 候选，随后把已验证长期事实晋升到对应 docs 或 implementation owner；删除或破坏性 cleanup 需要单独批准。
 
-The runtime artifact lifecycle policy is defined in [../artifact/runtime-artifact-lifecycle.md](../artifact/runtime-artifact-lifecycle.md). Closeout and refresh must preserve Gate verdicts, closeout records, manual exception records, dispatch records, and any evidence cited by milestone history or docs truth.
+Worktrack Evidence / Findings / Discovery 的清理分三段处理：Worktrack closeout 先 snapshot 或 bundle 证据并分流 finding / discovery；Milestone 结束清理聚合已关闭 Worktrack 的证据和遗留发现；Repo cleanup 再处理跨 Milestone 的 stale、orphan、superseded、expired 候选。
+
+runtime artifact 生命周期策略由 [../artifact/runtime-artifact-lifecycle.md](../artifact/runtime-artifact-lifecycle.md) 定义。Closeout 与 refresh 必须保留 Gate verdict、closeout record、manual exception record、dispatch record，以及任何被 milestone history 或 docs truth 引用的 evidence。
 
 ## Milestone Progress
 
