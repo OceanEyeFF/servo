@@ -229,6 +229,7 @@ whitebox_verdict:
   1. 标记 `carrier: current-carrier`
   2. 标记 `carrier_isolation_broken: true`
   3. 在当前载体内顺序执行——但不得因此降低检查标准或简化分析
+  4. 若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 - **No code generation**：本技能检查和报告，**绝不**生成或修改代码。即使发现应该修复的问题，唯一合法行为是记录在 finding 中并标记对应的 verdict 等级。产出修复建议、代码补丁或"推荐改法"的行为必须被阻断。
 - **Target type explicitness**：输出必须包含 `target_type`、`target_type_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 且无法从已批准产物可追溯推断时，整体 verdict 必须为 `blocked`。
 - **Program-code structural evidence**：当 `target_type=program_code` 或 `mixed` 的程序切片存在时，必须输出 `internal_structure_evidence`。证据至少覆盖适用的控制流、数据流、状态传递、接口合约、依赖路径、架构边界或关键实现审查项；只有外部行为场景、文件列表或 WT 摘要不足以让 whitebox 通过。

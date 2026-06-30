@@ -528,6 +528,10 @@ aggregator_input:
     manual_exception_followup_ref: string | N/A
 ```
 
+Before Layer 1 dispatch, each sibling axis input package must pass clean-room lint. The package records `context_refs`, `allowed_ref_categories`, `forbidden_ref_categories`, and `input_gap_classification`. Inputs that include prior control-state axis labels, broad backlog reads, prior milestone Gate reports, or sibling axis reports are contaminated and must be rejected or surfaced as `input_gap` / non-pass axis facts before aggregation.
+
+Each per-axis `runtime_dispatch_profile` that claims spawned SubAgent execution must include `parent_runtime_dispatch_record_ref`, `spawned_subagent_record_ref`, `carrier_instance_id`, and `isolation_boundary`. Current-carrier fallback or ambiguous spawned-axis claims cannot prove sibling isolation unless a concrete runtime boundary violation is recorded. Blackbox reports additionally carry `input_gap_classification` so missing `target_type`, `aggregation_rules`, `completion_signals_trace`, or scenario inputs are separated from actual behavior scenario failures.
+
 ### aggregator 的输出
 
 ```yaml
@@ -656,6 +660,8 @@ aggregator_output:
 ### Aggregator 实现时需注意
 
 - `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
+- Axis input package lint failure is non-pass evidence. Reports produced from packages that read prior control-state axis labels, broad backlog files, prior milestone Gate reports, or sibling axis reports must be marked `contaminated` or surfaced through `input_gap_classification`; they cannot become clean-room axis pass evidence.
+- A spawned SubAgent carrier claim is valid only when the runtime dispatch profile preserves parent dispatch linkage, spawned SubAgent record linkage, a concrete carrier instance, and the isolation boundary. Ambiguous claims and current-carrier masquerading do not satisfy `isolation_guarantee`.
 - `closeout_evidence_bundle_ref` 缺失、bundle 不完整、bundle contaminated，或只有 prose closeout summary 时，不得后验合成 self-review、dispatch provenance 或 composite lane evidence。该 worktrack 必须以 `missing` / `incomplete` / `contaminated` / `historical_gap` 状态进入 axis checks 和 aggregation。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。

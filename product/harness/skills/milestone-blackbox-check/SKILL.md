@@ -259,6 +259,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
 - `信号覆盖矩阵`：每个 completion_signal → 覆盖的 WT 列表
 - `行为场景矩阵`：对 `program_code` 和 `mixed` 的程序切片列出 scenario_id、触发、输入、可观察表面、期望输出、证据、回归期待和覆盖 WT
 - `替代验收说明`：对 `non_program_artifact` 和 `mixed` 的非程序切片列出 substituted / not_applicable 状态、替代方法和证据
+- `input_gap_classification`：显式区分缺少 `target_type`、`aggregation_rules`、`completion_signals_trace` 或 behavior scenario inputs 的输入缺口，与真实外部行为场景执行失败
 - `路径分层规则引用`：已知的 repo 分层规则
 - `已知风险`：从 milestone artifact 或 WT closeout 中已声明风险
 
@@ -278,8 +279,10 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
    - 标记 `carrier: current-carrier`
    - 标记 `carrier_isolation_broken: true`（因为 current-carrier 可能在同进程中看到了其他轴的输出）
    - 在 `isolation_guarantee` 中记录降级原因
+   - 若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 5. **不得进入后续阶段**：本技能产出 verdict 后立即停止。从本技能直接跳到 aggregator 计算、gate 判定、恢复决策、worktrack 创建或代码修改的行为必须返回 `blocked`。唯一合法的下一步是将输出交给 orchestrator（milestone-status-skill）。
 6. **缺失输入必须暴露**：缺少完成检查所必需的任何输入（如 milestone 无 completion_signals、WT 无 closeout record 等）时，唯一合法行为是将对应检查项标记为 `blocked` 并说明缺失内容。假定缺失数据为 pass 的行为必须返回 `blocked`。
+6a. **input_gap 不等于行为失败**：当缺少 `target_type`、`aggregation_rules`、`completion_signals_trace` 或 behavior scenario inputs 时，必须在 `input_gap_classification` 中标记 `input_gap_status: input_gap` 或 `mixed_input_gap_and_behavior_failure`，并列出对应布尔字段。未执行或无法构造场景时，不得把结果描述为外部行为 hard_fail；只有已经构造并执行/观察到 scenario 的实际不符合，才可标记 `behavior_failure_present: true`。
 7. **证据引用必须具体**：每条 finding 的 `evidence_refs` 必须是可追溯的文件路径或 artifact ref（如 `WT-xxx/closeout-record.md`、`milestone-artifact.md#completion_signals`）。不得出现无法定位的模糊引用（如"综合所有 WT 来看"）。
 8. **输出必须包含完整的五项检查结果**：即使某项检查因输入不足被 `blocked`，也必须显式输出该项的 verdict 和 finding，不得省略。跳过某项检查的行为必须返回 `blocked`。
 9. **target_type 必须显式化**：输出必须包含 `target_type`、`target_type_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 且无法从已批准产物可追溯推断时，整体 verdict 必须为 `blocked`。
@@ -330,6 +333,14 @@ blackbox_verdict:
       evidence_refs:
         - "path/to/wt-xxx-closeout.md#completion_signals_trace"
       verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
+  input_gap_classification:
+    input_gap_status: none | input_gap | behavior_failure | mixed_input_gap_and_behavior_failure
+    missing_target_type: true | false
+    missing_aggregation_rules: true | false
+    missing_completion_signals_trace: true | false
+    missing_scenario_inputs: true | false
+    behavior_failure_present: true | false
+    classification_reason: "说明缺口或行为失败的来源；若未执行场景，必须说明不是 behavior failure"
   checklist_results:
     - check_id: B1
       verdict: pass | soft_fail | hard_fail | blocked | substituted | not_applicable
@@ -381,6 +392,7 @@ blackbox_verdict:
 | `expected_method` | enum | 当前类型下 blackbox 轴应使用的方法 |
 | `substituted_by` | list | 替代验收方法和证据。仅在 `axis_applicability_state = substituted` 或 `split` 时有效 |
 | `scenario_results` | list | 程序目标或 mixed 程序切片的外部行为场景结果 |
+| `input_gap_classification` | object | 区分输入缺口与实际行为失败。缺少 `target_type`、`aggregation_rules`、`completion_signals_trace` 或 scenario inputs 时，必须记录为 `input_gap` / non-pass，而不是伪装成行为失败或 pass |
 | `checklist_results[*].verdict` | enum | 分项判定。`blocked`：检查无法执行（输入缺失）。`substituted`：该项用替代验收承接。`not_applicable`：该项明确不适用，不能计为 pass |
 | `checklist_results[*].evidence_refs` | list | 引用的文件路径或 artifact ref，用于追溯 |
 | `checklist_results[*].finding` | string | 具体发现描述，包含对比细节和结论 |

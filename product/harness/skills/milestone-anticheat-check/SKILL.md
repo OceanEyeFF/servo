@@ -388,7 +388,7 @@ Manual exception may accept the residual delivery risk, but it must preserve `hi
 
 1. **Permission boundary**：Read-only。可读取 evidence metadata、dispatch profiles、closeout records 和 aggregation_rules。MUST NOT 修改任何代码、evidence 或 control state。
 2. **Isolation**：MUST NOT 接收或读取其他轴（blackbox、whitebox、composite）的 verdict。若另一轴 verdict 被注入上下文，必须标记 `isolation_guarantee: false` 并记录泄露来源（文件路径或注入方式）。隔离被破坏时，仍产出 verdict 但置信度降级为 `low`。
-3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。
+3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 4. **Anti-cheat is NOT code review**：本技能不评判代码正确性、性能、安全性或架构质量。它只评判证据的可信度。即使所有代码从技术角度正确，若检测到 fake evidence 信号，仍必须报告 `hard_fail` 且不可被其他轴覆盖。
 5. **False positive handling**：若某条检测看起来命中反作弊 pattern 但存在可解释的合法理由（如 `A1` 中 test-type WT 合理使用 mock），其 verdict 应记录为 `pass` 并附带解释。不得压制检测结果或静默降级 — 合法理由必须显式记录在 `finding` 字段中。
 6. **Stale evidence 时效性**：A5 的主判断依据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；milestone 分支 HEAD 是目标基线，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 应基于 ref/hash 关系解释时间线。文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。

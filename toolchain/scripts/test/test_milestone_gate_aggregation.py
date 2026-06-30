@@ -16,8 +16,13 @@ import re
 import sys
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SKILLS_DIR = REPO_ROOT / "product" / "harness" / "skills"
+REAL_SHAPE_CLOSEOUT_FIXTURE = (
+    "toolchain/scripts/test/fixtures/closeout-records-real-shape-regressions.md"
+)
 FAILURES: list[str] = []
 
 
@@ -42,6 +47,20 @@ def read_repo_file(path: str) -> str:
         fail(f"missing file: {path}")
         return ""
     return full.read_text(encoding="utf-8")
+
+
+def extract_fenced_yaml_after_heading(text: str, heading: str) -> dict:
+    match = re.search(
+        rf"^## {re.escape(heading)}\n(?P<section>.*?)(?=^## |\Z)",
+        text,
+        re.S | re.M,
+    )
+    assert match, f"missing heading {heading!r}"
+    fence = re.search(r"```yaml\n(?P<body>.*?)\n```", match.group("section"), re.S)
+    assert fence, f"missing yaml block under {heading!r}"
+    payload = yaml.safe_load(fence.group("body"))
+    assert isinstance(payload, dict), f"{heading!r}: yaml block must load as object"
+    return payload
 
 
 # ---------- 1. Aggregator logic tests ----------
@@ -227,6 +246,27 @@ REQUIRED_AXIS_REPORT_FIELDS = {
     "runtime_dispatch_profile",
     "missing_evidence",
 }
+REQUIRED_BLACKBOX_INPUT_GAP_FIELDS = {
+    "input_gap_status",
+    "missing_target_type",
+    "missing_aggregation_rules",
+    "missing_completion_signals_trace",
+    "missing_scenario_inputs",
+    "behavior_failure_present",
+    "classification_reason",
+}
+VALID_BLACKBOX_INPUT_GAP_STATUSES = {
+    "none",
+    "input_gap",
+    "behavior_failure",
+    "mixed_input_gap_and_behavior_failure",
+}
+BLACKBOX_INPUT_GAP_MISSING_FLAGS = {
+    "missing_target_type",
+    "missing_aggregation_rules",
+    "missing_completion_signals_trace",
+    "missing_scenario_inputs",
+}
 REQUIRED_SUBSTITUTED_AXIS_REPORT_FIELDS = {
     "substitute_method",
     "substitution_evidence_ref",
@@ -245,6 +285,12 @@ REQUIRED_AXIS_RUNTIME_DISPATCH_PROFILE_FIELDS = {
     "attempted_carrier",
     "carrier_decision",
     "fallback_reason",
+}
+REQUIRED_SPAWNED_SUBAGENT_PROFILE_FIELDS = {
+    "parent_runtime_dispatch_record_ref",
+    "spawned_subagent_record_ref",
+    "carrier_instance_id",
+    "isolation_boundary",
 }
 REQUIRED_AXIS_DISPATCH_PROFILE_FIELDS = {
     "dispatch_owner",
@@ -469,6 +515,30 @@ VALID_BUNDLE_COMPLETENESS_STATUSES = {
     "contaminated",
     "historical_gap",
 }
+REQUIRED_AXIS_INPUT_PACKAGE_FIELDS = {
+    "axis",
+    "milestone_id",
+    "target_type",
+    "context_refs",
+    "allowed_ref_categories",
+    "forbidden_ref_categories",
+    "input_gap_classification",
+}
+FORBIDDEN_AXIS_INPUT_REF_PATTERNS = {
+    "control_state_axis_labels": re.compile(
+        r"\.servo/(control-state(?:-repo)?\.md|control-state)(?:$|[#/])"
+    ),
+    "broad_backlog_reads": re.compile(
+        r"\.servo/repo/(?:worktrack|milestone)-backlog\.md(?:$|[#/])"
+    ),
+    "prior_milestone_gate_reports": re.compile(
+        r"\.servo/milestone/MS-(?!current)[0-9-]+-(?:gate-verdict|gate-report)\.md(?:$|[#/])"
+    ),
+    "sibling_axis_reports": re.compile(
+        r"\.servo/milestone/MS-[0-9-]+-axis-(?:blackbox|whitebox|anticheat|composite)\.md(?:$|[#/])"
+    ),
+}
+REQUIRED_AXIS_INPUT_FORBIDDEN_CATEGORIES = set(FORBIDDEN_AXIS_INPUT_REF_PATTERNS)
 
 
 def _add_missing_fields(
@@ -502,6 +572,171 @@ def _validate_status(
 ) -> None:
     if value not in allowed:
         errors.append(f"{path}: invalid status {value!r}")
+
+
+def _validate_input_gap_classification(
+    errors: list[str],
+    gap: dict,
+    path: str,
+) -> None:
+    _add_missing_fields(
+        errors,
+        gap,
+        REQUIRED_BLACKBOX_INPUT_GAP_FIELDS,
+        path,
+    )
+    status = gap.get("input_gap_status")
+    if status is not None:
+        _validate_status(
+            errors,
+            status,
+            VALID_BLACKBOX_INPUT_GAP_STATUSES,
+            f"{path}.input_gap_status",
+        )
+
+    for field in sorted(BLACKBOX_INPUT_GAP_MISSING_FLAGS | {"behavior_failure_present"}):
+        if field in gap and not isinstance(gap[field], bool):
+            errors.append(f"{path}.{field}: must be a boolean")
+
+    has_missing_input = any(
+        gap.get(field) is True for field in BLACKBOX_INPUT_GAP_MISSING_FLAGS
+    )
+    has_behavior_failure = gap.get("behavior_failure_present") is True
+    if status == "none":
+        if has_missing_input or has_behavior_failure:
+            errors.append(
+                f"{path}.input_gap_status: none requires all missing flags false "
+                "and behavior_failure_present false"
+            )
+    elif status == "input_gap":
+        if not has_missing_input or has_behavior_failure:
+            errors.append(
+                f"{path}.input_gap_status: input_gap requires at least one missing "
+                "input flag and behavior_failure_present false"
+            )
+    elif status == "behavior_failure":
+        if has_missing_input or not has_behavior_failure:
+            errors.append(
+                f"{path}.input_gap_status: behavior_failure requires "
+                "behavior_failure_present true and no missing input flags"
+            )
+    elif status == "mixed_input_gap_and_behavior_failure":
+        if not has_missing_input or not has_behavior_failure:
+            errors.append(
+                f"{path}.input_gap_status: mixed_input_gap_and_behavior_failure "
+                "requires at least one missing input flag and behavior_failure_present true"
+            )
+
+
+def _validate_runtime_dispatch_profile(
+    errors: list[str],
+    value: object,
+    path: str,
+) -> None:
+    if not _require_object(errors, value, path):
+        return
+    _add_missing_fields(
+        errors,
+        value,
+        REQUIRED_AXIS_RUNTIME_DISPATCH_PROFILE_FIELDS,
+        path,
+    )
+    attempted = value.get("attempted_carrier")
+    decision = value.get("carrier_decision")
+    claims_spawned_subagent = (
+        attempted == "SubAgent"
+        or decision in {"delegated_subagent", "spawned_subagent"}
+        or value.get("carrier") == "subagent"
+    )
+    if claims_spawned_subagent:
+        _add_missing_fields(
+            errors,
+            value,
+            REQUIRED_SPAWNED_SUBAGENT_PROFILE_FIELDS,
+            path,
+        )
+        parent_ref = value.get("parent_runtime_dispatch_record_ref")
+        spawned_ref = value.get("spawned_subagent_record_ref")
+        carrier_id = value.get("carrier_instance_id")
+        isolation_boundary = value.get("isolation_boundary")
+        if parent_ref in {None, "", "N/A"}:
+            errors.append(f"{path}: spawned SubAgent claim requires parent runtime dispatch ref")
+        if spawned_ref in {None, "", "N/A"}:
+            errors.append(f"{path}: spawned SubAgent claim requires spawned subagent record ref")
+        if carrier_id in {None, "", "current-carrier", "N/A"}:
+            errors.append(f"{path}: spawned SubAgent claim requires concrete carrier_instance_id")
+        isolation_boundary_text = (
+            isolation_boundary.strip()
+            if isinstance(isolation_boundary, str)
+            else isolation_boundary
+        )
+        isolation_boundary_key = (
+            isolation_boundary_text.lower()
+            if isinstance(isolation_boundary_text, str)
+            else isolation_boundary_text
+        )
+        if isolation_boundary_key in {None, "", "n/a", "current-carrier", "ambiguous"}:
+            errors.append(f"{path}: spawned SubAgent claim requires concrete isolation_boundary")
+    if attempted == "SubAgent" and decision == "current_carrier":
+        if value.get("boundary_violation_recorded") is not True:
+            errors.append(
+                f"{path}: current-carrier fallback from SubAgent requires boundary_violation_recorded"
+            )
+
+
+def validate_axis_input_package(payload: dict) -> list[str]:
+    errors: list[str] = []
+    package = payload.get("axis_input_package")
+    if not _require_object(errors, package, "axis_input_package"):
+        return errors
+    _add_missing_fields(
+        errors,
+        package,
+        REQUIRED_AXIS_INPUT_PACKAGE_FIELDS,
+        "axis_input_package",
+    )
+    axis = package.get("axis")
+    if axis not in CANONICAL_AXIS_IDS:
+        errors.append(f"axis_input_package.axis: invalid axis {axis!r}")
+
+    context_refs = package.get("context_refs", [])
+    if not isinstance(context_refs, list):
+        errors.append("axis_input_package.context_refs: must be a list")
+        context_refs = []
+    forbidden_categories = package.get("forbidden_ref_categories", {})
+    if _require_object(
+        errors,
+        forbidden_categories,
+        "axis_input_package.forbidden_ref_categories",
+    ):
+        missing_categories = sorted(
+            REQUIRED_AXIS_INPUT_FORBIDDEN_CATEGORIES - set(forbidden_categories)
+        )
+        if missing_categories:
+            errors.append(
+                "axis_input_package.forbidden_ref_categories: "
+                f"missing categories {missing_categories}"
+            )
+
+    for ref in context_refs:
+        if not isinstance(ref, str):
+            errors.append("axis_input_package.context_refs: entries must be strings")
+            continue
+        for category, pattern in FORBIDDEN_AXIS_INPUT_REF_PATTERNS.items():
+            if pattern.search(ref):
+                errors.append(
+                    "axis_input_package.context_refs: "
+                    f"forbidden {category} ref {ref!r}"
+                )
+
+    gap = package.get("input_gap_classification", {})
+    if _require_object(errors, gap, "axis_input_package.input_gap_classification"):
+        _validate_input_gap_classification(
+            errors,
+            gap,
+            "axis_input_package.input_gap_classification",
+        )
+    return errors
 
 
 def validate_axis_report_bundle(payload: dict) -> list[str]:
@@ -550,15 +785,20 @@ def validate_axis_report_bundle(payload: dict) -> list[str]:
                     f"{axis}: substituted axis missing fields {substituted_missing}"
                 )
         runtime_profile = report.get("runtime_dispatch_profile")
-        if axis in CANONICAL_AXIS_IDS and _require_object(
-            errors, runtime_profile, f"{axis}.runtime_dispatch_profile"
-        ):
-            _add_missing_fields(
+        if axis in CANONICAL_AXIS_IDS:
+            _validate_runtime_dispatch_profile(
                 errors,
                 runtime_profile,
-                REQUIRED_AXIS_RUNTIME_DISPATCH_PROFILE_FIELDS,
                 f"{axis}.runtime_dispatch_profile",
             )
+        if axis == "blackbox":
+            gap = report.get("input_gap_classification")
+            if _require_object(errors, gap, f"{axis}.input_gap_classification"):
+                _validate_input_gap_classification(
+                    errors,
+                    gap,
+                    f"{axis}.input_gap_classification",
+                )
         if "missing_evidence" in report:
             _require_list(errors, report["missing_evidence"], f"{axis}.missing_evidence")
 
@@ -611,19 +851,12 @@ def validate_axis_report_bundle(payload: dict) -> list[str]:
                 )
             for axis in sorted(CANONICAL_AXIS_IDS):
                 runtime_profile = per_axis_profile.get(axis)
-                if _require_object(
+                _validate_runtime_dispatch_profile(
                     errors,
                     runtime_profile,
                     "axis_dispatch_profile.per_axis_runtime_dispatch_profile."
                     f"{axis}",
-                ):
-                    _add_missing_fields(
-                        errors,
-                        runtime_profile,
-                        REQUIRED_AXIS_RUNTIME_DISPATCH_PROFILE_FIELDS,
-                        "axis_dispatch_profile.per_axis_runtime_dispatch_profile."
-                        f"{axis}",
-                    )
+                )
 
     axis_report_status = payload.get("axis_report_status")
     _validate_status(
@@ -866,6 +1099,10 @@ def make_axis_runtime_dispatch_profile() -> dict:
         "attempted_carrier": "SubAgent",
         "carrier_decision": "delegated_subagent",
         "fallback_reason": "N/A",
+        "parent_runtime_dispatch_record_ref": ".servo/milestone/MS-xxx-axis-dispatch-profile.md#blackbox",
+        "spawned_subagent_record_ref": ".servo/milestone/MS-xxx-axis-dispatch-profile.md#blackbox-subagent",
+        "carrier_instance_id": "subagent-blackbox-001",
+        "isolation_boundary": "sibling-axis-clean-room",
     }
 
 
@@ -889,6 +1126,15 @@ def make_axis_report_bundle() -> dict:
             "runtime_dispatch_profile": make_axis_runtime_dispatch_profile(),
             "missing_evidence": [],
         }
+    reports["blackbox"]["input_gap_classification"] = {
+        "input_gap_status": "none",
+        "missing_target_type": False,
+        "missing_aggregation_rules": False,
+        "missing_completion_signals_trace": False,
+        "missing_scenario_inputs": False,
+        "behavior_failure_present": False,
+        "classification_reason": "all blackbox scenario inputs present",
+    }
     return {
         "axis_reports": reports,
         "axis_report_status": "complete",
@@ -917,6 +1163,41 @@ def make_axis_report_bundle() -> dict:
         "accepted_gate_verdict_preserved_as": "N/A",
         "anti_cheat_findings_preserved": "N/A",
         "manual_exception_followup_ref": "N/A",
+    }
+
+
+def make_axis_input_package(axis: str = "blackbox") -> dict:
+    return {
+        "axis_input_package": {
+            "axis": axis,
+            "milestone_id": "MS-current",
+            "target_type": "program_code",
+            "context_refs": [
+                ".servo/milestone/MS-current.md#Purpose",
+                ".servo/milestone/MS-current-closeout-records.md#WT-1",
+                ".servo/worktrack/WT-1-contract.md#Task-Goal",
+            ],
+            "allowed_ref_categories": {
+                "milestone_artifact": [".servo/milestone/MS-current.md"],
+                "closeout_records": [".servo/milestone/MS-current-closeout-records.md"],
+                "worktrack_contracts": [".servo/worktrack/WT-1-contract.md"],
+            },
+            "forbidden_ref_categories": {
+                "control_state_axis_labels": [],
+                "broad_backlog_reads": [],
+                "prior_milestone_gate_reports": [],
+                "sibling_axis_reports": [],
+            },
+            "input_gap_classification": {
+                "input_gap_status": "none",
+                "missing_target_type": False,
+                "missing_aggregation_rules": False,
+                "missing_completion_signals_trace": False,
+                "missing_scenario_inputs": False,
+                "behavior_failure_present": False,
+                "classification_reason": "clean-room package has enough inputs",
+            },
+        }
     }
 
 
@@ -1126,6 +1407,131 @@ def test_closeout_schema_preserves_visible_non_pass_states():
     print("  PASS: closeout_schema_preserves_visible_non_pass_states")
 
 
+def test_real_closeout_record_fixture_rejects_prose_dispatch_summary():
+    text = read_repo_file(REAL_SHAPE_CLOSEOUT_FIXTURE)
+    payload = extract_fenced_yaml_after_heading(
+        text,
+        "WT-deploy-sync-and-dogfood-evidence",
+    )
+    errors = validate_closeout_evidence_bundle(payload)
+    assert any("independence_summary" in e for e in errors), errors
+    print("  PASS: real_closeout_record_fixture_prose_dispatch_summary")
+
+
+def test_real_closeout_record_fixture_rejects_legacy_incomplete_bundle():
+    text = read_repo_file(REAL_SHAPE_CLOSEOUT_FIXTURE)
+    payload = extract_fenced_yaml_after_heading(
+        text,
+        "WT-closeout-evidence-bundle-contract",
+    )
+    errors = validate_closeout_evidence_bundle(payload)
+    assert any("dispatch_provenance" in e and "status" in e for e in errors), errors
+    assert any(
+        "dispatch_provenance" in e and "dispatch_result_status" in e
+        for e in errors
+    ), errors
+    assert any("missing lanes" in e for e in errors), errors
+    assert any("code_review: must be an object" in e for e in errors), errors
+    print("  PASS: real_closeout_record_fixture_legacy_incomplete_bundle")
+
+
+def test_axis_input_package_accepts_clean_room_refs():
+    payload = make_axis_input_package()
+    errors = validate_axis_input_package(payload)
+    assert not errors, f"expected clean axis input package, got {errors}"
+    print("  PASS: axis_input_package_clean_room_refs")
+
+
+def test_axis_input_package_rejects_forbidden_context_refs():
+    payload = make_axis_input_package()
+    refs = payload["axis_input_package"]["context_refs"]
+    refs.extend(
+        [
+            ".servo/control-state-repo.md#Milestone-Gate",
+            ".servo/repo/worktrack-backlog.md",
+            ".servo/milestone/MS-20260627-002-gate-verdict.md",
+            ".servo/milestone/MS-20260628-001-axis-whitebox.md",
+        ]
+    )
+    errors = validate_axis_input_package(payload)
+    for category in REQUIRED_AXIS_INPUT_FORBIDDEN_CATEGORIES:
+        assert any(category in e for e in errors), f"{category}: {errors}"
+    print("  PASS: axis_input_package_forbidden_context_refs")
+
+
+def test_axis_input_package_rejects_milestone_backlog_broad_read():
+    payload = make_axis_input_package()
+    refs = payload["axis_input_package"]["context_refs"]
+    refs.append(".servo/repo/milestone-backlog.md#Pipeline")
+    errors = validate_axis_input_package(payload)
+    assert any("broad_backlog_reads" in e for e in errors), errors
+    print("  PASS: axis_input_package_milestone_backlog_broad_read")
+
+
+def test_input_gap_classification_rejects_inconsistent_statuses():
+    payload = make_axis_input_package()
+    gap = payload["axis_input_package"]["input_gap_classification"]
+    gap["input_gap_status"] = "none"
+    gap["missing_target_type"] = True
+    errors = validate_axis_input_package(payload)
+    assert any("none requires all missing flags false" in e for e in errors), errors
+
+    invalid_report_cases = [
+        (
+            "input_gap",
+            {
+                "missing_target_type": False,
+                "missing_aggregation_rules": False,
+                "missing_completion_signals_trace": False,
+                "missing_scenario_inputs": False,
+                "behavior_failure_present": False,
+            },
+            "input_gap requires at least one missing input flag",
+        ),
+        (
+            "input_gap",
+            {
+                "missing_target_type": True,
+                "behavior_failure_present": True,
+            },
+            "input_gap requires at least one missing input flag",
+        ),
+        (
+            "behavior_failure",
+            {
+                "missing_scenario_inputs": True,
+                "behavior_failure_present": True,
+            },
+            "behavior_failure requires behavior_failure_present true and no missing input flags",
+        ),
+        (
+            "behavior_failure",
+            {
+                "behavior_failure_present": False,
+            },
+            "behavior_failure requires behavior_failure_present true and no missing input flags",
+        ),
+        (
+            "mixed_input_gap_and_behavior_failure",
+            {
+                "missing_completion_signals_trace": True,
+                "behavior_failure_present": False,
+            },
+            "mixed_input_gap_and_behavior_failure requires at least one missing input flag",
+        ),
+    ]
+    for status, updates, expected_error in invalid_report_cases:
+        report_payload = make_axis_report_bundle()
+        report_gap = report_payload["axis_reports"]["blackbox"][
+            "input_gap_classification"
+        ]
+        report_gap["input_gap_status"] = status
+        report_gap.update(updates)
+        errors = validate_axis_report_bundle(report_payload)
+        assert any(expected_error in e for e in errors), (status, errors)
+    print("  PASS: input_gap_classification_inconsistent_statuses")
+
+
 def test_axis_report_schema_complete_bundle():
     payload = make_axis_report_bundle()
     errors = validate_axis_report_bundle(payload)
@@ -1164,6 +1570,72 @@ def test_axis_report_schema_requires_runtime_dispatch_profile():
     assert any("runtime_dispatch_profile" in e for e in errors), errors
     assert any("per_axis_runtime_dispatch_profile" in e for e in errors), errors
     print("  PASS: axis_report_schema_runtime_dispatch_profile")
+
+
+def test_axis_report_schema_rejects_ambiguous_subagent_claims():
+    payload = make_axis_report_bundle()
+    runtime_profile = payload["axis_reports"]["whitebox"]["runtime_dispatch_profile"]
+    for field in REQUIRED_SPAWNED_SUBAGENT_PROFILE_FIELDS:
+        runtime_profile.pop(field, None)
+    runtime_profile["carrier_instance_id"] = "current-carrier"
+    errors = validate_axis_report_bundle(payload)
+    assert any("parent runtime dispatch ref" in e for e in errors), errors
+    assert any("spawned subagent record ref" in e for e in errors), errors
+    assert any("concrete carrier_instance_id" in e for e in errors), errors
+
+    runtime_profile.update(
+        {
+            "attempted_carrier": "SubAgent",
+            "carrier_decision": "current_carrier",
+            "parent_runtime_dispatch_record_ref": ".servo/milestone/MS-xxx-axis-dispatch-profile.md#whitebox",
+            "spawned_subagent_record_ref": ".servo/milestone/MS-xxx-axis-dispatch-profile.md#whitebox-subagent",
+            "carrier_instance_id": "subagent-whitebox-001",
+            "isolation_boundary": "sibling-axis-clean-room",
+        }
+    )
+    errors = validate_axis_report_bundle(payload)
+    assert any("boundary_violation_recorded" in e for e in errors), errors
+    print("  PASS: axis_report_schema_ambiguous_subagent_claims")
+
+
+def test_axis_report_schema_rejects_ambiguous_isolation_boundary():
+    for invalid_boundary in ["", "N/A", "current-carrier", "ambiguous"]:
+        payload = make_axis_report_bundle()
+        runtime_profile = payload["axis_reports"]["blackbox"][
+            "runtime_dispatch_profile"
+        ]
+        runtime_profile["isolation_boundary"] = invalid_boundary
+        errors = validate_axis_report_bundle(payload)
+        assert any("concrete isolation_boundary" in e for e in errors), (
+            invalid_boundary,
+            errors,
+        )
+    print("  PASS: axis_report_schema_ambiguous_isolation_boundary")
+
+
+def test_blackbox_report_schema_distinguishes_input_gap():
+    payload = make_axis_report_bundle()
+    gap = payload["axis_reports"]["blackbox"]["input_gap_classification"]
+    gap.update(
+        {
+            "input_gap_status": "input_gap",
+            "missing_target_type": True,
+            "missing_aggregation_rules": True,
+            "missing_completion_signals_trace": True,
+            "missing_scenario_inputs": True,
+            "behavior_failure_present": False,
+            "classification_reason": "required blackbox inputs are absent; no behavior failure was executed",
+        }
+    )
+    errors = validate_axis_report_bundle(payload)
+    assert not errors, f"expected explicit blackbox input_gap to validate, got {errors}"
+
+    del payload["axis_reports"]["blackbox"]["input_gap_classification"][
+        "missing_scenario_inputs"
+    ]
+    errors = validate_axis_report_bundle(payload)
+    assert any("missing_scenario_inputs" in e for e in errors), errors
+    print("  PASS: blackbox_report_schema_input_gap")
 
 
 def test_axis_report_schema_requires_substituted_axis_fields():
@@ -1673,10 +2145,19 @@ def main() -> int:
         test_dispatch_provenance_preserves_distinct_runtime_statuses,
         test_composite_lane_records_require_all_six_link_entries,
         test_closeout_schema_preserves_visible_non_pass_states,
+        test_real_closeout_record_fixture_rejects_prose_dispatch_summary,
+        test_real_closeout_record_fixture_rejects_legacy_incomplete_bundle,
+        test_axis_input_package_accepts_clean_room_refs,
+        test_axis_input_package_rejects_forbidden_context_refs,
+        test_axis_input_package_rejects_milestone_backlog_broad_read,
+        test_input_gap_classification_rejects_inconsistent_statuses,
         test_axis_report_schema_complete_bundle,
         test_axis_report_schema_rejects_missing_axis,
         test_axis_report_schema_rejects_legacy_aliases,
         test_axis_report_schema_requires_runtime_dispatch_profile,
+        test_axis_report_schema_rejects_ambiguous_subagent_claims,
+        test_axis_report_schema_rejects_ambiguous_isolation_boundary,
+        test_blackbox_report_schema_distinguishes_input_gap,
         test_axis_report_schema_requires_substituted_axis_fields,
         test_axis_report_schema_requires_dispatch_profile_axis_maps,
         test_axis_report_schema_requires_status_and_report_fields,
