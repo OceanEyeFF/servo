@@ -183,7 +183,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
   - `product/` 是否放业务代码、`docs/` 是否放文档、`toolchain/` 是否放脚本工具
   - 是否有文件放在了 `.servo/`、`.agents/`、`.claude/` 等被禁止产出的 state layer
 - 检查新引入的配置字段或 API 字段是否与现有字段语义冲突（如重名但含义不同）
-- 检查 milestone 产出是否在 `.agents/skills/` 和 `product/harness/skills/` 之间保持了 canonical → deploy target 的分发关系
+- 检查 milestone 产出是否保持 canonical source → deploy target 的声明关系；deploy target 不得被反向当作 source truth
 
 **证据来源**：
 

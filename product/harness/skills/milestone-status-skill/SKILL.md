@@ -270,7 +270,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `closeout_bundle_status_by_worktrack`、`dispatch_provenance_by_worktrack`、`missing_closeout_bundle_refs`、`historical_gap_worktracks`
 - `composite_lane_records_by_worktrack`、`missing_composite_lane_records`、`historical_gap_composite_lane_records`、`contaminated_composite_lane_records`
 
-详细格式见 `product/harness/skills/milestone-gate/SKILL.md#预期输出`。
+以上字段列表是本技能消费 `milestone-gate` 输出时的运行态最低合同；不得依赖 source-repo 路径读取额外格式定义。
 
 ## Writeback 指令
 

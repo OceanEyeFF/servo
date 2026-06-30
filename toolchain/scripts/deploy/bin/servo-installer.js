@@ -2184,6 +2184,28 @@ function targetFrontmatterOverrides(binding, relativeName, metadata, payload) {
 	return claudeFrontmatterOverrides(payload, binding);
 }
 
+function runtimePayloadDescriptorText(payload, binding) {
+	const metadata = payloadTargetMetadata(payload, binding);
+	const descriptor = {
+		payload_version: payload.payload_version,
+		backend: payload.backend,
+		skill_id: payload.skill_id,
+		target_dir: metadata.targetDir,
+		target_entry_name: metadata.targetEntryName,
+		payload_policy: "runtime-package-local",
+		supported_target_scopes: payload.supported_target_scopes,
+		reference_distribution: "package-local-files",
+		package_dir: ".",
+		package_paths: metadata.requiredPayloadFiles,
+		required_payload_files: metadata.requiredPayloadFiles,
+		legacy_target_dirs: metadata.legacyTargetDirs,
+	};
+	if (binding.backend === claudeBackend && payload.claude_frontmatter !== undefined) {
+		descriptor.claude_frontmatter = claudeFrontmatterOverrides(payload, binding);
+	}
+	return `${JSON.stringify(descriptor, null, 2)}\n`;
+}
+
 function expectedTargetFileText(
 	binding,
 	relativeName,
@@ -2191,6 +2213,9 @@ function expectedTargetFileText(
 	payload,
 	sourcePath,
 ) {
+	if (relativeName === payloadDescriptor) {
+		return runtimePayloadDescriptorText(payload, binding);
+	}
 	const sourceText = readFileSync(sourcePath, "utf8");
 	const metadata = payloadTargetMetadata(payload, binding);
 	const overrides = targetFrontmatterOverrides(
@@ -3250,7 +3275,7 @@ function sourceTextForTargetRelativeFile(
 	canonicalSource,
 ) {
 	if (relativeName === payloadDescriptor) {
-		return loadedPayload.payloadText;
+		return runtimePayloadDescriptorText(payload, binding);
 	}
 	const sourcePath = sourcePathForTargetRelativeFile(
 		binding,
@@ -6867,6 +6892,7 @@ module.exports = {
 	recursiveSensitiveTargetRepoRoots,
 	resolveExistingOrLexical,
 	runtimeMigrationSummary,
+	runtimePayloadDescriptorText,
 	runNodeOwned,
 	updatePlanSummary,
 	validateSourceRepoRoot,
