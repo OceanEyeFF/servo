@@ -64,6 +64,7 @@ ALLOWED: dict[str, str] = {
     "artifact_hydration":          "Artifact 水合",
     "status_consistency_check":    "状态一致性检查",
     "worktrack_queue_scheduling":  "Worktrack 内队列调度",
+    "bounded_worktrack_init":      "限定范围 Worktrack 初始化",
     "bounded_worktrack_dispatch":  "限定范围 Worktrack 分派",
     "bounded_worktrack_close":     "限定范围 Worktrack 收尾",
     "non_destructive_docs_edits":  "非破坏性文档编辑",
@@ -293,6 +294,22 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=["contract_scope_expansion"],
         needs_approval=True,
         description="Worktrack 初始化可能扩大 scope，需要审批",
+    ),
+    "init_worktrack::worktrack-init-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_init",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-init-skill 只允许初始化已在当前 active milestone "
+            "worktrack_list 中且 intake review ready 的 Worktrack；新增/"
+            "移除/重排 Worktrack、目标变更或 Contract scope expansion "
+            "仍需独立审批"
+        ),
     ),
 
     # ── cleanup ──
