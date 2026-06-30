@@ -313,6 +313,28 @@ POLICY_MAP: dict[str, PolicyProfile] = {
     ),
 
     # ── cleanup ──
+    "cleanup::milestone-cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "milestone-cleanup-skill 只允许 milestone closeout 后的"
+            "repo/runtime cleanup report 与非破坏性 dry-run 维护；"
+            "cleanup apply/delete/move/archive 仍需独立显式审批"
+        ),
+    ),
+    "cleanup::worktrack-cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
+        ),
+    ),
     "cleanup::servo-cleanup-skill": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
         forbidden_hit=[],
