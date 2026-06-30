@@ -16,7 +16,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 3. **control-state 安全压缩**：在 dry-run、字段保留校验和恢复证据齐备时，压缩 `.servo/control-state.md` 中的重复历史行。
 4. **runtime artifact 维护扫描**：报告 `.servo` stale refs、orphan artifact、rolling evidence reuse、临时 discovery 生命周期缺口和执行输出引用缺口，不执行清理。
 
-本技能设计为低风险、可复核的清理操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。
+本技能设计为低风险、可复核的 cleanup report / dry-run 操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。任何 backlog apply、branch delete、archive、move、delete 或 compact apply 都必须经过后续显式批准。
 
 ## 何时使用
 
@@ -124,7 +124,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - **不删除 protected 分支**：develop、master、main 及 active milestone branch 永不可删除。
 - **不删除未确认条目**：backlog 中 `active`、`blocked`、`deferred` 条目不参与清理。
 - **`git branch -d` 而非 `-D`**：使用 safe delete，如果分支未完全合并则跳过并报告。
-- **操作前必须 dry-run**：先输出将要执行的操作列表，等待确认后再执行。在非交互模式下，low-risk 清理（仅 backlog 清理）可自动执行。
+- **操作前必须 dry-run**：先输出将要执行的操作列表，等待确认后再执行。Milestone closeout 自动绑定或非交互模式下只允许 report/dry-run，不自动 apply backlog、branch、archive、move、delete 或 compact。
 - **操作后必须验证**：执行后重新读取 backlog 和 branch list，确认清理结果与预期一致。
 - **control-state compact 不得改变权限语义**：压缩不得改变 approval、autonomy、dispatch、review gate、branch guard、protected branch 或 milestone/worktrack routing 语义。
 - **history source 必须由 compact 操作生成**：installer-generated backup/update artifacts 只能作为排除对象或恢复线索，不能作为 canonical history reference。
@@ -134,6 +134,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 ## 预期输出
 
 - `cleanup_type`：backlog_only / branches_only / control_state_compact / runtime_maintenance_sweep / full
+- `report_mode`：report_only / dry_run / apply
 - `backlog_before_count` / `backlog_after_count`
 - `archived_entries`：已归档的 worktrack_id 列表
 - `deleted_branches`：已删除的本地分支列表

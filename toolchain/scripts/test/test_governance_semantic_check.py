@@ -17,6 +17,7 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_branch_policy_contract,
     check_canonical_skill_packages_are_minimal,
+    check_cleanup_contract,
     check_closeout_record_contract,
     check_conservative_backfill_contract,
     check_complex_project_entry_gate_contract,
@@ -990,6 +991,26 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
     check_closeout_record_contract(tmp_path, report)
 
     assert any("next_repo_scope_action" in item for item in report.failures)
+
+
+def test_check_cleanup_contract_flags_legacy_auto_apply_term(
+    tmp_path: Path,
+) -> None:
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/milestone-cleanup-skill/SKILL.md",
+        "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
+    ):
+        write_doc(
+            tmp_path / relative_path,
+            "milestone-cleanup-skill\n"
+            "在非交互模式下，low-risk 清理（仅 backlog 清理）可自动执行\n",
+        )
+
+    report = SemanticReport()
+    check_cleanup_contract(tmp_path, report)
+
+    assert any("stale auto-apply term" in item for item in report.failures)
 
 
 def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(
