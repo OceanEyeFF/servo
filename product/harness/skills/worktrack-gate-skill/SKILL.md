@@ -11,7 +11,7 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 
 本 gate 基于三个正交校验面（implementation/validation/policy）的证据做裁决，不直接消费 Self-Review Record 和 Single-Acceptance Verdict。
 
-> **注意**：Self-Review Record 和 Single-Acceptance Verdict 由 [worktrack-close-skill](../worktrack-close-skill/SKILL.md) 在 Close 阶段的 pre-closeout checks 中产出，并被 Close 阶段内的 **Closeout Gate**（非本 Worktrack Gate）消费。详见 [harness-skill §7 closeout pipeline](../harness-skill/SKILL.md#七)。
+> **注意**：Self-Review Record 和 Single-Acceptance Verdict 由 `worktrack-close-skill` 在 Close 阶段的 pre-closeout checks 中产出，并被 Close 阶段内的 **Closeout Gate**（非本 Worktrack Gate）消费。详见 `harness-skill` 的 closeout pipeline section。
 
 当 `Harness` 已经掌握当前轮次的证据，并需要在 `WorktrackScope.judging` 内完成一轮限定范围判定时，使用这个技能。
 

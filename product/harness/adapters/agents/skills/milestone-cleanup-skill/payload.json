@@ -1,0 +1,31 @@
+{
+  "payload_version": "agents-skill-payload.v1",
+  "backend": "agents",
+  "skill_id": "milestone-cleanup-skill",
+  "canonical_dir": "product/harness/skills/milestone-cleanup-skill",
+  "canonical_paths": [
+    "product/harness/skills/milestone-cleanup-skill/SKILL.md",
+    "product/harness/skills/milestone-cleanup-skill/VERSION",
+    "product/harness/skills/milestone-cleanup-skill/scripts/control_state_compact.py",
+    "product/harness/skills/milestone-cleanup-skill/scripts/runtime_maintenance_sweep.py"
+  ],
+  "target_dir": "milestone-cleanup-skill",
+  "target_entry_name": "SKILL.md",
+  "payload_policy": "canonical-copy",
+  "supported_target_scopes": [
+    "local"
+  ],
+  "reference_distribution": "copy-listed-canonical-paths",
+  "required_payload_files": [
+    "SKILL.md",
+    "VERSION",
+    "scripts/control_state_compact.py",
+    "scripts/runtime_maintenance_sweep.py",
+    "payload.json",
+    "aw.marker"
+  ],
+  "legacy_target_dirs": [
+    "servo-milestone-cleanup-skill",
+    "aw-milestone-cleanup-skill"
+  ]
+}

@@ -295,7 +295,7 @@ Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法�
 ```text
 Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
     → Closeout Gate → PR → Merge → Doc-Catch-Up (worktrack-doc-catch-up-skill)
-    → Refresh (repo-refresh-skill) → Cleanup (worktrack-cleanup-skill) → return RepoScope
+    → Refresh (repo-refresh-skill) → Cleanup Report (milestone-cleanup-skill) → return RepoScope
 ```
 
 > **Closeout Gate vs Worktrack Gate**：Closeout Gate 是 Close 阶段内部的二次检查，消费 Self-Review Record + Single-Acceptance Verdict 后判定是否允许 merge。Worktrack Gate（worktrack-gate-skill，Judge 阶段）在前，基于 implementation/validation/policy 三轴证据裁决是否允许进入 Close。两者不同，详见 §8.1。

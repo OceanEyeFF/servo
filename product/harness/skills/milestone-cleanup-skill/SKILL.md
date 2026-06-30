@@ -1,22 +1,22 @@
 ---
-name: worktrack-cleanup-skill
-description: 当需要对 repo 执行限定范围的清理操作（stale backlog 条目归档、已完成 milestone/worktrack 的本地分支清理）时，使用这个技能。它是 repo 维护层面的清理 worker，不执行破坏性操作，不修改 remote，不删除未确认的 artifact。
+name: milestone-cleanup-skill
+description: 当 milestone close / repo refresh 之后需要对 repo runtime 管理空间生成限定范围 cleanup report，或在显式批准后执行安全清理时使用这个技能。它是 milestone closeout 后的 repo runtime 维护 worker，默认 report/dry-run，不执行破坏性操作，不修改 remote，不删除未确认的 artifact。
 ---
 
-# Servo Cleanup 技能
-
-> Compatibility note: `worktrack-cleanup-skill` is the legacy distributed identity for cleanup behavior. New milestone closeout routes should bind `milestone-cleanup-skill`; this package is retained so existing installed calls and legacy adapter aliases keep working.
+# Milestone Cleanup 技能
 
 ## 概览
 
-本技能是 Harness 执行平面的 legacy repo 清理 worker。它保留给既有 `worktrack-cleanup-skill` 调用和旧 adapter alias；新的 Harness closeout pipeline 应绑定 `milestone-cleanup-skill` 生成 cleanup report。本兼容入口仍负责以下安全维护面：
+本技能是 Harness 执行平面的 repo runtime 维护 worker，在 Harness milestone closeout pipeline 中定位为 `merge → refresh → cleanup report` 的最后一环，由 `harness-skill` 在 repo refresh 完成后、下一次 milestone activation 判定前绑定调用。默认模式只生成报告和 dry-run 证据；任何 archive、move、delete、branch delete 或 compact apply 都需要后续显式批准。它负责处理以下安全维护面：
 
 1. **backlog 过期引用清理**：将 worktrack-backlog 中已完成条目归档到 worktrack-history，保持 backlog 精简。
 2. **已完成 milestone/worktrack 的本地分支清理**：删除已闭环的 `ms/*` 和 `wt/*` 本地分支。
 3. **control-state 安全压缩**：在 dry-run、字段保留校验和恢复证据齐备时，压缩 `.servo/control-state.md` 中的重复历史行。
 4. **runtime artifact 维护扫描**：报告 `.servo` stale refs、orphan artifact、rolling evidence reuse、临时 discovery 生命周期缺口和执行输出引用缺口，不执行清理。
 
-本技能设计为低风险、可复核的清理操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。
+本技能设计为低风险、可复核的 cleanup report / dry-run 操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。
+
+`worktrack-cleanup-skill` 是历史兼容入口。新的 canonical distributed identity 是 `milestone-cleanup-skill`；旧入口可以继续承接现有调用，但新 closeout / adapter / deploy target 应优先指向本技能。
 
 ## 何时使用
 
@@ -24,9 +24,10 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 
 - Worktrack-backlog 体量过大（如超过 100 条已完成条目），需要归档清理
 - 本地分支过多（如超过 50 个 stale 分支），需要清理已完成 milestone/worktrack 的分支
-- Milestone closeout 后，对应 `ms/*` 分支可安全删除
+- Milestone closeout / repo refresh 后，需要在下一次 milestone activation 判定前生成 cleanup report
+- 显式批准安全清理后，对应已完成 `ms/*` 分支可安全删除
 - `.servo/control-state.md` 中历史 handback、旧 checkpoint 或旧 closed-worktrack 记录过长，需要压缩到当前路由所需 footprint
-- 需要在 milestone 结束清理或 repo cleanup 前生成 `.servo` runtime artifact maintenance sweep report
+- 需要在 milestone closeout 后生成 `.servo` runtime artifact maintenance sweep report
 - 周期性 repo 维护
 
 不适用于：
@@ -103,10 +104,11 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 4. helper 默认即使发现 findings 也返回 0，因为 findings 是 cleanup 决策证据，不是 cleanup 执行结果。只有显式传入 `--fail-on-findings` 时才把 findings 转成非零退出码。
 5. 报告输出必须包含 `cleanup_executed: false`。任何 archive、move 或 delete action 都需要后续单独 approval 和专门 cleanup 流程。
 
-### 5. 生成清理报告
+### 5. 生成 cleanup report
 
 输出结构化清理报告，至少包含：
 
+- report_mode：默认 `report_only`；只有显式批准后才可进入 `apply`
 - 清理前 backlog 条目数 / 清理后 backlog 条目数
 - 已归档到 history 的条目列表
 - 已删除的本地分支列表
@@ -124,16 +126,18 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - **不删除 protected 分支**：develop、master、main 及 active milestone branch 永不可删除。
 - **不删除未确认条目**：backlog 中 `active`、`blocked`、`deferred` 条目不参与清理。
 - **`git branch -d` 而非 `-D`**：使用 safe delete，如果分支未完全合并则跳过并报告。
-- **操作前必须 dry-run**：先输出将要执行的操作列表，等待确认后再执行。在非交互模式下，low-risk 清理（仅 backlog 清理）可自动执行。
+- **操作前必须 dry-run**：先输出将要执行的操作列表，等待确认后再执行。Milestone closeout 自动绑定时只允许 report/dry-run，不自动 apply backlog、branch、archive、move、delete 或 compact。
 - **操作后必须验证**：执行后重新读取 backlog 和 branch list，确认清理结果与预期一致。
 - **control-state compact 不得改变权限语义**：压缩不得改变 approval、autonomy、dispatch、review gate、branch guard、protected branch 或 milestone/worktrack routing 语义。
 - **history source 必须由 compact 操作生成**：installer-generated backup/update artifacts 只能作为排除对象或恢复线索，不能作为 canonical history reference。
 - **active worktrack 场景更严格**：存在 active worktrack 时，Worktrack Contract、Plan / Task Queue 和当前 branch guard 必须可读；否则 compact 返回 blocked。
 - **maintenance sweep 不授权 cleanup**：stale、orphan、expired、rolling evidence reuse 等 finding 只能进入报告；删除、移动或归档必须另走 approval。
+- **分发包运行时只使用包内路径**：helper 命令必须使用 package-local `scripts/...` 或 explicit current-package paths；不得要求 installed package 读取 source-repo paths、docs paths 或 parent-directory escapes 作为运行权威。
 
 ## 预期输出
 
-- `cleanup_type`：backlog_only / branches_only / control_state_compact / runtime_maintenance_sweep / full
+- `cleanup_type`：report_only / backlog_only / branches_only / control_state_compact / runtime_maintenance_sweep / full
+- `report_mode`：report_only / dry_run / apply
 - `backlog_before_count` / `backlog_after_count`
 - `archived_entries`：已归档的 worktrack_id 列表
 - `deleted_branches`：已删除的本地分支列表

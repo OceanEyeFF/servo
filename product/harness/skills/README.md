@@ -41,7 +41,8 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
-  - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
+  - [milestone-cleanup-skill/](./milestone-cleanup-skill/) — Milestone closeout 后的 repo/runtime cleanup report 与非破坏性 dry-run 维护
+  - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — legacy cleanup 兼容入口，保留给既有调用与旧 adapter alias
 - [milestone-init-skill/](./milestone-init-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
 - [milestone-gate/](./milestone-gate/) — Milestone Gate 聚合器（消费顶层 Harness sibling axis reports + aggregation_rules 聚合）
@@ -99,6 +100,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [repo-append-request-skill/](./repo-append-request-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-change-goal-skill/](./repo-change-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-refresh-skill/](./repo-refresh-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [milestone-cleanup-skill/](./milestone-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [milestone-init-skill/](./milestone-init-skill/) | [docs/harness/catalog/milestone/milestone-init-skill.md](../../../docs/harness/catalog/milestone/milestone-init-skill.md) |
 | [milestone-status-skill/](./milestone-status-skill/) | [docs/harness/catalog/milestone/milestone-status-skill.md](../../../docs/harness/catalog/milestone/milestone-status-skill.md) |
