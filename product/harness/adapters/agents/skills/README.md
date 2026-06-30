@@ -54,7 +54,7 @@
 规则：
 
 - canonical source 继续留在 `product/harness/skills/`
-- `target_dir` 相对 backend skills root；当前实例统一使用 `servo-<skill_id>`，并保留 `<skill_id>` 与 `aw-<skill_id>` 作为 `legacy_target_dirs` 用于升级清理和 update 收敛，在当前 live bindings 内必须唯一
+- `target_dir` 相对 backend skills root；当前实例统一使用 `<skill_id>`，并保留 `servo-<skill_id>` 与 `aw-<skill_id>` 作为 `legacy_target_dirs` 用于升级清理和 update 收敛，在当前 live bindings 内必须唯一
 - payload 声明 canonical files 和 deploy target 命名
 - 当前 payload policy 固定为 `canonical-copy`，`reference_distribution` 固定为 `copy-listed-canonical-paths`
 - `supported_target_scopes` 当前保留为 `["local"]`

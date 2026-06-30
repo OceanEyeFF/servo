@@ -1,9 +1,9 @@
 ---
 title: "Deploy Mapping Spec"
 status: active
-updated: 2026-06-30
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-01
 ---
 # Deploy Mapping Spec
 
@@ -19,7 +19,7 @@ last_verified: 2026-06-30
 
 聚合 backend (`--backend bundle`) 在同一命令调用中同时实例化 agents 与 claude 两组 mapping 链路。canonical source 共享（一个 canonical source 同时驱动两组 backend payload source），但 `backend payload source -> payload descriptor -> target entry -> verify` 这一段在两个 backend 上各自独立运行，互不交叉：
 
-- agents 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/agents/skills/{skill_id}/` -> agents payload descriptor -> `<targetRepoRoot>/.agents/skills/servo-{skill_id}/` -> agents verify
+- agents 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/agents/skills/{skill_id}/` -> agents payload descriptor -> `<targetRepoRoot>/.agents/skills/{skill_id}/` -> agents verify
 - claude 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/claude/skills/{skill_id}/` -> claude payload descriptor -> `<targetRepoRoot>/.claude/skills/{skill_id}/` -> claude verify
 
 bundle 不创建第三条链路；它只是 dispatcher 决定"同时驱动这两条链路"的 control-plane 行为。
@@ -39,19 +39,19 @@ bundle 不创建第三条链路；它只是 dispatcher 决定"同时驱动这两
 
 这些最小字段属于 backend payload source，不属于安装态 `payload.json`。安装态 `payload.json` 的最小字段是身份字段、`target_dir`、`target_entry_name`、`payload_policy=runtime-package-local`、`reference_distribution=package-local-files`、`package_dir="."`、`package_paths`、`required_payload_files` 和必要的 legacy metadata。
 
-聚合 backend (`--backend bundle`) 不引入新的字段。每个字段的"最小要求"不变，仅 `target_dir` 唯一性以 per-root 视角解读：agents 根内的 `servo-{skill_id}` 与 claude 根内的 `{skill_id}` 因物理位于不同 target root，**不构成跨根唯一性冲突**。
+聚合 backend (`--backend bundle`) 不引入新的字段。每个字段的"最小要求"不变，仅 `target_dir` 唯一性以 per-root 视角解读：agents 根内的 `{skill_id}` 与 claude 根内的 `{skill_id}` 因物理位于不同 target root，**不构成跨根唯一性冲突**。
 
 ## 当前稳定 target 命名
 
 | backend | 当前稳定 `target_dir` 约定 |
 | --- | --- |
-| `agents` | `servo-{skill_id}` |
+| `agents` | `{skill_id}` |
 | `claude` | `{skill_id}` |
-| `bundle` | 同时实例化两组：agents 端 = `servo-{skill_id}`（在 `<targetRepoRoot>/.agents/skills/` 下），claude 端 = `{skill_id}`（在 `<targetRepoRoot>/.claude/skills/` 下） |
+| `bundle` | 同时实例化两组：agents 端 = `{skill_id}`（在 `<targetRepoRoot>/.agents/skills/` 下），claude 端 = `{skill_id}`（在 `<targetRepoRoot>/.claude/skills/` 下） |
 
 `bundle` 行的 `target_dir` 是 dispatcher 同时构造的双 binding 集合；每条 binding 仍各自满足前两行的稳定约定。`bundle` 不引入新的 target 命名规则，仅显式声明“两个 distribution 的 binding 在同一命令中同时存在”。
 
-Legacy agents target dirs named `aw-{skill_id}` remain recognized only through `legacy_target_dirs`. `diagnose` and `update` may report them as replaceable legacy target dirs; `update --yes` and `migrate-runtime --reinstall` converge them to the current `servo-{skill_id}` target dirs through the normal prune -> check -> install -> verify chain.
+Legacy agents target dirs named `servo-{skill_id}` or `aw-{skill_id}` remain recognized only through `legacy_target_dirs`. `diagnose` and `update` may report them as replaceable legacy target dirs; `update --yes` and `migrate-runtime --reinstall` converge them to the current `{skill_id}` target dirs through the normal prune -> check -> install -> verify chain.
 
 > 双根 path-disjoint 不变量：bundle 模式下，`<targetRepoRoot>/.agents/skills/` 与 `<targetRepoRoot>/.claude/skills/` 必须解析为物理不重叠的目录（dispatcher 在 context 构造阶段 reject `--agents-root` 与 `--claude-root` 解析后指向同一目录的组合）；详见 `distribution-entrypoint-contract.md` § "Aggregate Backend (`--backend bundle`)" § "Dual-Root Failure Short-Circuit" 第 3 条与 `payload-provenance-trust-boundary.md`。
 
