@@ -33,7 +33,7 @@ Milestone Gate 分为两个职责面：
 
 ### 与 Worktrack single-acceptance 的接口
 
-本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
+本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 与 [closeout evidence bundle](../worktrack/closeout-evidence-bundle.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记、`completion_signals_trace`、`closeout_evidence_bundle_ref` 和 `closeout_bundle_status` 是 aggregation_rules 的输入。
 
 ### 与四轴报告的接口
 
@@ -368,9 +368,32 @@ composite_lane_rules:
     anticheat:
       aggregate: "lane-level verdict = AND of all WT anti-cheat signals; any high-severity finding → lane fail"
       veto_power: true   # cheating signal → milestone blocked
+      severity_config_ref: "product/harness/skills/milestone-anticheat-check/SKILL.md#Severity-Configuration-Contract"
     composite:
       aggregate: "lane-level verdict = AND of all WT composite lane findings"
       veto_power: false  # composite lane 是总体判断，不单独 block
+  anticheat_severity_config:
+    schema_version: "anticheat-severity-config/v1"
+    required_check_ids: [A1, A2, A3, A4, A5, A6, A7]
+    required_fields:
+      - default_severity
+      - soft_fail_triggers
+      - hard_fail_triggers
+      - blocking_triggers
+      - aggregation_impact
+    aggregation_impact_contract:
+      hard_fail: "veto_power=true; milestone_gate_verdict=blocked"
+      blocked: "veto_power=true; milestone_gate_verdict=blocked"
+      high_severity: "weight_modifier.enabled=true; target_wt_weight=0"
+    severity_distribution_contract:
+      max_default_high_checks: 2
+      default_high_reserved_for: "direct evidence-chain breakage, not broad suspicion"
+      trigger_override_allowed: true
+      required_decision_fields:
+        - assessment_mode
+        - quantitative_indicators
+        - scenario_judgment
+        - severity_override
   weight_modifier:
     # 有限 B 降级：lane finding 可调整特定 WT 的权重，但不替代四轴判定
     enabled: true
@@ -457,6 +480,8 @@ aggregator_input:
       single_acceptance_verdict: { ... }  # from single-acceptance-contract.md
       gate_evidence: { ... }              # implementation/validation/policy gate verdicts
       closeout_record: { ... }
+      closeout_evidence_bundle_ref: ".servo/milestone/...#WT-xxx-Closeout-Evidence-Bundle"
+      closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing
       composite_lane_findings:            # per-WT composite lane findings
         blackbox: pass | soft_fail | hard_fail
         whitebox: pass | soft_fail | hard_fail
@@ -482,15 +507,24 @@ aggregator_input:
     composite: { ... }
   axis_dispatch_profile:
     dispatch_owner: top_level_harness
-    dispatch_model: sibling_delegated | current_carrier_fallback | missing
+    dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing
+    required_axes: [blackbox, whitebox, anticheat, composite]
+    completed_axes: [blackbox, whitebox, anticheat, composite]
+    missing_axes: []
     delegation_attempted_by_axis:
       blackbox: true | false
       whitebox: true | false
       anticheat: true | false
       composite: true | false
+    per_axis_runtime_dispatch_profile:
+      blackbox: { ... }
+      whitebox: { ... }
+      anticheat: { ... }
+      composite: { ... }
     carrier_isolation_broken_any: true | false
     same_carrier_cross_axis: true | false
     dispatch_gap_reason: string | N/A
+    nested_axis_dispatch_attempted: false
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
   target_type_rules: { ... }              # target_type 与 axis_applicability
   manual_exception:
@@ -499,8 +533,13 @@ aggregator_input:
     reason: string | N/A
     accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
     anti_cheat_findings_preserved: true | false | N/A
+    historical_gap_preserved: true | false | N/A
     manual_exception_followup_ref: string | N/A
 ```
+
+Before Layer 1 dispatch, each sibling axis input package must pass clean-room lint. The package records `context_refs`, `allowed_ref_categories`, `forbidden_ref_categories`, and `input_gap_classification`. Inputs that include prior control-state axis labels, broad backlog reads, prior milestone Gate reports, or sibling axis reports are contaminated and must be rejected or surfaced as `input_gap` / non-pass axis facts before aggregation.
+
+Each per-axis `runtime_dispatch_profile` that claims spawned SubAgent execution must include `parent_runtime_dispatch_record_ref`, `spawned_subagent_record_ref`, `carrier_instance_id`, and `isolation_boundary`. Current-carrier fallback or ambiguous spawned-axis claims cannot prove sibling isolation unless a concrete runtime boundary violation is recorded. Blackbox reports additionally carry `input_gap_classification` so missing `target_type`, `aggregation_rules`, `completion_signals_trace`, or scenario inputs are separated from actual behavior scenario failures.
 
 ### aggregator 的输出
 
@@ -622,6 +661,7 @@ aggregator_output:
     reason: string | N/A
   accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
   anti_cheat_findings_preserved: true | false | N/A
+  historical_gap_preserved: true | false | N/A
   manual_exception_followup_ref: string | N/A
   aggregation_summary: string
 ```
@@ -629,9 +669,13 @@ aggregator_output:
 ### Aggregator 实现时需注意
 
 - `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
+- Axis input package lint failure is non-pass evidence. Reports produced from packages that read prior control-state axis labels, broad backlog files, prior milestone Gate reports, or sibling axis reports must be marked `contaminated` or surfaced through `input_gap_classification`; they cannot become clean-room axis pass evidence.
+- A spawned SubAgent carrier claim is valid only when the runtime dispatch profile preserves parent dispatch linkage, spawned SubAgent record linkage, a concrete carrier instance, and the isolation boundary. Ambiguous claims and current-carrier masquerading do not satisfy `isolation_guarantee`.
+- `closeout_evidence_bundle_ref` 缺失、bundle 不完整、bundle contaminated，或只有 prose closeout summary 时，不得后验合成 self-review、dispatch provenance 或 composite lane evidence。该 worktrack 必须以 `missing` / `incomplete` / `contaminated` / `historical_gap` 状态进入 axis checks 和 aggregation。
 - `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
 - `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
-- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass 或 self-review bias，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true`。
+- `historical_gap` is visible non-positive evidence, distinct from `missing`, `incomplete`, and `contaminated`; it is not a waiver and not a pass. Aggregation may let programmer final acceptance acknowledge the legacy gap, but it must preserve the original `historical_gap` status and must not synthesize positive evidence or synthetic pass evidence from it.
+- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass、self-review bias 或 `historical_gap`，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、historical gap fields、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true` 与 `historical_gap_preserved: true`。
 - `milestone_gate_verdict` 与 `milestone_acceptance_verdict` 是两层不同结论：前者回答 Gate 是否通过，后者回答 programmer 是否在看到 Gate 结果后接受 milestone。`accepted_with_manual_exception` 只能出现在 final acceptance 层，不能反向改变 Gate verdict、axis verdict 或 anti-cheat verdict。
 - `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
@@ -724,10 +768,10 @@ aggregation_rules:
     lane_axes:
       blackbox: { veto_power: false }    # docs milestone 不强依赖 black-box
       whitebox: { veto_power: true }
-      anticheat: { veto_power: false }
+      anticheat: { veto_power: true }    # evidence credibility finding 仍可 block
       composite: { veto_power: false }
     weight_modifier:
-      enabled: false                      # docs milestone 不需要权重修饰
+      enabled: true                       # anti-cheat high severity 仍将对应 WT 权重清零
   degenerate_and_rules:
     recording_required: true
 ```
@@ -735,7 +779,8 @@ aggregation_rules:
 注意 release vs docs milestone 的区别：
 
 - release 的 black-box 和 anti-cheat 有 veto power
-- docs 的 white-box（review quality）有 veto power，但 black-box 没有
+- docs 的 white-box（review quality）和 anti-cheat 有 veto power，但 black-box 没有
+- 若 operator 手动偏离 anti-cheat veto 或 weight modifier 默认值，必须作为 bounded manual exception 记录，且不得删除、降级或覆盖 anti-cheat findings、severity、affected evidence refs 或 `historical_gap` 字段
 - 这体现了"不同 milestone 对证据的要求不同"
 
 ## 十一、约束与保证

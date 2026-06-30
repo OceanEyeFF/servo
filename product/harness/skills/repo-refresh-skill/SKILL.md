@@ -45,15 +45,16 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 1. 载入当前 `代码仓库目标/章程`、当前 `代码仓库快照/状态`、当前 `Harness 控制状态`，以及刚刚关闭的工作追踪的已验证 `关卡证据`。
 2. 为一轮限定范围的 `通用高能力模型` `SubAgent` 构建一份 `代码仓库刷新任务简报` 和一份 `代码仓库刷新信息包`。
 3. 从 close-worktrack 交接读取 `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`、PR target、merge target 与 checkpoint 基准；这些值的唯一合法来源是原始 `Worktrack Contract` 的 Branch Policy 字段。`baseline_branch` 表示 servo-managed final baseline；Milestone-derived worktrack 的直接 checkpoint/merge target 通常是 `closeout_target_ref` 指向的 Milestone branch。从当前分支名或写死默认分支名推断的行为必须返回 blocked。
-4. 根据 `代码仓库目标/章程`、当前 `代码仓库快照/状态` 和已验证收尾证据刷新代码仓库级评估。
-5. 将项目分开：
+4. 从 close-worktrack 交接读取 `closeout_evidence_bundle_ref`、`closeout_bundle_status` 和 `dispatch_provenance_summary`。该 summary 必须 lossless carry `dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`。如果传入字段缺失、bundle 不可读、record ref 无法 dereference，必须保留为 `missing` / `incomplete` / `historical_gap` / `contaminated`；不得从 closeout prose summary 合成 dispatch evidence。
+5. 根据 `代码仓库目标/章程`、当前 `代码仓库快照/状态` 和已验证收尾证据刷新代码仓库级评估。
+6. 将项目分开：
    - 已验证回写候选
    - 推迟或仍未验证的项目
    - 收尾后仍开放的代码仓库级风险
-6. 将已关闭 worktrack 的条目（worktrack_id / milestone_id / status / node_type / scope / merge_commit / validation / intake_route）写入 `.servo/repo/worktrack-backlog.md`（若 backlog 不存在则创建）。`status` 按以下映射从 gate verdict 转换后写入：gate pass/merge success → `done`，gate blocked → `blocked`，deferred decision → `deferred`，superseded/resolved → `resolved`。按 `worktrack_id` upsert：若同一 `worktrack_id` 已存在则更新（覆盖旧状态），否则追加新条目。`milestone_id` 按以下优先级获取：Worktrack Contract frontmatter `milestone_id` → close handoff 引用 → `null`（无绑定）。`intake_route` 按以下优先级获取：Worktrack Contract frontmatter → close handoff 中的 append request 引用 → `"direct"` fallback。此步骤对每个已验证关闭的 worktrack 无条件执行。
-7. 如果存在活跃 Milestone，检查已关闭 worktrack 是否在 Milestone 的 `worktrack_list` 中；若在列表中，标记 Milestone progress counter 需要由 milestone-status-skill 在下一轮 Observe 中更新。
-7b. **Milestone Backlog 刷新**：若已关闭 worktrack 携带 `milestone_id`，读取 live `.servo/repo/milestone-backlog.md`，在该 milestone 的 `worktrack_list` 中标记对应 worktrack 完成。不修改 milestone status（该职责属于 `harness-skill` 在收到 `milestone-status-skill` 输出后的状态更新阶段）。若 milestone 已在 `.servo/repo/milestone-history.md` 中，只有在修正 completed/superseded 历史记录的 stale worktrack marker 时才可更新 history，且必须保留 status 为 completed/superseded。
-8. 在一轮限定范围代码仓库刷新后停止，并返回一份固定格式的 `代码仓库刷新报告` 加一份 `已验证回写交接`。
+7. 将已关闭 worktrack 的条目（worktrack_id / milestone_id / status / node_type / scope / merge_commit / validation / intake_route）写入 `.servo/repo/worktrack-backlog.md`（若 backlog 不存在则创建）。`status` 按以下映射从 gate verdict 转换后写入：gate pass/merge success → `done`，gate blocked → `blocked`，deferred decision → `deferred`，superseded/resolved → `resolved`。按 `worktrack_id` upsert：若同一 `worktrack_id` 已存在则更新（覆盖旧状态），否则追加新条目。`milestone_id` 按以下优先级获取：Worktrack Contract frontmatter `milestone_id` → close handoff 引用 → `null`（无绑定）。`intake_route` 按以下优先级获取：Worktrack Contract frontmatter → close handoff 中的 append request 引用 → `"direct"` fallback。此步骤对每个已验证关闭的 worktrack 无条件执行。若回写条目包含 closeout evidence refs，必须把第 4 步的 provenance 字段作为结构化字段转交给 repo-writeback-skill，不得只写 prose notes。
+8. 如果存在活跃 Milestone，检查已关闭 worktrack 是否在 Milestone 的 `worktrack_list` 中；若在列表中，标记 Milestone progress counter 需要由 milestone-status-skill 在下一轮 Observe 中更新。
+8b. **Milestone Backlog 刷新**：若已关闭 worktrack 携带 `milestone_id`，读取 live `.servo/repo/milestone-backlog.md`，在该 milestone 的 `worktrack_list` 中标记对应 worktrack 完成。不修改 milestone status（该职责属于 `harness-skill` 在收到 `milestone-status-skill` 输出后的状态更新阶段）。若 milestone 已在 `.servo/repo/milestone-history.md` 中，只有在修正 completed/superseded 历史记录的 stale worktrack marker 时才可更新 history，且必须保留 status 为 completed/superseded。
+9. 在一轮限定范围代码仓库刷新后停止，并返回一份固定格式的 `代码仓库刷新报告` 加一份 `已验证回写交接`。
 
 ## 硬约束
 
@@ -64,6 +65,7 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 - 唯一合法行为是将已验证结论写进代码仓库真相产物；将未经验证结论写入的行为必须返回 blocked。
 - 如果传入的代码仓库刷新交接缺少基线追溯信息，或基线不可验证，标记为基线缺失风险并回写审批请求。
 - 回写目标的唯一合法来源是已验证且可追溯的基线证据；从工作追踪产物直接抄写回写目标的行为必须返回 blocked。
+- Closeout dispatch provenance 是 passthrough evidence，不是 repo-refresh 重新判定项。repo-refresh 只能复制、dereference 并标记 `dispatch_provenance.status`、refs、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；无法读取时必须标记缺口状态，不能合成 `delegated`、`current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked` 或 `historical_gap` 结论。
 
 ## 输出协议
 
@@ -113,6 +115,15 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
   - `actual_baseline_form`: 实际 checkpoint 形式
   - `merge_required`: close handoff 中声明的合并要求
   - `checkpoint_policy_match`: expected 与 actual 是否匹配
+- `closeout_evidence_bundle`
+  - `closeout_evidence_bundle_ref`
+  - `closeout_bundle_status`: complete / incomplete / contaminated / historical_gap / missing
+  - `dispatch_provenance.status`: captured / linked / incomplete / missing / historical_gap / contaminated
+  - `runtime_dispatch_record_ref`
+  - `subagent_dispatch_record_refs`
+  - `missing_dispatch_record_refs`
+  - `dispatch_result_status`
+  - `resolved_runtime_dispatch_status`
 - `已知风险`
 - `所需上下文`
 - `缺失或推迟项目`
@@ -123,6 +134,14 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 - `已验证发现`
 - `建议更新`
 - `证据依据`
+  - `closeout_evidence_bundle_ref`
+  - `closeout_bundle_status`
+  - `dispatch_provenance.status`
+  - `runtime_dispatch_record_ref`
+  - `subagent_dispatch_record_refs`
+  - `missing_dispatch_record_refs`
+  - `dispatch_result_status`
+  - `resolved_runtime_dispatch_status`
 - `推迟项目`
 - `审批请求`
 
@@ -159,6 +178,14 @@ description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并�
 - `回写目标`
 - `建议回写`
 - `证据依据`
+- `closeout_evidence_bundle_ref`
+- `closeout_bundle_status`
+- `dispatch_provenance.status`
+- `runtime_dispatch_record_ref`
+- `subagent_dispatch_record_refs`
+- `missing_dispatch_record_refs`
+- `dispatch_result_status`
+- `resolved_runtime_dispatch_status`
 - `推迟项目`
 - `开放风险`
 - `建议下一代码仓库动作`

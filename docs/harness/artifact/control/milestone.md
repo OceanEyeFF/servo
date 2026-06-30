@@ -152,14 +152,21 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 
 Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gate` skill 只消费顶层 Harness 提供的 `axis_reports` 并运行 aggregation；它不得在自身内部继续唤起 blackbox/whitebox/anticheat/composite SubAgent。这样可以避免依赖某个 SubAgent 是否还能继续创建子 SubAgent。
 
+顶层 Harness 在分派四轴前必须对每份 sibling axis input package 执行 clean-room lint。package 必须列出 `context_refs`、`allowed_ref_categories`、`forbidden_ref_categories` 和 `input_gap_classification`；若包含 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，必须拒绝该 package 或将对应轴记录为 `input_gap` / non-pass，不能作为 clean axis evidence 聚合。
+
 `axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
 
 - `dispatch_owner: top_level_harness`
-- `dispatch_model: sibling_delegated | current_carrier_fallback | missing`
+- `dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing`
+- `required_axes`
+- `completed_axes`
+- `missing_axes`
 - `delegation_attempted_by_axis`
+- `per_axis_runtime_dispatch_profile`
 - `carrier_isolation_broken_any`
 - `same_carrier_cross_axis`
 - `dispatch_gap_reason`
+- `nested_axis_dispatch_attempted: false`
 
 `axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
 
@@ -175,6 +182,8 @@ Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gat
 - `carrier_isolation_broken`
 - `checklist_results`
 - `missing_evidence`
+
+Blackbox report 必须携带 `input_gap_classification`，区分缺少 `target_type`、`aggregation_rules`、`completion_signals_trace`、scenario inputs 的输入缺口与实际 behavior scenario failure。所有 axis report 的 `runtime_dispatch_profile` 若声称 spawned SubAgent，必须携带 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`；缺少这些 linkage 的 current-carrier 或 ambiguous claim 不得证明 sibling SubAgent 隔离。
 
 缺失 axis report、same-carrier 四轴污染、运行时无法证明 sibling carrier、或 `carrier_isolation_broken_any: true` 时，Milestone Gate 不能声明真实 pass。程序员可以在 final acceptance 阶段手动接受一个 blocked Gate 作为 override，但该 override 必须记录为 `milestone_acceptance_verdict: accepted_with_manual_exception` 或等价字段，不得把 `milestone_gate_verdict` 改写成 `pass`。
 

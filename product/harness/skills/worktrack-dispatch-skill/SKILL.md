@@ -46,17 +46,17 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 6. 检查是否存在与当前工作项语义上明确匹配的专用技能；文档追平任务优先选择 `worktrack-doc-catch-up-skill`。
 7. 如果有，就通过该专用技能分派。
    - 如果没有，唯一合法行为是把调度包转成一次性的任务专用执行指令，明确目标、范围内、范围外、验收切片、完成信号、回传证据格式和执行载体。阻塞流程或临时发明新 skill 名称的行为必须被阻断。
-8. 读取 `runtime_dispatch_mode`（按 `override_scope -> contract -> control-state default -> runtime auto`）并选择执行载体；默认 `worktrack-contract-primary` 必须让 worktrack 级设置生效，只有 `global-override` 才允许 control-state 压过 contract。
+8. 读取 `runtime_dispatch_mode`（按 `override_scope -> contract -> control-state default -> runtime auto`）并选择执行载体；默认 `worktrack-contract-primary` 必须让 worktrack 级设置生效，只有 `global-override` 才允许 control-state 压过 contract。每轮分派必须产出或链接 `runtime_dispatch_record`，字段合同见 `docs/harness/artifact/worktrack/dispatch-evidence-records.md`。
    - 若模式为 `auto`，必须应用 Dispatch Decision Policy，并记录 `dispatch_policy_ref`、`runtime_dispatch_profile`、`decision_inputs`、`delegation_attempted`、`attempted_carrier`、`carrier_decision` 与选择理由。
    - `runtime_dispatch_profile` 必须至少包含 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`。
    - 在 ClaudeCodeCLI / Deepseek 兼容 lane 中，如果无法证明真实 SubAgent dispatch shell 可用，必须写明 `subagent_dispatch_shell = unavailable | unknown`，并将未委派原因记录为 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。不得静默回退到当前载体。
 9. 如果没有合适专用 skill，就使用同一份限定范围任务/信息约定，通过 `worktrack-generic-worker-skill` 承载的通用任务完成 `SubAgent` 分派。
    - 仅当 `runtime_dispatch_mode` 或 policy 判定为 `current-carrier`，或宿主运行时缺少真实分派壳层、权限边界禁止委派、交接包不满足安全分派条件时，才允许当前载体运行时回退。
-10. 记录本轮使用的是：
-
-- 委派式 `子代理` 分派
-- 当前载体运行时回退
-1. 返回一份固定格式的 `分派结果`。
+10. 真实创建 delegated carrier 时，必须为每个 carrier 产出或链接一个 `subagent_dispatch_record`，并从 parent `runtime_dispatch_record.subagent_dispatch_record_refs` 指向 child record。该 child record 必须保留 task package ref、returned payload ref、completion status、cleanup/close status 和隔离边界；当前载体回退不得合成 child record。
+11. 记录本轮使用的是：
+    - 委派式 `子代理` 分派
+    - 当前载体运行时回退
+12. 返回一份固定格式的 `分派结果`。
 
 ## 硬约束
 
@@ -69,6 +69,7 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 - 仅当调度包已经携带显式的原子性理由时，通过合并实现、清理和验证工作来放宽首个面向执行切片的行为才合法；否则必须保持原切片粒度或返回调度阶段。
 - 仅当宿主运行时真的创建了委派载体时，声称使用了委派式 `子代理` 才合法；否则必须显式报告未委派原因（`runtime fallback`、`permission blocked` 或 `dispatch package unsafe`），不得伪装成子代理分派。
 - 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界。
+- `runtime_dispatch_record` 与 `subagent_dispatch_record` 是 structured evidence boundary。缺失记录只能标记 `missing` / `historical_gap` / `blocked`，不得用 prose synthesis、模型名、执行者自述或 closeout summary 后验补造。
 
 ## 预期输出
 
@@ -100,6 +101,9 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 - `是否使用回退`
 - `回退理由`
 - `fallback_reason`
+- `runtime_dispatch_record_ref`
+- `subagent_dispatch_record_refs`
+- `dispatch_result_status`
 - `交接包来源`
 - `分派包状态`
 - `包限定范围判定`

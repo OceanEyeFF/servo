@@ -52,6 +52,107 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 7. 在综合前，确认没有跨轴泄露：若本轴上下文被注入了其他轴的 verdict，在 verdict 中显式记录。
 8. 返回结构化 `anti-cheat lane report`。在 milestone gate 综合之前停止。
 
+## Severity Configuration Contract
+
+每次运行本技能时，必须把实际使用的 `anticheat_severity_config` 暴露在报告中，或用 `severity_config_ref` 指向本节。A1-A7 的 default severity、soft/hard/blocking triggers、判定方法和聚合影响不得只藏在 prose 推理中。
+
+`default_severity` 是初始风险等级，不是最终 severity。最终 severity 必须由 `trigger_type`、命中范围、WT 权重、是否存在可量化证据、以及是否需要情景判断共同决定。默认 high 必须稀缺：A1-A7 中默认 high 最多 2 个；其余检查默认使用 medium 或 low，并在实际 hard/blocking trigger 命中时通过 `severity_override` 升级。适合计数、比例、hash、ref 或 carrier identity 判断的检查优先转换为量化指标；需要判断业务语义、WT 类型合理性或 operator 影响时使用情景分析，并在 finding 中写明判断依据。
+
+```yaml
+anticheat_severity_config:
+  schema_version: "anticheat-severity-config/v1"
+  aggregation_defaults:
+    veto_power: true
+    hard_fail_impact: "milestone_gate_verdict=blocked"
+    blocked_impact: "milestone_gate_verdict=blocked"
+    max_default_high_checks: 2
+    severity_assignment_policy: "default high is reserved for direct evidence-chain breakage; trigger-specific overrides may escalate medium/low defaults"
+    high_severity_weight_modifier:
+      enabled: true
+      target_wt_weight: 0
+  checks:
+    A1:
+      default_severity: medium
+      assessment_mode: hybrid
+      quantitative_indicators: ["mock_fixture_ratio", "real_integration_evidence_count", "affected_wt_weight"]
+      scenario_judgment: "node_type determines whether fixture-heavy evidence is legitimate or suspicious"
+      soft_fail_triggers: ["mock_or_fixture_present_with_real_integration_evidence"]
+      hard_fail_triggers: ["feature_or_release_all_mock_based_without_real_integration"]
+      blocking_triggers: ["validation_evidence_missing_or_unreadable"]
+      severity_override: "hard_fail on feature/release all-mock evidence escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A2:
+      default_severity: medium
+      assessment_mode: quantitative
+      quantitative_indicators: ["reused_evidence_ref_count", "affected_wt_count", "critical_wt_coverage_count"]
+      scenario_judgment: "shared baseline evidence may be legitimate when each WT independently reruns it"
+      soft_fail_triggers: ["unexplained_reuse_without_critical_coverage"]
+      hard_fail_triggers: ["reuse_across_three_or_more_wt_or_all_critical_wt"]
+      blocking_triggers: ["evidence_refs_missing_or_hash_unavailable"]
+      severity_override: "hard_fail reuse across three or more WT or all critical WT escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A3:
+      default_severity: medium
+      assessment_mode: hybrid
+      quantitative_indicators: ["cross_wt_dependency_count", "integration_evidence_count", "uncovered_dependency_count"]
+      scenario_judgment: "first decide whether cross-WT integration is truly required for this milestone"
+      soft_fail_triggers: ["cross_wt_integration_required_but_coverage_incomplete"]
+      hard_fail_triggers: ["cross_wt_integration_required_and_no_cross_wt_evidence"]
+      blocking_triggers: ["cannot_determine_cross_wt_integration_requirement"]
+      severity_override: "hard_fail with required integration and no evidence escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A4:
+      default_severity: high
+      assessment_mode: quantitative
+      quantitative_indicators: ["missing_required_gate_record_count", "affected_wt_count", "placeholder_required_section_count"]
+      scenario_judgment: "N/A"
+      soft_fail_triggers: ["required_gate_sections_present_but_empty_or_placeholder"]
+      hard_fail_triggers: ["self_review_gate_evidence_or_closeout_gate_verdict_missing"]
+      blocking_triggers: ["closeout_record_unavailable_for_required_wt"]
+      severity_override: "N/A; direct gate-record breakage is default high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A5:
+      default_severity: high
+      assessment_mode: quantitative
+      quantitative_indicators: ["stale_source_ref_count", "claimed_checkpoint_mismatch_count", "freshness_label_conflict_count"]
+      scenario_judgment: "mtime is auxiliary only; git/source refs dominate"
+      soft_fail_triggers: ["reused_or_mixed_evidence_with_clear_refs_but_no_refresh_note"]
+      hard_fail_triggers: ["source_ref_older_than_claimed_checkpoint_marked_fresh"]
+      blocking_triggers: ["source_ref_checkpoint_or_observed_hash_missing"]
+      severity_override: "N/A; stale evidence falsely marked fresh is default high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A6:
+      default_severity: medium
+      assessment_mode: quantitative
+      quantitative_indicators: ["implementer_reviewer_overlap_count", "self_gate_overlap_count", "carrier_identity_missing_count"]
+      scenario_judgment: "A6 records provenance bias; independent review coverage belongs to composite C1"
+      soft_fail_triggers: ["self_review_overlap_used_as_only_credibility_evidence"]
+      hard_fail_triggers: ["self_gate_overlap"]
+      blocking_triggers: ["dispatch_profile_or_carrier_identity_missing"]
+      severity_override: "self_gate_overlap escalates to high because gate independence is broken"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "medium_severity_records_risk", "conditional_high_severity_weight_modifier"]
+    A7:
+      default_severity: low
+      assessment_mode: quantitative
+      quantitative_indicators: ["warning_rule_count", "error_rule_count", "unreadable_severity_config_count"]
+      scenario_judgment: "N/A"
+      soft_fail_triggers: ["governance_rule_severity_config_unreadable"]
+      hard_fail_triggers: ["all_governance_rules_warning_no_error_rules"]
+      blocking_triggers: ["policy_evidence_required_but_missing"]
+      severity_override: "all-warning governance rule configuration escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+```
+
+报告中的 `checklist_results[]` 必须记录 `check_id`、`verdict`、`severity`、`severity_source`（`default` / `explicit_override` / `trigger_override`）、`trigger_type`（`soft_fail_trigger` / `hard_fail_trigger` / `blocking_trigger` / `not_triggered`）、`assessment_mode`、`quantitative_indicators`、`scenario_judgment`、`aggregation_impact` 和 `evidence_refs`。任何 explicit override 必须给出 source ref；无 source ref 的 explicit override 无效。trigger override 必须引用命中的 trigger 和证据范围。
+
+## Historical Gap Policy
+
+`historical_gap` is visible non-positive evidence. It is distinct from `missing`, `incomplete`, and `contaminated`: `missing` means evidence should exist under the current contract, `incomplete` means a linked record lacks required fields, `contaminated` means present evidence is unreliable, and `historical_gap` means an older Worktrack predates the capture contract.
+
+`historical_gap` is not a waiver and not a pass. It must remain in `missing_evidence`, `checklist_results[].evidence_state`, `bundle_completeness.historical_gap_fields`, or equivalent structured output so later reviewers can distinguish legacy absence from current process failure.
+
+Manual exception may accept the residual delivery risk, but it must preserve `historical_gap` fields and anti-cheat findings. When manual exception is present, the report must record `historical_gap_preserved: true`. It must not erase, rewrite, or convert historical gaps into synthetic pass evidence.
+
 ## 逐项检测细则
 
 ### A1 — Mock Abuse Detection
@@ -319,7 +420,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 1. **Permission boundary**：Read-only。可读取 evidence metadata、dispatch profiles、closeout records 和 aggregation_rules。MUST NOT 修改任何代码、evidence 或 control state。
 2. **Isolation**：MUST NOT 接收或读取其他轴（blackbox、whitebox、composite）的 verdict。若另一轴 verdict 被注入上下文，必须标记 `isolation_guarantee: false` 并记录泄露来源（文件路径或注入方式）。隔离被破坏时，仍产出 verdict 但置信度降级为 `low`。
-3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。
+3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 4. **Anti-cheat is NOT code review**：本技能不评判代码正确性、性能、安全性或架构质量。它只评判证据的可信度。即使所有代码从技术角度正确，若检测到 fake evidence 信号，仍必须报告 `hard_fail` 且不可被其他轴覆盖。
 5. **False positive handling**：若某条检测看起来命中反作弊 pattern 但存在可解释的合法理由（如 `A1` 中 test-type WT 合理使用 mock），其 verdict 应记录为 `pass` 并附带解释。不得压制检测结果或静默降级 — 合法理由必须显式记录在 `finding` 字段中。
 6. **Stale evidence 时效性**：A5 的主判断依据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；milestone 分支 HEAD 是目标基线，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 应基于 ref/hash 关系解释时间线。文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。

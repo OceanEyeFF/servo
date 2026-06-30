@@ -1,9 +1,9 @@
 ---
 title: "Composite Milestone Acceptance"
 status: active
-updated: 2026-05-27
+updated: 2026-06-29
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-29
 ---
 
 # Composite Milestone Acceptance
@@ -28,7 +28,7 @@ Composite Milestone Acceptance is the evidence contract for goal-driven mileston
 | `operator-simulation` | Simulate a realistic operator path using the delivered workflow and evidence, including failure/recovery surfaces when relevant. | yes |
 | `professional-review` | Provide a senior engineering synthesis: residual risks, quality bar, release readiness, and whether follow-up worktracks are required. | yes |
 
-Standard composite review may collapse multiple lanes into a single reviewer report only when the milestone is low-risk and does not touch release, deploy, migration, authority, destructive operations, path governance, or cross-worktrack integration. The report must still explicitly cover every lane.
+Standard composite review may share one physical reviewer report only when the milestone is low-risk and does not touch release, deploy, migration, authority, destructive operations, path governance, or cross-worktrack integration. It must still emit or link a distinct `composite_lane_record` for every lane, or explicitly mark the lane `missing`, `incomplete`, `historical_gap`, `contaminated`, or `not_applicable`.
 
 ## Review Depth
 
@@ -44,33 +44,60 @@ Deep review is mandatory when any of these are true:
 - the milestone contains appended issues whose impact spans more than one worktrack;
 - the milestone will be used to justify a release-prep or final handback decision.
 
+## Lane Record Boundary
+
+Composite lanes are structured evidence records. The stable Worktrack-scoped schema is `composite_lane_record`, defined in [../worktrack/composite-lane-records.md](../worktrack/composite-lane-records.md). Composite acceptance consumers must link or dereference those records; they must not turn closeout prose summaries into lane evidence.
+
+Each lane record carries:
+
+- `record_ref`, `lane_id`, `check_id`, `worktrack_id`, and `milestone_id`
+- `lane_status`: `captured`, `linked`, `incomplete`, `missing`, `historical_gap`, `contaminated`, or `not_applicable`
+- `producer_ref` and `validation_ref`
+- lane verdict, severity, carrier, fallback, freshness, evidence refs, findings, absorbed issue refs, residual risks, and required followups
+
+`missing`, `incomplete`, `historical_gap`, `contaminated`, and unreasoned `not_applicable` are non-pass lane evidence. They must remain visible in closeout bundles, `milestone-status-skill` prepared inputs, `milestone-composite-check` output, and `milestone-gate` aggregation output.
+
 ## Lane Output Schema
 
 Each lane must produce an evidence envelope:
 
 ```yaml
-lane_id: code-review
-lane_depth: standard | deep
-carrier: subagent | current-carrier | human
-delegation_attempted: true | false
-fallback_reason: null | "subagent dispatch unavailable"
-inputs_reviewed:
-  - ".servo/milestone/MS-YYYYMMDD-NNN.md"
-  - ".servo/repo/worktrack-backlog.md"
-freshness:
-  git_checkpoint: "<commit>"
-  evidence_current: true
-verdict: accepted | accepted_with_residual_risk | needs_followup_worktrack | blocked
-severity: none | low | medium | high
-findings:
-  - severity: low
-    summary: "..."
-    evidence_ref: "..."
-residual_risks:
-  - "..."
-required_followups:
-  - worktrack_title: "..."
-    blocking: true | false
+composite_lane_record:
+  schema_version: "worktrack-composite-lane-record/v1"
+  record_ref: string
+  lane_id: code-review
+  check_id: C1
+  worktrack_id: "WT-..."
+  milestone_id: "MS-..." | N/A
+  producer_ref: string
+  validation_ref: string | N/A
+  lane_status: captured | linked | incomplete | missing | historical_gap | contaminated | not_applicable
+  lane_depth: standard | deep | N/A
+  mandatory: true | false
+  carrier: subagent | current-carrier | human | N/A
+  delegation_attempted: true | false | unknown | N/A
+  fallback_reason: string | N/A
+  verdict: accepted | accepted_with_residual_risk | needs_followup_worktrack | blocked | N/A
+  severity: none | low | medium | high | N/A
+  evidence_refs: []
+  findings:
+    - finding_id: string
+      severity: low | medium | high
+      summary: "..."
+      evidence_refs: []
+      absorbed_issue_refs: []
+  absorbed_issue_refs: []
+  residual_risks: []
+  required_followups:
+    - worktrack_title: "..."
+      blocking: true | false
+      evidence_ref: string | N/A
+  missing_required_fields: []
+  contaminated_reason: string | N/A
+  not_applicable_reason: string | N/A
+  freshness:
+    git_checkpoint: "<commit>" | N/A
+    evidence_current: true | false | unknown
 ```
 
 ## Verdict Model
@@ -109,7 +136,7 @@ For goal-driven milestones:
 
 1. Worktrack gates must already be closed.
 2. Composite lanes must be available or explicitly fall back with sufficient evidence.
-3. `milestone-status-skill` consumes the composite report as part of `Milestone Gate`.
+3. `milestone-status-skill` consumes composite lane record refs/statuses as part of `Milestone Gate`.
 4. If the composite verdict is `accepted` or `accepted_with_residual_risk`, `purpose_achieved` may be evaluated.
 5. If `milestone_acceptance_verdict == achieved`, Harness must hand back to the programmer for final acceptance.
 
