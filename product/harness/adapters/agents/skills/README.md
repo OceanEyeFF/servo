@@ -23,6 +23,8 @@
 - `required_payload_files`
 - `legacy_target_dirs` 或 `legacy_skill_ids`（存在旧命名时）
 
+这些字段只属于 adapter source descriptor。`install --backend agents` 写入 `.agents/skills/<target_dir>/payload.json` 时会生成 package-local runtime descriptor：`payload_policy` 改为 `runtime-package-local`，`reference_distribution` 改为 `package-local-files`，并写入 `package_dir: "."` 与包内 `package_paths`。安装态 `payload.json` 不得保留 `canonical_dir`、`canonical_paths`、`product/harness/*` source path 或 parent-directory escape。
+
 当前 `agents` skill set：
 
 - `close-worktrack-skill`
@@ -58,6 +60,7 @@
 - `supported_target_scopes` 当前保留为 `["local"]`
 - `payload.json` 的 `required_payload_files` 仍声明顶层 `aw.marker`；但 marker 只在 `install --backend agents` 写入 target 时运行时生成，不作为 source 文件存放在 adapter 目录中
 - target 中的 `aw.marker` 只表达 deploy 指纹：`marker_version / backend / skill_id / payload_version / payload_fingerprint`
+- target 中的 `payload.json` 只表达已安装 package 的本地文件面；source truth 仍由 adapter payload 和 canonical skill source 承接
 - `prune --all` 只会删除带可识别、且属于当前 backend 的 marker 目录
 - `check_paths_exist` 与 `install` 只承接当前 source 声明的 live payload，不承接 archive/history 或旧版本保活
 - install 会复制 payload 声明的 canonical workflow 正文、references 或 templates

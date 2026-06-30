@@ -9,7 +9,6 @@ const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
 const DEFAULT_CLAUDE_SKILL_NAME = "harness-set-goal-skill";
-const CANONICAL_TEMPLATE_RELPATH = path.join("product", ".servo_template");
 
 let _templateRoot;
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
@@ -804,13 +803,6 @@ function setTemplateRoot(explicitRoot) {
 		_templateRoot = resolved;
 		return;
 	}
-	// Auto-detect: prefer product/.servo_template/ from CWD (repo dev mode)
-	const canonical = path.resolve(process.cwd(), CANONICAL_TEMPLATE_RELPATH);
-	if (fs.existsSync(canonical) && fs.statSync(canonical).isDirectory()) {
-		_templateRoot = canonical;
-		return;
-	}
-	// Fall back to bundled assets/ under SKILL_ROOT (npm distribution mode)
 	_templateRoot = undefined;
 }
 
@@ -819,8 +811,6 @@ function templateRoot() {
 }
 
 function sourcePath(spec) {
-	// When using canonical template root (product/.servo_template/),
-	// sourceRelpath like "assets/control-state.md" maps to "control-state.md"
 	if (_templateRoot) {
 		const assetRel = spec.sourceRelpath.replace(/^assets\//, "");
 		return path.join(_templateRoot, assetRel);

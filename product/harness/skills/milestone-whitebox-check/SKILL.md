@@ -235,7 +235,7 @@ whitebox_verdict:
 - **Program-code structural evidence**：当 `target_type=program_code` 或 `mixed` 的程序切片存在时，必须输出 `internal_structure_evidence`。证据至少覆盖适用的控制流、数据流、状态传递、接口合约、依赖路径、架构边界或关键实现审查项；只有外部行为场景、文件列表或 WT 摘要不足以让 whitebox 通过。
 - **Non-program substitution boundary**：当 `target_type=non_program_artifact` 或 `mixed` 的非程序切片存在时，软件代码白盒项只能输出 `substituted` / `not_applicable` 或失败/阻塞。`substituted` 必须有替代结构审查方法和证据引用；`not_applicable` 不等于 `pass`，不得被当作软件白盒测试通过计入整体结论。
 - **Blackbox boundary**：用户可观察行为场景、CLI/API 输出、UI 截图、外部回归场景和 operator-visible results 只能作为 traceability context；不得作为 whitebox 的内部结构证据。需要判断外部行为是否满足验收时，必须交给 blackbox 轴。
-- **Canonical source / deploy target boundary**：本技能的 canonical source 位于 `product/harness/skills/milestone-whitebox-check/SKILL.md`。`.agents/skills/milestone-whitebox-check/SKILL.md` 与 `.claude/skills/milestone-whitebox-check/SKILL.md` 是分发/部署目标；同步应由明确的 deploy/adapter 流程或后续授权 worktrack 承接，不得在本轴检查运行中修改。
+- **Canonical source / deploy target boundary**：本技能运行时只消费当前已安装的 skill package。canonical source 与 deploy target 的同步应由明确的 deploy/adapter 流程或后续授权 worktrack 承接，不得在本轴检查运行中修改。
 - W1-W4 的五项检查不得因前一阶段 verdict 较差而跳过后续阶段。所有五项必须全部执行（标记为 `not_applicable` 的项除外，必须有明确理由）。
 - 依赖图构建必须基于代码中的**实际引用关系**，不能仅依赖 WT contract 中声明的依赖列表。contract 中的声明用于与实际情况对比，不是图构建的唯一来源。
 - 当发现未声明依赖或循环依赖时，必须在 `finding` 中显式说明依赖的具体形式（import 语句、接口消费、配置依赖等）及其影响范围。笼统写"存在未声明依赖"的行为必须被阻断。
