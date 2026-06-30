@@ -16,6 +16,15 @@ HELPER = (
     / "scripts"
     / "runtime_maintenance_sweep.py"
 )
+LEGACY_HELPER = (
+    REPO_ROOT
+    / "product"
+    / "harness"
+    / "skills"
+    / "worktrack-cleanup-skill"
+    / "scripts"
+    / "runtime_maintenance_sweep.py"
+)
 PAYLOADS = (
     REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills" / "milestone-cleanup-skill" / "payload.json",
     REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills" / "milestone-cleanup-skill" / "payload.json",
@@ -59,6 +68,10 @@ def test_cleanup_skill_runtime_sweep_helper_is_report_first(tmp_path: Path) -> N
     assert payload["cleanup_executed"] is False
     assert payload["finding_count"] >= 1
     assert "rolling_evidence_reuse" in payload["counts_by_type"]
+
+
+def test_legacy_cleanup_runtime_sweep_stays_in_sync_with_canonical() -> None:
+    assert LEGACY_HELPER.read_text(encoding="utf-8") == HELPER.read_text(encoding="utf-8")
 
 
 def test_cleanup_skill_runtime_sweep_reports_milestone_backlog_history_gaps(

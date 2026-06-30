@@ -635,7 +635,7 @@ _已合并入 §10.5。_
 
    - 脚本输出 JSON 包含 `complete`、`missing`、`present`、`checked_items`。检查 9 项必需证据：`route_decision`、`worktrack_contract_scope`、`selected_task_dispatch_packet`、`runtime_dispatch_profile`、`validation_evidence`、`governance_policy_evidence`、`gate_verdict`、`closeout_record`、`repo_refresh_checkpoint`。
 9. **项目基本面刷新触发**：以下 5 个条件任意满足时触发刷新：
-   - **Worktrack closeout 后**：merge → cleanup → 返回到 RepoScope 时刷新 Repo 级慢变量
+   - **Worktrack closeout 后**：merge → doc-catch-up → refresh → cleanup report → 返回到 RepoScope 时刷新 Repo 级慢变量
    - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后刷新全部 backlog 和 control-state
    - **Git hash 变更后**：`latest_observed_checkpoint` 与当前 HEAD 不一致时标记 `repo_baseline_changed: true`
    - **Pipeline 不一致检测**：milestone-backlog、worktrack-backlog、control-state 之间不一致时触发 pipeline 恢复
