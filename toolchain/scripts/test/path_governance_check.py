@@ -214,6 +214,7 @@ REQUIRED_GITIGNORE_ENTRIES = [
     ".logs/",
     "**/__pycache__/",
     ".pytest_cache/",
+    ".ruff_cache/",
     "*.pyc",
     "*.pyo",
 ]

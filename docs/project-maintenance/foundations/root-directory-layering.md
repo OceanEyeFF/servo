@@ -1,9 +1,9 @@
 ---
 title: "根目录分层"
 status: active
-updated: 2026-06-15
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-06-30
 ---
 # 根目录分层
 
@@ -28,7 +28,7 @@ last_verified: 2026-06-13
 | Repo-local Execution Config Layer | `.codex/` | repo-local 执行配置 | 长期真相正文、运行产物 |
 | Compatibility Navigation Layer | `.nav/` | 兼容导航 | 结构定义与规则正文 |
 | Compatibility Shim Layer | `tools/` | 兼容入口 shim | canonical 逻辑实现 |
-| Local Ephemeral Cache Layer | `.pytest_cache/` | 本地测试缓存 | tracked 主线内容 |
+| Local Ephemeral Cache Layer | `.pytest_cache/` `.ruff_cache/` | 本地测试与 lint 缓存 | tracked 主线内容 |
 | Repo Infra Layer | `.github/` `.git/` `.gitignore` `.gitattributes` `.claudeignore` `LICENSE` `CONTRIBUTING.md` | 仓库基础设施 | 业务规则正文 |
 
 ## 三、受控例外与白名单
@@ -49,9 +49,9 @@ Repo-local execution config。允许 tracked：`.codex/config.toml`、`.codex/ru
 
 只允许 `README.md`、`@docs`、`@skills`；`@docs` 与 `@skills` 是 symlink，分别解析到 `docs/` 和 `product/harness/skills/`。
 
-### 4. `.pytest_cache/`
+### 4. `.pytest_cache/` / `.ruff_cache/`
 
-可存在于根目录，不得有 tracked 内容。
+可存在于根目录，不得有 tracked 内容。`.ruff_cache/` 是 Ruff 运行验证时产生的本地缓存；若出现在 `product/`、`docs/`、`toolchain/` 或 `tools/` 内部，应视为运行缓存泄漏并清理。
 
 ### 5. `.servo/`
 
