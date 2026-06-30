@@ -37,7 +37,7 @@ last_verified: 2026-06-30
 | milestone runtime record | `.servo/milestone/MS-*.md`、Gate verdict、closeout record、axis report、manual exception | 被 backlog、history、manual exception、follow-up milestone 或 Gate evidence 引用期间必须保留 |
 | worktrack runtime record | `.servo/worktrack/contract.md`、`plan-task-queue.md`、`gate-evidence.md` | 当前 Worktrack 的滚动文件；历史引用依赖它们之前，必须生成 snapshot、closeout bundle 或归档副本 |
 | worktrack evidence | Gate evidence、closeout evidence bundle、dispatch record、test output 摘要 | 支撑 Gate / closeout / Milestone Gate 的证据；默认保留，Milestone 结束后可归档但不能静默删除 |
-| worktrack findings | review findings、Gate findings、blocking findings、remaining risks | 已验证且仍有行动价值的 finding 晋升为 backlog / append request / docs 真相；已解决或过期的 finding 进入 report-first cleanup 候选 |
+| worktrack findings | review findings、Gate findings、blocking findings、remaining risks | 已验证且仍有行动价值的 finding 转入 backlog / append request / follow-up 或必要正式文档；已解决或过期的 finding 进入 report-first cleanup 候选 |
 | worktrack discovery | 临时理解、探索记录、命令摘要、scratch intake material | Worktrack closeout 前分类：晋升、并入 evidence、归档或标记 stale；Milestone 结束清理和 repo cleanup 再处理遗漏项 |
 | repo runtime record | `.servo/repo/milestone-backlog.md`、`worktrack-backlog.md`、`snapshot-status.md`、intake review | 保留活跃 pipeline 记录；只有经过 report-first maintenance 才能压缩 stale 条目 |
 | execution output | SubAgent raw output、command log、diagnostic output | 被引用为证据时保留；有参考价值但不是 canonical truth 时归档；只有报告和批准后才能过期删除 |
@@ -70,7 +70,7 @@ Worktrack 相关运行产物按用途分成三类处理：
 2. Milestone 结束清理：
    - 已关闭 Worktrack 的 evidence / findings / discovery 按 milestone 聚合检查。
    - Milestone Gate、axis report、final acceptance、manual exception、closeout record 和被引用 evidence 默认保留。
-   - 已晋升事实的临时 discovery、已解决 finding、重复命令输出可列入归档候选。
+   - 已整理成正式文档的临时 discovery、已解决 finding、重复命令输出可列入归档候选。
    - 仍影响后续工作的 finding 必须转成新 Milestone、append request、backlog 条目或 docs 中的明确风险说明。
 3. Repo cleanup：
    - Repo 级 cleanup 只处理跨 Milestone 的 stale、orphan、superseded、expired 候选。
@@ -98,9 +98,11 @@ Milestone final acceptance 后，清理顺序是：
 4. 将已整理成正式文档的临时 discovery、重复命令输出、过期 scratch material 写入 maintenance sweep report。
 5. 只在引用链完整、风险已说明、且获得 cleanup approval 后，才执行删除或批量移动。
 
-## 归档路径
+## 归档路径合同
 
-归档路径应保留足够身份信息，使历史引用仍可读：
+`.servo/archive/` 只收容 `.servo` 生命周期内已经完成分类的 runtime artifact。归档不是删除，也不是正式文档发布；它保留运行记录的历史版本和引用链。
+
+归档路径应保留 artifact 所属层级、原始身份和来源日期，使历史引用仍可读：
 
 ```text
 .servo/archive/
@@ -111,7 +113,44 @@ Milestone final acceptance 后，清理顺序是：
   command-output/<YYYYMMDD>/<slug>/
 ```
 
-移动 artifact 到 archive 是生命周期状态转移。必须记录 source path、destination path、原因、时间戳，以及哪些引用已更新或被明确保留不改。
+### 路径语义
+
+| 路径 | 收容对象 | 命名规则 |
+| --- | --- | --- |
+| `.servo/archive/milestone/<milestone_id>/` | 单个 Milestone 结束后的 preserved / archived runtime 文件，如 axis reports、Gate verdict 副本、manual exception 附属材料 | 保留原文件名；同名多版本加 `-<YYYYMMDDHHMMSS>` 后缀 |
+| `.servo/archive/worktrack/<worktrack_id>/` | 已关闭 Worktrack 的 contract、queue、gate evidence snapshot、dispatch record、review/test/policy evidence 副本 | 保留原文件名；滚动文件必须带 closeout 时间或 checkpoint |
+| `.servo/archive/discovery/<YYYYMMDD>/<slug>/` | 临时 discovery、scratch notes、临时文档、未进入正式文档但仍有审计价值的探索材料 | 日期取首次归档日期；`slug` 使用来源主题或 worktrack id |
+| `.servo/archive/subagent/<worktrack_id>/<carrier_id>/` | SubAgent raw output、任务包、返回 payload、隔离边界记录 | `carrier_id` 必须来自 dispatch record；不能事后虚构 |
+| `.servo/archive/command-output/<YYYYMMDD>/<slug>/` | 被 evidence 引用或有复核价值的命令输出、诊断日志、长输出摘要 | 日期取命令执行或归档日期；`slug` 描述命令目的 |
+
+### 归档记录字段
+
+每次把 artifact 移入 archive，必须同时保留一条归档记录。记录可写入 sweep report、closeout record、或同目录的 `archive-manifest.md`，至少包含：
+
+- `source_path`
+- `archive_path`
+- `artifact_class`
+- `lifecycle_state_before`
+- `lifecycle_state_after`
+- `reason`
+- `archived_at`
+- `archived_by` 或 `carrier`
+- `source_checkpoint`
+- `referenced_by`
+- `references_updated`
+- `references_intentionally_preserved`
+- `deletion_authorized: false`，除非后续单独 cleanup approval 明确覆盖
+
+### Snapshot / Bundle / Archive / Deletion Candidate
+
+| 动作 | 含义 | 是否改变原文件位置 |
+| --- | --- | --- |
+| snapshot | 为滚动文件保存某一时刻副本，供历史引用使用 | 否 |
+| bundle | 把一次 closeout 或 Gate 所需的多个 evidence ref 组合成稳定证据包 | 否，除非 bundle 自身归档 |
+| archive | 将不再处于当前活动路径、但仍需追溯的 artifact 移到 `.servo/archive/` | 是 |
+| deletion candidate | 记录可删除候选及理由，等待 cleanup approval | 否 |
+
+移动 artifact 到 archive 是生命周期状态转移。必须记录 source path、destination path、原因、时间戳，以及哪些引用已更新或被明确保留不改。删除候选不能因为进入 archive 而自动删除。
 
 ## 保留规则
 
