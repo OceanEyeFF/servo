@@ -385,6 +385,15 @@ composite_lane_rules:
       hard_fail: "veto_power=true; milestone_gate_verdict=blocked"
       blocked: "veto_power=true; milestone_gate_verdict=blocked"
       high_severity: "weight_modifier.enabled=true; target_wt_weight=0"
+    severity_distribution_contract:
+      max_default_high_checks: 2
+      default_high_reserved_for: "direct evidence-chain breakage, not broad suspicion"
+      trigger_override_allowed: true
+      required_decision_fields:
+        - assessment_mode
+        - quantitative_indicators
+        - scenario_judgment
+        - severity_override
   weight_modifier:
     # 有限 B 降级：lane finding 可调整特定 WT 的权重，但不替代四轴判定
     enabled: true

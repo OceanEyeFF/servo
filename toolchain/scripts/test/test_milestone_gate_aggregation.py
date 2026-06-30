@@ -326,19 +326,23 @@ MANUAL_EXCEPTION_PRESERVATION_FIELDS = {
     "manual_exception_followup_ref",
 }
 ANTICHEAT_SEVERITY_DEFAULTS = {
-    "A1": "high",
-    "A2": "high",
-    "A3": "high",
+    "A1": "medium",
+    "A2": "medium",
+    "A3": "medium",
     "A4": "high",
     "A5": "high",
     "A6": "medium",
-    "A7": "high",
+    "A7": "low",
 }
 ANTICHEAT_SEVERITY_REQUIRED_FIELDS = {
     "default_severity",
+    "assessment_mode",
+    "quantitative_indicators",
+    "scenario_judgment",
     "soft_fail_triggers",
     "hard_fail_triggers",
     "blocking_triggers",
+    "severity_override",
     "aggregation_impact",
 }
 ANTICHEAT_HISTORICAL_GAP_REQUIRED_TERMS = [
@@ -1739,13 +1743,16 @@ def _extract_check_config(config: str, check_id: str) -> str:
 def test_anticheat_severity_config_contract_terms():
     skill_text = read_skill("milestone-anticheat-check")
     config = _extract_anticheat_severity_config(skill_text)
+    default_high_count = 0
 
     for check_id, expected_severity in ANTICHEAT_SEVERITY_DEFAULTS.items():
         check_config = _extract_check_config(config, check_id)
         for field in ANTICHEAT_SEVERITY_REQUIRED_FIELDS:
             assert field in check_config, f"{check_id}: missing {field}"
+        if expected_severity == "high":
+            default_high_count += 1
         assert f"default_severity: {expected_severity}" in check_config, (
-            f"{check_id}: default severity weakened or changed"
+            f"{check_id}: default severity distribution changed"
         )
         assert "hard_fail_veto" in check_config, f"{check_id}: missing hard_fail veto"
         assert "blocked_veto" in check_config, f"{check_id}: missing blocked veto"
@@ -1753,7 +1760,21 @@ def test_anticheat_severity_config_contract_terms():
             assert "high_severity_weight_modifier" in check_config, (
                 f"{check_id}: missing high severity weight modifier"
             )
+        else:
+            assert (
+                "conditional_high_severity_weight_modifier" in check_config
+                or "medium_severity_records_risk" in check_config
+            ), f"{check_id}: non-high default needs conditional escalation"
+            if "escalates to high" in check_config:
+                assert "conditional_high_severity_weight_modifier" in check_config, (
+                    f"{check_id}: high trigger override needs conditional high impact"
+                )
 
+    assert default_high_count <= 2, "default high severity must stay scarce"
+    assert "max_default_high_checks: 2" in config
+    assert "severity_assignment_policy" in config
+    assert "trigger_override" in skill_text
+    assert "适合计数、比例、hash、ref 或 carrier identity 判断的检查优先转换为量化指标" in skill_text
     assert "veto_power: true" in config
     assert "target_wt_weight: 0" in config
     assert "severity_source" in skill_text
@@ -1771,6 +1792,11 @@ def test_anticheat_severity_config_contract_terms():
         "hard_fail_triggers",
         "blocking_triggers",
         "weight_modifier.enabled=true; target_wt_weight=0",
+        "max_default_high_checks: 2",
+        "assessment_mode",
+        "quantitative_indicators",
+        "scenario_judgment",
+        "trigger_override_allowed: true",
     ):
         assert token in aggregation_text, f"aggregation contract missing {token}"
     print("  PASS: anticheat_severity_config_contract_terms")
