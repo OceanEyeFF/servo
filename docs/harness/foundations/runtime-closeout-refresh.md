@@ -49,7 +49,7 @@ Worktrack closeout 后必须进入 `RepoScope.Refresh`，刷新 repo 慢变量�
 
 ## Runtime Artifact Maintenance
 
-Worktrack closeout 与 Milestone final acceptance 都可能留下 stale、superseded 或滚动 runtime artifact。维护周期必须是 report-first：先盘点 runtime artifact 和引用链，再分类 preserve / promote / archive / stale / superseded / expired 候选，随后把已验证长期事实晋升到对应 docs 或 implementation owner；删除或破坏性 cleanup 需要单独批准。
+Worktrack closeout 与 Milestone final acceptance 都可能留下 stale、superseded 或滚动 runtime artifact。维护周期必须是 report-first：先盘点 `.servo` runtime artifact 和引用链，再分类 preserve / promote / archive / stale / superseded / expired 候选；只有确有必要长期呈现的内容才整理成正式文档。删除或破坏性 cleanup 需要单独批准。
 
 Worktrack Evidence / Findings / Discovery 的清理分三段处理：Worktrack closeout 先 snapshot 或 bundle 证据并分流 finding / discovery；Milestone 结束清理聚合已关闭 Worktrack 的证据和遗留发现；Repo cleanup 再处理跨 Milestone 的 stale、orphan、superseded、expired 候选。
 

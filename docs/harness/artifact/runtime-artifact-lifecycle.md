@@ -7,21 +7,17 @@ last_verified: 2026-06-30
 ---
 # Runtime Artifact 生命周期
 
-本文定义 `.servo/` runtime artifact 的生命周期策略。它是 Harness artifact 合同，不是清理 runbook：它说明什么可以保留、归档、晋升、标记为候选项，或在后续单独批准后删除。
+本文定义 `.servo/` 生命周期内产生的文档、工作记录、临时发现、证据和运行记录如何被收容、固化、归档、标记为清理候选，或在后续单独批准后删除。它是 `.servo` 管理规则，不是通用仓库分层规则，也不是清理 runbook。
 
 ## 定位
 
-`.servo/` 是当前仓库的运行时控制与证据层。它保存 control state、Milestone / Worktrack 运行记录、临时 discovery、执行证据、dispatch 记录和 closeout trace。
+`.servo/` 是当前仓库的运行时控制与证据层。它保存 control state、Milestone / Worktrack 运行记录、临时文档、临时 discovery、执行证据、dispatch 记录和 closeout trace。
 
-长期项目真相不能只留在 `.servo/`：
-
-- Harness doctrine、workflow policy、artifact contract 晋升到 `docs/harness/`。
-- 项目维护、deploy、governance、usage-help 真相晋升到 `docs/project-maintenance/`。
-- 可执行实现合同落在 `product/` 或 `toolchain/`。
+`.servo` 里的内容默认不是正式文档。只有经过验证、确有必要被后续人或 agent 直接阅读的内容，才从 `.servo` 整理成正式文档；其余运行记录继续留在 `.servo` 的当前、历史或归档位置。本文不定义正式文档、源码或测试脚本自身的生命周期。
 
 ## 层级绑定
 
-runtime artifact 的生命周期必须和仓库层级绑定，不能只按“临时文件”粗暴处理：
+`.servo` 产物的生命周期必须先和 `.servo` 内部层级绑定，不能只按“临时文件”粗暴处理：
 
 | 层级 | 承接内容 | 生命周期责任 |
 | --- | --- | --- |
@@ -29,11 +25,9 @@ runtime artifact 的生命周期必须和仓库层级绑定，不能只按“临
 | `.servo/milestone/` | 单个 Milestone 的定义、progress、Gate verdict、axis report、closeout records、manual exception | Milestone 结束清理时聚合并保留最终验收链；不再活动但仍被 history / docs / follow-up 引用的文件进入 preserved 或 archive |
 | `.servo/repo/` | milestone backlog、worktrack backlog、snapshot、intake review、append request | Repo cleanup 负责清理跨 Milestone 的 stale/orphan/superseded 候选；live pipeline 文件只保留当前可行动视图 |
 | `.servo/archive/` | 已归档的 milestone、worktrack、discovery、SubAgent output、command-output | 只保存带来源、目标、时间、原因和引用处理记录的归档项；不是垃圾桶 |
-| `docs/harness/` | Harness doctrine、workflow、artifact contract、长期运行规则 | 接收已验证的长期 Harness 真相；不能引用未固化的 rolling evidence 当历史证明 |
-| `docs/project-maintenance/` | 项目维护、governance、deploy、usage-help 长期规则 | 接收已验证的项目维护真相 |
-| `product/` / `toolchain/` | 可执行合同、skill source、adapter、检查脚本 | 接收需要由代码或测试长期执行的规则 |
+| 正式文档层 | 从 `.servo` 中整理出的必要内容 | 只接收已验证且需要长期呈现的内容；不能直接引用未固化的 rolling evidence 当历史证明 |
 
-临时文件的默认路径也要遵守层级：Worktrack 临时 discovery 先归当前 Worktrack；Milestone 级聚合发现归当前 Milestone；跨 Milestone 或 pipeline 级判断归 `.servo/repo/`。只有完成分类后，才进入 `.servo/archive/` 或被晋升到长期 truth owner。
+临时文件的默认路径也要遵守层级：Worktrack 临时文档和 discovery 先归当前 Worktrack；Milestone 级聚合发现归当前 Milestone；跨 Milestone 或 pipeline 级判断归 `.servo/repo/`。只有完成分类后，才进入 `.servo/archive/`，或被整理成必要的正式文档。
 
 ## Artifact 分类
 
@@ -54,7 +48,7 @@ runtime artifact 的生命周期必须和仓库层级绑定，不能只按“临
 | --- | --- | --- |
 | active | 当前控制路由或当前 Worktrack 正在消费 | 原地保留 |
 | preserved | 审计、Gate、closeout、manual exception 或历史追溯仍需要 | 保持稳定路径，或归档并同步引用/redirect |
-| promoted | 已验证事实已经晋升到 `docs/`、`product/` 或 `toolchain/` truth owner | runtime 来源可以归档，但不能静默删除 |
+| promoted | `.servo` 中的已验证内容已经被整理成必要的正式文档 | runtime 来源可以归档，但不能静默删除 |
 | superseded | 已被更新 runtime artifact 替代，不再是权威来源 | 作为归档候选进入 maintenance report |
 | stale | 与当前 control state、git checkpoint 或 canonical docs 冲突 | 作为维护候选报告，行动前需要确认 |
 | expired | 临时记录过了保留期，且没有 evidence 引用 | 删除仍需要显式 cleanup 批准 |
@@ -72,7 +66,7 @@ Worktrack 相关运行产物按用途分成三类处理：
 1. Worktrack closeout：
    - `Evidence` 必须被写入稳定 closeout record、bundle 或 snapshot，避免后续 `.servo/worktrack/*` 滚动文件覆盖后丢失历史证据。
    - `Findings` 必须分流：仍需行动的 finding 写入 backlog、append request、follow-up Worktrack 或 remaining risks；已经解决的 finding 跟随 closeout record 保留。
-   - `Discovery` 必须分类：已验证事实晋升到 docs/product/toolchain；只支撑本轮判断的 discovery 归档或并入 evidence；未验证假设不得写成长期真相。
+   - `Discovery` 必须分类：确有长期呈现价值的内容整理成正式文档；只支撑本轮判断的 discovery 归档或并入 evidence；未验证假设不得写成正式文档。
 2. Milestone 结束清理：
    - 已关闭 Worktrack 的 evidence / findings / discovery 按 milestone 聚合检查。
    - Milestone Gate、axis report、final acceptance、manual exception、closeout record 和被引用 evidence 默认保留。
@@ -101,7 +95,7 @@ Milestone final acceptance 后，清理顺序是：
 1. 将 live milestone backlog 条目移入 milestone history，或确认 history 已有完整条目。
 2. 确认 Worktrack closeout records 覆盖所有已决 Worktrack。
 3. 确认 Gate verdict、axis reports、dispatch profile、manual exception 和 final acceptance record 被稳定引用。
-4. 将已晋升的临时 discovery、重复命令输出、过期 scratch material 写入 maintenance sweep report。
+4. 将已整理成正式文档的临时 discovery、重复命令输出、过期 scratch material 写入 maintenance sweep report。
 5. 只在引用链完整、风险已说明、且获得 cleanup approval 后，才执行删除或批量移动。
 
 ## 归档路径
@@ -137,7 +131,7 @@ Milestone final acceptance 后，清理顺序是：
 1. 观察 runtime artifact inventory 和引用链。
 2. 将候选项分类为 preserve、promote、archive、stale、superseded、expired 或 unknown。
 3. 在改动前产出 maintenance sweep report。
-4. 将已验证长期事实晋升到正确 docs 或 implementation owner。
+4. 将确有必要长期呈现的内容整理成正式文档。
 5. 只有保留 traceability 时才归档。
 6. 删除或破坏性 cleanup 前请求单独批准。
 
@@ -160,4 +154,4 @@ Report-first maintenance 可以识别删除候选，但不执行删除。cleanup
 
 本策略不授权 release、publish、tag、remote push、deploy、protected branch mutation、secret handling、database migration、external side effect 或 destructive cleanup。
 
-当 runtime artifact 含有已验证长期事实时，必须先把事实晋升到合适的 truth owner，才能把 runtime artifact 视为 stale 或 expired。
+当 runtime artifact 含有仍需要长期呈现的内容时，必须先整理成正式文档，才能把原 runtime artifact 视为 stale 或 expired。

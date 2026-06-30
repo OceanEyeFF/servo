@@ -133,7 +133,7 @@ Milestone 结束清理不是删除阶段，而是分类阶段：
 1. `completed` / `superseded` milestone 必须从 live backlog 移入 milestone history，live backlog 不继续保存历史主线。
 2. 所有 Worktrack closeout records 必须可追溯到对应 Worktrack evidence、merge commit 或明确的 `closed_without_tracked_commit` 说明。
 3. Gate verdict、axis reports、dispatch profile、manual exception 和 final acceptance record 必须形成闭合引用链。
-4. 已晋升到 `docs/harness/`、`docs/project-maintenance/`、`product/` 或 `toolchain/` 的长期事实，可以让原始 discovery / scratch material 进入 archive 或 stale 候选。
+4. 已从 `.servo` 整理成正式文档的必要内容，可以让原始 discovery / scratch material 进入 archive 或 stale 候选。
 5. 仍影响后续工作的 finding 必须转入 follow-up milestone、append request、repo backlog 或 docs 风险说明；不能因为当前 Milestone 结束而丢弃。
 6. 删除、批量移动和破坏性 cleanup 仍需要单独 approval；Milestone final acceptance 不自动授权 runtime cleanup。
 
