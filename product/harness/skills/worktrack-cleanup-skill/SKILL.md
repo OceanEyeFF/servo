@@ -12,6 +12,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 1. **backlog 过期引用清理**：将 worktrack-backlog 中已完成条目归档到 worktrack-history，保持 backlog 精简。
 2. **已完成 milestone/worktrack 的本地分支清理**：删除已闭环的 `ms/*` 和 `wt/*` 本地分支。
 3. **control-state 安全压缩**：在 dry-run、字段保留校验和恢复证据齐备时，压缩 `.servo/control-state.md` 中的重复历史行。
+4. **runtime artifact 维护扫描**：报告 `.servo` stale refs、orphan artifact、rolling evidence reuse、临时 discovery 生命周期缺口和执行输出引用缺口，不执行清理。
 
 本技能设计为低风险、可复核的清理操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。
 
@@ -23,6 +24,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - 本地分支过多（如超过 50 个 stale 分支），需要清理已完成 milestone/worktrack 的分支
 - Milestone closeout 后，对应 `ms/*` 分支可安全删除
 - `.servo/control-state.md` 中历史 handback、旧 checkpoint 或旧 closed-worktrack 记录过长，需要压缩到当前路由所需 footprint
+- 需要在 milestone 结束清理或 repo cleanup 前生成 `.servo` runtime artifact maintenance sweep report
 - 周期性 repo 维护
 
 不适用于：
@@ -33,6 +35,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - 删除 `.servo/milestone/` 或 `.servo/worktrack/` artifact 文件
 - 使用 installer-generated backup/update artifacts 作为 control-state history source
 - 在缺少 dry-run 或 hydration-critical 字段校验时重写 `.servo/control-state.md`
+- 把 maintenance sweep finding 当作删除或移动授权
 
 ## 工作流
 
@@ -82,7 +85,23 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 7. 不得把 installer-generated backup/update artifacts 当作 history source、模板默认值、清理输入或 `handback_history_ref` 的默认目标。
 8. 写入后重新读取 compacted control-state，验证 hydration-critical 字段可解析；验证失败时保留原文件并返回 blocked / recover 建议。
 
-### 4. 生成清理报告
+### 4. Runtime artifact 维护扫描
+
+维护扫描是 report-first 流程，只观察 `.servo` runtime artifact inventory 和引用链，不删除、不移动、不归档。
+
+1. 读取 `.servo` 下的 control-state、repo、milestone、worktrack、archive 和 history 文本 artifact。
+2. 使用随包分发的 helper 生成 JSON 报告：
+   - `PYTHONDONTWRITEBYTECODE=1 python3 scripts/runtime_maintenance_sweep.py --servo-root .servo --json`
+3. 报告至少覆盖：
+   - 指向缺失 `.servo` artifact 的 stale reference
+   - 已关闭 Worktrack 仍引用 rolling `.servo/worktrack/gate-evidence.md` 且缺少 stable closeout / bundle / snapshot / archive ref
+   - 不在已知 `.servo` 层级且没有引用链的 orphan artifact
+   - 未晋升、未退役、未归档、未保留且无人引用的 temporary discovery / evidence
+   - 只有 prose summary、没有具体 SubAgent 或 command-output runtime artifact ref 的执行证据
+4. helper 默认即使发现 findings 也返回 0，因为 findings 是 cleanup 决策证据，不是 cleanup 执行结果。只有显式传入 `--fail-on-findings` 时才把 findings 转成非零退出码。
+5. 报告输出必须包含 `cleanup_executed: false`。任何 archive、move 或 delete action 都需要后续单独 approval 和专门 cleanup 流程。
+
+### 5. 生成清理报告
 
 输出结构化清理报告，至少包含：
 
@@ -91,6 +110,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - 已删除的本地分支列表
 - 被白名单保护的跳过分支列表
 - control-state compaction dry-run/apply 状态和 post-verify verdict
+- runtime artifact maintenance sweep finding counts and report ref
 - 未处理的条目（如有）
 
 ## 硬约束
@@ -107,14 +127,16 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - **control-state compact 不得改变权限语义**：压缩不得改变 approval、autonomy、dispatch、review gate、branch guard、protected branch 或 milestone/worktrack routing 语义。
 - **history source 必须由 compact 操作生成**：installer-generated backup/update artifacts 只能作为排除对象或恢复线索，不能作为 canonical history reference。
 - **active worktrack 场景更严格**：存在 active worktrack 时，Worktrack Contract、Plan / Task Queue 和当前 branch guard 必须可读；否则 compact 返回 blocked。
+- **maintenance sweep 不授权 cleanup**：stale、orphan、expired、rolling evidence reuse 等 finding 只能进入报告；删除、移动或归档必须另走 approval。
 
 ## 预期输出
 
-- `cleanup_type`：backlog_only / branches_only / control_state_compact / full
+- `cleanup_type`：backlog_only / branches_only / control_state_compact / runtime_maintenance_sweep / full
 - `backlog_before_count` / `backlog_after_count`
 - `archived_entries`：已归档的 worktrack_id 列表
 - `deleted_branches`：已删除的本地分支列表
 - `skipped_branches`：被白名单保护的跳过分支
 - `control_state_compaction`：dry-run/apply 状态、preserved fields、externalized sections、history artifact ref、post-verify verdict
+- `runtime_maintenance_sweep`：cleanup_executed、artifact_count、finding_count、counts_by_type、counts_by_severity、findings、recommendations
 - `errors`：清理过程中的错误
 - `recommendations`：建议的后续动作
