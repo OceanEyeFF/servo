@@ -74,6 +74,67 @@ def write_control_state(path: Path, checkpoint: str | None = None) -> None:
     )
 
 
+def write_branch_control_state(path: Path, baseline: str, milestone: str = "") -> None:
+    milestone_line = (
+        f"- active_milestone_branch: {milestone}\n"
+        if milestone
+        else "- active_milestone_branch: none\n"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        textwrap.dedent(
+            f"""\
+            ---
+            updated: "2026-06-30T00:00:00Z"
+            ---
+            # Control State
+
+            ## Branch Context
+            - baseline_branch: {baseline}
+            {milestone_line}- latest_observed_checkpoint: test-checkpoint
+            """
+        ),
+        encoding="utf-8",
+    )
+
+
+def write_worktrack_contract(
+    path: Path, worktrack: str, closeout_target: str = ""
+) -> None:
+    closeout_line = (
+        f"- closeout_target_ref: {closeout_target}\n"
+        if closeout_target
+        else "- closeout_target_ref: \n"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        textwrap.dedent(
+            f"""\
+            ---
+            title: "Test Worktrack Contract"
+            ---
+            # Worktrack Contract
+
+            ## Identity
+
+            - worktrack_branch: {worktrack}
+            {closeout_line}- branch_source_ref: test-source
+            - checkpoint_base_ref: test-checkpoint
+            """
+        ),
+        encoding="utf-8",
+    )
+
+
+def checkout_branch(repo: Path, branch: str) -> None:
+    subprocess.run(
+        ["git", "checkout", "-B", branch],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+
+
 def test_git_hash_check_defaults_to_control_state_repo_not_root_control(tmp_path: Path) -> None:
     head = init_repo(tmp_path)
     write_control_state(tmp_path / ".servo/control-state-repo.md", checkpoint=head)
@@ -249,3 +310,190 @@ def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> No
 
     assert result.returncode == 0, result.stderr
     assert payload["recommended_mode"] == "delegated"
+
+
+def test_branch_context_refresh_accepts_milestone_and_baseline_refs(
+    tmp_path: Path,
+) -> None:
+    init_repo(tmp_path)
+    baseline = "develop-servo"
+    milestone = "ms/MS-20260630-001-harness-guard-fixtures"
+    subprocess.run(["git", "branch", "-M", baseline], cwd=tmp_path, check=True)
+    write_branch_control_state(tmp_path / ".servo/control-state.md", baseline, milestone)
+
+    checkout_branch(tmp_path, milestone)
+    milestone_result = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--scope",
+            "RepoScope",
+            "--function",
+            "Refresh",
+        ],
+        tmp_path,
+    )
+    milestone_payload = parse_stdout_json(milestone_result)
+    assert milestone_result.returncode == 0, milestone_result.stderr
+    assert milestone_payload["blocked"] is False
+    assert milestone_payload["branch_context"] == "milestone"
+    assert milestone_payload["expected_contexts"] == []
+    assert milestone_payload["expected_branches"] == [milestone, baseline]
+
+    checkout_branch(tmp_path, baseline)
+    baseline_result = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--scope",
+            "RepoScope",
+            "--function",
+            "Refresh",
+        ],
+        tmp_path,
+    )
+    baseline_payload = parse_stdout_json(baseline_result)
+    assert baseline_result.returncode == 0, baseline_result.stderr
+    assert baseline_payload["blocked"] is False
+    assert baseline_payload["branch_context"] == "baseline"
+    assert baseline_payload["expected_branches"] == [milestone, baseline]
+
+
+def test_branch_context_refresh_uses_closeout_target_as_concrete_ref(
+    tmp_path: Path,
+) -> None:
+    init_repo(tmp_path)
+    baseline = "develop-servo"
+    milestone = "ms/MS-20260630-001-harness-guard-fixtures"
+    worktrack = "wt/WT-branch-context-refresh-guard-fix"
+    subprocess.run(["git", "branch", "-M", baseline], cwd=tmp_path, check=True)
+    write_branch_control_state(tmp_path / ".servo/control-state.md", baseline, milestone)
+    write_worktrack_contract(
+        tmp_path / ".servo/worktrack/contract.md", worktrack, milestone
+    )
+
+    checkout_branch(tmp_path, milestone)
+    allowed = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--worktrack-contract",
+            ".servo/worktrack/contract.md",
+            "--scope",
+            "RepoScope",
+            "--function",
+            "Refresh",
+        ],
+        tmp_path,
+    )
+    allowed_payload = parse_stdout_json(allowed)
+    assert allowed.returncode == 0, allowed.stderr
+    assert allowed_payload["blocked"] is False
+    assert allowed_payload["branch_context"] == "milestone"
+    assert allowed_payload["expected_contexts"] == []
+    assert allowed_payload["expected_branches"] == [milestone]
+
+    checkout_branch(tmp_path, "feature/wrong-refresh-target")
+    blocked = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--worktrack-contract",
+            ".servo/worktrack/contract.md",
+            "--scope",
+            "RepoScope",
+            "--function",
+            "Refresh",
+        ],
+        tmp_path,
+    )
+    blocked_payload = parse_stdout_json(blocked)
+    assert blocked.returncode == 1
+    assert blocked_payload["blocked"] is True
+    assert blocked_payload["branch_context"] == "unknown"
+    assert blocked_payload["target_branch"] == milestone
+    assert blocked_payload["expected_branches"] == [milestone]
+
+
+def test_branch_context_close_accepts_worktrack_and_closeout_target_refs(
+    tmp_path: Path,
+) -> None:
+    init_repo(tmp_path)
+    baseline = "develop-servo"
+    milestone = "ms/MS-20260630-001-harness-guard-fixtures"
+    worktrack = "wt/WT-branch-context-refresh-guard-fix"
+    subprocess.run(["git", "branch", "-M", baseline], cwd=tmp_path, check=True)
+    write_branch_control_state(tmp_path / ".servo/control-state.md", baseline, milestone)
+    write_worktrack_contract(
+        tmp_path / ".servo/worktrack/contract.md", worktrack, milestone
+    )
+
+    checkout_branch(tmp_path, worktrack)
+    worktrack_result = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--worktrack-contract",
+            ".servo/worktrack/contract.md",
+            "--scope",
+            "WorktrackScope",
+            "--function",
+            "Close",
+        ],
+        tmp_path,
+    )
+    worktrack_payload = parse_stdout_json(worktrack_result)
+    assert worktrack_result.returncode == 0, worktrack_result.stderr
+    assert worktrack_payload["blocked"] is False
+    assert worktrack_payload["branch_context"] == "worktrack"
+    assert worktrack_payload["expected_contexts"] == ["worktrack"]
+    assert worktrack_payload["expected_branches"] == [worktrack, milestone]
+
+    checkout_branch(tmp_path, milestone)
+    closeout_result = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--worktrack-contract",
+            ".servo/worktrack/contract.md",
+            "--scope",
+            "WorktrackScope",
+            "--function",
+            "Close",
+        ],
+        tmp_path,
+    )
+    closeout_payload = parse_stdout_json(closeout_result)
+    assert closeout_result.returncode == 0, closeout_result.stderr
+    assert closeout_payload["blocked"] is False
+    assert closeout_payload["branch_context"] == "milestone"
+    assert closeout_payload["expected_contexts"] == ["worktrack"]
+    assert closeout_payload["expected_branches"] == [worktrack, milestone]
+
+    checkout_branch(tmp_path, "feature/wrong-close-target")
+    blocked = run_script(
+        "branch_context_check.py",
+        [
+            "--control-state",
+            ".servo/control-state.md",
+            "--worktrack-contract",
+            ".servo/worktrack/contract.md",
+            "--scope",
+            "WorktrackScope",
+            "--function",
+            "Close",
+        ],
+        tmp_path,
+    )
+    blocked_payload = parse_stdout_json(blocked)
+    assert blocked.returncode == 1
+    assert blocked_payload["blocked"] is True
+    assert blocked_payload["branch_context"] == "unknown"
+    assert blocked_payload["target_branch"] == milestone
+    assert blocked_payload["expected_branches"] == [worktrack, milestone]

@@ -134,6 +134,7 @@ def check_context(
         "current_branch": git_branch_current(),
         "branch_context": branch_context,
         "expected_contexts": [],
+        "expected_branches": [],
         "legal": True,
         "blocked": False,
         "warning": None,
@@ -146,8 +147,10 @@ def check_context(
     worktrack = contract.get("worktrack_branch", "")
     closeout_target = contract.get("closeout_target_ref", "")
 
-    # ── 构建允许的上下文列表 → 同时用于 expected_contexts 和准入检查 ──
+    # Context labels (baseline/milestone/worktrack) and concrete branch refs are
+    # intentionally separate: a label must never be compared with a branch name.
     allowed = []
+    allowed_branches = []
 
     if scope == "RepoScope":
         if function in ("Observe", "Decide"):
@@ -178,17 +181,19 @@ def check_context(
 
         elif function == "Refresh":
             if closeout_target:
-                allowed = [closeout_target]
+                allowed_branches = [closeout_target]
             else:
-                allowed = [b for b in (milestone, baseline) if b]
-            if branch_context not in allowed:
+                allowed_branches = [b for b in (milestone, baseline) if b]
+            if result["current_branch"] not in allowed_branches:
                 result["legal"] = False
                 result["blocked"] = True
-                result["target_branch"] = allowed[0] if allowed else baseline
+                result["target_branch"] = (
+                    allowed_branches[0] if allowed_branches else baseline
+                )
                 result["reason"] = (
                     "RepoScope.Refresh 必须在 "
-                    + " / ".join(allowed)
-                    + f" 上执行，当前在 {branch_context}"
+                    + " / ".join(allowed_branches)
+                    + f" 上执行，当前在 {result['current_branch']} ({branch_context})"
                 )
             else:
                 result["reason"] = "RepoScope.Refresh 上下文合法"
@@ -234,20 +239,25 @@ def check_context(
 
         elif function == "Close":
             allowed = ["worktrack"]
+            allowed_branches = [b for b in (worktrack,) if b]
             if closeout_target:
-                allowed.append(closeout_target)
+                allowed_branches.append(closeout_target)
             else:
                 if milestone:
-                    allowed.append(milestone)
-                allowed.append(baseline)
-            if branch_context not in allowed:
+                    allowed_branches.append(milestone)
+                if baseline:
+                    allowed_branches.append(baseline)
+            if (
+                branch_context not in allowed
+                and result["current_branch"] not in allowed_branches
+            ):
                 result["legal"] = False
                 result["blocked"] = True
                 result["target_branch"] = closeout_target or milestone or baseline
                 result["reason"] = (
                     "WorktrackScope.Close 需要 "
-                    + " / ".join(allowed)
-                    + f" 上下文，当前在 {branch_context}"
+                    + " / ".join(allowed_branches or allowed)
+                    + f" 上执行，当前在 {result['current_branch']} ({branch_context})"
                 )
             else:
                 result["reason"] = "WorktrackScope.Close 上下文合法"
@@ -273,6 +283,7 @@ def check_context(
             result["reason"] = "Recover 在 worktrack 上执行"
 
     result["expected_contexts"] = allowed
+    result["expected_branches"] = allowed_branches
 
     if result["blocked"]:
         result["legal"] = False
