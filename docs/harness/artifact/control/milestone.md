@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-28
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-28
+last_verified: 2026-06-30
 ---
 
 # Milestone Artifact
@@ -114,6 +114,28 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 | completed 后行为 | handback 等 programmer 验收 | 自动完成，不触发 handback |
 | pipeline 优先级 | 按 priority 字段 | 始终最低，不阻塞 goal-driven milestone |
 | 生命周期 | 完整四态（planned → active → completed → superseded） | 同四态，但 completed 后自动 superseded |
+
+## Milestone Runtime 文件生命周期
+
+Milestone artifact 是 RepoScope 的聚合控制对象，但 `.servo/milestone/` 下会产生多类 runtime 文件。它们的生命周期必须和 [runtime-artifact-lifecycle.md](../runtime-artifact-lifecycle.md) 保持一致。
+
+| 文件类型 | 运行时职责 | 结束后处理 |
+| --- | --- | --- |
+| `MS-*.md` 主文件 | 保存 purpose、scope、worktrack_list、progress、completion signals、acceptance criteria、activation / branch facts | Milestone active 期间原地保留；final acceptance 后转为 preserved，由 milestone history、closeout record 或 follow-up milestone 引用 |
+| `MS-*-closeout-records.md` | 聚合每个已关闭 Worktrack 的 merge commit、validation、evidence refs、remaining risks 和 next action | 默认长期保留；可随 Milestone 一起归档，但不得删除或只保留 prose summary |
+| `MS-*-gate-verdict.md` | 保存 Milestone Gate 聚合 verdict、blocking axes、manual exception 前的正式判定 | 默认长期保留；manual final acceptance 只能新增 acceptance 记录，不能改写原 Gate verdict 为 pass |
+| `MS-*-axis-*.md` / axis reports | 保存 blackbox、whitebox、anticheat、composite 轴报告和输入缺口 | 被 Gate verdict 引用期间必须保留；Milestone 结束清理时可归入 `.servo/archive/milestone/<milestone_id>/` |
+| `MS-*-axis-dispatch-profile.md` | 保存 sibling axis dispatch、carrier、isolation 和 fallback 事实 | 与 axis reports 同生命周期；不得从摘要反推或伪造 dispatch provenance |
+| manual exception / final acceptance record | 保存 programmer-owned override、最终验收和后续追踪 | 默认长期保留；若产生 follow-up milestone，必须保留到 follow-up 完成并完成 repo cleanup 报告 |
+
+Milestone 结束清理不是删除阶段，而是分类阶段：
+
+1. `completed` / `superseded` milestone 必须从 live backlog 移入 milestone history，live backlog 不继续保存历史主线。
+2. 所有 Worktrack closeout records 必须可追溯到对应 Worktrack evidence、merge commit 或明确的 `closed_without_tracked_commit` 说明。
+3. Gate verdict、axis reports、dispatch profile、manual exception 和 final acceptance record 必须形成闭合引用链。
+4. 已晋升到 `docs/harness/`、`docs/project-maintenance/`、`product/` 或 `toolchain/` 的长期事实，可以让原始 discovery / scratch material 进入 archive 或 stale 候选。
+5. 仍影响后续工作的 finding 必须转入 follow-up milestone、append request、repo backlog 或 docs 风险说明；不能因为当前 Milestone 结束而丢弃。
+6. 删除、批量移动和破坏性 cleanup 仍需要单独 approval；Milestone final acceptance 不自动授权 runtime cleanup。
 
 ## Entry Gate
 

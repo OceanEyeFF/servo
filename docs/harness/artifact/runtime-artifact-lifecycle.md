@@ -19,12 +19,28 @@ last_verified: 2026-06-30
 - 项目维护、deploy、governance、usage-help 真相晋升到 `docs/project-maintenance/`。
 - 可执行实现合同落在 `product/` 或 `toolchain/`。
 
+## 层级绑定
+
+runtime artifact 的生命周期必须和仓库层级绑定，不能只按“临时文件”粗暴处理：
+
+| 层级 | 承接内容 | 生命周期责任 |
+| --- | --- | --- |
+| `.servo/worktrack/` | 当前 Worktrack 的滚动 contract、queue、gate evidence | Worktrack closeout 前必须把会被历史引用的 evidence / findings / discovery 固化到 closeout record、bundle、snapshot 或 archive |
+| `.servo/milestone/` | 单个 Milestone 的定义、progress、Gate verdict、axis report、closeout records、manual exception | Milestone 结束清理时聚合并保留最终验收链；不再活动但仍被 history / docs / follow-up 引用的文件进入 preserved 或 archive |
+| `.servo/repo/` | milestone backlog、worktrack backlog、snapshot、intake review、append request | Repo cleanup 负责清理跨 Milestone 的 stale/orphan/superseded 候选；live pipeline 文件只保留当前可行动视图 |
+| `.servo/archive/` | 已归档的 milestone、worktrack、discovery、SubAgent output、command-output | 只保存带来源、目标、时间、原因和引用处理记录的归档项；不是垃圾桶 |
+| `docs/harness/` | Harness doctrine、workflow、artifact contract、长期运行规则 | 接收已验证的长期 Harness 真相；不能引用未固化的 rolling evidence 当历史证明 |
+| `docs/project-maintenance/` | 项目维护、governance、deploy、usage-help 长期规则 | 接收已验证的项目维护真相 |
+| `product/` / `toolchain/` | 可执行合同、skill source、adapter、检查脚本 | 接收需要由代码或测试长期执行的规则 |
+
+临时文件的默认路径也要遵守层级：Worktrack 临时 discovery 先归当前 Worktrack；Milestone 级聚合发现归当前 Milestone；跨 Milestone 或 pipeline 级判断归 `.servo/repo/`。只有完成分类后，才进入 `.servo/archive/` 或被晋升到长期 truth owner。
+
 ## Artifact 分类
 
 | 类别 | 例子 | 生命周期 |
 | --- | --- | --- |
 | control-state | `.servo/control-state.md`、`.servo/control-state-repo.md`、`.servo/control-state-wt.md`、`.servo/operator-config.md` | 当前路由依赖的活动运行状态；向前压缩，不在当前路由仍引用时归档 |
-| milestone runtime record | `.servo/milestone/MS-*.md`、Gate verdict、closeout record、axis report | 被 backlog、history、manual exception 或 Gate evidence 引用期间必须保留 |
+| milestone runtime record | `.servo/milestone/MS-*.md`、Gate verdict、closeout record、axis report、manual exception | 被 backlog、history、manual exception、follow-up milestone 或 Gate evidence 引用期间必须保留 |
 | worktrack runtime record | `.servo/worktrack/contract.md`、`plan-task-queue.md`、`gate-evidence.md` | 当前 Worktrack 的滚动文件；历史引用依赖它们之前，必须生成 snapshot、closeout bundle 或归档副本 |
 | worktrack evidence | Gate evidence、closeout evidence bundle、dispatch record、test output 摘要 | 支撑 Gate / closeout / Milestone Gate 的证据；默认保留，Milestone 结束后可归档但不能静默删除 |
 | worktrack findings | review findings、Gate findings、blocking findings、remaining risks | 已验证且仍有行动价值的 finding 晋升为 backlog / append request / docs 真相；已解决或过期的 finding 进入 report-first cleanup 候选 |
@@ -66,6 +82,27 @@ Worktrack 相关运行产物按用途分成三类处理：
    - Repo 级 cleanup 只处理跨 Milestone 的 stale、orphan、superseded、expired 候选。
    - cleanup 先生成 sweep report，列出 source path、引用链、建议动作和风险；不能直接删除。
    - 删除、批量移动或破坏性清理必须单独获得批准。
+
+## Milestone 文件生命周期
+
+Milestone 相关文件不只是一份 `MS-*.md`。它们共同构成 Milestone 级验收链：
+
+| 文件类型 | 例子 | 生命周期说明 |
+| --- | --- | --- |
+| Milestone 主文件 | `.servo/milestone/MS-20260630-002.md` | active 期间作为 progress 与 completion signals 的控制事实；final acceptance 后转为 preserved，并由 milestone history / closeout record 引用 |
+| Closeout records | `.servo/milestone/MS-*-closeout-records.md` | 保存每个已关闭 Worktrack 的合并、验证、证据与 remaining risks；Milestone 结束后默认保留 |
+| Gate verdict | `.servo/milestone/MS-*-gate-verdict.md` | 保存 Milestone Gate 聚合判定；即使 final acceptance 采用 manual exception，也不能改写或删除原 verdict |
+| Axis reports | `.servo/milestone/MS-*-blackbox-report.md` 等 | 保存 sibling axis 的独立检查结果；被 Gate verdict 引用期间必须保留，可在 Milestone 结束后按 milestone 目录归档 |
+| Dispatch profile | `.servo/milestone/MS-*-axis-dispatch-profile.md` | 保存 Gate 轴分派和 carrier isolation 事实；与 axis reports / Gate verdict 同生命周期 |
+| Intake / append / follow-up refs | `.servo/repo/pre-milestone-intake-*.md`、`.servo/repo/append-request-*.md` | 若只用于创建该 Milestone，Milestone 结束后可作为 preserved evidence 或 archive 候选；若影响后续 Milestone，必须留在 repo 层可追溯位置 |
+
+Milestone final acceptance 后，清理顺序是：
+
+1. 将 live milestone backlog 条目移入 milestone history，或确认 history 已有完整条目。
+2. 确认 Worktrack closeout records 覆盖所有已决 Worktrack。
+3. 确认 Gate verdict、axis reports、dispatch profile、manual exception 和 final acceptance record 被稳定引用。
+4. 将已晋升的临时 discovery、重复命令输出、过期 scratch material 写入 maintenance sweep report。
+5. 只在引用链完整、风险已说明、且获得 cleanup approval 后，才执行删除或批量移动。
 
 ## 归档路径
 
