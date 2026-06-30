@@ -688,9 +688,9 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 validate_no_python(install_result, install_failures)
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("packaged install did not write servo-harness-skill")
+                        install_failures.append("packaged install did not write harness-skill")
 
             subchecks.append(
                 run_tarball_servo_installer(
@@ -720,9 +720,9 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 validate_no_python(update_apply_result, update_apply_failures)
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("packaged update apply did not write servo-harness-skill")
+                    update_apply_failures.append("packaged update apply did not write harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("packaged update apply did not run verify")
 
@@ -986,9 +986,9 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
 
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("root packaged install did not write servo-harness-skill")
+                        install_failures.append("root packaged install did not write harness-skill")
 
             subchecks.append(
                 run_tarball_servo_installer(
@@ -1019,7 +1019,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not install_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
@@ -1126,7 +1126,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not update_apply_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
@@ -1173,9 +1173,9 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             def validate_update_apply(update_apply_result: dict, update_apply_failures: list[str]) -> None:
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("root packaged update apply did not write servo-harness-skill")
+                    update_apply_failures.append("root packaged update apply did not write harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("root packaged update apply did not run verify")
 

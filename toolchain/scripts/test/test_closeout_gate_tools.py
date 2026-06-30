@@ -156,7 +156,7 @@ def successful_npm_command_result(
                 npm_exec_target_root("claude") / CLAUDE_TARGET_DIR_BY_SKILL.get(skill_name, skill_name)
                 for skill_name in CLAUDE_SKILL_DIR_NAMES
             ]
-        return [npm_exec_target_root("agents") / "servo-harness-skill"]
+        return [npm_exec_target_root("agents") / "harness-skill"]
 
     if command[:4] == ["npm", "pack", "--dry-run", "--json"]:
         packed_paths = (
