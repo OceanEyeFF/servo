@@ -13,7 +13,7 @@ SCRIPT = (
     / "product"
     / "harness"
     / "skills"
-    / "worktrack-cleanup-skill"
+    / "milestone-cleanup-skill"
     / "scripts"
     / "control_state_compact.py"
 )

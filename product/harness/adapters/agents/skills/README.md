@@ -33,6 +33,7 @@
 - `harness-skill`
 - `init-milestone-skill`
 - `init-worktrack-skill`
+- `milestone-cleanup-skill`
 - `milestone-status-skill`
 - `pre-milestone-intake-skill`
 - `recover-worktrack-skill`

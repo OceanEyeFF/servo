@@ -7,7 +7,8 @@
     "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
     "product/harness/skills/worktrack-cleanup-skill/VERSION",
     "product/harness/skills/worktrack-cleanup-skill/scripts/control_state_compact.py",
-    "product/harness/skills/worktrack-cleanup-skill/scripts/runtime_maintenance_sweep.py"
+    "product/harness/skills/worktrack-cleanup-skill/scripts/runtime_maintenance_sweep.py",
+    "product/harness/skills/worktrack-cleanup-skill/scripts/worktrack_backlog_cleanup.py"
   ],
   "target_dir": "worktrack-cleanup-skill",
   "target_entry_name": "SKILL.md",
@@ -21,6 +22,7 @@
     "VERSION",
     "scripts/control_state_compact.py",
     "scripts/runtime_maintenance_sweep.py",
+    "scripts/worktrack_backlog_cleanup.py",
     "payload.json",
     "aw.marker"
   ],

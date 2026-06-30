@@ -12,13 +12,13 @@ HELPER = (
     / "product"
     / "harness"
     / "skills"
-    / "worktrack-cleanup-skill"
+    / "milestone-cleanup-skill"
     / "scripts"
     / "runtime_maintenance_sweep.py"
 )
 PAYLOADS = (
-    REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills" / "worktrack-cleanup-skill" / "payload.json",
-    REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills" / "worktrack-cleanup-skill" / "payload.json",
+    REPO_ROOT / "product" / "harness" / "adapters" / "agents" / "skills" / "milestone-cleanup-skill" / "payload.json",
+    REPO_ROOT / "product" / "harness" / "adapters" / "claude" / "skills" / "milestone-cleanup-skill" / "payload.json",
 )
 
 
@@ -68,7 +68,7 @@ def test_cleanup_skill_payloads_include_runtime_sweep_and_exclude_generated_cach
         required_payload_files = payload["required_payload_files"]
 
         assert (
-            "product/harness/skills/worktrack-cleanup-skill/scripts/runtime_maintenance_sweep.py"
+            "product/harness/skills/milestone-cleanup-skill/scripts/runtime_maintenance_sweep.py"
             in canonical_paths
         )
         assert "scripts/runtime_maintenance_sweep.py" in required_payload_files

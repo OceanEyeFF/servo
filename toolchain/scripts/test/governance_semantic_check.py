@@ -538,10 +538,11 @@ CLOSEOUT_RECORD_REQUIRED_TERMS = [
 ]
 CLEANUP_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/milestone-cleanup-skill/SKILL.md",
     "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
 ]
 CLEANUP_CONTRACT_REQUIRED_TERMS = [
-    "worktrack-cleanup-skill",
+    "milestone-cleanup-skill",
     # Closeout pipeline terms: only checked in harness-skill (closeout pipeline authority)
 ]
 REPO_WHATS_NEXT_OVERVIEW_FALLBACK_CONTRACT_PATHS = [

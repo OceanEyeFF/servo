@@ -174,18 +174,18 @@ harness-skill §10.7.6 定义的 acceptance writeback 事务最小写入集合�
 
 任一步骤 fail，标记 `writeback_incomplete`，不继续后续步骤。
 
-## 与 worktrack-cleanup-skill 的边界
+## 与 milestone-cleanup-skill 的边界
 
-| 维度 | .repo-writeback-skill | worktrack-cleanup-skill |
+| 维度 | .repo-writeback-skill | milestone-cleanup-skill |
 |------|----------------------|---------------------|
-| **操作对象** | `.servo/` artifact 文件内容（字段值） | 本地 git 分支 + backlog 条目归档 + control-state 压缩 |
-| **操作性质** | 字段级内容变更（写、改、迁移） | 文件系统/分支清理（删、归档、压缩） |
-| **典型动作** | 更新 progress_counter、追加 commit hash、迁移 backlog 条目 | 删除已合并 worktrack/milestone 分支、归档 history、压缩滚动日志 |
-| **事务保证** | 文件级事务（预校验→重写→后校验） | 安全守卫（不碰 remote、不删未合并分支、不删 baseline） |
-| **触发时机** | 每次 worktrack closeout / milestone acceptance / checkpoint 更新 | Milestone final acceptance 后（merge → refresh → cleanup 第三阶段） |
-| **副作用** | 仅修改 `.servo/` 文件内容 | 删除本地分支、修改 backlog 条目归属、compact control-state |
+| **操作对象** | `.servo/` artifact 文件内容（字段值） | repo runtime cleanup report、dry-run 清理候选、本地 git 分支 + backlog 条目归档 + control-state 压缩 |
+| **操作性质** | 字段级内容变更（写、改、迁移） | 默认 report/dry-run；显式批准后才执行文件系统/分支清理（删、归档、压缩） |
+| **典型动作** | 更新 progress_counter、追加 commit hash、迁移 backlog 条目 | 生成 runtime maintenance sweep report、报告可清理分支、归档 history、压缩滚动日志 |
+| **事务保证** | 文件级事务（预校验→重写→后校验） | 安全守卫（不碰 remote、不删未合并分支、不删 baseline；自动 closeout 只 report/dry-run） |
+| **触发时机** | 每次 worktrack closeout / milestone acceptance / checkpoint 更新 | Milestone final acceptance / repo refresh 后、下一次 milestone activation 判定前 |
+| **副作用** | 仅修改 `.servo/` 文件内容 | 默认无清理副作用；apply 经批准后才删除本地分支、修改 backlog 条目归属或 compact control-state |
 
-**关键区分**：writeback 改"文件里写了什么"，cleanup 改"磁盘上有什么分支"。两者不同时执行，但可能在同一 closeout 链中先后调用。
+**关键区分**：writeback 改"文件里写了什么"，cleanup report 先说明"运行空间里有什么清理候选"。两者不同时执行，但可能在同一 closeout 链中先后调用；自动 closeout 链不得把 report finding 升级为 apply 授权。
 
 ## .servo/ 跟踪模式
 

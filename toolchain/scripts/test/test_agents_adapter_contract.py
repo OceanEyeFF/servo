@@ -37,6 +37,7 @@ EXPECTED_AGENTS_SKILLS = {
     "repo-append-request-skill",
     "repo-change-goal-skill",
     "repo-refresh-skill",
+    "milestone-cleanup-skill",
     "repo-status-skill",
     "repo-whats-next-skill",
     "repo-writeback-skill",
@@ -282,21 +283,23 @@ class AgentsAdapterContractTest(unittest.TestCase):
             f"duplicate target_dir bindings are not allowed: {duplicates}",
         )
 
-    def test_cleanup_skill_uses_servo_qualified_identity(self) -> None:
+    def test_cleanup_skill_uses_milestone_canonical_identity_with_legacy_compatibility(
+        self,
+    ) -> None:
         self.assertFalse((ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
         self.assertFalse((CLAUDE_ADAPTER_SKILLS_DIR / "cleanup-skill").exists())
 
         agents_payload = load_json(
-            ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+            ADAPTER_SKILLS_DIR / "milestone-cleanup-skill" / "payload.json"
         )
         claude_payload = load_json(
-            CLAUDE_ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+            CLAUDE_ADAPTER_SKILLS_DIR / "milestone-cleanup-skill" / "payload.json"
         )
 
         for payload in (agents_payload, claude_payload):
-            self.assertEqual(payload["skill_id"], "worktrack-cleanup-skill")
+            self.assertEqual(payload["skill_id"], "milestone-cleanup-skill")
             self.assertIn(
-                "product/harness/skills/worktrack-cleanup-skill/scripts/control_state_compact.py",
+                "product/harness/skills/milestone-cleanup-skill/scripts/control_state_compact.py",
                 payload["canonical_paths"],
             )
             self.assertIn(
@@ -305,11 +308,22 @@ class AgentsAdapterContractTest(unittest.TestCase):
             )
             self.assertEqual(
                 payload["canonical_dir"],
-                "product/harness/skills/worktrack-cleanup-skill",
+                "product/harness/skills/milestone-cleanup-skill",
             )
+            self.assertEqual(payload["target_dir"], "milestone-cleanup-skill")
+            self.assertNotIn("worktrack-cleanup-skill", payload["legacy_target_dirs"])
+            self.assertNotIn("cleanup-skill", payload["legacy_target_dirs"])
+            self.assertNotIn("aw-cleanup-skill", payload["legacy_target_dirs"])
+
+        legacy_agents_payload = load_json(
+            ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+        )
+        legacy_claude_payload = load_json(
+            CLAUDE_ADAPTER_SKILLS_DIR / "worktrack-cleanup-skill" / "payload.json"
+        )
+        for payload in (legacy_agents_payload, legacy_claude_payload):
+            self.assertEqual(payload["skill_id"], "worktrack-cleanup-skill")
             self.assertEqual(payload["target_dir"], "worktrack-cleanup-skill")
-            self.assertIn("cleanup-skill", payload["legacy_target_dirs"])
-            self.assertIn("aw-cleanup-skill", payload["legacy_target_dirs"])
 
     def test_set_harness_goal_agents_payload_includes_default_repo_analysis_template(
         self,
