@@ -86,7 +86,7 @@ Harness 作为控制系统，包含以下系统组件。每个传感器映射到
 | Branch Environment Guard | `分支熵` | 分支上下文匹配检查（`branch_context_check.py`） |
 | Git Commit Hash 幂等性守卫 | `目标偏差` | 基线是否变化（`git_hash_check.py`） |
 
-`branch_context_check.py` 和 `git_hash_check.py` 位于 `product/harness/skills/harness-skill/scripts/`。
+`branch_context_check.py` 和 `git_hash_check.py` 随本技能包分发，位于 `./scripts/`。
 
 ### 3.2 执行器（Executor）
 
@@ -376,21 +376,21 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
      - `Baseline Traceability` 字段（`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`verified_at_history` 等 checkpoints）位于 `.servo/control-state-repo.md`
      - hydration 时必须同时读取两者
 
-   > 注：`product/` 是源码层，`.agents/` 是部署目标层。修改 product/ 中的 SKILL.md 或 scripts 后，必须同步到 `.agents/`。当前同步方式为手动 cp，未来应通过 deploy script 自动化。
+   > 注：本技能运行时只依赖当前技能包内的 `SKILL.md` 与 `./scripts/`。源码到部署目标的同步由 adapter/installer 流程负责，不是已安装技能的运行时依赖。
 
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
    - 调用 `branch_context_check.py` 执行确定性分支上下文匹配：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/branch_context_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/branch_context_check.py \
        --control-state .servo/control-state.md \
        --scope <RepoScope|WorktrackScope> \
        --function <Observe|Decide|Init|Dispatch|Verify|Judge|Close|Refresh|Recover> \
        [--worktrack-contract .servo/worktrack/contract.md]
      ```
 
-   - 脚本位于 `product/harness/skills/harness-skill/scripts/branch_context_check.py`。
+   - 脚本随本技能包分发，位于 `./scripts/branch_context_check.py`。
    - 脚本输出 JSON 包含 `status`、`branch_context`、`expected_context`、`blocked`、`warning`、`target_branch`、`reason`。
    - 若 `blocked == true`，Harness 必须停止变更并返回 `branch_context_blocked`。
    - `target_branch` 是合法恢复路径，不得从当前分支名反推或写死默认值。
@@ -401,11 +401,11 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - 调用 `git_hash_check.py` 执行确定性 hash 对比：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/git_hash_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/git_hash_check.py \
        --control-state .servo/control-state-repo.md
      ```
 
-   - 脚本位于 `product/harness/skills/harness-skill/scripts/git_hash_check.py`。
+   - 脚本随本技能包分发，位于 `./scripts/git_hash_check.py`。
    - 脚本输出 JSON 包含 `status`、`current_head`、`checkpoint`、`repo_baseline_unchanged`、`repo_baseline_changed`。
    - 若 `repo_baseline_unchanged == true`，跳过 `repo-refresh-skill` 绑定。
    - 若 `repo_baseline_changed == true`（或 checkpoint 缺失），必须在本轮合适阶段绑定 `repo-refresh-skill`。
@@ -425,14 +425,14 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - **Guard 1: `milestone_kind_routing`** — 调用 `milestone_kind_routing.py` 确定 work-collection vs goal-driven 路由差异。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/milestone_kind_routing.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/milestone_kind_routing.py \
        --milestone .servo/milestone/{milestone_id}.md
      ```
 
    - **Guard 2: `pre_milestone_intake_guard`** — Goal-driven milestone 的 create/upsert/activate/append_worktracks 前，调用 `pre_milestone_intake_guard.py`。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/pre_milestone_intake_guard.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/pre_milestone_intake_guard.py \
        --intake-review .servo/repo/pre-milestone-intake-{id}.md
      ```
 
@@ -440,7 +440,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - **Guard 3: `complex_project_entry_gate_check`** — 调用 `complex_project_entry_gate_check.py` 检查 entry gate blocking。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/complex_project_entry_gate_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complex_project_entry_gate_check.py \
        --gate-source .servo/repo/pre-milestone-intake-{id}.md
      ```
 
@@ -448,7 +448,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - **Guard 4: `milestone_review_gate_check`** — 进入 WorktrackScope.Init 前，调用 `milestone_review_gate_check.py`。这是 Milestone Review Gate：一个 route guard，检查 milestone 级审查状态。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/milestone_review_gate_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/milestone_review_gate_check.py \
        --control-state .servo/control-state.md
      ```
 
@@ -457,7 +457,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - **Guard 5: `runtime_backfill_detect`** — 调用 `runtime_backfill_detect.py` 检测缺失字段。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/runtime_backfill_detect.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/runtime_backfill_detect.py \
        --artifact .servo/control-state.md
      ```
 
@@ -465,7 +465,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - **Guard 6: `worktrack_intake_review_check`** — 调用 `worktrack_intake_review_check.py`。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/worktrack_intake_review_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/worktrack_intake_review_check.py \
        --intake-review .servo/repo/worktrack-intake-{id}.md
      ```
 
@@ -497,7 +497,7 @@ _已合并入 §10.4 前置段落。_
    - 调用 `dispatch_mode_recommend.py` 执行确定性载体推荐：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/dispatch_mode_recommend.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/dispatch_mode_recommend.py \
        --task-coupling low|medium|high \
        --state-sharing low|medium|high \
        --parallel-value low|medium|high \
@@ -515,7 +515,7 @@ _已合并入 §10.4 前置段落。_
    - 每次分派后调用 `dispatch_profile_check.py` 验证 `runtime_dispatch_profile` 字段完整性：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/dispatch_profile_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/dispatch_profile_check.py \
        --profile-json '<json>'
      ```
 
@@ -564,7 +564,7 @@ _已合并入 §10.5。_
    - 刷新完成后，调用 `checkpoint_writeback.py` 写入 observed checkpoint：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/checkpoint_writeback.py \
        --checkpoint-type observed \
        --control-state .servo/control-state-repo.md
      ```
@@ -585,7 +585,7 @@ _已合并入 §10.5。_
    调用 `checkpoint_writeback.py` 写入 doc-catch-up checkpoint：
 
    ```bash
-   PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
+   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/checkpoint_writeback.py \
      --checkpoint-type doc-catch-up \
      --control-state .servo/control-state-repo.md
    ```
@@ -594,7 +594,7 @@ _已合并入 §10.5。_
    - 调用 `autonomy_policy_check.py` 判定当前操作是否命中 forbidden / stop_condition：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/autonomy_policy_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/autonomy_policy_check.py \
        --operation {observe|schedule|dispatch|verify|close|recover|change_goal|init_milestone|init_worktrack|cleanup|doc_catch_up} \
        --skill <skill_name> \
        --control-state .servo/control-state.md
@@ -610,7 +610,7 @@ _已合并入 §10.5。_
    - 调用 `writeback_bridge.py` 桥接 milestone-status-skill 输出到 repo-writeback-skill 期望格式：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/writeback_bridge.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/writeback_bridge.py \
        --milestone-id <id> \
        --instructions-json '<json>'
      ```
@@ -629,7 +629,7 @@ _已合并入 §10.5。_
    - 在 Gate 裁决前，调用 `evidence_completeness_check.py`：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/evidence_completeness_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/evidence_completeness_check.py \
        --evidence-file .servo/worktrack/gate-evidence.md
      ```
 
@@ -682,8 +682,8 @@ Close/Refresh 完成 → 状态更新阶段
 
 | 脚本 | 位置 | 用途 |
 |------|------|------|
-| `git_hash_check.py` | `product/harness/skills/harness-skill/scripts/` | §10.1 步骤 5：读取并对比 hash |
-| `checkpoint_writeback.py` | `product/harness/skills/harness-skill/scripts/` | §10.7 步骤 2/4：写入 observed / doc-catch-up checkpoint |
+| `git_hash_check.py` | `./scripts/` | §10.1 步骤 5：读取并对比 hash |
+| `checkpoint_writeback.py` | `./scripts/` | §10.7 步骤 2/4：写入 observed / doc-catch-up checkpoint |
 
 **硬约束**：
 
@@ -819,7 +819,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `-` 或 `待填写`）。
 5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.servo/worktrack/contract.md#Task Goal]`。
 6. **压缩不是省略**：`Supporting Detail` 层必须保留完整内容，只是不纳入传递/决策上下文；后续如需查阅细节，可直接读取。
-7. **脚本输出是权威控制信号源**：所有 guard、check 和 routing 决策必须优先消费 `product/harness/skills/harness-skill/scripts/` 下对应脚本的结构化 JSON 输出，不得用 LLM 自行推断替代确定性脚本结果。脚本返回 `blocked == true` 即硬阻断，不得覆盖。
+7. **脚本输出是权威控制信号源**：所有 guard、check 和 routing 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出，不得用 LLM 自行推断替代确定性脚本结果。脚本返回 `blocked == true` 即硬阻断，不得覆盖。
 
 ---
 
@@ -877,7 +877,7 @@ Unlock signal 结构化格式：
 - **控制态规范化**：如果 control-state.md 出现重复 key（如多个 `- verified_at:`、重复的 singleton key），应在 hydration 后调用 `normalize_control_state.py` 消除歧义：
 
   ```bash
-  PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/normalize_control_state.py \
+  PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/normalize_control_state.py \
     --input .servo/control-state.md
   ```
 
@@ -887,7 +887,7 @@ Unlock signal 结构化格式：
 
 使用当前 `Harness Control State`、当前 Scope 所需的正式产物，以及下游技能的结构化输出作为本轮的权威依据。
 
-判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。所有 guard 决策必须优先消费 `product/harness/skills/harness-skill/scripts/` 下对应脚本的结构化 JSON 输出（见 §10.2 的 8 个 guard 脚本调用和 §10.7 的 `autonomy_policy_check.py` 引用）。
+判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。所有 guard 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出（见 §10.2 的 8 个 guard 脚本调用和 §10.7 的 `autonomy_policy_check.py` 引用）。
 
 三轴参考：
 

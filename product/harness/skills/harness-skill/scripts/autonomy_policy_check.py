@@ -64,6 +64,8 @@ ALLOWED: dict[str, str] = {
     "artifact_hydration":          "Artifact 水合",
     "status_consistency_check":    "状态一致性检查",
     "worktrack_queue_scheduling":  "Worktrack 内队列调度",
+    "bounded_worktrack_dispatch":  "限定范围 Worktrack 分派",
+    "bounded_worktrack_close":     "限定范围 Worktrack 收尾",
     "non_destructive_docs_edits":  "非破坏性文档编辑",
     "bounded_local_verification":  "限定范围本地验证",
     "post_gate_repo_refresh":      "Gate 后 repo 刷新写回",
@@ -192,6 +194,23 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "dispatch-skills 分派：限定范围但可能触及边界，需要审批"
         ),
     ),
+    "dispatch::worktrack-dispatch-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_dispatch",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-dispatch-skill 只允许在当前 Worktrack Contract 与"
+            "已选 dispatch packet 范围内执行非破坏性分派；cleanup apply/"
+            "delete/move/archive、release/publish/tag/push/deploy、受保护"
+            "分支 mutation、secret/database/external quota 仍由 forbidden/stop"
+            "边界阻断"
+        ),
+    ),
 
     # ── close ──
     "close::close-worktrack-skill": PolicyProfile(
@@ -204,6 +223,23 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         description=(
             "close-worktrack-skill 涉及 merge/rebase 触达受保护分支策略，"
             "需要审批。已批准的 closeout 流程可继续"
+        ),
+    ),
+    "close::worktrack-close-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_close",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-close-skill 可执行当前 Worktrack Contract 内的"
+            "非破坏性收尾、报告型 closeout 和 RepoScope refresh 交接；"
+            "merge、protected branch mutation、branch cleanup、cleanup apply/"
+            "delete/move/archive、release/publish/tag/push/deploy 仍需独立"
+            "审批或由 forbidden/stop 边界阻断"
         ),
     ),
 
