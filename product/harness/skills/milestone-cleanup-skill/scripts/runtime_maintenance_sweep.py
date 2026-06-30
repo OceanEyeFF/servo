@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,7 @@ FIELD_PATTERN = re.compile(r"^\s*-\s*([A-Za-z0-9_.-]+)\s*:\s*(.*)$")
 WORKTRACK_ID_PATTERN = re.compile(r"^\s*-\s*worktrack_id\s*:\s*(.+?)\s*$")
 MILESTONE_ID_PATTERN = re.compile(r"^\s*-\s*milestone_id\s*:\s*(.+?)\s*$")
 STATUS_PATTERN = re.compile(r"^\s*-\s*status\s*:\s*(.+?)\s*$")
+WORKTRACK_MARKER_PATTERN = re.compile(r"^\s*(WT-[^()\s]+)\s*\(([^)]*)\)\s*$")
 PRIMARY_MILESTONE_ARTIFACT_PATTERN = re.compile(
     r"^MS-(?:\d{8}-\d{3}|\d{3}|LEGACY)\.md$"
 )
@@ -126,6 +128,28 @@ def parse_fields(text: str) -> dict[str, list[str]]:
     return fields
 
 
+def clean_scalar(raw_value: str) -> str:
+    return raw_value.strip().strip('"').strip("'")
+
+
+def parse_scalar_fields(path: Path, keys: Iterable[str]) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+
+    wanted = set(keys)
+    fields: dict[str, str] = {}
+    for line in read_text(path).splitlines():
+        stripped = line.strip()
+        for key in wanted:
+            dash_prefix = f"- {key}:"
+            yaml_prefix = f"{key}:"
+            if stripped.startswith(dash_prefix):
+                fields.setdefault(key, clean_scalar(stripped.removeprefix(dash_prefix)))
+            elif stripped.startswith(yaml_prefix):
+                fields.setdefault(key, clean_scalar(stripped.removeprefix(yaml_prefix)))
+    return fields
+
+
 def parse_worktrack_backlog(path: Path) -> list[dict[str, object]]:
     if not path.is_file():
         return []
@@ -156,6 +180,39 @@ def parse_worktrack_backlog(path: Path) -> list[dict[str, object]]:
     if current:
         entries.append(current)
     return entries
+
+
+def parse_worktrack_marker(raw_marker: str) -> tuple[str, str] | None:
+    match = WORKTRACK_MARKER_PATTERN.match(raw_marker.strip())
+    if not match:
+        return None
+    status_parts = [part.strip().lower() for part in match.group(2).split(",")]
+    for status in ("completed", "done", "closed", "active", "planned", "blocked", "deferred"):
+        if status in status_parts:
+            return match.group(1), status
+    return match.group(1), status_parts[-1] if status_parts else ""
+
+
+def worktrack_statuses_from_milestones(
+    entries: Sequence[dict[str, object]],
+) -> dict[str, dict[str, str]]:
+    statuses: dict[str, dict[str, str]] = {}
+    for entry in entries:
+        milestone_id = str(entry.get("milestone_id", "")).strip()
+        worktracks = entry.get("worktrack_list", [])
+        if not isinstance(worktracks, list):
+            continue
+        for marker in worktracks:
+            parsed = parse_worktrack_marker(str(marker))
+            if parsed is None:
+                continue
+            worktrack_id, status = parsed
+            statuses[worktrack_id] = {
+                "status": status,
+                "milestone_id": milestone_id,
+                "marker": str(marker),
+            }
+    return statuses
 
 
 def parse_milestone_backlog(path: Path) -> list[dict[str, object]]:
@@ -603,6 +660,159 @@ def find_milestone_backlog_history_gaps(
     return findings
 
 
+def find_worktrack_backlog_state_gaps(
+    *,
+    worktrack_entries: Sequence[dict[str, object]],
+    milestone_entries: Sequence[dict[str, object]],
+) -> list[Finding]:
+    findings: list[Finding] = []
+    milestone_worktracks = worktrack_statuses_from_milestones(milestone_entries)
+    backlog_by_id = {
+        str(entry.get("worktrack_id", "")).strip(): entry for entry in worktrack_entries
+    }
+
+    for worktrack_id, marker in sorted(milestone_worktracks.items()):
+        marker_status = marker["status"]
+        entry = backlog_by_id.get(worktrack_id)
+        if entry is None:
+            continue
+        backlog_status = str(entry.get("status", "")).strip().lower()
+        if marker_status in DONE_STATUSES and backlog_status not in DONE_STATUSES:
+            findings.append(
+                Finding(
+                    finding_type="worktrack_live_status_stale",
+                    severity="high",
+                    path=".servo/repo/worktrack-backlog.md",
+                    message=(
+                        f"Worktrack {worktrack_id} is marked completed in milestone backlog "
+                        f"but remains {backlog_status or 'unknown'} in worktrack-backlog."
+                    ),
+                    evidence={
+                        "worktrack_id": worktrack_id,
+                        "milestone_id": marker["milestone_id"],
+                        "milestone_marker": marker["marker"],
+                        "worktrack_backlog_status": backlog_status,
+                    },
+                )
+            )
+
+    return findings
+
+
+def current_git_head(repo_root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def find_control_state_consistency_gaps(servo_root: Path, repo_root: Path) -> list[Finding]:
+    findings: list[Finding] = []
+    root_fields = parse_scalar_fields(
+        servo_root / "control-state.md",
+        {
+            "active_worktrack",
+            "latest_observed_checkpoint",
+            "observed_git_hash",
+            "repo_refresh_checkpoint",
+        },
+    )
+    repo_fields = parse_scalar_fields(
+        servo_root / "control-state-repo.md",
+        {
+            "active_worktrack",
+            "active_milestone_branch_head",
+            "latest_observed_checkpoint",
+        },
+    )
+    wt_fields = parse_scalar_fields(
+        servo_root / "control-state-wt.md",
+        {"current_worktrack", "worktrack_next_action", "worktrack_branch"},
+    )
+    snapshot_fields = parse_scalar_fields(
+        servo_root / "repo" / "snapshot-status.md",
+        {"current_head", "active_milestone_branch_head"},
+    )
+
+    root_active = root_fields.get("active_worktrack", "")
+    repo_active = repo_fields.get("active_worktrack", "")
+    wt_current = wt_fields.get("current_worktrack", "")
+    if wt_current and wt_current != "N/A" and root_active == "N/A" and repo_active == "N/A":
+        findings.append(
+            Finding(
+                finding_type="split_control_state_worktrack_disagreement",
+                severity="high",
+                path=".servo/control-state-wt.md",
+                message=(
+                    "Worktrack control-state keeps a current worktrack while root and repo "
+                    "control-state report no active worktrack."
+                ),
+                evidence={
+                    "root_active_worktrack": root_active,
+                    "repo_active_worktrack": repo_active,
+                    "wt_current_worktrack": wt_current,
+                    "wt_worktrack_next_action": wt_fields.get("worktrack_next_action", ""),
+                    "wt_worktrack_branch": wt_fields.get("worktrack_branch", ""),
+                },
+            )
+        )
+
+    git_head = current_git_head(repo_root)
+    checkpoint_fields = {
+        ".servo/control-state.md latest_observed_checkpoint": root_fields.get(
+            "latest_observed_checkpoint", ""
+        ),
+        ".servo/control-state.md observed_git_hash": root_fields.get("observed_git_hash", ""),
+        ".servo/control-state.md repo_refresh_checkpoint": root_fields.get(
+            "repo_refresh_checkpoint", ""
+        ),
+        ".servo/control-state-repo.md active_milestone_branch_head": repo_fields.get(
+            "active_milestone_branch_head", ""
+        ),
+        ".servo/control-state-repo.md latest_observed_checkpoint": repo_fields.get(
+            "latest_observed_checkpoint", ""
+        ),
+        ".servo/repo/snapshot-status.md current_head": snapshot_fields.get("current_head", ""),
+        ".servo/repo/snapshot-status.md active_milestone_branch_head": snapshot_fields.get(
+            "active_milestone_branch_head", ""
+        ),
+    }
+    non_empty_checkpoints = {
+        name: value for name, value in checkpoint_fields.items() if value and value != "N/A"
+    }
+    unique_values = set(non_empty_checkpoints.values())
+    if git_head:
+        unique_values.add(git_head)
+    if len(unique_values) > 1:
+        findings.append(
+            Finding(
+                finding_type="repo_snapshot_head_drift",
+                severity="high",
+                path=".servo/repo/snapshot-status.md",
+                message=(
+                    "Repo snapshot/control-state checkpoint fields do not agree with each "
+                    "other or the current git HEAD."
+                ),
+                evidence={
+                    "git_head": git_head or "unavailable",
+                    "checkpoint_fields": non_empty_checkpoints,
+                },
+            )
+        )
+
+    return findings
+
+
 def sweep(servo_root: Path) -> dict[str, object]:
     servo_root = servo_root.resolve()
     repo_root = servo_root.parent
@@ -632,6 +842,13 @@ def sweep(servo_root: Path) -> dict[str, object]:
             history_entries=milestone_history_entries,
         )
     )
+    findings.extend(
+        find_worktrack_backlog_state_gaps(
+            worktrack_entries=worktrack_entries,
+            milestone_entries=milestone_live_entries + milestone_history_entries,
+        )
+    )
+    findings.extend(find_control_state_consistency_gaps(servo_root, repo_root))
 
     finding_dicts = [finding.as_dict() for finding in findings]
     counts_by_type: dict[str, int] = {}

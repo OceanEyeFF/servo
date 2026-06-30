@@ -244,6 +244,82 @@ def test_cleanup_skill_runtime_sweep_accepts_normalized_multi_cycle_state(
     assert payload["milestone_entry_count"] == 5
 
 
+def test_cleanup_skill_runtime_sweep_reports_live_worktrack_and_snapshot_drift(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(
+        servo / "control-state.md",
+        "# Harness Control State\n\n"
+        "## Active Worktrack\n"
+        "- active_worktrack: N/A\n\n"
+        "## User-Defined Servo Controls\n"
+        "- latest_observed_checkpoint: 1111111\n"
+        "- observed_git_hash: 1111111\n"
+        "- repo_refresh_checkpoint: 1111111\n",
+    )
+    write_doc(
+        servo / "control-state-repo.md",
+        "# Harness Control State - Repo Level\n\n"
+        "## Milestone Pipeline - Active Milestone\n"
+        "- active_worktrack: N/A\n"
+        "- active_milestone_branch_head: 1111111\n\n"
+        "## Baseline Traceability\n"
+        "- latest_observed_checkpoint: 1111111\n",
+    )
+    write_doc(
+        servo / "control-state-wt.md",
+        "# Harness Control State - Worktrack Level\n\n"
+        "## Worktrack Current\n"
+        "- current_worktrack: WT-stale-active\n"
+        "- worktrack_next_action: dispatch\n"
+        "- worktrack_branch: wt/WT-stale-active\n",
+    )
+    write_doc(
+        servo / "repo" / "snapshot-status.md",
+        "# Repo Snapshot / Status\n\n"
+        "## Current Baseline\n\n"
+        "```yaml\n"
+        "current_head: \"2222222\"\n"
+        "```\n\n"
+        "## Active Milestone\n\n"
+        "```yaml\n"
+        "active_milestone_branch_head: \"2222222\"\n"
+        "```\n",
+    )
+    write_doc(
+        servo / "repo" / "worktrack-backlog.md",
+        "- worktrack_id: WT-stale-active\n"
+        "  - milestone_id: MS-20260630-004\n"
+        "  - status: active\n"
+        "  - evidence_ref: .servo/worktrack/gate-evidence.md\n",
+    )
+    write_doc(
+        servo / "repo" / "milestone-backlog.md",
+        "- milestone_id: MS-20260630-004\n"
+        "  - status: active\n"
+        "  - worktrack_list:\n"
+        "    - WT-stale-active (config, completed)\n",
+    )
+    write_doc(servo / "worktrack" / "gate-evidence.md", "# Rolling Evidence\n")
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    counts = payload["counts_by_type"]
+    assert counts["worktrack_live_status_stale"] == 1
+    assert counts["split_control_state_worktrack_disagreement"] == 1
+    assert counts["repo_snapshot_head_drift"] == 1
+
+
 def test_cleanup_skill_payloads_include_runtime_sweep_and_exclude_generated_cache() -> None:
     for payload_path in PAYLOADS:
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
