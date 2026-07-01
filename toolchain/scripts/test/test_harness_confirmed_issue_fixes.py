@@ -9,6 +9,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_DIR = REPO_ROOT / "product/harness/skills/harness-skill/scripts"
+AUTONOMY_POLICY_COPY_PATHS = (
+    SCRIPT_DIR / "autonomy_policy_check.py",
+    REPO_ROOT / ".agents/skills/harness-skill/scripts/autonomy_policy_check.py",
+    REPO_ROOT / ".claude/skills/harness-skill/scripts/autonomy_policy_check.py",
+)
 
 
 def run_script(script_name: str, args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -293,7 +298,12 @@ def test_autonomy_policy_cleanup_skills_use_explicit_non_destructive_profiles(
         encoding="utf-8",
     )
 
-    for skill in ("milestone-cleanup-skill", "worktrack-cleanup-skill"):
+    for skill in (
+        "milestone-cleanup-skill",
+        "worktrack-cleanup-skill",
+        "servo-cleanup-skill",
+        "cleanup-skill",
+    ):
         result = run_script(
             "autonomy_policy_check.py",
             [
@@ -314,7 +324,35 @@ def test_autonomy_policy_cleanup_skills_use_explicit_non_destructive_profiles(
         assert payload["needs_approval"] is False
         assert payload["forbidden_hit"] == []
         assert payload["stop_condition_hit"] == []
+        assert "cleanup apply/delete/move/archive" in str(payload["reason"])
+        assert "显式审批" in str(payload["reason"])
         assert "未在 POLICY_MAP" not in str(payload["reason"])
+
+
+def test_autonomy_policy_cleanup_copies_reject_stale_safe_delete_wording() -> None:
+    stale_terms = ("使用 -d 安全删除", "不命中 forbidden:destructive_cleanup")
+    checked_paths = [path for path in AUTONOMY_POLICY_COPY_PATHS if path.exists()]
+
+    assert SCRIPT_DIR / "autonomy_policy_check.py" in checked_paths
+
+    for path in checked_paths:
+        text = path.read_text(encoding="utf-8")
+        for term in stale_terms:
+            assert term not in text, f"{path} still contains stale term {term!r}"
+
+        for skill in ("servo-cleanup-skill", "cleanup-skill"):
+            profile_start = text.index(f'"cleanup::{skill}"')
+            profile_block = text[profile_start : profile_start + 1000]
+            assert "cleanup report/dry-run" in profile_block
+            assert "cleanup apply/delete/" in profile_block
+            assert "move/archive" in profile_block
+            assert "显式审批" in profile_block
+
+        default_start = text.index('"cleanup": PolicyProfile(')
+        default_block = text[default_start : default_start + 400]
+        assert "仅允许非破坏性 cleanup report/dry-run" in default_block
+        assert "cleanup apply/delete/move/archive" in default_block
+        assert "安全删除" not in default_block
 
 
 def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> None:
@@ -344,6 +382,41 @@ def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> No
 
     assert result.returncode == 0, result.stderr
     assert payload["recommended_mode"] == "delegated"
+
+
+def test_runtime_skill_docs_use_package_local_script_commands() -> None:
+    cleanup_docs = [
+        "product/harness/skills/milestone-cleanup-skill/SKILL.md",
+        "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
+        ".agents/skills/milestone-cleanup-skill/SKILL.md",
+        ".agents/skills/worktrack-cleanup-skill/SKILL.md",
+        ".claude/skills/milestone-cleanup-skill/SKILL.md",
+        ".claude/skills/worktrack-cleanup-skill/SKILL.md",
+    ]
+    set_goal_runtime_docs = [
+        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        ".agents/skills/harness-set-goal-skill/SKILL.md",
+        ".claude/skills/harness-set-goal-skill/SKILL.md",
+        "docs/project-maintenance/usage-help/claude.md",
+    ]
+    set_goal_asset_docs = [
+        "product/harness/skills/harness-set-goal-skill/assets/README.md",
+        ".agents/skills/harness-set-goal-skill/assets/README.md",
+        ".claude/skills/harness-set-goal-skill/assets/README.md",
+    ]
+    bare_python_runtime = "python3 " + "scripts/"
+    bare_node_deploy = "node " + "scripts/deploy_servo.js"
+
+    for relative_path in cleanup_docs:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        assert bare_python_runtime not in text, relative_path
+        assert "python3 ./scripts/control_state_compact.py" in text, relative_path
+        assert "python3 ./scripts/runtime_maintenance_sweep.py" in text, relative_path
+
+    for relative_path in set_goal_runtime_docs + set_goal_asset_docs:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        assert bare_node_deploy not in text, relative_path
+        assert "node ./scripts/deploy_servo.js" in text, relative_path
 
 
 def test_branch_context_refresh_accepts_milestone_and_baseline_refs(

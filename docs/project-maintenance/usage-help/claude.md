@@ -66,8 +66,8 @@ Skill resolution probe. Do not call tools. Return compact JSON only with keys sk
 `harness-set-goal-skill` 的 `scripts/deploy_servo.js` 可安装自身到 Claude 项目级 skill 目录：
 
 ```bash
-node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
+node ./scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
 ```
 
 目标 `<deploy-path>/.claude/skills/harness-set-goal-skill/`，默认不覆盖（需 `--force`）；`--claude-root` 仅限受控 trial 环境；目标目录不能是 symlink。

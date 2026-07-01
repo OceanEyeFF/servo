@@ -91,7 +91,7 @@ git describe --tags --always --dirty
 npm view servo-installer dist-tags --json
 npm view servo-installer@latest version gitHead dist.tarball --json
 npm view servo-installer@next version gitHead dist.tarball --json
-node toolchain/scripts/deploy/bin/servo-installer.js --version
+npx servo-installer --version
 ```
 
 同步目标通常包括：

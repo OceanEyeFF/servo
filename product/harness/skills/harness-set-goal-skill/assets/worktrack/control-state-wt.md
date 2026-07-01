@@ -14,6 +14,7 @@
 - worktrack_scope: closed
 - worktrack_next_action:
 - current_worktrack:
+- last_closed_worktrack:
 - worktrack_branch:
 - worktrack_contract:
 - plan_task_queue:

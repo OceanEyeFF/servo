@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SCRIPT = (
+MILESTONE_SCRIPT = (
     REPO_ROOT
     / "product"
     / "harness"
@@ -17,7 +17,23 @@ SCRIPT = (
     / "scripts"
     / "control_state_compact.py"
 )
+WORKTRACK_SCRIPT = (
+    REPO_ROOT
+    / "product"
+    / "harness"
+    / "skills"
+    / "worktrack-cleanup-skill"
+    / "scripts"
+    / "control_state_compact.py"
+)
+HELPER_SCRIPTS = (MILESTONE_SCRIPT, WORKTRACK_SCRIPT)
 SERVO_TEMPLATE_CONTROL_STATE = REPO_ROOT / "product" / ".servo_template" / "control-state.md"
+SERVO_TEMPLATE_REPO_CONTROL_STATE = (
+    REPO_ROOT / "product" / ".servo_template" / "repo" / "control-state-repo.md"
+)
+SERVO_TEMPLATE_WT_CONTROL_STATE = (
+    REPO_ROOT / "product" / ".servo_template" / "worktrack" / "control-state-wt.md"
+)
 SET_GOAL_CONTROL_STATE_ASSET = (
     REPO_ROOT
     / "product"
@@ -27,10 +43,39 @@ SET_GOAL_CONTROL_STATE_ASSET = (
     / "assets"
     / "control-state.md"
 )
+SET_GOAL_REPO_CONTROL_STATE_ASSET = (
+    REPO_ROOT
+    / "product"
+    / "harness"
+    / "skills"
+    / "harness-set-goal-skill"
+    / "assets"
+    / "repo"
+    / "control-state-repo.md"
+)
+SET_GOAL_WT_CONTROL_STATE_ASSET = (
+    REPO_ROOT
+    / "product"
+    / "harness"
+    / "skills"
+    / "harness-set-goal-skill"
+    / "assets"
+    / "worktrack"
+    / "control-state-wt.md"
+)
+ACTUAL_SPLIT_CONTROL_STATE_ARTIFACTS = (
+    (SERVO_TEMPLATE_CONTROL_STATE, "split-primary-control-state"),
+    (SERVO_TEMPLATE_REPO_CONTROL_STATE, "split-repo-control-state"),
+    (SERVO_TEMPLATE_WT_CONTROL_STATE, "split-worktrack-control-state"),
+    (SET_GOAL_CONTROL_STATE_ASSET, "split-primary-control-state"),
+    (SET_GOAL_REPO_CONTROL_STATE_ASSET, "split-repo-control-state"),
+    (SET_GOAL_WT_CONTROL_STATE_ASSET, "split-worktrack-control-state"),
+)
 
 
-def load_helper_module():
-    spec = importlib.util.spec_from_file_location("control_state_compact", SCRIPT)
+def load_helper_module(script: Path = MILESTONE_SCRIPT):
+    module_name = f"control_state_compact_{script.parts[-3].replace('-', '_')}"
+    spec = importlib.util.spec_from_file_location(module_name, script)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -175,9 +220,13 @@ def sample_split_wt_control_state() -> str:
     )
 
 
-def run_helper(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+def run_helper(
+    *args: str,
+    cwd: Path,
+    script: Path = MILESTONE_SCRIPT,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [sys.executable, str(script), *args],
         cwd=cwd,
         check=False,
         text=True,
@@ -325,29 +374,32 @@ def test_backup_history_dir_is_rejected(tmp_path: Path) -> None:
 
 
 def test_control_state_templates_include_compaction_required_fields() -> None:
-    helper = load_helper_module()
+    for script in HELPER_SCRIPTS:
+        helper = load_helper_module(script)
 
-    for template_path in (SERVO_TEMPLATE_CONTROL_STATE, SET_GOAL_CONTROL_STATE_ASSET):
-        text = template_path.read_text(encoding="utf-8")
-        validation = helper.validate_control_state(text)
-        assert validation.missing_sections == [], template_path
-        assert validation.missing_fields == [], template_path
-        assert validation.missing_groups == [], template_path
+        for template_path, expected_profile in ACTUAL_SPLIT_CONTROL_STATE_ARTIFACTS:
+            text = template_path.read_text(encoding="utf-8")
+            validation = helper.validate_control_state(text, template_path)
+            assert validation.profile_name == expected_profile, (script, template_path)
+            assert validation.missing_sections == [], (script, template_path)
+            assert validation.missing_fields == [], (script, template_path)
+            assert validation.missing_groups == [], (script, template_path)
 
 
 def test_split_runtime_profiles_include_compaction_required_fields() -> None:
-    helper = load_helper_module()
-
     samples = {
         ".servo/control-state.md": sample_split_primary_control_state(),
         ".servo/control-state-repo.md": sample_split_repo_control_state(),
         ".servo/control-state-wt.md": sample_split_wt_control_state(),
     }
-    for relative_path, text in samples.items():
-        validation = helper.validate_control_state(text, Path(relative_path))
-        assert validation.missing_sections == [], relative_path
-        assert validation.missing_fields == [], relative_path
-        assert validation.missing_groups == [], relative_path
+    for script in HELPER_SCRIPTS:
+        helper = load_helper_module(script)
+
+        for relative_path, text in samples.items():
+            validation = helper.validate_control_state(text, Path(relative_path))
+            assert validation.missing_sections == [], (script, relative_path)
+            assert validation.missing_fields == [], (script, relative_path)
+            assert validation.missing_groups == [], (script, relative_path)
 
 
 def test_split_runtime_cli_dry_run_accepts_all_control_state_artifacts(tmp_path: Path) -> None:
@@ -366,24 +418,48 @@ def test_split_runtime_cli_dry_run_accepts_all_control_state_artifacts(tmp_path:
         ),
     }
 
-    for relative_path, (text, expected_profile) in samples.items():
-        target = tmp_path / relative_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8")
+    for script in HELPER_SCRIPTS:
+        for relative_path, (text, expected_profile) in samples.items():
+            target = tmp_path / script.stem / relative_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
 
-        result = run_helper(
-            "--control-state",
-            str(target),
-            "--dry-run",
-            "--json",
-            cwd=tmp_path,
-        )
+            result = run_helper(
+                "--control-state",
+                str(target),
+                "--dry-run",
+                "--json",
+                cwd=tmp_path,
+                script=script,
+            )
 
-        assert result.returncode == 0, result.stdout
-        payload = json.loads(result.stdout)
-        assert payload["post_verify_verdict"] == "pass"
-        assert payload["preserved_fields"]["validation_profile"] == expected_profile
-        assert target.read_text(encoding="utf-8") == text
+            assert result.returncode == 0, result.stdout
+            payload = json.loads(result.stdout)
+            assert payload["post_verify_verdict"] == "pass"
+            assert payload["preserved_fields"]["validation_profile"] == expected_profile
+            assert target.read_text(encoding="utf-8") == text
+
+
+def test_actual_split_control_state_artifacts_dry_run_against_cleanup_helpers() -> None:
+    for script in HELPER_SCRIPTS:
+        for template_path, expected_profile in ACTUAL_SPLIT_CONTROL_STATE_ARTIFACTS:
+            original = template_path.read_text(encoding="utf-8")
+
+            result = run_helper(
+                "--control-state",
+                str(template_path),
+                "--dry-run",
+                "--json",
+                cwd=REPO_ROOT,
+                script=script,
+            )
+
+            assert result.returncode == 0, result.stdout
+            payload = json.loads(result.stdout)
+            assert payload["post_verify_verdict"] == "pass"
+            assert payload["changed"] is False
+            assert payload["preserved_fields"]["validation_profile"] == expected_profile
+            assert template_path.read_text(encoding="utf-8") == original
 
 
 def test_servo_template_does_not_reference_installer_backup_artifacts() -> None:

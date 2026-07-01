@@ -341,8 +341,9 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "servo-cleanup-skill 使用 -d 安全删除，"
-            "不命中 forbidden:destructive_cleanup"
+            "servo-cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
         ),
     ),
     "cleanup::cleanup-skill": PolicyProfile(
@@ -351,8 +352,9 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "cleanup-skill 使用 -d 安全删除，"
-            "不命中 forbidden:destructive_cleanup"
+            "cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
         ),
     ),
 
@@ -429,7 +431,10 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
     "cleanup": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
         needs_approval=False,
-        description="cleanup 默认：安全删除",
+        description=(
+            "cleanup 默认：仅允许非破坏性 cleanup report/dry-run；"
+            "cleanup apply/delete/move/archive 需独立显式审批"
+        ),
     ),
     "doc_catch_up": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],

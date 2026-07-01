@@ -180,7 +180,6 @@ SPLIT_PRIMARY_PROFILE = ControlStateProfile(
         "worktrack_scope",
         "current_function",
         "active_worktrack",
-        "latest_closed_worktrack",
         "milestone_status",
         "recommended_next_route",
     ),
@@ -296,6 +295,14 @@ def frontmatter_values(text: str) -> dict[str, str]:
     return values
 
 
+def declares_split_primary_control_state(text: str) -> bool:
+    return (
+        "control_state_version: split" in text
+        and "control-state-repo.md" in text
+        and "control-state-wt.md" in text
+    )
+
+
 def select_profile(text: str, control_state_path: Path | None = None) -> ControlStateProfile:
     metadata = frontmatter_values(text)
     artifact_type = metadata.get("artifact_type", "")
@@ -309,6 +316,9 @@ def select_profile(text: str, control_state_path: Path | None = None) -> Control
     if (
         artifact_type == "control-state"
         and control_state_version == "split"
+    ) or (
+        file_name in {"", "control-state.md"}
+        and declares_split_primary_control_state(text)
     ):
         return SPLIT_PRIMARY_PROFILE
     return LEGACY_PROFILE

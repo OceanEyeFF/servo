@@ -5,7 +5,7 @@
 Harness 在状态估计阶段（§10.1 步骤 3）调用此脚本。
 
 用法:
-  PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/branch_context_check.py \\
+  PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/branch_context_check.py \\
     --control-state .servo/control-state.md \\
     [--worktrack-contract .servo/worktrack/contract.md] \\
     --scope RepoScope|WorktrackScope \\

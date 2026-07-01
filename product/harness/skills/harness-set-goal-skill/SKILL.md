@@ -138,7 +138,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - `assets/` 目录遵循 Codex Skills 标准，存放本技能所需的模板、资源和参考文档
    - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
    - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/harness-set-goal-skill/`
-   - 也可以单独运行 `node scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
+   - 也可以单独运行 `node ./scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
    - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `harness-set-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
    - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为已完成并 no-op
    - 复制时只复制模板骨架；内容字段（如 Project Vision、autonomy 参数等）由第 3~5 步的分析结果填充
@@ -252,13 +252,13 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 最小用法：
 
 ```bash
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --weak-doc-onboarding
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --complex-project-entry-gate
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
-node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_servo.js generate --help
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --owner servo-kernel
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --weak-doc-onboarding
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --adoption-mode existing-code-adoption --complex-project-entry-gate
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --baseline-branch "$BASELINE_BRANCH" --install-claude-skill
+node ./scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node ./scripts/deploy_servo.js generate --help
 ```
 
 ## 资源

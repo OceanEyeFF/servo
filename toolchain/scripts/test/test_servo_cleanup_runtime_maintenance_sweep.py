@@ -70,6 +70,57 @@ def test_cleanup_skill_runtime_sweep_helper_is_report_first(tmp_path: Path) -> N
     assert "rolling_evidence_reuse" in payload["counts_by_type"]
 
 
+def test_cleanup_skill_runtime_sweep_requires_stable_ref_for_rolling_evidence(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(
+        servo / "repo" / "worktrack-backlog.md",
+        "- worktrack_id: WT-complete-status-only\n"
+        "  - milestone_id: MS-001\n"
+        "  - status: done\n"
+        "  - evidence_ref: .servo/worktrack/gate-evidence.md\n"
+        "  - closeout_bundle_status: complete\n"
+        "\n"
+        "- worktrack_id: WT-rolling-bundle-ref\n"
+        "  - milestone_id: MS-001\n"
+        "  - status: done\n"
+        "  - evidence_ref: .servo/worktrack/gate-evidence.md#WT-rolling-bundle-ref\n"
+        "  - closeout_evidence_bundle_ref: .servo/worktrack/gate-evidence.md\n"
+        "  - closeout_bundle_status: archived\n"
+        "\n"
+        "- worktrack_id: WT-stable-bundle-ref\n"
+        "  - milestone_id: MS-001\n"
+        "  - status: done\n"
+        "  - evidence_ref: .servo/worktrack/gate-evidence.md\n"
+        "  - closeout_evidence_bundle_ref: .servo/archive/worktrack/WT-stable-bundle.md\n"
+        "  - closeout_bundle_status: complete\n",
+    )
+    write_doc(servo / "worktrack" / "gate-evidence.md", "# Rolling Evidence\n")
+    write_doc(servo / "archive" / "worktrack" / "WT-stable-bundle.md", "# Stable Bundle\n")
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    rolling_findings = [
+        finding
+        for finding in payload["findings"]
+        if finding["type"] == "rolling_evidence_reuse"
+    ]
+    assert {finding["evidence"]["worktrack_id"] for finding in rolling_findings} == {
+        "WT-complete-status-only",
+        "WT-rolling-bundle-ref",
+    }
+
+
 def test_legacy_cleanup_runtime_sweep_stays_in_sync_with_canonical() -> None:
     assert LEGACY_HELPER.read_text(encoding="utf-8") == HELPER.read_text(encoding="utf-8")
 
@@ -148,6 +199,111 @@ def test_cleanup_skill_runtime_sweep_reports_milestone_backlog_history_gaps(
     assert counts["milestone_missing_history_record"] == 2
     assert counts["milestone_history_live_status"] == 1
     assert counts["milestone_active_pointer_non_active"] == 1
+
+
+def test_cleanup_skill_runtime_sweep_reports_typed_unfinished_history_markers(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(
+        servo / "repo" / "milestone-history.md",
+        "- milestone_id: MS-20260630-010\n"
+        "  - status: completed\n"
+        "  - worktrack_list:\n"
+        "    - WT-planned-010 (config, planned)\n"
+        "    - WT-active-010 (feature, active)\n"
+        "    - WT-done-010 (config, completed)\n",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    findings = [
+        finding
+        for finding in payload["findings"]
+        if finding["type"] == "milestone_history_unfinished_worktrack_marker"
+    ]
+    assert len(findings) == 1
+    assert findings[0]["evidence"]["worktrack_markers"] == [
+        "WT-planned-010 (config, planned)",
+        "WT-active-010 (feature, active)",
+    ]
+
+
+def test_cleanup_skill_runtime_sweep_reads_split_repo_active_milestone(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(
+        servo / "control-state.md",
+        "# Harness Control State\n\n"
+        "## Milestone Pipeline\n"
+        "- active_milestone: none\n",
+    )
+    write_doc(
+        servo / "control-state-repo.md",
+        "# Harness Control State - Repo Level\n\n"
+        "## Milestone Pipeline - Active Milestone\n"
+        "- active_milestone: MS-20260630-011\n"
+        "- milestone_status: active\n",
+    )
+    write_doc(
+        servo / "repo" / "milestone-backlog.md",
+        "- milestone_id: MS-20260630-011\n"
+        "  - status: planned\n"
+        "  - worktrack_list:\n"
+        "    - WT-011 (planned)\n",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    findings = [
+        finding
+        for finding in payload["findings"]
+        if finding["type"] == "milestone_active_pointer_non_active"
+    ]
+    assert len(findings) == 1
+    assert findings[0]["path"] == ".servo/control-state-repo.md"
+    assert findings[0]["evidence"]["active_milestone"] == "MS-20260630-011"
+
+
+def test_cleanup_skill_runtime_sweep_treats_goal_charter_as_entrypoint(
+    tmp_path: Path,
+) -> None:
+    servo = tmp_path / ".servo"
+    write_doc(servo / "goal-charter.md", "# Goal Charter\n")
+
+    result = subprocess.run(
+        [sys.executable, str(HELPER), "--servo-root", str(servo), "--json"],
+        cwd=tmp_path,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert all(
+        finding["path"] != ".servo/goal-charter.md" for finding in payload["findings"]
+    )
 
 
 def test_cleanup_skill_runtime_sweep_accepts_normalized_multi_cycle_state(

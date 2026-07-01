@@ -80,8 +80,8 @@ description: 当 milestone close / repo refresh 之后需要对 repo runtime 管
    - 将写入的 compaction history artifact
    - 停止条件命中情况
 3. 优先使用随包分发的 helper 执行 dry-run：
-   - `PYTHONDONTWRITEBYTECODE=1 python3 scripts/control_state_compact.py --control-state .servo/control-state.md --dry-run --json`
-   - 若 dry-run 结果被人工确认，才可执行 `PYTHONDONTWRITEBYTECODE=1 python3 scripts/control_state_compact.py --control-state .servo/control-state.md --apply --json`
+   - `PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/control_state_compact.py --control-state .servo/control-state.md --dry-run --json`
+   - 若 dry-run 结果被人工确认，才可执行 `PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/control_state_compact.py --control-state .servo/control-state.md --apply --json`
 4. helper 内置最小 preservation contract；安装后的技能运行时不得依赖源码仓库 `docs/` 路径。必须保留的字段组至少覆盖 current scope/function、active worktrack、active milestone、branch guard、review gate、approval boundary、continuation authority、handback guard、baseline traceability 和 autonomy ledger。
 5. 可折叠内容仅限旧 `latest_closed_worktrack_commit`、旧 `verified_at`、旧 `last_stop_reason`、旧 handback note、旧 closeout 摘要和非当前路由所需的重复 checkpoint 叙述。
 6. 若需要 externalized history，必须由本次 compact 操作生成 compaction history artifact，并记录 source checkpoint、created_at、preserved field summary 和 externalized sections。
@@ -94,7 +94,7 @@ description: 当 milestone close / repo refresh 之后需要对 repo runtime 管
 
 1. 读取 `.servo` 下的 control-state、repo、milestone、worktrack、archive 和 history 文本 artifact。
 2. 使用随包分发的 helper 生成 JSON 报告：
-   - `PYTHONDONTWRITEBYTECODE=1 python3 scripts/runtime_maintenance_sweep.py --servo-root .servo --json`
+   - `PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/runtime_maintenance_sweep.py --servo-root .servo --json`
 3. 报告至少覆盖：
    - 指向缺失 `.servo` artifact 的 stale reference
    - 已关闭 Worktrack 仍引用 rolling `.servo/worktrack/gate-evidence.md` 且缺少 stable closeout / bundle / snapshot / archive ref

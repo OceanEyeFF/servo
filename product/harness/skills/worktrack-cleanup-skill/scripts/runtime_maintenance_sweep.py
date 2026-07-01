@@ -40,7 +40,9 @@ LIFECYCLE_TERMS = (
     "closeout",
     "evidence_ref",
 )
+ROLLING_GATE_EVIDENCE_REF = ".servo/worktrack/gate-evidence.md"
 ENTRYPOINT_FILES = {
+    ".servo/goal-charter.md",
     ".servo/control-state.md",
     ".servo/control-state-repo.md",
     ".servo/control-state-wt.md",
@@ -83,6 +85,17 @@ def normalize_ref(raw_ref: str) -> str:
     ref = ref.split("#", 1)[0]
     ref = re.sub(r"(\.[A-Za-z0-9]+):\d+(?:-\d+)?$", r"\1", ref)
     return ref
+
+
+def is_rolling_gate_evidence_ref(raw_ref: str) -> bool:
+    return normalize_ref(raw_ref) == ROLLING_GATE_EVIDENCE_REF
+
+
+def is_stable_runtime_ref(raw_ref: str) -> bool:
+    ref = normalize_ref(raw_ref)
+    if not ref or ref.lower() in {"n/a", "na", "none", "null", "[]", "-"}:
+        return False
+    return not is_rolling_gate_evidence_ref(ref)
 
 
 def looks_like_file_ref(ref: str) -> bool:
@@ -273,7 +286,7 @@ def parse_control_pipeline_fields(path: Path) -> dict[str, str]:
         if line.startswith("## "):
             current_section = line.removeprefix("## ").strip()
             continue
-        if current_section != "Milestone Pipeline":
+        if not current_section.startswith("Milestone Pipeline"):
             continue
         stripped = line.strip()
         for key in ("active_milestone", "milestone_status", "milestone_pipeline_summary"):
@@ -351,7 +364,7 @@ def find_rolling_evidence_reuse(entries: Sequence[dict[str, object]]) -> list[Fi
         evidence_ref = str(entry.get("evidence_ref", "")).strip()
         if status not in DONE_STATUSES:
             continue
-        if not evidence_ref.startswith(".servo/worktrack/gate-evidence.md"):
+        if not is_rolling_gate_evidence_ref(evidence_ref):
             continue
 
         stable_refs = (
@@ -360,10 +373,8 @@ def find_rolling_evidence_reuse(entries: Sequence[dict[str, object]]) -> list[Fi
             str(entry.get("snapshot_ref", "")).strip(),
             str(entry.get("archive_ref", "")).strip(),
         )
-        bundle_status = str(entry.get("closeout_bundle_status", "")).strip().lower()
-        has_stable_ref = any(ref and ref != "N/A" for ref in stable_refs)
-        has_complete_bundle = bundle_status in {"complete", "snapshot_complete", "archived"}
-        if not has_stable_ref and not has_complete_bundle:
+        has_stable_ref = any(is_stable_runtime_ref(ref) for ref in stable_refs)
+        if not has_stable_ref:
             findings.append(
                 Finding(
                     finding_type="rolling_evidence_reuse",
@@ -376,6 +387,10 @@ def find_rolling_evidence_reuse(entries: Sequence[dict[str, object]]) -> list[Fi
                     evidence={
                         "worktrack_id": entry.get("worktrack_id", "unknown"),
                         "evidence_ref": evidence_ref,
+                        "stable_refs": list(stable_refs),
+                        "closeout_bundle_status": str(
+                            entry.get("closeout_bundle_status", "")
+                        ).strip(),
                     },
                 )
             )
@@ -582,7 +597,10 @@ def find_milestone_backlog_history_gaps(
                 stale_markers = [
                     str(worktrack)
                     for worktrack in worktracks
-                    if re.search(r"\((planned|active)\)", str(worktrack))
+                    if (
+                        (parsed := parse_worktrack_marker(str(worktrack))) is not None
+                        and parsed[1] in LIVE_MILESTONE_STATUSES
+                    )
                 ]
                 if stale_markers:
                     findings.append(
@@ -623,21 +641,32 @@ def find_milestone_backlog_history_gaps(
                 )
             )
 
-    control = parse_control_pipeline_fields(servo_root / "control-state.md")
-    active_milestone = control.get("active_milestone", "")
-    if active_milestone and active_milestone != "none":
+    control_sources = (
+        (".servo/control-state.md", parse_control_pipeline_fields(servo_root / "control-state.md")),
+        (
+            ".servo/control-state-repo.md",
+            parse_control_pipeline_fields(servo_root / "control-state-repo.md"),
+        ),
+    )
+    for source_path, control in control_sources:
+        active_milestone = control.get("active_milestone", "").strip()
+        if not active_milestone or active_milestone.lower() in {"none", "n/a"}:
+            continue
         live_entry = live_by_id.get(active_milestone)
         if live_entry is None:
             findings.append(
                 Finding(
                     finding_type="milestone_active_pointer_stale",
                     severity="high",
-                    path=".servo/control-state.md",
+                    path=source_path,
                     message=(
-                        f"control-state active_milestone {active_milestone} is not present "
+                        f"{source_path} active_milestone {active_milestone} is not present "
                         "as a live milestone-backlog entry."
                     ),
-                    evidence={"active_milestone": active_milestone},
+                    evidence={
+                        "control_state_path": source_path,
+                        "active_milestone": active_milestone,
+                    },
                 )
             )
         elif str(live_entry.get("status", "")).strip() != "active":
@@ -645,12 +674,13 @@ def find_milestone_backlog_history_gaps(
                 Finding(
                     finding_type="milestone_active_pointer_non_active",
                     severity="high",
-                    path=".servo/control-state.md",
+                    path=source_path,
                     message=(
-                        f"control-state active_milestone {active_milestone} points to "
+                        f"{source_path} active_milestone {active_milestone} points to "
                         f"live status {live_entry.get('status')!r}, not 'active'."
                     ),
                     evidence={
+                        "control_state_path": source_path,
                         "active_milestone": active_milestone,
                         "status": live_entry.get("status", ""),
                     },

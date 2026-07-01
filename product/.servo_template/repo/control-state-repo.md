@@ -30,6 +30,8 @@
 - milestone_status:
 - milestone_kind:
 - active_milestone_branch:
+- active_worktrack:
+- active_worktrack_branch:
 - milestone_pipeline_summary:
 - active_milestone_branch_sync_state:
 - active_milestone_progress:
