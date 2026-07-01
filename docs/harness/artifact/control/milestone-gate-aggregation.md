@@ -1,9 +1,9 @@
 ---
 title: "Milestone Gate 证据聚合合同"
 status: active
-updated: 2026-06-28
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-28
+last_verified: 2026-07-01
 ---
 # Milestone Gate 证据聚合合同
 
@@ -44,8 +44,15 @@ Milestone Gate 分为两个职责面：
 - `verdict`: `pass` / `soft_fail` / `hard_fail` / `blocked` / `not_applicable`
 - `severity`
 - `target_type`
+- `target_scenario`
 - `axis_applicability_state`
 - `expected_method`
+- `substitute_method`
+- `substitution_evidence_ref`
+- `substitute_verdict`
+- `evidence_covers_completion_signal`
+- `slice_coverage` when `target_type = mixed` or `axis_applicability_state = split`
+- `unknown_target_inference` when target type or scenario is missing or contradictory
 - `carrier`
 - `runtime_dispatch_profile`
 - `isolation_guarantee`
@@ -212,24 +219,28 @@ target_type_rules:
   target_type: program_code | non_program_artifact | mixed | unknown
   target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
   target_type_confidence: high | medium | low
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario_confidence: high | medium | low
+  operator_situation: string | N/A
   axis_applicability:
     blackbox:
-      state: applicable | not_applicable | substituted | blocked
+      state: applicable | not_applicable | substituted | split | blocked
       expected_method: external_behavior_scenario | artifact_acceptance_review | operator_simulation | N/A
       substituted_by: composite | professional_review | policy_check | N/A
       reason: string
     whitebox:
-      state: applicable | not_applicable | substituted | blocked
+      state: applicable | not_applicable | substituted | split | blocked
       expected_method: structural_internal_analysis | artifact_structure_review | policy_structure_review | N/A
       substituted_by: composite | professional_review | policy_check | N/A
       reason: string
     anticheat:
-      state: applicable | not_applicable | substituted | blocked
+      state: applicable | not_applicable | substituted | split | blocked
       expected_method: evidence_integrity_review | N/A
       substituted_by: N/A
       reason: string
     composite:
-      state: applicable | not_applicable | substituted | blocked
+      state: applicable | not_applicable | substituted | split | blocked
       expected_method: composite_acceptance_lanes | professional_review | N/A
       substituted_by: N/A
       reason: string
@@ -242,8 +253,9 @@ target_type_rules:
   slice_coverage:                 # required when target_type = mixed
     - slice_id: string
       slice_target_type: program_code | non_program_artifact | unknown
+      slice_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | unknown
       axis: blackbox | whitebox | anticheat | composite
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       expected_method: string
       substitute_method: string | N/A
       evidence_ref: string | N/A
@@ -259,6 +271,45 @@ target_type_rules:
 | `mixed` | Split by worktrack, completion signal, or artifact component. Program/code slices use behavior scenarios; non-program slices use substitute acceptance. | Split by worktrack, completion signal, or artifact component. Program/code slices use structural/internal analysis; non-program slices use artifact structure review. | `applicable` across all slices. | `applicable`; must record slice-level coverage. |
 | `unknown` | `blocked` unless the gate can produce a justified type inference. | `blocked` unless the gate can produce a justified type inference. | `blocked` if evidence boundary is unclear. | `blocked` or `substituted` only with explicit programmer or gate evidence. |
 
+### Scenario routing matrix
+
+`target_scenario` refines how the four canonical `target_type` values are applied to real operator situations. It must not introduce a fifth target type and must not relax the evidence rules above.
+
+| target_scenario | target_type mapping | blackbox hint | whitebox hint | anticheat / composite hint |
+|-----------------|---------------------|---------------|---------------|----------------------------|
+| `runnable_workflow` | usually `program_code` | External behavior scenarios from completion signals, CLI/API/UI/log/file output, or integration behavior. | Structural/internal analysis of the runnable path. | Both remain applicable. |
+| `config_environment` | `program_code`, `mixed`, or `non_program_artifact` | If config changes runtime behavior, use operator-triggered config scenarios; if it is only rule text, use substitute artifact review. | Check config schema, defaulting, load path, state propagation, or substitute with policy/artifact structure review. | Evidence provenance and composite related-influence/operator lanes are often material. |
+| `experiment_execution` | `program_code`, `mixed`, or `non_program_artifact` | Runnable experiment scripts use observable execution/result scenarios; reports use substitute research evidence review. | Reproducible code path for scripts; traceability/research structure for reports. | Stale evidence, evidence reuse, and external dependency boundaries must remain visible. |
+| `workflow_policy` | usually `non_program_artifact` or `mixed` | Substitute with reader/operator simulation, policy conformance, and traceability review. | Substitute with policy structure, rule-chain, terminology, and cross-reference review. | Still applicable because policy evidence can be stale, self-biased, or bypassed. |
+| `documentation_or_skill_contract` | usually `non_program_artifact` | Substitute with artifact acceptance review and reader/operator simulation. | Substitute with artifact structure review, field consistency, prompt/control-flow traceability, and cross-reference validation. | Composite lanes are often the primary acceptance surface. |
+| `research_or_plan_artifact` | usually `non_program_artifact` | Substitute with research evidence review and professional review. | Substitute with claim/assumption/traceability structure review. | Anticheat checks source quality, reuse, and stale claims. |
+| `mixed_delivery` | `mixed` | Split by worktrack, completion signal, component, or delivery path. | Split the same way; program slices keep software semantics. | Must preserve slice coverage and lane records across all slices. |
+| `unknown` | `unknown` | Non-pass until a high-confidence traceable inference exists. | Non-pass until a high-confidence traceable inference exists. | Block or request programmer review when evidence boundaries are unclear. |
+
+Unknown fallback requires a structured inference record with `inferred_target_type`, `inferred_target_scenario`, `confidence`, `evidence_refs`, `uncertainty`, and `recommended_axis_profile`. `medium`, `low`, or contradictory confidence cannot produce a pass; it remains non-pass or blocked until clarified.
+
+### Axis applicability profiles by scenario
+
+These profiles define the default axis state for the common scenario when no milestone-specific override exists. A profile is routing evidence, not a verdict. A milestone may override a profile only by recording the reason and preserving the same substitution evidence contract.
+
+| target_scenario | blackbox default | whitebox default | anticheat default | composite default |
+|-----------------|------------------|------------------|-------------------|-------------------|
+| `runnable_workflow` | `applicable`; external behavior scenario evidence is required. | `applicable`; structural/internal evidence is required. | `applicable`; dispatch, evidence freshness, reuse, bypass, and bias remain in scope. | `applicable`; consume lane records according to review depth. |
+| `config_environment` | `applicable` when config changes runtime behavior; `substituted` with `policy_conformance` or `reader_operator_simulation` when the deliverable is config policy text only. | `applicable` when code loads or propagates config; `substituted` with `artifact_structure_review` or `policy_conformance` for config contracts or run rules. | `applicable`; config evidence is still vulnerable to stale refs, partial validation, and bypass. | `applicable`; related-influence and operator-simulation lanes are especially relevant. |
+| `experiment_execution` | `applicable` for executable experiment workflows; `substituted` with `research_evidence_review` / `professional_review` for reports and conclusions. | `applicable` for experiment code; `substituted` with traceability/research structure review for non-code results. | `applicable`; A2 evidence reuse and A5 stale evidence are material. | `applicable`; feature-completeness, intent-completeness, and professional-review lanes must preserve external dependency gaps. |
+| `workflow_policy` | usually `substituted` with `reader_operator_simulation`, `policy_conformance`, or `traceability_review`; do not force runtime scenarios unless a program slice exists. | usually `substituted` with `policy_structure_review`, `artifact_structure_review`, or `cross_reference_validation`. | `applicable`; policy evidence can still bypass gates or carry self-review bias. | `applicable`; lane records are often the main acceptance surface. |
+| `documentation_or_skill_contract` | usually `substituted` with `artifact_acceptance_review`, `reader_operator_simulation`, or `cross_reference_validation`. | usually `substituted` with `artifact_structure_review`, field-contract consistency, or prompt/control-flow traceability. | `applicable`; artifact evidence credibility still matters. | `applicable`; code-review may be non-code review, but lane status must stay explicit. |
+| `research_or_plan_artifact` | usually `substituted` with `research_evidence_review`, `traceability_review`, or `professional_review`. | usually `substituted` with claim/assumption/evidence structure review. | `applicable`; source quality, reuse, and stale claim detection remain in scope. | `applicable`; professional-review and intent-completeness carry much of the acceptance burden. |
+| `mixed_delivery` | `split`; each program slice uses behavior scenarios and each non-program slice uses substitution evidence. | `split`; each program slice uses structure analysis and each non-program slice uses artifact/policy/research structure review. | `applicable`; must cover all slices and preserve per-slice evidence gaps. | `applicable`; must preserve slice-level lane coverage. |
+| `unknown` | `blocked` unless a high-confidence traceable inference resolves the scenario. | `blocked` unless a high-confidence traceable inference resolves the scenario. | `blocked` if the evidence boundary is unclear. | `blocked` or questions_required until scope and mandatory lane set can be classified. |
+
+Substitution boundaries:
+
+- Blackbox substitution may only replace runtime behavior testing for non-runnable or non-program slices. It cannot replace an available program slice's external behavior scenario.
+- Whitebox substitution may only replace software internal analysis for non-code artifact structure, policy rule chains, research reasoning, or contract consistency. It cannot use blackbox behavior evidence as internal structure evidence.
+- Anticheat is not a substitute for blackbox or whitebox. It remains an evidence credibility axis; if a scenario has no meaningful evidence boundary, the result is `blocked`, not `not_applicable`.
+- Composite is not a substitute for missing axis evidence unless the axis explicitly records `substituted` and its substitute evidence contract is satisfied. Composite lane records must stay distinct from blackbox/whitebox findings.
+
 ### Applicability state is not verdict
 
 `axis_applicability.state` is a routing fact, not a pass/fail verdict:
@@ -266,6 +317,7 @@ target_type_rules:
 - `applicable` means the axis must run and produce its normal verdict.
 - `not_applicable` means the axis does not apply to this target type; aggregation must record it separately and must not coerce it to `pass`.
 - `substituted` means the axis's usual software-testing method is replaced by an artifact-appropriate method; aggregation may treat the axis as satisfied only when the substitute evidence is present and accepted.
+- `split` means a mixed delivery or scenario must provide slice-level coverage; the state itself is not a pass.
 - `blocked` means the milestone gate cannot legally complete until target type, evidence, or substitute method is clarified.
 
 ### Substitute acceptance evidence contract
@@ -295,9 +347,46 @@ Minimal fields for every substituted axis:
 
 ### Mixed target slice coverage
 
-When `target_type = mixed`, aggregation must evaluate slices before producing a milestone-level verdict. A slice can be a worktrack, completion signal, artifact component, or delivery path. Each slice records `slice_id`, `slice_target_type`, `axis`, `applicability_state`, `expected_method`, `substitute_method`, `evidence_ref`, and verdict.
+When `target_type = mixed`, aggregation must evaluate slices before producing a milestone-level verdict. A slice can be a worktrack, completion signal, artifact component, or delivery path. Each slice records `slice_id`, `slice_target_type`, `slice_target_scenario`, `axis`, `applicability_state`, `expected_method`, `substitute_method`, `evidence_ref`, and verdict.
 
 Program/code slices keep normal software validation semantics: black-box behavior scenarios and white-box structural/internal analysis. Non-program slices use substitute acceptance. Anti-cheat and composite remain applicable across slices unless their evidence boundary is explicitly blocked. A pass on one slice type cannot cover missing evidence on another slice type.
+
+Required `slice_coverage` semantics:
+
+- Every completion signal or accepted delivery component must map to at least one slice.
+- Each slice must declare `slice_target_type`, `slice_target_scenario`, `axis`, `applicability_state`, `expected_method`, `evidence_ref`, and verdict.
+- A program slice with missing blackbox or whitebox evidence keeps that axis unsatisfied even when a non-program slice has substitute evidence.
+- A non-program slice with missing substitute evidence keeps that slice unsatisfied even when program behavior tests pass.
+- Anticheat and composite must preserve the slice or lane evidence state for every slice; they may not collapse mixed evidence into a milestone-level prose summary.
+- Missing, incomplete, contaminated, or historical-gap slice evidence is non-positive evidence. It may be accepted later only by final acceptance manual exception while preserving the original gap.
+
+### Unknown target fallback
+
+Unknown target handling is a routing guard, not a convenience default. When `target_type`, `target_scenario`, or their sources are missing or contradictory, the Gate must build an inference record before any axis verdict can be considered satisfied:
+
+```yaml
+unknown_target_inference:
+  inferred_target_type: program_code | non_program_artifact | mixed | unknown
+  inferred_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  confidence: high | medium | low
+  evidence_refs: []
+  uncertainty:
+    - string
+  contradictory_evidence_refs: []
+  recommended_axis_profile:
+    blackbox: applicable | substituted | split | blocked
+    whitebox: applicable | substituted | split | blocked
+    anticheat: applicable | blocked
+    composite: applicable | blocked
+  questions_required: []
+```
+
+Inference rules:
+
+- `confidence: high` requires at least one approved artifact source and no contradictory target evidence.
+- `confidence: medium` or `low` is not enough for a pass. The milestone remains non-pass or `blocked`, and `questions_required` must explain what is missing.
+- `inferred_target_type: unknown`, `inferred_target_scenario: unknown`, empty `evidence_refs`, or non-empty unresolved `contradictory_evidence_refs` forces `axis_applicability_resolved: false`.
+- The recommended axis profile is a proposed route for recovery or programmer clarification. It is not a verdict and does not satisfy any axis by itself.
 
 ### Final verdict interaction
 
@@ -331,7 +420,7 @@ Aggregator 必须按固定顺序执行，不能先看 raw axis verdict 再回填
 
 | 优先级 | 条件 | verdict |
 |--------|------|---------|
-| 0 | `target_type = unknown`、`axis_applicability_resolved = false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
+| 0 | `target_type = unknown`、`target_scenario = unknown` 且无高置信可追溯推断、`axis_applicability_resolved = false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
 | 1 | veto-power 轴适用且 hard_fail / blocked，或 mandatory substituted 轴 `axis_satisfied = false` | `blocked` |
 | 2 | `contradiction_blocked = true` | `blocked` |
 | 3a | 所有 weight ≥ 3 的 WT pass，所有 mandatory applicable / substituted axes 满足 `axis_satisfied = true`，显式 `not_applicable` 轴均有 target_type reason | `pass` |
@@ -498,6 +587,7 @@ aggregator_input:
       isolation_guarantee: true | false
       carrier_isolation_broken: true | false
       target_type: program_code | non_program_artifact | mixed | unknown
+      target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
       axis_applicability_state: applicable | not_applicable | substituted | split | blocked
       expected_method: string
       checklist_results: [ ... ]
@@ -526,7 +616,7 @@ aggregator_input:
     dispatch_gap_reason: string | N/A
     nested_axis_dispatch_attempted: false
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
-  target_type_rules: { ... }              # target_type 与 axis_applicability
+  target_type_rules: { ... }              # target_type、target_scenario 与 axis_applicability
   manual_exception:
     present: true | false
     exception_type: programmer_acceptance_override | N/A
@@ -563,6 +653,10 @@ aggregator_output:
   aggregation_rules_source: string
   target_type: program_code | non_program_artifact | mixed | unknown
   target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario_confidence: high | medium | low
+  operator_situation: string | N/A
   axis_applicability_resolved: true | false
   axis_satisfaction:
     blackbox:
@@ -634,7 +728,7 @@ aggregator_output:
       evidence_covers_completion_signal: true | false | N/A
     composite:
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
-      applicability_state: applicable | not_applicable | substituted | blocked
+      applicability_state: applicable | not_applicable | substituted | split | blocked
       substituted_by: string | N/A
       axis_satisfied: true | false
       veto_triggered: true | false
@@ -646,12 +740,22 @@ aggregator_output:
   slice_coverage:                         # required for target_type = mixed
     - slice_id: string
       slice_target_type: program_code | non_program_artifact | unknown
+      slice_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | unknown
       axis: blackbox | whitebox | anticheat | composite
       applicability_state: applicable | not_applicable | substituted | split | blocked
       expected_method: string
       substitute_method: string | N/A
       evidence_ref: string | N/A
       verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+  unknown_target_inference:                # required when target type/scenario is missing or contradictory
+    inferred_target_type: program_code | non_program_artifact | mixed | unknown
+    inferred_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+    confidence: high | medium | low
+    evidence_refs: []
+    uncertainty: []
+    contradictory_evidence_refs: []
+    recommended_axis_profile: { ... }
+    questions_required: []
   degenerate_and_applied: true | false
   degenerate_and_reason: string | N/A
   manual_exception:
@@ -709,6 +813,10 @@ aggregation_rules:
     target_type: program_code
     target_type_source: milestone_artifact
     target_type_confidence: high
+    target_scenario: runnable_workflow
+    target_scenario_source: milestone_artifact
+    target_scenario_confidence: high
+    operator_situation: "operator runs the delivered workflow and observes runtime behavior"
     axis_applicability:
       blackbox: { state: applicable, expected_method: external_behavior_scenario }
       whitebox: { state: applicable, expected_method: structural_internal_analysis }
@@ -748,6 +856,10 @@ aggregation_rules:
     target_type: non_program_artifact
     target_type_source: milestone_artifact
     target_type_confidence: high
+    target_scenario: documentation_or_skill_contract
+    target_scenario_source: milestone_artifact
+    target_scenario_confidence: high
+    operator_situation: "reviewer reads and applies the delivered artifact contract"
     axis_applicability:
       blackbox:
         state: substituted

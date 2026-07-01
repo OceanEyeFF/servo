@@ -34,7 +34,7 @@ description: 当 Milestone Gate 需要按 target_type 从内部实现视角检�
 
 ## Target-Type 路由
 
-Whitebox 轴不得把所有 milestone 都当成可执行程序来验收。每次运行必须先读取或推断 `target_type`、`target_type_source` 与 whitebox 轴适用性，并记录在输出中。
+Whitebox 轴不得把所有 milestone 都当成可执行程序来验收。每次运行必须先读取或推断 `target_type`、`target_type_source`、`target_scenario`、`target_scenario_source` 与 whitebox 轴适用性，并记录在输出中。`target_scenario` 是四个 canonical `target_type` 下的场景细分，不新增顶层类型。
 
 | target_type | whitebox 处理方式 |
 |-------------|-------------------|
@@ -43,13 +43,24 @@ Whitebox 轴不得把所有 milestone 都当成可执行程序来验收。每次
 | `mixed` | 分片处理。对程序切片执行完整 whitebox 结构分析；对非程序切片记录替代结构审查或不适用结论；整体 verdict 不得把非程序不适用项计为程序白盒测试通过。 |
 | `unknown` | 默认 `blocked`。只有在 milestone artifact、WT contract 或 closeout 中有可追溯证据支持类型推断时，才允许记录 `target_type_source` 后继续。 |
 
+| target_scenario | whitebox 场景提示 |
+|-----------------|-------------------|
+| `runnable_workflow` | 对程序 slice 阅读必要实现，检查控制流、数据流、状态传递、接口和依赖路径。 |
+| `config_environment` | 若配置被运行时消费，检查 schema、默认值、加载路径、环境覆盖、状态传播和错误路径；若只是配置规则文本，使用 policy/artifact structure review。 |
+| `experiment_execution` | 对可执行实验脚本检查可复现路径、输入/输出和环境假设；对实验报告或方案比较检查 claim、assumption、evidence 和 conclusion 的结构追溯。 |
+| `workflow_policy` | 通常替代为 policy structure review、rule-chain traceability、术语一致性和上下游引用审查。 |
+| `documentation_or_skill_contract` | 替代为 artifact structure review、字段合同一致性、skill 输出合同、prompt/control-flow traceability 和交叉引用验证。 |
+| `research_or_plan_artifact` | 替代为 research structure、traceability 和 professional review；缺少来源、反例边界或推理链时 blocked。 |
+| `mixed_delivery` | 按 worktrack、completion signal、artifact component 或 delivery path 拆分程序结构审查与非程序替代结构审查。 |
+| `unknown` | 必须记录推断来源、置信度、未决问题和 recommended axis profile；置信度不足时 blocked。 |
+
 `target_type` 不改变轴间边界：whitebox 只能检查内部结构、实现路径和代码/产物内部一致性。用户可观察行为场景、CLI/API 输出、UI 截图和外部回归场景属于 blackbox 轴；whitebox 可将 milestone acceptance 或 completion signal 作为 traceability 输入，但不得用外部行为场景替代内部结构证据。
 
 ## 工作流
 
 1. **接收并验证输入完整性**：确认已收到 milestone artifact（purpose、acceptance_criteria、target_type）、所有已闭环 WT 的 contract（scope、impacted_modules）、WT 的完整 diff（程序切片可阅读代码），以及 repo 的 Engineering Node Map 或路径分层规则。任何缺失材料标记为 `missing_input` 并记录。
 2. **确认轴间隔离**：检查输入包中是否包含其他轴（blackbox / anticheat / composite）的 verdict 或检查结果。若有泄露，必须标记 `isolation_guarantee: false`，记录泄露内容和来源，但仍继续本轴的独立分析（不因泄露而中止——但必须暴露）。
-3. **执行 target_type 路由**：记录 `target_type_source`、whitebox 轴适用性和预期方法。`program_code` 进入结构/实现检查；`non_program_artifact` 进入替代结构审查或不适用；`mixed` 分片；`unknown` 缺少可追溯推断时 `blocked`。
+3. **执行 target_type / target_scenario 路由**：记录 `target_type_source`、`target_scenario_source`、whitebox 轴适用性和预期方法。`program_code` 进入结构/实现检查；`non_program_artifact` 进入替代结构审查或不适用；`mixed` 分片；`unknown` 缺少高置信可追溯推断时 `blocked`。
 4. **为程序目标建立内部结构证据图**：从完整实现代码、完整 diff、contract 和架构规则中抽取 `control_flow_paths`、`data_flow_paths`、`state_transfer_paths`、`interface_contract_paths`、`dependency_paths`、`architecture_boundaries` 与关键 `implementation_invariants`。证据必须引用具体文件与行号。
 5. **识别跨 WT 集成面**：从各 WT 的 `impacted_modules`、`scope`、完整 diff 和内部结构证据图中提取交集——找出被多个 WT 修改或共同依赖的模块、文件、接口、状态、配置、依赖边或架构边界，形成集成分析矩阵。如果没有任何跨 WT 交集（所有 WT 修改互不重叠的模块），记录 `integration_surface: none` 并简化后续检查。
 6. **执行五项检查（W1-W5）**：按 checklist 逐项检查，每项产出独立的 verdict + finding + evidence_refs。详见「检查清单与判据」节。
@@ -105,6 +116,10 @@ whitebox_verdict:
   severity: low | medium | high
   target_type: program_code | non_program_artifact | mixed | unknown
   target_type_source: "milestone-artifact.md#target_type"
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: "milestone-artifact.md#target_scenario"
+  target_scenario_confidence: high | medium | low
+  operator_situation: "operator/user situation or N/A"
   axis_applicability_state: applicable | substituted | not_applicable | split | blocked
   expected_method: structural_whitebox_analysis | artifact_structure_review | split_by_slice | blocked_pending_type
   substituted_by:
@@ -231,7 +246,7 @@ whitebox_verdict:
   3. 在当前载体内顺序执行——但不得因此降低检查标准或简化分析
   4. 若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 - **No code generation**：本技能检查和报告，**绝不**生成或修改代码。即使发现应该修复的问题，唯一合法行为是记录在 finding 中并标记对应的 verdict 等级。产出修复建议、代码补丁或"推荐改法"的行为必须被阻断。
-- **Target type explicitness**：输出必须包含 `target_type`、`target_type_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 且无法从已批准产物可追溯推断时，整体 verdict 必须为 `blocked`。
+- **Target type / scenario explicitness**：输出必须包含 `target_type`、`target_type_source`、`target_scenario`、`target_scenario_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 或目标场景且无法从已批准产物做高置信可追溯推断时，整体 verdict 必须为 `blocked`。
 - **Program-code structural evidence**：当 `target_type=program_code` 或 `mixed` 的程序切片存在时，必须输出 `internal_structure_evidence`。证据至少覆盖适用的控制流、数据流、状态传递、接口合约、依赖路径、架构边界或关键实现审查项；只有外部行为场景、文件列表或 WT 摘要不足以让 whitebox 通过。
 - **Non-program substitution boundary**：当 `target_type=non_program_artifact` 或 `mixed` 的非程序切片存在时，软件代码白盒项只能输出 `substituted` / `not_applicable` 或失败/阻塞。`substituted` 必须有替代结构审查方法和证据引用；`not_applicable` 不等于 `pass`，不得被当作软件白盒测试通过计入整体结论。
 - **Blackbox boundary**：用户可观察行为场景、CLI/API 输出、UI 截图、外部回归场景和 operator-visible results 只能作为 traceability context；不得作为 whitebox 的内部结构证据。需要判断外部行为是否满足验收时，必须交给 blackbox 轴。
@@ -267,6 +282,10 @@ whitebox_verdict:
 - `severity`（low / medium / high）
 - `target_type`（program_code / non_program_artifact / mixed / unknown）
 - `target_type_source`
+- `target_scenario`（runnable_workflow / config_environment / experiment_execution / workflow_policy / documentation_or_skill_contract / research_or_plan_artifact / mixed_delivery / unknown）
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `axis_applicability_state`（applicable / substituted / not_applicable / split / blocked）
 - `expected_method`
 - `substituted_by`

@@ -44,6 +44,10 @@ last_verified: 2026-07-01
 | aggregation_rules | object | Per-milestone 可配置的证据聚合规则；字段合同见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md)。未声明时默认使用退化 AND 并在 milestone gate evidence 中标记 `aggregation_rules_missing: true` |
 | target_type | enum | Milestone Gate 目标类型：`program_code` / `non_program_artifact` / `mixed` / `unknown`。用于决定黑盒、白盒、反作弊与复合验收轴的适用性 |
 | target_type_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
+| target_scenario | enum | `runnable_workflow` / `config_environment` / `experiment_execution` / `workflow_policy` / `documentation_or_skill_contract` / `research_or_plan_artifact` / `mixed_delivery` / `unknown`。它是 `target_type` 下的场景细分，不扩展顶层 target type 枚举 |
+| target_scenario_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
+| target_scenario_confidence | enum | `high` / `medium` / `low`。低置信或矛盾场景推断不得让 Gate 通过 |
+| operator_situation | string | 描述验收时真实 operator / user 面对的情境，例如运行 CLI、审查 skill prompt、验证配置迁移、复核实验结果或走读治理流程 |
 | axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
 | axis_reports | object | Milestone Gate 四个 sibling axis carrier 产出的显式报告引用与状态；每轴至少记录 `report_ref`、`verdict`、`carrier`、`runtime_dispatch_profile`、`isolation_guarantee`、`carrier_isolation_broken` 与缺失/污染状态 |
 | axis_dispatch_profile | object | 顶层 Harness 四轴分派画像；记录 `dispatch_owner: top_level_harness`、`dispatch_model`、per-axis delegation attempts、same-carrier fallback、runtime gap 和隔离破坏事实 |
@@ -196,8 +200,16 @@ Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gat
 - `report_ref`
 - `verdict`
 - `target_type`
+- `target_scenario`
+- `target_scenario_source`
 - `axis_applicability_state`
 - `expected_method`
+- `substitute_method`
+- `substitution_evidence_ref`
+- `substitute_verdict`
+- `evidence_covers_completion_signal`
+- `slice_coverage`（mixed/split 时必需）
+- `unknown_target_inference`（target type 或 scenario 缺失/矛盾时必需）
 - `carrier`
 - `runtime_dispatch_profile`
 - `isolation_guarantee`
@@ -218,11 +230,33 @@ Canonical values:
 | `mixed` | 同一 milestone 同时包含可运行程序和非程序 artifact | 必须按 worktrack 或 completion signal 拆分适用性；不能把整项 milestone 一概视为 program 或 non-program |
 | `unknown` | 目标类型缺失、矛盾或证据不足 | Milestone Gate 不得把任何轴默认为 pass；必须记录 `blocked`、`needs_programmer_review` 或 conservative fallback |
 
+`target_scenario` 是 `target_type` 的场景细分，用于避免把真实工作场景误套成单一软件测试模板。它不新增顶层类型，也不改变四轴职责；它只帮助四轴选择方法、替代验收和 mixed slice 粒度。
+
+Scenario taxonomy:
+
+| target_scenario | 常见 target_type | operator situation | 轴适用性提示 |
+|-----------------|------------------|--------------------|--------------|
+| `runnable_workflow` | `program_code` | user/operator 运行 CLI、API、UI、脚本、adapter 或测试工具并观察输出 | blackbox 使用外部行为场景；whitebox 使用实现结构审查；anticheat/composite 适用 |
+| `config_environment` | `program_code` / `mixed` / `non_program_artifact` | operator 调整配置、环境变量、路径、adapter 开关或运行约束 | 若配置改变运行时行为，按程序 slice 验证；若只改变规则/说明，按非程序 artifact 替代验收；mixed 必须拆配置行为与规则文本 |
+| `experiment_execution` | `program_code` / `non_program_artifact` / `mixed` | operator 运行实验、收集结果、复核研究证据或比较方案 | 可执行实验脚本按程序 slice；实验记录、结论和方案比较按 artifact/research evidence review；外部数据依赖不足时 blocked |
+| `workflow_policy` | `non_program_artifact` / `mixed` | 使用者按流程、Gate、Skill prompt 或 governance policy 做决策 | blackbox 通常替代为 reader/operator simulation；whitebox 替代为 policy/artifact structure review；anticheat/composite 仍适用 |
+| `documentation_or_skill_contract` | `non_program_artifact` | reviewer 审查文档、skill 文本、字段合同、runbook 或入口导航 | blackbox/whitebox 走 artifact acceptance、structure、traceability、cross-reference review；不得伪装成软件运行测试 |
+| `research_or_plan_artifact` | `non_program_artifact` | reviewer 检查研究结论、计划、取舍说明或后续工作建议 | 使用 research evidence review、professional review 和 traceability；缺少来源或反例边界时 blocked |
+| `mixed_delivery` | `mixed` | 一个 milestone 同时交付代码、配置、文档、治理或实验结果 | 必须按 worktrack、completion signal、artifact component 或交付路径拆 slice；任一 slice 缺证不能被另一 slice pass 覆盖 |
+| `unknown` | `unknown` | 目标、交付物或 operator 情境缺失、互相矛盾或只能猜测 | 不得默认四轴 pass；必须记录推断来源、置信度、未决问题和 recommended axis profile；置信度不足时 blocked |
+
+Unknown fallback:
+
+- `target_type_source = unknown`、`target_scenario_source = unknown` 或 `target_scenario = unknown` 时，Milestone Gate 必须先尝试从 programmer brief、milestone artifact、Worktrack Contract、completion signals 和 closeout records 做可追溯推断。
+- 推断记录至少包含 `inferred_target_type`、`inferred_target_scenario`、`confidence`、`evidence_refs`、`uncertainty` 和 `recommended_axis_profile`。
+- 只有 `confidence = high` 且无矛盾时，才能继续使用推断结果；`medium` / `low` / contradictory 推断必须保持 non-pass 或 blocked，直到 programmer 或后续 evidence 明确。
+
 `axis_applicability` 记录四轴适用性。每个轴的 `state` 只能是：
 
 - `applicable`: 该轴按自身语义执行并产出 verdict。
 - `not_applicable`: 该轴对当前 target type 不适用；必须写明原因，且不能被聚合器当成 pass。
 - `substituted`: 该轴的软件测试语义被 artifact-appropriate 验收替代；必须写明 `substituted_by`、替代方法和证据引用。
+- `split`: mixed 目标或混合场景需要逐 slice 覆盖；该状态本身不是 pass。
 - `blocked`: 目标类型或输入不足，无法合法判定适用性。
 
 Program/code target 的最低约束：

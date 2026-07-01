@@ -13,6 +13,8 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
 
 本技能在隔离的 SubAgent 上运行，接收限定范围输入包，不得读取其他轴的 verdict。架构位置定义见 milestone-gate-aggregation.md Layer 1 / composite_lane_rules。
 
+`target_type` / `target_scenario` 只能参与 review-depth 和 mandatory lane 分类。Composite 轴不能用 lane prose 后验补造 blackbox、whitebox 或 anticheat evidence；也不能把自己的 pass 当成其他轴的替代 pass，除非对应轴显式记录 `substituted` 且替代证据合同满足。
+
 ## 何时使用
 
 当 Milestone Gate 到达 composite acceptance 轴检查阶段时，使用这个技能：
@@ -32,7 +34,7 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
    - 所有已闭环 WT 的 composite acceptance lane records（如存在）以及 closeout bundle 中每条 lane 的 ref/status
    - milestone 的 `composite_acceptance` 配置（来自 milestone artifact 的 `composite_acceptance` 字段或聚合合同中的 `composite_lane_rules`）
    - milestone 的 `purpose` 和 `acceptance_criteria`
-4. **判定 review depth**：读取 milestone 的 composite_acceptance 配置中的 `review_depth`（`standard` / `deep`），并结合 mandatory trigger table 判定当前深度。若配置缺失，先根据 milestone `target_type`、purpose、node_types、changed paths、risk boundary 与 acceptance criteria 做目标/风险分类；分类命中 deep trigger 才进入 deep，分类明确为普通低风险则进入 standard，分类无法完成时返回 `blocked` / `questions_required`，不得无依据盲目默认 deep。
+4. **判定 review depth**：读取 milestone 的 composite_acceptance 配置中的 `review_depth`（`standard` / `deep`），并结合 mandatory trigger table 判定当前深度。若配置缺失，先根据 milestone `target_type`、`target_scenario`、operator situation、purpose、node_types、changed paths、risk boundary 与 acceptance criteria 做目标/风险分类；分类命中 deep trigger 才进入 deep，分类明确为普通低风险则进入 standard，分类无法完成时返回 `blocked` / `questions_required`，不得无依据盲目默认 deep。
 5. **逐 lane 检查**：对六条 composite acceptance lane 分别执行检查：
    - **C1 (code-review)**：消费 `code-review` lane record，检查其独立代码审查覆盖（非 self-review）结论、证据 refs 与状态。它回答 review coverage 是否存在且覆盖关键 WT，不判定 evidence credibility bias；carrier/provenance 偏倚由 anticheat A6 判定。
    - **C2 (feature-completeness)**：消费 `feature-completeness` lane record，检查 completion_signal→evidence 映射是否由 record refs 支撑。
@@ -83,6 +85,11 @@ description: 当 Milestone Gate 需要消费 composite acceptance lanes（code-r
 ### Composite 轴信息包
 
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `review_depth`
 - `deep_review_triggered`: true | false
 - `deep_review_reason`: 触发 deep review 的具体场景（如 "release + cross-WT integration"）
@@ -316,7 +323,7 @@ composite_verdict:
 **判定优先级**：
 
 1. 先检查 milestone artifact 的 `composite_acceptance.review_depth` 是否显式声明为 `deep` 或 `standard`。若显式声明为 `deep`，所有 6 条 lane 为 mandatory；若显式声明为 `standard`，仍需检查是否命中不可降级 deep trigger。
-2. 若 `composite_acceptance` 配置缺失，不得直接默认 deep。必须先基于 `target_type`、purpose、node_types、changed paths、risk boundary、acceptance criteria 与 known risks 分类当前 milestone。
+2. 若 `composite_acceptance` 配置缺失，不得直接默认 deep。必须先基于 `target_type`、`target_scenario`、operator situation、purpose、node_types、changed paths、risk boundary、acceptance criteria 与 known risks 分类当前 milestone。
 3. 若分类命中上述 trigger table 中任一 deep trigger 场景，所有 6 条 lane 为 mandatory，并记录 `deep_review_reason`。
 4. 若分类明确不命中 deep trigger，按 standard：C1 (code-review) + C2 (feature-completeness) 为 mandatory，C3-C6 为 optional。
 5. 若配置缺失且目标/风险分类无法完成，返回 `blocked` 并记录 `questions_required`、`missing_inputs` 与 `composite_acceptance_config_missing: true`；不得为了保守而无证据扩大为 deep，也不得静默降级为 standard。

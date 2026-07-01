@@ -36,7 +36,7 @@ description: 当 milestone gate 需要按 target_type 从外部视角（用户�
 
 ## Target-Type 路由
 
-Blackbox 轴不得把所有 milestone 都当成可运行软件来验收。每次运行必须先读取或推断 `target_type`、`target_type_source` 与 blackbox 轴适用性，并记录在输出中。
+Blackbox 轴不得把所有 milestone 都当成可运行软件来验收。每次运行必须先读取或推断 `target_type`、`target_type_source`、`target_scenario`、`target_scenario_source` 与 blackbox 轴适用性，并记录在输出中。`target_scenario` 是四个 canonical `target_type` 下的场景细分，不新增顶层类型。
 
 | target_type | blackbox 处理方式 |
 |-------------|-------------------|
@@ -45,6 +45,17 @@ Blackbox 轴不得把所有 milestone 都当成可运行软件来验收。每次
 | `mixed` | 分片处理。对程序切片执行外部行为场景检查；对非程序切片记录替代验收或不适用结论；整体 verdict 不得把非程序不适用项计为程序测试通过。 |
 | `unknown` | 默认 `blocked`。只有在 milestone artifact、WT contract 或 closeout 中有可追溯证据支持类型推断时，才允许记录 `target_type_source` 后继续。 |
 
+| target_scenario | blackbox 场景提示 |
+|-----------------|-------------------|
+| `runnable_workflow` | 建立 user/operator 可观察行为场景，覆盖 CLI/API/UI/log/file output 或集成行为。 |
+| `config_environment` | 若配置影响运行时行为，建立配置触发、环境前置条件、可观察输出和回归期待；若只是配置说明文本，改用非程序替代验收。 |
+| `experiment_execution` | 可执行实验脚本按外部命令/结果场景检查；实验报告、方案比较或外部数据结论使用 research evidence / professional review 替代验收。 |
+| `workflow_policy` | 通常不运行软件黑盒测试；使用 reader/operator simulation、policy conformance、traceability 或 cross-reference validation 作为替代验收。 |
+| `documentation_or_skill_contract` | 使用 artifact acceptance review、reader/operator simulation、cross-reference validation 或 professional review，检查读者能否按 artifact 得出正确操作。 |
+| `research_or_plan_artifact` | 使用 research evidence review、traceability review 或 professional review；缺少来源、反例边界或 completion signal 映射时 blocked。 |
+| `mixed_delivery` | 按 worktrack、completion signal、artifact component 或 delivery path 拆分程序场景与非程序替代验收。 |
+| `unknown` | 必须记录推断来源、置信度、未决问题和 recommended axis profile；置信度不足时 blocked。 |
+
 `target_type` 不改变轴间边界：blackbox 只能检查外部可观察行为和交付表面。内部结构、代码路径、接口拼接细节、状态传递、依赖方向和实现一致性属于 whitebox 轴。
 
 ## 工作流
@@ -52,7 +63,7 @@ Blackbox 轴不得把所有 milestone 都当成可运行软件来验收。每次
 1. **验证就绪状态**：确认 milestone 下所有 WT 已闭环。若有 active WT，返回 `not_ready` 并列出未闭环 WT。
 2. **载入最小输入集**：精确载入 milestone artifact、`target_type` / `axis_applicability` 信息、所有闭环 WT 的 closeout record、single-acceptance verdict、WT diff summary 和外部可观察行为证据。不得载入完整 diff 或实现代码。
 3. **建立隔离上下文**：确认当前运行环境（SubAgent 或 current-carrier）。记录 `carrier` 和 `isolation_guarantee`。如果检测到其他轴 verdict 注入上下文，立即标记 `isolation_guarantee: false` 并记录泄漏来源。
-4. **执行 target_type 路由**：记录 `target_type_source`、blackbox 轴适用性和预期方法。`program_code` 进入行为场景检查；`non_program_artifact` 进入替代/不适用验收；`mixed` 分片；`unknown` 缺少可追溯推断时 `blocked`。
+4. **执行 target_type / target_scenario 路由**：记录 `target_type_source`、`target_scenario_source`、blackbox 轴适用性和预期方法。`program_code` 进入行为场景检查；`non_program_artifact` 进入替代/不适用验收；`mixed` 分片；`unknown` 缺少高置信可追溯推断时 `blocked`。
 5. **为程序目标构建外部行为场景矩阵**：每个场景至少包含 `scenario_id`、触发者、输入/前置条件、可观察表面、期望输出、证据引用、回归期待和覆盖 WT。场景必须来自 milestone 的 completion_signals / acceptance_criteria / WT closeout，不得从实现代码倒推。
 6. **执行五项 blackbox 检查**（见下文「检查 checklist」）：
    - B1: Cross-WT integration consistency
@@ -241,7 +252,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
 - `触发条件`：milestone 下所有 WT 已闭环
 - `检查目标`：按 target_type 从外部视角验证 milestone 的跨 WT 集成质量、程序行为场景或非程序替代验收
 - `当前里程碑`：milestone ID 和 purpose 摘要
-- `target_type 路由`：`program_code | non_program_artifact | mixed | unknown`，来源、适用性和预期方法
+- `target_type / target_scenario 路由`：`program_code | non_program_artifact | mixed | unknown` 及其场景细分、来源、适用性和预期方法
 - `检查范围`：所有闭环 WT 的 contract、evidence、closeout record、diff summary、可观察行为证据和替代验收证据
 - `排除范围`：完整实现代码、其他轴 verdict、单个 WT 的代码质量（属 whitebox）、单个证据可信度（属 anticheat）
 - `检查项`：B1-B5
@@ -251,7 +262,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
 ### Blackbox 检查信息包
 
 - `输入产物`：milestone artifact、所有闭环 WT 的 contract / single-acceptance verdict / gate evidence / closeout record / diff summary
-- `target_type 信息`：`target_type`、`target_type_source`、`axis_applicability.blackbox`、`expected_method`
+- `target_type 信息`：`target_type`、`target_type_source`、`target_scenario`、`target_scenario_source`、`target_scenario_confidence`、`operator_situation`、`axis_applicability.blackbox`、`expected_method`
 - `里程碑约定摘要`：milestone 的 purpose、completion_signals、acceptance_criteria
 - `WT 列表`：所有闭环 WT 的 ID、node_type、verdict 摘要
 - `依赖关系`：WT 之间的声明依赖（从 contract 的 dependencies 字段提取）
@@ -285,7 +296,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
 6a. **input_gap 不等于行为失败**：当缺少 `target_type`、`aggregation_rules`、`completion_signals_trace` 或 behavior scenario inputs 时，必须在 `input_gap_classification` 中标记 `input_gap_status: input_gap` 或 `mixed_input_gap_and_behavior_failure`，并列出对应布尔字段。未执行或无法构造场景时，不得把结果描述为外部行为 hard_fail；只有已经构造并执行/观察到 scenario 的实际不符合，才可标记 `behavior_failure_present: true`。
 7. **证据引用必须具体**：每条 finding 的 `evidence_refs` 必须是可追溯的文件路径或 artifact ref（如 `WT-xxx/closeout-record.md`、`milestone-artifact.md#completion_signals`）。不得出现无法定位的模糊引用（如"综合所有 WT 来看"）。
 8. **输出必须包含完整的五项检查结果**：即使某项检查因输入不足被 `blocked`，也必须显式输出该项的 verdict 和 finding，不得省略。跳过某项检查的行为必须返回 `blocked`。
-9. **target_type 必须显式化**：输出必须包含 `target_type`、`target_type_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 且无法从已批准产物可追溯推断时，整体 verdict 必须为 `blocked`。
+9. **target_type / target_scenario 必须显式化**：输出必须包含 `target_type`、`target_type_source`、`target_scenario`、`target_scenario_source`、`axis_applicability_state` 和 `expected_method`。缺少 `target_type` 或目标场景且无法从已批准产物做高置信可追溯推断时，整体 verdict 必须为 `blocked`。
 10. **程序目标必须有行为场景**：当 `target_type=program_code` 或 `mixed` 的程序切片存在时，B2 必须输出 behavior scenario matrix。只有文件变更覆盖、代码路径解释或内部实现摘要，不足以让 B2 通过。
 11. **非程序目标不得伪装成运行时测试**：当 `target_type=non_program_artifact` 或 `mixed` 的非程序切片存在时，运行时黑盒项只能输出 `substituted` / `not_applicable` 或失败/阻塞。`not_applicable` 不等于 `pass`，不得被当作测试通过计入整体结论。
 12. **白盒边界不可跨越**：如果判断需要内部结构、完整代码、调用链、状态传递或依赖方向分析，必须标记为 `blocked` 或把风险建议交给 whitebox 轴；不得在 blackbox 轴内补做白盒审查。
@@ -312,6 +323,10 @@ blackbox_verdict:
   severity: low | medium | high
   target_type: program_code | non_program_artifact | mixed | unknown
   target_type_source: "milestone-artifact.md#target_type"
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: "milestone-artifact.md#target_scenario"
+  target_scenario_confidence: high | medium | low
+  operator_situation: "operator/user situation or N/A"
   axis_applicability_state: applicable | substituted | not_applicable | split | blocked
   expected_method: external_behavior_scenario | artifact_appropriate_review | split_by_slice | blocked_pending_type
   substituted_by:
@@ -388,6 +403,10 @@ blackbox_verdict:
 | `severity` | enum | 对 milestone 的影响严重度。`low`：发现不影响交付（仅为 soft_fail 低权重项）。`medium`：存在实质性但可修复的问题。`high`：存在 hard_fail 或 blocked，里程碑交付受阻 |
 | `target_type` | enum | Milestone 交付目标类型：`program_code`、`non_program_artifact`、`mixed` 或 `unknown` |
 | `target_type_source` | string | 类型来源或可追溯推断来源 |
+| `target_scenario` | enum | `target_type` 下的场景细分，例如 `runnable_workflow`、`config_environment`、`experiment_execution`、`workflow_policy`、`documentation_or_skill_contract`、`research_or_plan_artifact`、`mixed_delivery` 或 `unknown` |
+| `target_scenario_source` | string | 场景来源或可追溯推断来源 |
+| `target_scenario_confidence` | enum | 场景推断置信度；`medium` / `low` 或矛盾推断不得让 blackbox 轴通过 |
+| `operator_situation` | string | 本轴模拟或观察的真实 user/operator 情境；无时写 `N/A` |
 | `axis_applicability_state` | enum | blackbox 轴适用性状态：`applicable`、`substituted`、`not_applicable`、`split` 或 `blocked`；这是路由事实，不是成功 verdict |
 | `expected_method` | enum | 当前类型下 blackbox 轴应使用的方法 |
 | `substituted_by` | list | 替代验收方法和证据。仅在 `axis_applicability_state = substituted` 或 `split` 时有效 |

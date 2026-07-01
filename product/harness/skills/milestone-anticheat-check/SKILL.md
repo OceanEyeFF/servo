@@ -25,6 +25,8 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 这个技能设计为**隔离 SubAgent** 运行：它 MUST NOT 接收或消费其他轴（blackbox、whitebox、composite）的 verdict。若任何其他轴的结论被注入上下文，必须标记 `isolation_guarantee: false` 并记录泄露来源。
 
+`target_type` / `target_scenario` 只能帮助解释证据可信度风险，不能让 anti-cheat 变成代码审查，也不能让该轴被 blackbox、whitebox 或 composite 替代。只要 milestone 存在可用于 Gate 的证据链，anti-cheat 默认适用；若证据边界本身不清，结果应为 `blocked` 而不是 `not_applicable`。
+
 ## 何时使用
 
 当需要检测 milestone 级证据可信度风险时，使用这个技能：
@@ -40,6 +42,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 1. 确认本轴隔离边界：确认上下文中没有其他轴（blackbox / whitebox / composite）的 verdict。若已泄露，先记录 `isolation_guarantee: false` 与泄露来源，再继续执行。
 2. 载入当前 milestone 下所有已闭环 WT 的最小必要产物：
+   - 当前 milestone 的 `target_type`、`target_scenario`、`target_scenario_source` 和 `operator_situation`（若声明），用于解释证据可信度风险；不得用它们评判代码正确性
    - 每个 WT 的 `single_acceptance_verdict`（来自 `single-acceptance-contract.md`）
    - 每个 WT 的 `gate_evidence`（包含 implementation/validation/policy 三面证据路径与时效性标签）
    - 每个 WT 的 `closeout_record`
@@ -344,6 +347,11 @@ Manual exception may accept the residual delivery risk, but it must preserve `hi
 ### 反作弊信息包
 
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `aggregation_rules`（若声明）
 - `per_worktrack.single_acceptance_verdict`：N 个 WT 的 single-acceptance verdict 摘要
 - `per_worktrack.gate_evidence`：N 个 WT 的 gate evidence 路径与时效性标签
@@ -358,6 +366,11 @@ Manual exception may accept the residual delivery risk, but it must preserve `hi
 
 - `轴标识`：`anti-cheat`
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `检查时间戳`
 - `carrier`：subagent | current-carrier
 - `isolation_guarantee`：true | false
@@ -391,6 +404,11 @@ Manual exception may accept the residual delivery risk, but it must preserve `hi
 
 - `轴标识`
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `carrier`
 - `isolation_guarantee`
 - `checklist_results[].check_id`

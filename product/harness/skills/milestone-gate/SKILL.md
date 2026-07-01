@@ -51,7 +51,7 @@ milestone-status-skill（sensor）
    - `milestone_id`
    - `closed_worktrack_list`：已闭环 WT 列表，每项含 `{ id, node_type, verdict, critical_failure, closeout_record_ref, closeout_evidence_bundle_ref, closeout_bundle_status, runtime_dispatch_record_ref, subagent_dispatch_record_refs, dispatch_provenance_status, dispatch_result_status, resolved_runtime_dispatch_status, composite_lane_records }`
    - `aggregation_rules`：milestone artifact 的 `aggregation_rules` 字段（缺失时退化 AND）
-   - `target_type_rules`：目标类型与轴适用性规则
+   - `target_type_rules`：目标类型、目标场景与轴适用性规则
    - `axis_reports`：顶层 Harness 提供的 blackbox / whitebox / anticheat / composite 报告
    - `axis_dispatch_profile`：顶层 Harness 对四轴 carrier 的分派与隔离记录
    - `manual_exception`：仅可表示 programmer final acceptance override 的输入事实，不能改写 Gate pass
@@ -92,6 +92,9 @@ axis_report:
   report_ref: ".servo/milestone/...#axis"
   observed_git_hash: "<hash>"
   target_type: program_code | non_program_artifact | mixed | unknown
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: string
+  target_scenario_confidence: high | medium | low
   axis_applicability_state: applicable | not_applicable | substituted | split | blocked
   expected_method: string
   axis_applicability_reason: string
@@ -102,6 +105,8 @@ axis_report:
   substitution_evidence_ref: string | N/A
   substitute_verdict: pass | soft_fail | hard_fail | blocked | N/A
   evidence_covers_completion_signal: true | false | N/A
+  slice_coverage: array | N/A
+  unknown_target_inference: object | N/A
 ```
 
 各轴的完整 checklist（B1-B5、W1-W5、A1-A7、C1-C6）和 verdict 推导规则定义在各自 SKILL.md 中。
@@ -152,14 +157,39 @@ Blackbox 轴的 `input_gap_classification` 必须区分输入缺口与真实行�
 
 ### Step 0：target_type_rules / axis_applicability resolution（目标类型与轴适用性解析）
 
-先解析 milestone 的 `target_type_rules`、每个轴报告中的 `target_type` / `axis_applicability_state`，以及非程序替代验收字段：
+先解析 milestone 的 `target_type_rules`、`target_scenario`、每个轴报告中的 `target_type` / `target_scenario` / `axis_applicability_state`，以及非程序替代验收字段：
 
 - `target_type` 允许表达 `program_code`、`non_program_artifact`、`mixed` 或 `unknown`。
+- `target_scenario` 是 `target_type` 下的场景细分，允许表达 `runnable_workflow`、`config_environment`、`experiment_execution`、`workflow_policy`、`documentation_or_skill_contract`、`research_or_plan_artifact`、`mixed_delivery` 或 `unknown`；它不得扩展顶层 target type，也不得降低证据要求。
 - 轴报告内的 `axis_applicability_state` 至少区分 `applicable`、`not_applicable`、`substituted`、`split`、`blocked`；`axis_applicability` 仅保留给 milestone/target_type_rules 的四轴封套使用。
 - `not_applicable` 必须带有 `target_type` 与明确原因；它只能把该轴从 mandatory pass 计算中移除，不能产生正向 evidence、不能覆盖 completion signal、不能等价为 `pass`。
 - `substituted` 必须带有 `substitute_method`、`substitution_evidence_ref`、`substitute_verdict`、`evidence_covers_completion_signal`。只有 `substitute_verdict: pass` 且 `evidence_covers_completion_signal: true` 时，替代轴才可被判为 satisfied。
-- `split` 或 `mixed` 目标必须提供 `slice_coverage`，每个 slice 记录 `slice_target_type`、适用轴、使用方法、证据引用和 verdict。程序/代码 slice 的 pass 不能覆盖非程序 slice 的替代证据缺失；非程序 substitute pass 也不能覆盖程序/代码 slice 的 blackbox/whitebox 缺失。
-- 目标类型未知、适用性字段互相矛盾、替代证据缺失、`slice_coverage` 缺失或无法映射 completion signal 时，设置 `axis_applicability_resolved: false`，最终 verdict 必须为 `blocked`。
+- `split` 或 `mixed` 目标必须提供 `slice_coverage`，每个 slice 记录 `slice_target_type`、`slice_target_scenario`、适用轴、使用方法、证据引用和 verdict。程序/代码 slice 的 pass 不能覆盖非程序 slice 的替代证据缺失；非程序 substitute pass 也不能覆盖程序/代码 slice 的 blackbox/whitebox 缺失。
+- 目标类型未知、目标场景未知且无高置信可追溯推断、适用性字段互相矛盾、替代证据缺失、`slice_coverage` 缺失或无法映射 completion signal 时，设置 `axis_applicability_resolved: false`，最终 verdict 必须为 `blocked`。
+- 未知目标场景的可追溯推断必须记录 `inferred_target_type`、`inferred_target_scenario`、`confidence`、`evidence_refs`、`uncertainty` 和 `recommended_axis_profile`。`medium`、`low` 或 contradictory confidence 不能产出 pass。
+
+默认场景 profile：
+
+| target_scenario | blackbox | whitebox | anticheat | composite |
+|-----------------|----------|----------|-----------|-----------|
+| `runnable_workflow` | `applicable` external behavior scenario | `applicable` structural/internal analysis | `applicable` evidence integrity review | `applicable` composite lanes |
+| `config_environment` | runtime config 为 `applicable`；policy-only config 为 `substituted` | runtime config load/propagation 为 `applicable`；config contract 为 `substituted` | `applicable` | `applicable` |
+| `experiment_execution` | executable experiment 为 `applicable`；report/conclusion 为 `substituted` | experiment code 为 `applicable`；research structure 为 `substituted` | `applicable` | `applicable` |
+| `workflow_policy` | usually `substituted` reader/operator simulation or policy conformance | usually `substituted` policy/artifact structure review | `applicable` | `applicable` |
+| `documentation_or_skill_contract` | usually `substituted` artifact acceptance / reader simulation | usually `substituted` artifact structure / traceability review | `applicable` | `applicable` |
+| `research_or_plan_artifact` | usually `substituted` research evidence / professional review | usually `substituted` claim/assumption/evidence structure review | `applicable` | `applicable` |
+| `mixed_delivery` | `split` by slice | `split` by slice | `applicable` across slices | `applicable` with slice-level lane coverage |
+| `unknown` | `blocked` without high-confidence inference | `blocked` without high-confidence inference | `blocked` if evidence boundary unclear | `blocked` or questions_required |
+
+替代边界：blackbox substitution 不能覆盖已有程序 slice 的外部行为场景；whitebox substitution 不能用外部行为结果冒充内部结构证据；anticheat 不替代 blackbox/whitebox，只评证据可信度；composite 不后验合成缺失的 axis evidence。
+
+Mixed / unknown 处理：
+
+- `target_type: mixed` 或任一轴 `axis_applicability_state: split` 时，必须输出 `slice_coverage`。每个 slice 至少包含 `slice_id`、`slice_target_type`、`slice_target_scenario`、`axis`、`applicability_state`、`expected_method`、`evidence_ref` 和 verdict。
+- 程序 slice 缺少 blackbox/whitebox 证据时，该轴保持 unsatisfied；不能用非程序替代证据补位。
+- 非程序 slice 缺少 substitute evidence 时，该 slice 保持 unsatisfied；不能用程序测试 pass 补位。
+- `unknown_target_inference` 必须在目标类型或目标场景缺失/矛盾时输出，字段至少包含 `inferred_target_type`、`inferred_target_scenario`、`confidence`、`evidence_refs`、`uncertainty`、`contradictory_evidence_refs`、`recommended_axis_profile` 和 `questions_required`。
+- `confidence: medium | low`、未解决矛盾、空 evidence refs 或 inferred unknown 都必须设置 `axis_applicability_resolved: false`，最终 verdict 为 `blocked` 或显式 non-pass。
 
 聚合器必须产出 `axis_satisfaction`，并用以下谓词代替原始 `verdict == pass`：
 
@@ -239,7 +269,7 @@ axis_satisfied(axis) =
 | 优先级 | 条件 | verdict |
 |--------|------|---------|
 | -1 | `axis_report_status` 为 `missing` / `contaminated` / `isolation_broken` / `blocked_axis`，或 `nested_axis_dispatch_attempted == true` | `blocked` |
-| 0 | target type unknown、`axis_applicability_resolved == false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
+| 0 | target type unknown、target scenario unknown 且无高置信可追溯推断、`axis_applicability_resolved == false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
 | 1 | veto-power 轴适用且 hard_fail/blocked，或 mandatory substituted 轴 `axis_satisfied == false` | `blocked` |
 | 2 | contradiction_blocked | `blocked` |
 | 3a | 所有 weight ≥ 3 的 WT pass，且所有 mandatory applicable / substituted axes 满足 `axis_satisfied(axis) == true`，显式 `not_applicable` 轴均有 target_type reason | `pass` |
@@ -269,9 +299,14 @@ axis_satisfied(axis) =
 - `aggregation_rules_source`：string
 - `target_type`：program_code / non_program_artifact / mixed / unknown
 - `target_type_source`：string
+- `target_scenario`：runnable_workflow / config_environment / experiment_execution / workflow_policy / documentation_or_skill_contract / research_or_plan_artifact / mixed_delivery / unknown
+- `target_scenario_source`：string
+- `target_scenario_confidence`：high / medium / low
+- `operator_situation`：string | N/A
 - `axis_applicability_resolved`：boolean
 - `axis_satisfaction`：object — 每轴包含 `applicability_state`、`axis_satisfied`、reason 和 evidence refs
 - `slice_coverage`：array | N/A — mixed target 时必须列出每个 slice 的 target type、适用轴、方法、证据和 verdict
+- `unknown_target_inference`：object | N/A — target type 或 scenario 缺失/矛盾时必须列出推断、置信度、证据、未决问题和 recommended axis profile
 - `substitution_evidence_summary`：object — 每个 substituted 轴的 substitute method、evidence ref、substitute verdict 和 completion-signal coverage
 - `per_worktrack_weights`：array — `{ worktrack_id, node_type, base_weight, final_weight, overridden, override_reason }`
 - `closeout_bundle_status_by_worktrack`：object — 每个 WT 的 `closeout_evidence_bundle_ref` 与 `complete / incomplete / contaminated / historical_gap / missing` 状态
