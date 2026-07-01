@@ -1,9 +1,9 @@
 ---
 title: Harness Runtime Closeout Refresh
 status: active
-updated: 2026-06-30
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-01
 ---
 
 # Harness Runtime Closeout Refresh
@@ -77,3 +77,20 @@ programmer final acceptance 发生后，`harness-skill` 执行 final acceptance 
 work-collection milestone achieved 后可自动标记 superseded，并按 pipeline priority 激活下一 planned milestone；若没有下一 planned milestone，则清空 active milestone。
 
 任何 milestone gate `soft-fail`、`hard-fail`、`blocked` 或反作弊信号，均不得把 milestone 标记为 completed，也不得自动推进 pipeline。
+
+## Post-Acceptance Managed-Branch Merge
+
+goal-driven milestone 被 programmer final acceptance 后，验收事实写回不等同于已经把结果合回 `develop-servo` 或其他 managed branch。Harness 必须把 post-acceptance managed-branch merge 视为 final acceptance writeback 之后的独立受控路线。
+
+final acceptance writeback 成功后，`harness-skill` 必须向 programmer 明示 post-acceptance merge 选择，而不是静默结束在 accepted-but-not-merged 状态。提示内容至少包含 accepted source ref、默认 managed branch（通常是 `develop-servo`）、可选的 user-specified managed branch、跳过合回的选项，以及 release/publish/tag/push/protected/deploy/destructive 边界不会被授权的说明。
+
+该路线只在满足以下条件时可进入：
+
+- programmer 在 post-acceptance merge prompt 中明确要求合回，或 milestone / repo operator config 明确声明已接受结果需要合回的 managed branch。
+- source ref 指向已接受的 milestone branch 或等价已验收 checkpoint，且 final acceptance record、Milestone Gate verdict、manual exception record 保持可追溯。
+- target branch 是 servo-managed baseline branch（如 `develop-servo`）或 programmer 指定并被 branch policy 允许的 managed branch。
+- preflight 已记录 target branch、source ref、当前 worktree 状态、branch context、最终验收记录引用、Gate verdict 保留策略、checkpoint / writeback plan 和失败恢复路径。
+
+preflight 失败时必须 stop before merge，并返回明确 blocker；不得用“已验收”绕过分支策略、受保护分支策略或未满足的证据要求。若 merge 已经发生但 post-merge writeback 未完成，Harness 必须进入 recovery / refresh 路径，记录 post-merge checkpoint、实际 merge target、恢复动作和残留风险，而不是静默继续推进 pipeline。
+
+post-acceptance managed-branch merge 不授权 release、publish、package version、tag、dist-tag、remote push、protected branch mutation、deploy、database migration、secrets access、destructive cleanup 或跨 repo 副作用。并行 Worktrack 的 git commit 编排与 git worktree 支持不是该路线的前置能力；相关问题必须保留为独立后续范围。

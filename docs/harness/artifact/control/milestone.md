@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-30
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-01
 ---
 
 # Milestone Artifact
@@ -299,7 +299,7 @@ Milestone branch 的职责：
 - 从 servo-managed `baseline_branch` 创建。
 - 接收该 Milestone 下 Worktrack closeout 的 merge。
 - 在进入或恢复 Milestone 时，同步当前 baseline，默认通过 merge baseline into milestone branch 记录同步，而不是对已共享/已记录的 runtime branch 做 rebase 或 force-push。
-- 仅在 goal-driven Milestone final acceptance 后合回 servo-managed baseline branch。
+- 仅在 goal-driven Milestone final acceptance 后，通过独立的 post-acceptance managed-branch merge 路线合回 servo-managed baseline branch 或 programmer 指定的 allowed managed branch。
 
 Worktrack 实现仍必须在独立 Worktrack branch 中完成。Milestone branch 只接收 Worktrack closeout merge 和 baseline sync merge；直接在 Milestone branch 上做实现改动必须由对应 Worktrack Contract 明确批准，否则视为范围漂移。
 
@@ -366,6 +366,22 @@ goal-driven milestone 的 `completed` 写入分两层理解：
 final acceptance writeback 是一个逻辑事务，不是只改某一个文件。事务最小写入集合包括 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，必要时还包括 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 状态的归一化。写回前必须校验输入状态，写回后必须复核 artifact 一致性；失败时进入 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞，不得把 milestone 伪装成已完成。
 
 Manual exception 不改变证据层含义。尤其是反作弊轴发现的 evidence reuse、gate bypass、same-carrier contamination、stale checkpoint 或 self-review bias，不能因为 programmer 接受 milestone 而被从 Gate report 中删除、降级或改写为 pass。后续 status/cleanup/history 读者必须能同时看到：原始 Gate verdict、人工接受原因、被保留的 anti-cheat finding 和任何 follow-up milestone/worktrack 引用。
+
+### Post-Acceptance Managed-Branch Merge Contract
+
+Final acceptance writeback 只证明 programmer 已接受 milestone 结果并完成 control-plane 持久化；它不隐含执行 git merge。需要把已接受结果合回 `develop-servo` 或其他 managed branch 时，Harness 必须进入单独的 post-acceptance managed-branch merge contract。
+
+该 contract 至少记录：
+
+- `accepted_milestone_id`、`final_acceptance_record_ref`、`accepted_source_ref` 和 `milestone_branch_head`。
+- `post_acceptance_merge_prompt`，记录提示时间、默认 managed branch、候选 target、programmer choice（merge default / merge selected / skip for now）和 prompt result。
+- `managed_merge_target_ref`，其值必须来自 servo-managed baseline branch 或 programmer 指定且 branch policy 允许的 managed branch。
+- `merge_authority_source`，区分 programmer explicit approval、repo operator config 或 blocked / missing authority。
+- `preflight_record_ref`，包含 branch context、clean worktree、target branch existence、source/target checkpoint、Gate verdict preservation、manual exception preservation 和 writeback plan。
+- `post_merge_checkpoint_ref` 或 `stopped_before_merge_reason`。
+- forbidden operation confirmation：未执行 release / publish / package version / tag / push / protected branch mutation / deploy / destructive cleanup / cross-repo side effect。
+
+若 `post_acceptance_merge_prompt` 缺失、`merge_authority_source` 缺失、target branch 不在 allowed managed branch 范围、preflight 不完整、source ref 不是已接受 checkpoint，或操作会触发 forbidden boundary，Harness 必须停在 merge 前并把 milestone 保持为已验收但未合回目标分支的状态。若 programmer 选择 skip for now，Harness 必须记录 `stopped_before_merge_reason: programmer_deferred_managed_branch_merge`，并保留后续恢复该 merge route 所需的 source / target facts。
 
 ## Latest Override 语义
 
