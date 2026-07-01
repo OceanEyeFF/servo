@@ -44,7 +44,7 @@ EXPECTED_AGENTS_SKILLS = {
     "worktrack-review-evidence-skill",
     "worktrack-rule-check-skill",
     "worktrack-schedule-skill",
-    "harness-set-goal-skill",
+    "repo-init-goal-skill",
     "worktrack-cleanup-skill",
     "worktrack-test-evidence-skill",
     "worktrack-status-skill",
@@ -55,7 +55,11 @@ EXPECTED_CLAUDE_SKILLS = {
 AGENTS_TARGET_DIR_OVERRIDES = {}
 CLAUDE_TARGET_DIR_OVERRIDES = {}
 AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
-    "harness-set-goal-skill": ["set-harness-goal-skill", "aw-set-harness-goal-skill"],
+    "repo-init-goal-skill": [
+        "harness-set-goal-skill",
+        "set-harness-goal-skill",
+        "aw-set-harness-goal-skill",
+    ],
     "milestone-init-skill": ["init-milestone-skill", "aw-init-milestone-skill"],
     "milestone-pre-intake-skill": [
         "pre-milestone-intake-skill",
@@ -96,7 +100,11 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
     "harness-skill": ["servo-harness-skill"],
-    "harness-set-goal-skill": ["aw-set-harness-goal-skill", "set-harness-goal-skill"],
+    "repo-init-goal-skill": [
+        "harness-set-goal-skill",
+        "aw-set-harness-goal-skill",
+        "set-harness-goal-skill",
+    ],
     "milestone-init-skill": ["aw-init-milestone-skill"],
     "milestone-pre-intake-skill": ["aw-pre-milestone-intake-skill"],
     "worktrack-cleanup-skill": ["cleanup-skill", "aw-cleanup-skill"],
@@ -325,11 +333,11 @@ class AgentsAdapterContractTest(unittest.TestCase):
             self.assertEqual(payload["skill_id"], "worktrack-cleanup-skill")
             self.assertEqual(payload["target_dir"], "worktrack-cleanup-skill")
 
-    def test_set_harness_goal_agents_payload_includes_default_repo_analysis_template(
+    def test_repo_init_goal_agents_payload_includes_default_repo_analysis_template(
         self,
     ) -> None:
         payload = load_json(
-            ADAPTER_SKILLS_DIR / "harness-set-goal-skill" / "payload.json"
+            ADAPTER_SKILLS_DIR / "repo-init-goal-skill" / "payload.json"
         )
         canonical_paths = payload["canonical_paths"]
         required_payload_files = payload["required_payload_files"]
@@ -337,26 +345,26 @@ class AgentsAdapterContractTest(unittest.TestCase):
         self.assertIsInstance(canonical_paths, list)
         self.assertIsInstance(required_payload_files, list)
         self.assertIn(
-            "product/harness/skills/harness-set-goal-skill/assets/repo/analysis.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/analysis.md",
             canonical_paths,
         )
         self.assertIn("assets/repo/analysis.md", required_payload_files)
         self.assertIn(
-            "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md",
             canonical_paths,
         )
         self.assertIn("assets/repo/temporary-understanding.md", required_payload_files)
         self.assertIn(
-            "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+            "product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
             canonical_paths,
         )
         self.assertIn("scripts/complexity_signal_scanner.py", required_payload_files)
 
         claude_payload = load_json(
-            CLAUDE_ADAPTER_SKILLS_DIR / "harness-set-goal-skill" / "payload.json"
+            CLAUDE_ADAPTER_SKILLS_DIR / "repo-init-goal-skill" / "payload.json"
         )
         self.assertIn(
-            "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+            "product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
             claude_payload["canonical_paths"],
         )
         self.assertIn(

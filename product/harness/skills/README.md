@@ -34,7 +34,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [worktrack-generic-worker-skill/](./worktrack-generic-worker-skill/) — 接收限定范围 Prompt 的通用执行 worker
   - [worktrack-doc-catch-up-skill/](./worktrack-doc-catch-up-skill/) — 将已验证实现事实追平到正确文档层
 - 已落地的 `RepoScope` 技能骨架：
-  - [harness-set-goal-skill/](./harness-set-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
+  - [repo-init-goal-skill/](./repo-init-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
   - [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) — Milestone 写入/激活前的需求核实、追问和确认 review
   - [repo-status-skill/](./repo-status-skill/) — 代码仓库状态观察
   - [repo-whats-next-skill/](./repo-whats-next-skill/) — 代码仓库下一步判断
@@ -93,7 +93,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | Canonical source | Docs/catalog owner |
 |------------------|--------------------|
 | [harness-skill/](./harness-skill/) | [docs/harness/catalog/supervisor.md](../../../docs/harness/catalog/supervisor.md) |
-| [harness-set-goal-skill/](./harness-set-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [repo-init-goal-skill/](./repo-init-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-status-skill/](./repo-status-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-whats-next-skill/](./repo-whats-next-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |

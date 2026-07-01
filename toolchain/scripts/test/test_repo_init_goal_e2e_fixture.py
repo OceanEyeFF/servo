@@ -14,7 +14,7 @@ NODE_HELPER = (
     / "product"
     / "harness"
     / "skills"
-    / "harness-set-goal-skill"
+    / "repo-init-goal-skill"
     / "scripts"
     / "deploy_servo.js"
 )

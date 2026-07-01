@@ -8,7 +8,7 @@ const SKILL_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_AW_DIRNAME = ".servo";
 const DEFAULT_PROFILE = "full-deploy-bootstrap";
 const DEFAULT_CLAUDE_SKILL_ROOT = path.join(".claude", "skills");
-const DEFAULT_CLAUDE_SKILL_NAME = "harness-set-goal-skill";
+const DEFAULT_CLAUDE_SKILL_NAME = "repo-init-goal-skill";
 
 let _templateRoot;
 const SKILL_PACKAGE_EXCLUDED_NAMES = new Set([
@@ -842,7 +842,7 @@ function placeholder(name) {
 
 function usage() {
 	return [
-		"Generate and validate `.servo` bootstrap artifacts from harness-set-goal-skill-owned assets.",
+		"Generate and validate `.servo` bootstrap artifacts from repo-init-goal-skill-owned assets.",
 		"",
 		"Usage:",
 		"  node deploy_servo.js list [--json]",
@@ -1293,13 +1293,13 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 		token_budget_note:
 			"lightweight is low-token and quick; full is deeper and may require a separate discovery milestone or worktrack",
 		source_scope: placeholder("source_scope"),
-		generated_by: "harness-set-goal-skill",
+		generated_by: "repo-init-goal-skill",
 		truth_status: "temporary-inferred",
 		gate_truth_status: "runtime-evidence",
 		scanner_command:
-			"PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+			"PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
 		scanner_command_alternatives:
-			"PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+			"PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
 		scanner_output_role: "scanner output is evidence, not verdict",
 		docker_compose_permission: "pending_programmer_confirmation",
 		database_migration_permission: "pending_programmer_confirmation",

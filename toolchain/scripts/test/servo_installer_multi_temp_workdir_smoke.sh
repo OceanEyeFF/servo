@@ -248,7 +248,7 @@ if (!awControl.includes("`.aw/control-state.md`")) {
 if (!servoControl.includes("`.servo/control-state.md`")) {
   fail("migrated .servo control-state should rewrite .aw path references");
 }
-if (!servoControl.includes("harness-set-goal-skill")) {
+if (!servoControl.includes("repo-init-goal-skill")) {
   fail("migrated .servo control-state should rewrite legacy skill reference");
 }
 if (!servoControl.includes("develop-aw")) {

@@ -60,7 +60,7 @@ const runtimeMigrationAwPathReplacements = [
 	[/\.aw\//g, ".servo/"],
 	[/`\.aw`/g, "`.servo`"],
 	[/\.aw(?=\s)/g, ".servo"],
-	[/aw-set-harness-goal-skill/g, "harness-set-goal-skill"],
+	[/aw-set-harness-goal-skill/g, "repo-init-goal-skill"],
 ];
 const defaultGithubRepo = "OceanEyeFF/servo";
 const githubRepoPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
@@ -4390,7 +4390,7 @@ function reconcileServoContext(parsed) {
 		"product",
 		"harness",
 		"skills",
-		"harness-set-goal-skill",
+		"repo-init-goal-skill",
 		"scripts",
 		"deploy_servo.js",
 	);

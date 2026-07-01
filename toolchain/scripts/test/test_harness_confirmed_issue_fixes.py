@@ -393,16 +393,20 @@ def test_runtime_skill_docs_use_package_local_script_commands() -> None:
         ".claude/skills/milestone-cleanup-skill/SKILL.md",
         ".claude/skills/worktrack-cleanup-skill/SKILL.md",
     ]
-    set_goal_runtime_docs = [
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        ".agents/skills/harness-set-goal-skill/SKILL.md",
-        ".claude/skills/harness-set-goal-skill/SKILL.md",
+    repo_init_goal_runtime_docs = [
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "docs/project-maintenance/usage-help/claude.md",
     ]
-    set_goal_asset_docs = [
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        ".agents/skills/harness-set-goal-skill/assets/README.md",
-        ".claude/skills/harness-set-goal-skill/assets/README.md",
+    repo_init_goal_installed_runtime_docs = [
+        ".agents/skills/repo-init-goal-skill/SKILL.md",
+        ".claude/skills/repo-init-goal-skill/SKILL.md",
+    ]
+    repo_init_goal_asset_docs = [
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+    ]
+    repo_init_goal_installed_asset_docs = [
+        ".agents/skills/repo-init-goal-skill/assets/README.md",
+        ".claude/skills/repo-init-goal-skill/assets/README.md",
     ]
     bare_python_runtime = "python3 " + "scripts/"
     bare_node_deploy = "node " + "scripts/deploy_servo.js"
@@ -413,7 +417,12 @@ def test_runtime_skill_docs_use_package_local_script_commands() -> None:
         assert "python3 ./scripts/control_state_compact.py" in text, relative_path
         assert "python3 ./scripts/runtime_maintenance_sweep.py" in text, relative_path
 
-    for relative_path in set_goal_runtime_docs + set_goal_asset_docs:
+    optional_installed_paths = repo_init_goal_installed_runtime_docs + repo_init_goal_installed_asset_docs
+    existing_optional_paths = [
+        path for path in optional_installed_paths if (REPO_ROOT / path).exists()
+    ]
+
+    for relative_path in repo_init_goal_runtime_docs + repo_init_goal_asset_docs + existing_optional_paths:
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert bare_node_deploy not in text, relative_path
         assert "node ./scripts/deploy_servo.js" in text, relative_path

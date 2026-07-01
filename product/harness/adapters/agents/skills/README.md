@@ -47,7 +47,7 @@
 - `review-evidence-skill`
 - `rule-check-skill`
 - `schedule-worktrack-skill`
-- `set-harness-goal-skill`
+- `repo-init-goal-skill`
 - `test-evidence-skill`
 - `worktrack-status-skill`
 

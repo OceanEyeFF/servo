@@ -17,9 +17,9 @@ last_verified: 2026-06-30
 
 ## Catalog
 
-### 0. harness-set-goal-skill
+### 0. repo-init-goal-skill
 
-职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制平面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径。
+职责：当 Harness 尚未初始化或 `.servo/goal-charter.md` 缺失时，将 programmer 的自然语言目标转化为 Repo Goal/Charter、Engineering Node Map 和初始控制平面组件。它是 `RepoScope.SetGoal` 的初始化参考信号入口，不属于常规循环中的目标变更路径，也不承担从 Goal Charter 高频推导 Milestone/Worktrack 的 planner 职责。
 
 主要依赖：
 
@@ -31,13 +31,14 @@ last_verified: 2026-06-30
 
 canonical executable source：
 
-- [../../../product/harness/skills/harness-set-goal-skill/SKILL.md](../../../product/harness/skills/harness-set-goal-skill/SKILL.md)
-- [../../../product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md)
+- [../../../product/harness/skills/repo-init-goal-skill/SKILL.md](../../../product/harness/skills/repo-init-goal-skill/SKILL.md)
+- [../../../product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md](../../../product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md)
 
 当前状态：
 
 - `initial canonical executable skeleton landed`
 - `weak-doc temporary understanding template contract landed`
+- `operator-facing rename to repo-init-goal-skill landed; old harness-set-goal-skill command compatibility is not retained`
 
 preferred handoff fields：
 

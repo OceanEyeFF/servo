@@ -23,7 +23,7 @@ RepoScope 维护以下慢变量：
 
 | 控制对象 | 存储位置 | 说明 |
 |---------|---------|------|
-| Goal / Charter | `.servo/goal-charter.md` | 长期参考信号，定义 Repo 的目标状态和 Engineering Node Map |
+| Goal / Charter | `.servo/goal-charter.md` | 长期参考信号，定义 Repo 的抽象目标、设计框架、系统不变量和 Engineering Node Map；不作为高频 Milestone planner |
 | Repo Snapshot / Status | `.servo/repo/snapshot-status.md` | RepoScope.Observe 的观测面，记录 `baseline_ref`、`source_baselines`、governance 信号 |
 | Milestone Pipeline | `.servo/repo/milestone-backlog.md` | 所有 milestone 的聚合管线，含 planned/active/completed/superseded 状态 |
 | Control State | `.servo/control-state.md` | 控制平面配置与当前定位（Scope/Function/Route），不承载业务真相 |
@@ -91,6 +91,8 @@ RepoScope.Decide 基于观测结果做出以下判定：
 
 当 operator 只要求“还有什么可推进”“先列任务点”“讨论后再设置 Milestone”或类似 pre-milestone 输入时，RepoScope.Decide 可以输出 candidate milestone recommendation，但该 recommendation 不是 milestone 创建、激活或 append 授权。
 
+Candidate milestone recommendation 不要求从 Goal Charter 直接推导。Goal Charter 只提供抽象目标、系统不变量、Engineering Node Map 和越界判断依据；具体候选主要来自已观测事实、用户最新输入、repo runtime state、append request、pre-intake 发现、已有 milestone/worktrack 状态和 artifact drift。工程细节下沉导致的 abstraction distance 不等同于 goal drift。
+
 候选 Milestone 推荐必须使用 fact-first / field-research 约束：
 
 - 先列 `observed_facts`：active/planned/completed milestone、latest closed worktrack、已验证 evidence、用户最新输入、repo baseline 与已知风险。
@@ -150,7 +152,7 @@ RepoScope.Decide 基于观测结果做出以下判定：
 
 | 算子 | 触发条件 | 说明 |
 |------|---------|------|
-| `SetGoal` | `.servo/` 未初始化，首次设定参考信号 | 仅执行一次，建立 Goal/Charter |
+| `SetGoal` | `.servo/` 未初始化，首次初始化 repo 级参考信号 | 内部 Function 名保留；仅执行一次，建立 Goal/Charter 与初始控制面。operator-facing canonical skill 是 `repo-init-goal-skill` |
 | `ChangeGoal` | 外部 `GoalChangeRequest` 触发 | 目标变更走独立控制路径，不属于常规循环 |
 
 目标变更的完整流程见 [../artifact/control/goal-change-request.md](../artifact/control/goal-change-request.md)。在 RepoScope 正常循环中，Goal 是不可变的参考信号。
@@ -181,7 +183,7 @@ RepoScope 在以下情况触发文档追平：
 ## 治理约束
 
 1. RepoScope 不直接执行代码变更；所有变更通过 WorktrackScope 执行
-2. Goal 在常规循环中不可变；目标变更必须走 ChangeGoal
+2. Goal 在常规循环中不可变；目标变更必须走 ChangeGoal；Milestone/Worktrack 规划不应把 Goal Charter 当作高频 planner
 3. Milestone 最终验收权归 programmer
 4. Control State 只保存控制平面当前定位信息；业务真相在正式 artifact 中
 5. git hash 一致仅跳过重复刷新，不可跳过首次验证和 Gate 裁决
