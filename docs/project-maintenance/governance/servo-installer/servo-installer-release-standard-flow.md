@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Standard Flow"
 status: active
-updated: 2026-06-18
+updated: 2026-07-03
 owner: servo-kernel
-last_verified: 2026-06-18
+last_verified: 2026-07-03
 ---
 # servo-installer Release Standard Flow
 
@@ -134,7 +134,7 @@ At minimum, review [Release Channel Governance](./servo-installer-release-channe
 
 Post-publish registry facts must not be written into the release tag target retroactively. Commit docs fact sync on the release development branch, open a narrow docs PR to `master`, wait for checks, then merge it.
 
-## 9. Resync Release Development Branch
+## 9. Resync Release Branches
 
 After the post-publish docs PR is merged, fast-forward the release development branch to `origin/master` and push it so the next release starts from the published repository truth:
 
@@ -145,4 +145,20 @@ git push origin <release-development-branch>
 git status --short --branch
 ```
 
-Final handback must report the release tag, publish workflow run, npm dist-tags, registry smoke result, docs PR, and final release development branch / `master` SHAs.
+Then align local working branches to the published remote truth before final release handback:
+
+```bash
+git fetch --no-tags origin master <release-development-branch> --prune
+git switch <release-development-branch>
+git merge --ff-only origin/<release-development-branch>
+git switch master
+git merge --ff-only origin/master
+git switch develop-servo
+git merge --ff-only <release-development-branch>
+git rev-parse <release-development-branch> master develop-servo origin/<release-development-branch> origin/master
+git status --short --branch
+```
+
+For the current branch policy, `<release-development-branch>` is `develop`. After a completed release, local `develop` and local `master` must match their remote refs, and local `develop-servo` must match the local release development branch. If any local branch cannot fast-forward because of a local-only commit, duplicate commit, dirty worktree, or divergent history, stop and request an explicit reconcile/reset decision; do not force-update or drop local commits implicitly.
+
+Final handback must report the release tag, publish workflow run, npm dist-tags, registry smoke result, docs PR, final `master` / release development branch SHAs, and local branch alignment status for `develop`, `master`, and `develop-servo`.
