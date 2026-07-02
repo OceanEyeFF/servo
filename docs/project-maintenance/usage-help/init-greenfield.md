@@ -34,7 +34,7 @@ npx servo-installer verify --backend agents
 以 Codex 为例：
 
 ```txt
-$harness-set-goal-skill 当前空仓库期望最终实现一个 [目标描述]。
+$repo-init-goal-skill 当前空仓库期望最终实现一个 [目标描述]。
 ```
 
 目标描述示例：
@@ -53,7 +53,7 @@ $harness-set-goal-skill 当前空仓库期望最终实现一个 [目标描述]�
 
 ## 四、空项目的推荐节奏
 
-1. **Round 0**：项目初始化（install + set-harness-goal）
+1. **Round 0**：项目初始化（install + repo-init-goal）
 2. **Round 1**：项目骨架（目录结构、配置文件、CI 基础）
 3. **Round 2+**：按功能模块拆分 bounded worktrack
 

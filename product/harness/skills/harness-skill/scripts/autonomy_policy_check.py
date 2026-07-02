@@ -64,6 +64,9 @@ ALLOWED: dict[str, str] = {
     "artifact_hydration":          "Artifact 水合",
     "status_consistency_check":    "状态一致性检查",
     "worktrack_queue_scheduling":  "Worktrack 内队列调度",
+    "bounded_worktrack_init":      "限定范围 Worktrack 初始化",
+    "bounded_worktrack_dispatch":  "限定范围 Worktrack 分派",
+    "bounded_worktrack_close":     "限定范围 Worktrack 收尾",
     "non_destructive_docs_edits":  "非破坏性文档编辑",
     "bounded_local_verification":  "限定范围本地验证",
     "post_gate_repo_refresh":      "Gate 后 repo 刷新写回",
@@ -96,6 +99,7 @@ class PolicyProfile:
         "stop_condition_hit",
         "needs_approval",
         "blocked_override",
+        "blocking_exception",
         "description",
     )
 
@@ -107,6 +111,7 @@ class PolicyProfile:
         stop_condition_hit: list[str] | None = None,
         needs_approval: bool = False,
         blocked_override: bool | None = None,
+        blocking_exception: str | None = None,
         description: str = "",
     ):
         self.allowed_rules = allowed_rules or []
@@ -114,6 +119,7 @@ class PolicyProfile:
         self.stop_condition_hit = stop_condition_hit or []
         self.needs_approval = needs_approval
         self.blocked_override = blocked_override
+        self.blocking_exception = blocking_exception
         self.description = description
 
 
@@ -189,6 +195,23 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "dispatch-skills 分派：限定范围但可能触及边界，需要审批"
         ),
     ),
+    "dispatch::worktrack-dispatch-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_dispatch",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-dispatch-skill 只允许在当前 Worktrack Contract 与"
+            "已选 dispatch packet 范围内执行非破坏性分派；cleanup apply/"
+            "delete/move/archive、release/publish/tag/push/deploy、受保护"
+            "分支 mutation、secret/database/external quota 仍由 forbidden/stop"
+            "边界阻断"
+        ),
+    ),
 
     # ── close ──
     "close::close-worktrack-skill": PolicyProfile(
@@ -201,6 +224,23 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         description=(
             "close-worktrack-skill 涉及 merge/rebase 触达受保护分支策略，"
             "需要审批。已批准的 closeout 流程可继续"
+        ),
+    ),
+    "close::worktrack-close-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_close",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-close-skill 可执行当前 Worktrack Contract 内的"
+            "非破坏性收尾、报告型 closeout 和 RepoScope refresh 交接；"
+            "merge、protected branch mutation、branch cleanup、cleanup apply/"
+            "delete/move/archive、release/publish/tag/push/deploy 仍需独立"
+            "审批或由 forbidden/stop 边界阻断"
         ),
     ),
 
@@ -227,7 +267,8 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "milestone_final_acceptance_boundary",
         ],
         needs_approval=True,
-        blocked_override=False,  # 有独立审批门，不硬阻断
+        blocked_override=False,
+        blocking_exception="repo-change-goal-skill requires separate programmer approval gate before mutation",
         description=(
             "目标变更命中 forbidden:goal_change，但 repo-change-goal-skill "
             "有独立审批门，标记 needs_approval: true 而非 blocked"
@@ -245,6 +286,25 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         needs_approval=True,
         description="Milestone 初始化可能扩大 scope，需要审批",
     ),
+    "init_milestone::milestone-init-skill": PolicyProfile(
+        allowed_rules=[
+            "artifact_hydration",
+            "status_consistency_check",
+            "scaffold_validation",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "milestone-init-skill 只允许在 pre-milestone intake、complex "
+            "entry gate、Milestone Review Gate、branch guard 与 programmer "
+            "activation approval 均已通过后，对既有 planned milestone 执行"
+            "非 release/non-destructive 的 bounded create/upsert/activate；"
+            "新增目标、范围扩张、release/publish/tag/push/deploy、protected "
+            "branch mutation 和 destructive cleanup 仍由前置 guards 与 "
+            "forbidden/stop 边界阻断"
+        ),
+    ),
 
     # ── init_worktrack ──
     "init_worktrack::init-worktrack-skill": PolicyProfile(
@@ -254,16 +314,55 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         needs_approval=True,
         description="Worktrack 初始化可能扩大 scope，需要审批",
     ),
+    "init_worktrack::worktrack-init-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_init",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-init-skill 只允许初始化已在当前 active milestone "
+            "worktrack_list 中且 intake review ready 的 Worktrack；新增/"
+            "移除/重排 Worktrack、目标变更或 Contract scope expansion "
+            "仍需独立审批"
+        ),
+    ),
 
     # ── cleanup ──
+    "cleanup::milestone-cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "milestone-cleanup-skill 只允许 milestone closeout 后的"
+            "repo/runtime cleanup report 与非破坏性 dry-run 维护；"
+            "cleanup apply/delete/move/archive 仍需独立显式审批"
+        ),
+    ),
+    "cleanup::worktrack-cleanup-skill": PolicyProfile(
+        allowed_rules=["non_destructive_docs_edits"],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
+        ),
+    ),
     "cleanup::servo-cleanup-skill": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
         forbidden_hit=[],
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "servo-cleanup-skill 使用 -d 安全删除，"
-            "不命中 forbidden:destructive_cleanup"
+            "servo-cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
         ),
     ),
     "cleanup::cleanup-skill": PolicyProfile(
@@ -272,8 +371,9 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "cleanup-skill 使用 -d 安全删除，"
-            "不命中 forbidden:destructive_cleanup"
+            "cleanup-skill 为 legacy cleanup 入口，语义等同"
+            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
+            "move/archive 仍需独立显式审批"
         ),
     ),
 
@@ -332,6 +432,7 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
         stop_condition_hit=["needs_programmer_judgment"],
         needs_approval=True,
         blocked_override=False,
+        blocking_exception="change_goal default requires separate programmer approval gate before mutation",
         description="change_goal 默认：目标变更需审批",
     ),
     "init_milestone": PolicyProfile(
@@ -349,7 +450,10 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
     "cleanup": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
         needs_approval=False,
-        description="cleanup 默认：安全删除",
+        description=(
+            "cleanup 默认：仅允许非破坏性 cleanup report/dry-run；"
+            "cleanup apply/delete/move/archive 需独立显式审批"
+        ),
     ),
     "doc_catch_up": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
@@ -579,11 +683,17 @@ def main() -> None:
     # allowed = 至少命中一条 allowed 规则
     is_allowed = len(profile.allowed_rules) > 0
 
-    # blocked = block_override 为 True，或 block_override 为 None 且 forbidden_hit 非空
+    # blocked = forbidden / stop_condition / missing evidence hard block by default.
+    # A blocked_override=False exception only suppresses forbidden hard-blocking
+    # when the profile documents a separate approval gate. Stop conditions and
+    # missing required evidence remain hard blocks.
     if profile.blocked_override is not None:
-        is_blocked = profile.blocked_override
+        forbidden_blocked = profile.blocked_override
     else:
-        is_blocked = len(profile.forbidden_hit) > 0
+        forbidden_blocked = len(profile.forbidden_hit) > 0
+    stop_condition_blocked = len(profile.stop_condition_hit) > 0
+    evidence_blocked = not evidence["evidence_required_complete"]
+    is_blocked = forbidden_blocked or stop_condition_blocked or evidence_blocked
 
     reason_parts: list[str] = [profile.description]
 
@@ -600,7 +710,9 @@ def main() -> None:
                 f"forbidden 命中: {rule}（{FORBIDDEN[rule]}）"
             )
         if profile.blocked_override is False:
-            reason_parts.append("（blocked_override=false，不硬阻断）")
+            reason_parts.append(
+                f"forbidden blocking exception: {profile.blocking_exception}"
+            )
 
     if profile.stop_condition_hit:
         for rule in profile.stop_condition_hit:
@@ -625,6 +737,7 @@ def main() -> None:
         "stop_condition_hit": profile.stop_condition_hit,
         "allowed_rules": profile.allowed_rules,
         "needs_approval": profile.needs_approval,
+        "blocking_exception": profile.blocking_exception,
         "evidence_required_complete": evidence["evidence_required_complete"],
         "evidence_missing": evidence["evidence_missing"],
         "reason": " | ".join(reason_parts),

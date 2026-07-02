@@ -57,12 +57,32 @@ ROOT_NPM_REQUIRED_PACKAGE_FILES = {
     f"product/harness/adapters/claude/skills/{skill_id}/payload.json"
     for skill_id in CLAUDE_REQUIRED_PAYLOAD_SKILLS
 }
+COMMAND_TIMEOUT_SECONDS = 600
+
+
+def command_timeout_seconds() -> int:
+    raw_value = os.environ.get("SERVO_CLOSEOUT_GATE_COMMAND_TIMEOUT_SECONDS")
+    if raw_value is None:
+        return COMMAND_TIMEOUT_SECONDS
+    try:
+        parsed = int(raw_value)
+    except ValueError:
+        return COMMAND_TIMEOUT_SECONDS
+    return parsed if parsed > 0 else COMMAND_TIMEOUT_SECONDS
+
+
+def timeout_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
 ROOT_NPM_FORBIDDEN_PACKAGE_FILES = {
     "toolchain/scripts/deploy/adapter_deploy.py",
     "toolchain/scripts/deploy/harness_deploy.py",
     "toolchain/scripts/deploy/aw_scaffold.py",
     "toolchain/scripts/deploy/bin/servo-harness-deploy.js",
-    "product/harness/skills/harness-set-goal-skill/scripts/deploy_aw.py",
+    "product/harness/skills/repo-init-goal-skill/scripts/deploy_aw.py",
 }
 @dataclass
 class GateStep:
@@ -138,14 +158,33 @@ def run_command(command: list[str], *, cwd: Path, extra_env: dict[str, str] | No
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     if extra_env:
         env.update(extra_env)
+    timeout_seconds = command_timeout_seconds()
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, cwd=cwd, env=env)
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            timeout=timeout_seconds,
+        )
     except FileNotFoundError as error:
         return {
             "command": command,
             "returncode": 127,
             "stdout": "",
             "stderr": str(error),
+            "passed": False,
+        }
+    except subprocess.TimeoutExpired as error:
+        stderr = timeout_output(error.stderr)
+        timeout_message = f"command timed out after {timeout_seconds}s"
+        return {
+            "command": command,
+            "returncode": 124,
+            "stdout": timeout_output(error.stdout),
+            "stderr": f"{stderr}\n{timeout_message}".strip(),
             "passed": False,
         }
     return {
@@ -688,9 +727,9 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 validate_no_python(install_result, install_failures)
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("packaged install did not write servo-harness-skill")
+                        install_failures.append("packaged install did not write harness-skill")
 
             subchecks.append(
                 run_tarball_servo_installer(
@@ -720,9 +759,9 @@ def run_npm_package_tarball_smoke(repo_root: Path, expected_version_output: str)
                 validate_no_python(update_apply_result, update_apply_failures)
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("packaged update apply did not write servo-harness-skill")
+                    update_apply_failures.append("packaged update apply did not write harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("packaged update apply did not run verify")
 
@@ -986,9 +1025,9 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
 
             def validate_install(install_result: dict, install_failures: list[str]) -> None:
                 if install_result["passed"]:
-                    installed_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                    installed_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                     if not installed_skill.is_file():
-                        install_failures.append("root packaged install did not write servo-harness-skill")
+                        install_failures.append("root packaged install did not write harness-skill")
 
             subchecks.append(
                 run_tarball_servo_installer(
@@ -1019,12 +1058,12 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not install_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "harness-set-goal-skill"
+                    / "repo-init-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (
@@ -1037,7 +1076,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                 if not agents_skill.is_file():
                     install_failures.append("root packaged claude install removed agents skill")
                 if not claude_skill.is_file():
-                    install_failures.append("root packaged claude install did not write set-harness-goal skill")
+                    install_failures.append("root packaged claude install did not write repo-init-goal skill")
                 if not claude_harness_skill.is_file():
                     install_failures.append("root packaged claude install did not write harness skill")
 
@@ -1126,12 +1165,12 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             ) -> None:
                 if not update_apply_result["passed"]:
                     return
-                agents_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                agents_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 claude_skill = (
                     target_repo
                     / ".claude"
                     / "skills"
-                    / "harness-set-goal-skill"
+                    / "repo-init-goal-skill"
                     / "SKILL.md"
                 )
                 claude_harness_skill = (
@@ -1145,7 +1184,7 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
                     update_apply_failures.append("root packaged claude update removed agents skill")
                 if not claude_skill.is_file():
                     update_apply_failures.append(
-                        "root packaged claude update left set-harness-goal skill missing"
+                        "root packaged claude update left repo-init-goal skill missing"
                     )
                 if not claude_harness_skill.is_file():
                     update_apply_failures.append(
@@ -1173,9 +1212,9 @@ def run_root_npm_package_tarball_smoke(repo_root: Path, expected_version_output:
             def validate_update_apply(update_apply_result: dict, update_apply_failures: list[str]) -> None:
                 if not update_apply_result["passed"]:
                     return
-                updated_skill = target_repo / ".agents" / "skills" / "servo-harness-skill" / "SKILL.md"
+                updated_skill = target_repo / ".agents" / "skills" / "harness-skill" / "SKILL.md"
                 if not updated_skill.is_file():
-                    update_apply_failures.append("root packaged update apply did not write servo-harness-skill")
+                    update_apply_failures.append("root packaged update apply did not write harness-skill")
                 if "[agents] ok" not in update_apply_result["stdout"]:
                     update_apply_failures.append("root packaged update apply did not run verify")
 
@@ -1226,7 +1265,7 @@ def run_test_gate_subchecks(repo_root: Path, python: str, version_metadata_check
         ),
         (
             "set_harness_goal_e2e_fixture_tests",
-            run_command([python, "-m", "pytest", "toolchain/scripts/test/test_set_harness_goal_e2e_fixture.py"], cwd=repo_root),
+            run_command([python, "-m", "pytest", "toolchain/scripts/test/test_repo_init_goal_e2e_fixture.py"], cwd=repo_root),
         ),
         (
             "agents_adapter_contract_tests",

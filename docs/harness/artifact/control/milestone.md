@@ -1,9 +1,9 @@
 ---
 title: "Milestone Artifact"
 status: active
-updated: 2026-06-23
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-07-01
 ---
 
 # Milestone Artifact
@@ -42,6 +42,15 @@ last_verified: 2026-06-23
 | developer_decision_boundary | array | 标记哪些决定必须由 developer 做出 |
 | depends_on_milestones | array | 前置 Milestone 列表 |
 | aggregation_rules | object | Per-milestone 可配置的证据聚合规则；字段合同见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md)。未声明时默认使用退化 AND 并在 milestone gate evidence 中标记 `aggregation_rules_missing: true` |
+| target_type | enum | Milestone Gate 目标类型：`program_code` / `non_program_artifact` / `mixed` / `unknown`。用于决定黑盒、白盒、反作弊与复合验收轴的适用性 |
+| target_type_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
+| target_scenario | enum | `runnable_workflow` / `config_environment` / `experiment_execution` / `workflow_policy` / `documentation_or_skill_contract` / `research_or_plan_artifact` / `mixed_delivery` / `unknown`。它是 `target_type` 下的场景细分，不扩展顶层 target type 枚举 |
+| target_scenario_source | enum | `programmer_declared` / `milestone_artifact` / `gate_input` / `inferred_from_worktracks` / `unknown`。推断来源必须写入 evidence |
+| target_scenario_confidence | enum | `high` / `medium` / `low`。低置信或矛盾场景推断不得让 Gate 通过 |
+| operator_situation | string | 描述验收时真实 operator / user 面对的情境，例如运行 CLI、审查 skill prompt、验证配置迁移、复核实验结果或走读治理流程 |
+| axis_applicability | object | Milestone Gate 四轴适用性声明；每轴包含 `state`、`expected_method`、`substituted_by`、`reason`，字段语义见 [milestone-gate-aggregation.md](./milestone-gate-aggregation.md#五target_type_rules目标类型与轴适用性) |
+| axis_reports | object | Milestone Gate 四个 sibling axis carrier 产出的显式报告引用与状态；每轴至少记录 `report_ref`、`verdict`、`carrier`、`runtime_dispatch_profile`、`isolation_guarantee`、`carrier_isolation_broken` 与缺失/污染状态 |
+| axis_dispatch_profile | object | 顶层 Harness 四轴分派画像；记录 `dispatch_owner: top_level_harness`、`dispatch_model`、per-axis delegation attempts、same-carrier fallback、runtime gap 和隔离破坏事实 |
 | updated | date | 最后更新时间 |
 | `priority` | integer | Pipeline 中的优先级（数值越小优先级越高） |
 | `activation_rules` | string | 自动激活条件（optional，harness-inferred）；描述 harness 可自动激活的前提，空值表示仅 manual |
@@ -110,6 +119,28 @@ Guard terms: conservative runtime backfill must not grant permissions, must not 
 | pipeline 优先级 | 按 priority 字段 | 始终最低，不阻塞 goal-driven milestone |
 | 生命周期 | 完整四态（planned → active → completed → superseded） | 同四态，但 completed 后自动 superseded |
 
+## Milestone Runtime 文件生命周期
+
+Milestone artifact 是 RepoScope 的聚合控制对象，但 `.servo/milestone/` 下会产生多类 runtime 文件。它们的生命周期必须和 [runtime-artifact-lifecycle.md](../runtime-artifact-lifecycle.md) 保持一致。
+
+| 文件类型 | 运行时职责 | 结束后处理 |
+| --- | --- | --- |
+| `MS-*.md` 主文件 | 保存 purpose、scope、worktrack_list、progress、completion signals、acceptance criteria、activation / branch facts | Milestone active 期间原地保留；final acceptance 后转为 preserved，由 milestone history、closeout record 或 follow-up milestone 引用 |
+| `MS-*-closeout-records.md` | 聚合每个已关闭 Worktrack 的 merge commit、validation、evidence refs、remaining risks 和 next action | 默认长期保留；可随 Milestone 一起归档，但不得删除或只保留 prose summary |
+| `MS-*-gate-verdict.md` | 保存 Milestone Gate 聚合 verdict、blocking axes、manual exception 前的正式判定 | 默认长期保留；manual final acceptance 只能新增 acceptance 记录，不能改写原 Gate verdict 为 pass |
+| `MS-*-axis-*.md` / axis reports | 保存 blackbox、whitebox、anticheat、composite 轴报告和输入缺口 | 被 Gate verdict 引用期间必须保留；Milestone 结束清理时可归入 `.servo/archive/milestone/<milestone_id>/` |
+| `MS-*-axis-dispatch-profile.md` | 保存 sibling axis dispatch、carrier、isolation 和 fallback 事实 | 与 axis reports 同生命周期；不得从摘要反推或伪造 dispatch provenance |
+| manual exception / final acceptance record | 保存 programmer-owned override、最终验收和后续追踪 | 默认长期保留；若产生 follow-up milestone，必须保留到 follow-up 完成并完成 repo cleanup 报告 |
+
+Milestone 结束清理不是删除阶段，而是分类阶段：
+
+1. `completed` / `superseded` milestone 必须从 live backlog 移入 milestone history，live backlog 不继续保存历史主线。
+2. 所有 Worktrack closeout records 必须可追溯到对应 Worktrack evidence、merge commit 或明确的 `closed_without_tracked_commit` 说明。
+3. Gate verdict、axis reports、dispatch profile、manual exception 和 final acceptance record 必须形成闭合引用链。
+4. 已从 `.servo` 整理成正式文档的必要内容，可以让原始 discovery / scratch material 进入 archive 或 stale 候选。
+5. 仍影响后续工作的 finding 必须转入 follow-up milestone、append request、repo backlog 或 docs 风险说明；不能因为当前 Milestone 结束而丢弃。
+6. 删除、批量移动和破坏性 cleanup 仍需要单独 approval；Milestone final acceptance 不自动授权 runtime cleanup。
+
 ## Entry Gate
 
 对于复杂项目、弱文档、高风险操作或跨系统 milestone，goal-driven milestone 在 create / upsert / activate 或派生首个 Worktrack 前，必须先消费 [Complex Project Entry Gate](../repo/complex-project-entry-gate.md)。该 gate 是 Milestone-side blocking gate，不是固定 heavy mode；canonical guard term: not fixed heavy mode。低风险小请求可记录 `entry_verdict = not_applicable` 后轻量跳过。
@@ -140,6 +171,132 @@ Conservative runtime backfill applies when older `.servo/milestone/*.md` artifac
 Guard terms: conservative runtime backfill must not grant permissions, must not infer programmer confirmation, must not increment counters, and must not enable Worktrack Init/Dispatch.
 
 该 gate 只阻断 milestone 进入 Worktrack 工作，不自动改变 milestone purpose、验收标准或 final acceptance 结论。
+
+## Milestone Gate Target Type And Axis Reports
+
+`target_type` 是 goal-driven milestone 的 Milestone Gate 前置路由字段。它回答“这个 milestone 最终交付物是什么类型”，从而决定黑盒、白盒、反作弊与复合验收轴应该如何取证。该字段不创建第三 Scope，不替代 `milestone_kind`，也不替代 Worktrack Contract。
+
+Milestone Gate 的四轴执行由顶层 Harness 扁平化分派。`milestone-gate` skill 只消费顶层 Harness 提供的 `axis_reports` 并运行 aggregation；它不得在自身内部继续唤起 blackbox/whitebox/anticheat/composite SubAgent。这样可以避免依赖某个 SubAgent 是否还能继续创建子 SubAgent。
+
+顶层 Harness 在分派四轴前必须对每份 sibling axis input package 执行 clean-room lint。package 必须列出 `context_refs`、`allowed_ref_categories`、`forbidden_ref_categories` 和 `input_gap_classification`；若包含 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，必须拒绝该 package 或将对应轴记录为 `input_gap` / non-pass，不能作为 clean axis evidence 聚合。
+
+`axis_dispatch_profile` 是执行隔离事实，不是验收结论。它至少记录：
+
+- `dispatch_owner: top_level_harness`
+- `dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing`
+- `required_axes`
+- `completed_axes`
+- `missing_axes`
+- `delegation_attempted_by_axis`
+- `per_axis_runtime_dispatch_profile`
+- `carrier_isolation_broken_any`
+- `same_carrier_cross_axis`
+- `dispatch_gap_reason`
+- `nested_axis_dispatch_attempted: false`
+
+`axis_reports` 是 `milestone-gate` 的正式输入。每轴至少记录：
+
+- `axis`: `blackbox` / `whitebox` / `anticheat` / `composite`
+- `report_ref`
+- `verdict`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `axis_applicability_state`
+- `expected_method`
+- `substitute_method`
+- `substitution_evidence_ref`
+- `substitute_verdict`
+- `evidence_covers_completion_signal`
+- `slice_coverage`（mixed/split 时必需）
+- `unknown_target_inference`（target type 或 scenario 缺失/矛盾时必需）
+- `carrier`
+- `runtime_dispatch_profile`
+- `isolation_guarantee`
+- `carrier_isolation_broken`
+- `checklist_results`
+- `missing_evidence`
+
+Blackbox report 必须携带 `input_gap_classification`，区分缺少 `target_type`、`aggregation_rules`、`completion_signals_trace`、scenario inputs 的输入缺口与实际 behavior scenario failure。所有 axis report 的 `runtime_dispatch_profile` 若声称 spawned SubAgent，必须携带 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`；缺少这些 linkage 的 current-carrier 或 ambiguous claim 不得证明 sibling SubAgent 隔离。
+
+缺失 axis report、same-carrier 四轴污染、运行时无法证明 sibling carrier、或 `carrier_isolation_broken_any: true` 时，Milestone Gate 不能声明真实 pass。程序员可以在 final acceptance 阶段手动接受一个 blocked Gate 作为 override，但该 override 必须记录为 `milestone_acceptance_verdict: accepted_with_manual_exception` 或等价字段，不得把 `milestone_gate_verdict` 改写成 `pass`。
+
+Canonical values:
+
+| target_type | 适用场景 | Milestone Gate 路由 |
+|-------------|----------|---------------------|
+| `program_code` | 可运行程序、CLI、API、库、adapter、脚本、前端/后端功能、测试工具等会产生运行时行为的目标 | blackbox 必须使用外部可观察行为场景；whitebox 必须使用结构/内部实现分析；anti-cheat 与 composite 仍按证据可信度和复合验收执行 |
+| `non_program_artifact` | 文档、治理规则、skill 文本、workflow policy、研究报告、计划或其他非运行时代码交付物 | 不强制作软件运行测试；blackbox/whitebox 可声明 `substituted` 或 `not_applicable`，并使用 artifact review、policy conformance、reader/operator simulation、professional review 等替代验收 |
+| `mixed` | 同一 milestone 同时包含可运行程序和非程序 artifact | 必须按 worktrack 或 completion signal 拆分适用性；不能把整项 milestone 一概视为 program 或 non-program |
+| `unknown` | 目标类型缺失、矛盾或证据不足 | Milestone Gate 不得把任何轴默认为 pass；必须记录 `blocked`、`needs_programmer_review` 或 conservative fallback |
+
+`target_scenario` 是 `target_type` 的场景细分，用于避免把真实工作场景误套成单一软件测试模板。它不新增顶层类型，也不改变四轴职责；它只帮助四轴选择方法、替代验收和 mixed slice 粒度。
+
+Scenario taxonomy:
+
+| target_scenario | 常见 target_type | operator situation | 轴适用性提示 |
+|-----------------|------------------|--------------------|--------------|
+| `runnable_workflow` | `program_code` | user/operator 运行 CLI、API、UI、脚本、adapter 或测试工具并观察输出 | blackbox 使用外部行为场景；whitebox 使用实现结构审查；anticheat/composite 适用 |
+| `config_environment` | `program_code` / `mixed` / `non_program_artifact` | operator 调整配置、环境变量、路径、adapter 开关或运行约束 | 若配置改变运行时行为，按程序 slice 验证；若只改变规则/说明，按非程序 artifact 替代验收；mixed 必须拆配置行为与规则文本 |
+| `experiment_execution` | `program_code` / `non_program_artifact` / `mixed` | operator 运行实验、收集结果、复核研究证据或比较方案 | 可执行实验脚本按程序 slice；实验记录、结论和方案比较按 artifact/research evidence review；外部数据依赖不足时 blocked |
+| `workflow_policy` | `non_program_artifact` / `mixed` | 使用者按流程、Gate、Skill prompt 或 governance policy 做决策 | blackbox 通常替代为 reader/operator simulation；whitebox 替代为 policy/artifact structure review；anticheat/composite 仍适用 |
+| `documentation_or_skill_contract` | `non_program_artifact` | reviewer 审查文档、skill 文本、字段合同、runbook 或入口导航 | blackbox/whitebox 走 artifact acceptance、structure、traceability、cross-reference review；不得伪装成软件运行测试 |
+| `research_or_plan_artifact` | `non_program_artifact` | reviewer 检查研究结论、计划、取舍说明或后续工作建议 | 使用 research evidence review、professional review 和 traceability；缺少来源或反例边界时 blocked |
+| `mixed_delivery` | `mixed` | 一个 milestone 同时交付代码、配置、文档、治理或实验结果 | 必须按 worktrack、completion signal、artifact component 或交付路径拆 slice；任一 slice 缺证不能被另一 slice pass 覆盖 |
+| `unknown` | `unknown` | 目标、交付物或 operator 情境缺失、互相矛盾或只能猜测 | 不得默认四轴 pass；必须记录推断来源、置信度、未决问题和 recommended axis profile；置信度不足时 blocked |
+
+Unknown fallback:
+
+- `target_type_source = unknown`、`target_scenario_source = unknown` 或 `target_scenario = unknown` 时，Milestone Gate 必须先尝试从 programmer brief、milestone artifact、Worktrack Contract、completion signals 和 closeout records 做可追溯推断。
+- 推断记录至少包含 `inferred_target_type`、`inferred_target_scenario`、`confidence`、`evidence_refs`、`uncertainty` 和 `recommended_axis_profile`。
+- 只有 `confidence = high` 且无矛盾时，才能继续使用推断结果；`medium` / `low` / contradictory 推断必须保持 non-pass 或 blocked，直到 programmer 或后续 evidence 明确。
+
+`axis_applicability` 记录四轴适用性。每个轴的 `state` 只能是：
+
+- `applicable`: 该轴按自身语义执行并产出 verdict。
+- `not_applicable`: 该轴对当前 target type 不适用；必须写明原因，且不能被聚合器当成 pass。
+- `substituted`: 该轴的软件测试语义被 artifact-appropriate 验收替代；必须写明 `substituted_by`、替代方法和证据引用。
+- `split`: mixed 目标或混合场景需要逐 slice 覆盖；该状态本身不是 pass。
+- `blocked`: 目标类型或输入不足，无法合法判定适用性。
+
+Program/code target 的最低约束：
+
+- blackbox 轴必须从外部用户/调用者可观察行为出发，构造或引用 scenario acceptance；不得阅读完整实现代码来补判断。
+- whitebox 轴必须从内部结构、控制流、数据流、接口拼接、状态传递、依赖关系或架构路径等结构性证据出发；需要读取实现代码时由 whitebox 负责。
+
+Non-program target 的最低约束：
+
+- 不得为了模拟软件工程术语而强制运行不存在的程序测试。
+- 替代验收必须贴合 artifact 类型，例如文档可读性/完整性审查、governance rule conformance、operator simulation、cross-reference validation、professional review 或 research evidence review。
+- `not_applicable` 和 `substituted` 都是适用性状态，不是成功 verdict。聚合器必须分别记录它们，并检查替代证据是否满足该 milestone 的 acceptance criteria。
+
+Non-program substitute acceptance 的最低证据合同：
+
+| substitute_method | 适用 artifact | 最低证据 |
+|-------------------|---------------|----------|
+| `artifact_acceptance_review` | 文档、skill 文本、workflow policy、计划 artifact | 对照 purpose / completion signals / acceptance criteria 的覆盖记录，列出满足项、缺口和阻断项 |
+| `policy_conformance` | governance rule、运行协议、adapter/deploy 规则文本 | 指向被检查规则和承接文档，说明目标 artifact 是否符合必须/不得/例外条件 |
+| `reader_operator_simulation` | 面向人类或 operator 执行的说明、runbook、skill 提问交互 | 从外部读者或 operator 视角走读预期流程，记录可理解性、可执行性、歧义和失败点 |
+| `cross_reference_validation` | 含路径、链接、字段名或上下游引用的 artifact | 验证引用目标存在、语义未漂移，并记录不再有效的引用 |
+| `traceability_review` | completion signal、acceptance criteria、worktrack evidence 的映射 | 逐项把完成信号/验收标准映射到具体章节、字段或 evidence ref；缺口不得被 `substituted` 掩盖 |
+| `professional_review` | 需要领域判断的研究报告、策略、交互设计或复杂治理文本 | 记录 reviewer 视角、判断依据、结论和残留风险；不能只写“已审查” |
+| `research_evidence_review` | 研究结论、外部事实、方案比较 | 记录来源质量、证据边界、反例/限制和结论是否足以支撑 milestone purpose |
+| `artifact_structure_review` | 结构化文档、schema、字段合同、skill 输出合同 | 检查结构完整性、字段一致性、术语一致性、内部引用和上下游接口拼接 |
+
+`substituted` 只有在同时满足以下条件时，才可被 `axis_satisfied` 视为满足：
+
+- `substitute_method` 属于 artifact-appropriate 方法，并与该 axis 的 `expected_method` 匹配。
+- `substitution_evidence_ref` 指向具体 evidence、文件章节、命令输出或 reviewer 记录。
+- `substitute_verdict = pass`，且 evidence 明确覆盖对应 completion signal 或 acceptance criterion。
+- evidence 中保留未覆盖项、残留风险和 reviewer/operator 视角，不把“未运行软件测试”写成 pass。
+
+`not_applicable` 只能说明某个软件测试轴对目标类型不适用。它可以从 mandatory pass calculation 中移除该轴，但不能产生正向完成证据；对应 completion signal 仍必须由 composite、professional review、artifact review 或其他适配方法证明。
+
+Mixed target 的最低约束：
+
+- 必须记录 slice-level coverage，最小粒度可以是 worktrack、completion signal、artifact component 或交付物路径。
+- 每个 slice 至少记录 `slice_id`、`slice_target_type`、适用 axis、`applicability_state`、`substitute_method` 或正常测试方法、`evidence_ref` 与 verdict。
+- program_code slice 仍使用真实黑盒场景和白盒结构/内部分析；non_program_artifact slice 使用替代验收；不得用某一类 slice 的 pass 覆盖另一类 slice 的缺证。
 
 ## 生命周期
 
@@ -176,7 +333,7 @@ Milestone branch 的职责：
 - 从 servo-managed `baseline_branch` 创建。
 - 接收该 Milestone 下 Worktrack closeout 的 merge。
 - 在进入或恢复 Milestone 时，同步当前 baseline，默认通过 merge baseline into milestone branch 记录同步，而不是对已共享/已记录的 runtime branch 做 rebase 或 force-push。
-- 仅在 goal-driven Milestone final acceptance 后合回 servo-managed baseline branch。
+- 仅在 goal-driven Milestone final acceptance 后，通过独立的 post-acceptance managed-branch merge 路线合回 servo-managed baseline branch 或 programmer 指定的 allowed managed branch。
 
 Worktrack 实现仍必须在独立 Worktrack branch 中完成。Milestone branch 只接收 Worktrack closeout merge 和 baseline sync merge；直接在 Milestone branch 上做实现改动必须由对应 Worktrack Contract 明确批准，否则视为范围漂移。
 
@@ -237,9 +394,28 @@ Milestone 作为 Pipeline 中的节点，遵循以下规则：
 goal-driven milestone 的 `completed` 写入分两层理解：
 
 - `milestone-status-skill` 输出 `milestone_acceptance_verdict == achieved` 且 `milestone_gate_verdict == pass`，表示该 milestone 已达到可交给 programmer final acceptance 的状态。
+- `milestone_gate_verdict != pass` 时，自动路径不得把 milestone 视为 achieved。若 programmer 明确选择带例外接受，写回的是 `milestone_acceptance_verdict: accepted_with_manual_exception`（或等价 final acceptance override），并必须保留 `milestone_gate_verdict`、`accepted_gate_verdict_preserved_as`、`manual_exception.reason`、`anti_cheat_findings_preserved`、`manual_exception_followup_ref` 和相关 axis/anticheat findings。
 - programmer 明确接受后，`harness-skill` 才执行 final acceptance writeback，把验收事实持久化为 runtime control-plane 状态。
 
 final acceptance writeback 是一个逻辑事务，不是只改某一个文件。事务最小写入集合包括 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`，必要时还包括 `.servo/repo/worktrack-backlog.md` 中对应 worktrack 状态的归一化。写回前必须校验输入状态，写回后必须复核 artifact 一致性；失败时进入 `writeback_incomplete` / `milestone_pipeline_stale` 阻塞，不得把 milestone 伪装成已完成。
+
+Manual exception 不改变证据层含义。尤其是反作弊轴发现的 evidence reuse、gate bypass、same-carrier contamination、stale checkpoint 或 self-review bias，不能因为 programmer 接受 milestone 而被从 Gate report 中删除、降级或改写为 pass。后续 status/cleanup/history 读者必须能同时看到：原始 Gate verdict、人工接受原因、被保留的 anti-cheat finding 和任何 follow-up milestone/worktrack 引用。
+
+### Post-Acceptance Managed-Branch Merge Contract
+
+Final acceptance writeback 只证明 programmer 已接受 milestone 结果并完成 control-plane 持久化；它不隐含执行 git merge。需要把已接受结果合回 `develop-servo` 或其他 managed branch 时，Harness 必须进入单独的 post-acceptance managed-branch merge contract。
+
+该 contract 至少记录：
+
+- `accepted_milestone_id`、`final_acceptance_record_ref`、`accepted_source_ref` 和 `milestone_branch_head`。
+- `post_acceptance_merge_prompt`，记录提示时间、默认 managed branch、候选 target、programmer choice（merge default / merge selected / skip for now）和 prompt result。
+- `managed_merge_target_ref`，其值必须来自 servo-managed baseline branch 或 programmer 指定且 branch policy 允许的 managed branch。
+- `merge_authority_source`，区分 programmer explicit approval、repo operator config 或 blocked / missing authority。
+- `preflight_record_ref`，包含 branch context、clean worktree、target branch existence、source/target checkpoint、Gate verdict preservation、manual exception preservation 和 writeback plan。
+- `post_merge_checkpoint_ref` 或 `stopped_before_merge_reason`。
+- forbidden operation confirmation：未执行 release / publish / package version / tag / push / protected branch mutation / deploy / destructive cleanup / cross-repo side effect。
+
+若 `post_acceptance_merge_prompt` 缺失、`merge_authority_source` 缺失、target branch 不在 allowed managed branch 范围、preflight 不完整、source ref 不是已接受 checkpoint，或操作会触发 forbidden boundary，Harness 必须停在 merge 前并把 milestone 保持为已验收但未合回目标分支的状态。若 programmer 选择 skip for now，Harness 必须记录 `stopped_before_merge_reason: programmer_deferred_managed_branch_merge`，并保留后续恢复该 merge route 所需的 source / target facts。
 
 ## Latest Override 语义
 
@@ -284,7 +460,7 @@ goal-driven milestone 完成判定必须满足以下顺序约束：
 
 其中：
 
-- `Milestone Gate` 是独立的 milestone 级验证层，最少包含黑盒测试、白盒测试、反作弊检测，以及 goal-driven milestone 的 [Composite Milestone Acceptance](./composite-milestone-acceptance.md) lanes。
+- `Milestone Gate` 是独立的 milestone 级验证层，最少包含 target-type-aware 黑盒验收、白盒验收、反作弊检测，以及 goal-driven milestone 的 [Composite Milestone Acceptance](./composite-milestone-acceptance.md) lanes。程序/代码目标使用真实黑盒行为场景和白盒结构/内部分析；非程序目标使用 artifact-appropriate 替代验收，并显式记录轴适用性。
 - `signal_satisfaction_pct` = 已满足的 `completion_signals` 数 / 总 `completion_signals` 数。
 - `criteria_pass_pct` = 已通过的 `acceptance_criteria` 数 / 总 `acceptance_criteria` 数。
 - `purpose_achieved == true` 仅当 `signal_satisfaction_pct >= completion_threshold_pct` 且 `criteria_pass_pct >= completion_threshold_pct`。默认阈值 `completion_threshold_pct = 100`。

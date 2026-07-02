@@ -86,7 +86,7 @@ Harness 作为控制系统，包含以下系统组件。每个传感器映射到
 | Branch Environment Guard | `分支熵` | 分支上下文匹配检查（`branch_context_check.py`） |
 | Git Commit Hash 幂等性守卫 | `目标偏差` | 基线是否变化（`git_hash_check.py`） |
 
-`branch_context_check.py` 和 `git_hash_check.py` 位于 `product/harness/skills/harness-skill/scripts/`。
+`branch_context_check.py` 和 `git_hash_check.py` 随本技能包分发，位于 `./scripts/`。
 
 ### 3.2 执行器（Executor）
 
@@ -275,7 +275,16 @@ Layer 4: Task Matrix（任务执行矩阵）
 
 `Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
 
-当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段**追加绑定 `milestone-gate` skill**（推荐 SubAgent delegated），接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。Sensor skill 负责准备 gate skill 的输入包。Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法委派 gate skill（SubAgent 不可用），降级为 current-carrier 并标记 `carrier_isolation_broken: true`。若无活跃 Milestone，跳过此额外绑定。
+当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段运行扁平化 Milestone Gate：
+
+1. 顶层 Harness 准备四份 sibling axis input package，并先执行 clean-room lint。每份 package 必须列出 `context_refs`、`allowed_ref_categories`、`forbidden_ref_categories` 和 `input_gap_classification`。若 `context_refs` 包含 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，必须拒绝该 package 或将对应轴标记为 `input_gap` / non-pass；不得把污染输入交给 sibling axis carrier。
+2. 顶层 Harness 分别绑定 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check`，作为互相不可见的 sibling axis carriers 执行，并记录每轴 `runtime_dispatch_profile`。
+3. 顶层 Harness 将四个显式 `axis_reports` 和 `axis_dispatch_profile` 传给 `milestone-gate` skill。
+4. `milestone-gate` 只执行 aggregation，接收 `milestone_gate_verdict` 和聚合状态字段，再进入 Decide 判定。
+
+Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法真实创建 sibling axis carriers，Harness 必须记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`carrier_isolation_broken_any: true` 或 `dispatch_gap_reason`。这种运行时缺口不能被 `milestone-gate` 改写为 pass；只可作为 blocked/non-pass Gate evidence 或 programmer final acceptance manual exception 的事实来源。若无活跃 Milestone，跳过此额外绑定。
+
+若 programmer 在 final acceptance 层手动接受 non-pass Milestone Gate，Harness 写回时必须保留 `milestone_gate_verdict` 原值，并随 `manual_exception` 一起记录 `accepted_gate_verdict_preserved_as`、`anti_cheat_findings_preserved` 与 `manual_exception_followup_ref`。manual exception 只能表示验收层 override，不能删除、降级或改写 anticheat 轴的原始 finding。
 
 当存在活跃 goal-driven milestone 且仍有待执行 worktrack 时，Harness 以逐 worktrack 推进的方式运行当前 milestone：每次只派生一个当前 worktrack，为其建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪；完成当前 worktrack 的闭环后，再回到 RepoScope 选择下一个 current worktrack。
 
@@ -286,7 +295,7 @@ Layer 4: Task Matrix（任务执行矩阵）
 ```text
 Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
     → Closeout Gate → PR → Merge → Doc-Catch-Up (worktrack-doc-catch-up-skill)
-    → Refresh (repo-refresh-skill) → Cleanup (worktrack-cleanup-skill) → return RepoScope
+    → Refresh (repo-refresh-skill) → Cleanup Report (milestone-cleanup-skill) → return RepoScope
 ```
 
 > **Closeout Gate vs Worktrack Gate**：Closeout Gate 是 Close 阶段内部的二次检查，消费 Self-Review Record + Single-Acceptance Verdict 后判定是否允许 merge。Worktrack Gate（worktrack-gate-skill，Judge 阶段）在前，基于 implementation/validation/policy 三轴证据裁决是否允许进入 Close。两者不同，详见 §8.1。
@@ -328,12 +337,12 @@ Gate 应汇总**正交校验面**的裁决：
 
 对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
 
-Milestone Gate 拆分为两层，由 `milestone-gate` skill 统一承载：
+Milestone Gate 拆分为两层，但不再由 `milestone-gate` skill 统一承载：
 
-- **Layer 1（四轴隔离检查）**：`milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check`，在隔离 SubAgent 上并行执行、轴间不可见。
-- **Layer 2（可配置聚合器）**：按 milestone 的 `aggregation_rules` 执行 weight → contradiction → composite_lane → degenerate 四步，产出 `milestone_gate_verdict`。
+- **Layer 1（四轴隔离检查）**：由顶层 Harness 将 `milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check` 作为 sibling axis carriers 分派，轴间不可见。
+- **Layer 2（可配置聚合器）**：由 `milestone-gate` skill 消费显式 `axis_reports`，按 milestone 的 `aggregation_rules` 执行 target_type → weight → contradiction → composite_lane → degenerate，产出 `milestone_gate_verdict`。
 
-Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate` skill（推荐 SubAgent delegated）；milestone-status-skill 负责准备输入包。详见 milestone-gate skill。
+Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis skills，再绑定 `milestone-gate` skill 聚合。`milestone-status-skill` 负责观察 finished 状态并准备 closed worktrack 输入事实；Harness 负责 axis carrier dispatch；`milestone-gate` 负责 aggregation。
 
 ---
 
@@ -355,7 +364,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
 ### 10.1 状态估计阶段
 
 1. **现有 `.servo` 配置读取 / 恢复前置**：任何 Harness 轮次启动时，必须先读取既有 `.servo/control-state.md`，恢复控制面配置与上次交接边界，再进入状态估计。
-   - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `harness-set-goal-skill`，不得凭当前对话临时假设长期配置。
+   - 如果 `.servo/control-state.md` 或 `.servo/goal-charter.md` 缺失，说明 Harness 尚未初始化，应路由到 `SetGoal` / `repo-init-goal-skill`，不得凭当前对话临时假设长期配置。
    - 必读控制配置段包括 `Linked Formal Documents`、`Approval Boundary`、`Continuation Authority`、`Handback Guard`、`Baseline Traceability` 和 `Autonomy Ledger`。
    - 缺失控制字段按最保守默认值解释：权限/自动性为未授权，状态为 `unknown` / `missing` / `blocked` / `not ready`，列表为空，布尔值为 `false`；同时在状态估计中记录 `config_hydration_gaps`。缺失不能静默扩大权限或自动性。
    - 本轮用户若给出长期权限、自动性或分派策略变更，必须先判定是一次性审批还是持久配置变更。持久变更只能写入 `.servo/control-state.md` 的对应配置段；若改变 canonical 字段语义或默认值，还必须同步更新 source-side control-state contract 与初始化模板。
@@ -367,21 +376,21 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
      - `Baseline Traceability` 字段（`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`verified_at_history` 等 checkpoints）位于 `.servo/control-state-repo.md`
      - hydration 时必须同时读取两者
 
-   > 注：`product/` 是源码层，`.agents/` 是部署目标层。修改 product/ 中的 SKILL.md 或 scripts 后，必须同步到 `.agents/`。当前同步方式为手动 cp，未来应通过 deploy script 自动化。
+   > 注：本技能运行时只依赖当前技能包内的 `SKILL.md` 与 `./scripts/`。源码到部署目标的同步由 adapter/installer 流程负责，不是已安装技能的运行时依赖。
 
 2. 读取 `Harness Control State`，确定当前 `Scope` 和 `Function`
 3. **分支环境检查（Branch Environment Guard）**：
    - 调用 `branch_context_check.py` 执行确定性分支上下文匹配：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/branch_context_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/branch_context_check.py \
        --control-state .servo/control-state.md \
        --scope <RepoScope|WorktrackScope> \
        --function <Observe|Decide|Init|Dispatch|Verify|Judge|Close|Refresh|Recover> \
        [--worktrack-contract .servo/worktrack/contract.md]
      ```
 
-   - 脚本位于 `product/harness/skills/harness-skill/scripts/branch_context_check.py`。
+   - 脚本随本技能包分发，位于 `./scripts/branch_context_check.py`。
    - 脚本输出 JSON 包含 `status`、`branch_context`、`expected_context`、`blocked`、`warning`、`target_branch`、`reason`。
    - 若 `blocked == true`，Harness 必须停止变更并返回 `branch_context_blocked`。
    - `target_branch` 是合法恢复路径，不得从当前分支名反推或写死默认值。
@@ -392,11 +401,11 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - 调用 `git_hash_check.py` 执行确定性 hash 对比：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/git_hash_check.py \
-       --control-state .servo/control-state.md
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/git_hash_check.py \
+       --control-state .servo/control-state-repo.md
      ```
 
-   - 脚本位于 `product/harness/skills/harness-skill/scripts/git_hash_check.py`。
+   - 脚本随本技能包分发，位于 `./scripts/git_hash_check.py`。
    - 脚本输出 JSON 包含 `status`、`current_head`、`checkpoint`、`repo_baseline_unchanged`、`repo_baseline_changed`。
    - 若 `repo_baseline_unchanged == true`，跳过 `repo-refresh-skill` 绑定。
    - 若 `repo_baseline_changed == true`（或 checkpoint 缺失），必须在本轮合适阶段绑定 `repo-refresh-skill`。
@@ -416,14 +425,14 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - **Guard 1: `milestone_kind_routing`** — 调用 `milestone_kind_routing.py` 确定 work-collection vs goal-driven 路由差异。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/milestone_kind_routing.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/milestone_kind_routing.py \
        --milestone .servo/milestone/{milestone_id}.md
      ```
 
    - **Guard 2: `pre_milestone_intake_guard`** — Goal-driven milestone 的 create/upsert/activate/append_worktracks 前，调用 `pre_milestone_intake_guard.py`。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/pre_milestone_intake_guard.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/pre_milestone_intake_guard.py \
        --intake-review .servo/repo/pre-milestone-intake-{id}.md
      ```
 
@@ -431,7 +440,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - **Guard 3: `complex_project_entry_gate_check`** — 调用 `complex_project_entry_gate_check.py` 检查 entry gate blocking。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/complex_project_entry_gate_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complex_project_entry_gate_check.py \
        --gate-source .servo/repo/pre-milestone-intake-{id}.md
      ```
 
@@ -439,7 +448,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - **Guard 4: `milestone_review_gate_check`** — 进入 WorktrackScope.Init 前，调用 `milestone_review_gate_check.py`。这是 Milestone Review Gate：一个 route guard，检查 milestone 级审查状态。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/milestone_review_gate_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/milestone_review_gate_check.py \
        --control-state .servo/control-state.md
      ```
 
@@ -448,7 +457,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - **Guard 5: `runtime_backfill_detect`** — 调用 `runtime_backfill_detect.py` 检测缺失字段。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/runtime_backfill_detect.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/runtime_backfill_detect.py \
        --artifact .servo/control-state.md
      ```
 
@@ -456,7 +465,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时绑定 `milestone-gate
    - **Guard 6: `worktrack_intake_review_check`** — 调用 `worktrack_intake_review_check.py`。
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/worktrack_intake_review_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/worktrack_intake_review_check.py \
        --intake-review .servo/repo/worktrack-intake-{id}.md
      ```
 
@@ -488,7 +497,7 @@ _已合并入 §10.4 前置段落。_
    - 调用 `dispatch_mode_recommend.py` 执行确定性载体推荐：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/dispatch_mode_recommend.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/dispatch_mode_recommend.py \
        --task-coupling low|medium|high \
        --state-sharing low|medium|high \
        --parallel-value low|medium|high \
@@ -506,18 +515,19 @@ _已合并入 §10.4 前置段落。_
    - 每次分派后调用 `dispatch_profile_check.py` 验证 `runtime_dispatch_profile` 字段完整性：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/dispatch_profile_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/dispatch_profile_check.py \
        --profile-json '<json>'
      ```
 
-   - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
+  - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
+  - 若 profile 声称 spawned SubAgent 或 `carrier_decision: delegated_subagent`，还必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少 parent runtime dispatch linkage、child SubAgent record 或 concrete carrier instance 时，不得声称 SubAgent 隔离成立。若尝试委派 SubAgent 后实际使用 current-carrier，必须记录 `boundary_violation_recorded: true` 或等价运行时边界缺口。
 4. `auto` 表示按 §2 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
 8. 不要声称已经分派了子代理，除非宿主运行时真的创建了委派载体
 9. 每轮 Dispatch 必须记录 `runtime_dispatch_profile`，至少包含 §10.4 步骤 3 列出的 11 个必填字段。在 ClaudeCodeCLI / Deepseek 兼容 lane 中，无法证明 SubAgent shell 可用时，不得静默 current-carrier；必须把 capability probe 与 fallback 证据写入 dispatch result 或 gate evidence。
-10. **Milestone Gate 分派偏好**：当绑定 `milestone-gate` skill 时，Harness 推荐使用 `delegated`（SubAgent 委派），因为 gate skill 内部还要并行分派 4 个轴 SubAgent——重型操作在隔离载体上运行更安全。若运行时不支持 SubAgent，降级为 current-carrier 并标记 `carrier_isolation_broken: true`。分派决策记录在 `runtime_dispatch_profile.delegation_attempted` 中。
+10. **Milestone Gate 四轴分派偏好**：当 goal-driven milestone 的 `worktrack_list_finished == true` 时，Harness 推荐把四个 axis skills 作为 sibling delegated carriers 分派，并为每轴记录 `runtime_dispatch_profile`。`milestone-gate` 本身是 aggregation carrier，不应再在内部继续分派四轴。若运行时不支持 sibling carrier dispatch，记录 `axis_dispatch_profile.dispatch_model: current_carrier_fallback | missing`、`same_carrier_cross_axis` 和 `carrier_isolation_broken_any`；该缺口必须传入 `milestone-gate`，不得静默宣称四轴隔离达成。当前载体或 ambiguous spawned-axis claims 不能 masquerade 为真实 SubAgent；只有存在 parent runtime dispatch record、spawned SubAgent record、concrete carrier instance 和 isolation boundary 时，才能声明 spawned SubAgent carrier。
 
 ### 10.5 证据收集与裁决
 
@@ -554,12 +564,12 @@ _已合并入 §10.5。_
    - 刷新完成后，调用 `checkpoint_writeback.py` 写入 observed checkpoint：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/checkpoint_writeback.py \
        --checkpoint-type observed \
-       --control-state .servo/control-state.md
+       --control-state .servo/control-state-repo.md
      ```
 
-   - 此脚本将当前 `git rev-parse HEAD` hash 写入 `.servo/control-state.md` 的 `Baseline Traceability.latest_observed_checkpoint` 并追加 `verified_at_history` 时间戳。
+   - 此脚本将当前 `git rev-parse HEAD` hash 写入 `.servo/control-state-repo.md` 的 `Baseline Traceability.latest_observed_checkpoint` 并追加 `verified_at_history` 时间戳。
 3. 如果是 `失败/阻塞` → 进入 `Recover`。以下 5 种 recover mode 对应 control-state 迁移：
 
    | recover mode | control-state 迁移 | 触发条件 |
@@ -575,16 +585,16 @@ _已合并入 §10.5。_
    调用 `checkpoint_writeback.py` 写入 doc-catch-up checkpoint：
 
    ```bash
-   PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/checkpoint_writeback.py \
+   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/checkpoint_writeback.py \
      --checkpoint-type doc-catch-up \
-     --control-state .servo/control-state.md
+     --control-state .servo/control-state-repo.md
    ```
 
 5. **长期权限配置写回**：
    - 调用 `autonomy_policy_check.py` 判定当前操作是否命中 forbidden / stop_condition：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/autonomy_policy_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/autonomy_policy_check.py \
        --operation {observe|schedule|dispatch|verify|close|recover|change_goal|init_milestone|init_worktrack|cleanup|doc_catch_up} \
        --skill <skill_name> \
        --control-state .servo/control-state.md
@@ -600,7 +610,7 @@ _已合并入 §10.5。_
    - 调用 `writeback_bridge.py` 桥接 milestone-status-skill 输出到 repo-writeback-skill 期望格式：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/writeback_bridge.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/writeback_bridge.py \
        --milestone-id <id> \
        --instructions-json '<json>'
      ```
@@ -612,6 +622,7 @@ _已合并入 §10.5。_
    **Gate 状态透传**：`milestone-status-skill` 输出中的 gate 特定字段来自 `milestone-gate` skill 产出，由 sensor skill 透传到 writeback_instructions。Harness 按 writeback_instructions 逐字段写入，不自行解释 gate 语义。
 
    - **Final Acceptance 事务边界**：goal-driven milestone handback 前必须存在 composite acceptance report。goal-driven milestone 的最终验收由 programmer 决定。programmer 明确接受后，acceptance writeback 必须作为一个逻辑事务处理。该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`。写回后必须校验一致性。
+   - **Post-Acceptance Managed-Branch Merge 边界**：final acceptance writeback 不等同于已经合回 `develop-servo` 或其他 managed branch。writeback 成功后，Harness 必须提示 programmer 是否要把已接受结果合回 managed branch；提示至少列出 accepted source ref、默认 managed branch、可指定 managed branch、skip for now 选项，以及 release/publish/tag/push/protected/deploy/destructive 边界不被授权。若 programmer 在提示中明确要求合回，或 repo / milestone operator config 明确声明已接受结果需要合回 managed branch，Harness 必须选择独立的 post-acceptance managed-branch merge 路线。该路线进入前必须记录 accepted source ref、managed merge target、merge authority source、branch context、clean worktree、final acceptance record、Gate verdict / manual exception preservation、checkpoint/writeback plan 和 failure recovery path。任何缺失、target branch 不被 branch policy 允许、受保护分支策略命中、或 release/publish/tag/push/deploy/destructive/跨 repo 副作用信号命中，均必须 stop before merge。若 programmer 选择 skip for now，记录 accepted-but-not-merged 和恢复该 route 所需 facts。该路线不解决并行 Worktrack git commit 编排或 git worktree 支持。
    - **Milestone Artifact 更新**、**Control State 更新**、**Pipeline 推进**：按 `milestone-status-skill` 输出的 `writeback_instructions` 执行。
    - 若 `milestone_gate_verdict != "pass"`：不得把 Milestone 标记为完成，不得自动推进 pipeline。
 7. 如果命中正式停止条件 → 向程序员返回控制权
@@ -619,13 +630,13 @@ _已合并入 §10.5。_
    - 在 Gate 裁决前，调用 `evidence_completeness_check.py`：
 
      ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/evidence_completeness_check.py \
+     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/evidence_completeness_check.py \
        --evidence-file .servo/worktrack/gate-evidence.md
      ```
 
    - 脚本输出 JSON 包含 `complete`、`missing`、`present`、`checked_items`。检查 9 项必需证据：`route_decision`、`worktrack_contract_scope`、`selected_task_dispatch_packet`、`runtime_dispatch_profile`、`validation_evidence`、`governance_policy_evidence`、`gate_verdict`、`closeout_record`、`repo_refresh_checkpoint`。
 9. **项目基本面刷新触发**：以下 5 个条件任意满足时触发刷新：
-   - **Worktrack closeout 后**：merge → cleanup → 返回到 RepoScope 时刷新 Repo 级慢变量
+   - **Worktrack closeout 后**：merge → doc-catch-up → refresh → cleanup report → 返回到 RepoScope 时刷新 Repo 级慢变量
    - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后刷新全部 backlog 和 control-state
    - **Git hash 变更后**：`latest_observed_checkpoint` 与当前 HEAD 不一致时标记 `repo_baseline_changed: true`
    - **Pipeline 不一致检测**：milestone-backlog、worktrack-backlog、control-state 之间不一致时触发 pipeline 恢复
@@ -640,7 +651,7 @@ _（保留）_
 
 Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill`。
 
-**存储位置**：`.servo/control-state.md` 的 `Baseline Traceability` 段。
+**存储位置**：`.servo/control-state-repo.md` 的 `Baseline Traceability` 段。`.servo/control-state.md` 只保留 root control fields、路径指针与控制面记忆。
 
 **字段定义**：
 
@@ -672,8 +683,8 @@ Close/Refresh 完成 → 状态更新阶段
 
 | 脚本 | 位置 | 用途 |
 |------|------|------|
-| `git_hash_check.py` | `product/harness/skills/harness-skill/scripts/` | §10.1 步骤 5：读取并对比 hash |
-| `checkpoint_writeback.py` | `product/harness/skills/harness-skill/scripts/` | §10.7 步骤 2/4：写入 observed / doc-catch-up checkpoint |
+| `git_hash_check.py` | `./scripts/` | §10.1 步骤 5：读取并对比 hash |
+| `checkpoint_writeback.py` | `./scripts/` | §10.7 步骤 2/4：写入 observed / doc-catch-up checkpoint |
 
 **硬约束**：
 
@@ -809,7 +820,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `-` 或 `待填写`）。
 5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.servo/worktrack/contract.md#Task Goal]`。
 6. **压缩不是省略**：`Supporting Detail` 层必须保留完整内容，只是不纳入传递/决策上下文；后续如需查阅细节，可直接读取。
-7. **脚本输出是权威控制信号源**：所有 guard、check 和 routing 决策必须优先消费 `product/harness/skills/harness-skill/scripts/` 下对应脚本的结构化 JSON 输出，不得用 LLM 自行推断替代确定性脚本结果。脚本返回 `blocked == true` 即硬阻断，不得覆盖。
+7. **脚本输出是权威控制信号源**：所有 guard、check 和 routing 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出，不得用 LLM 自行推断替代确定性脚本结果。脚本返回 `blocked == true` 即硬阻断，不得覆盖。
 
 ---
 
@@ -867,7 +878,7 @@ Unlock signal 结构化格式：
 - **控制态规范化**：如果 control-state.md 出现重复 key（如多个 `- verified_at:`、重复的 singleton key），应在 hydration 后调用 `normalize_control_state.py` 消除歧义：
 
   ```bash
-  PYTHONDONTWRITEBYTECODE=1 python3 product/harness/skills/harness-skill/scripts/normalize_control_state.py \
+  PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/normalize_control_state.py \
     --input .servo/control-state.md
   ```
 
@@ -877,7 +888,7 @@ Unlock signal 结构化格式：
 
 使用当前 `Harness Control State`、当前 Scope 所需的正式产物，以及下游技能的结构化输出作为本轮的权威依据。
 
-判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。所有 guard 决策必须优先消费 `product/harness/skills/harness-skill/scripts/` 下对应脚本的结构化 JSON 输出（见 §10.2 的 8 个 guard 脚本调用和 §10.7 的 `autonomy_policy_check.py` 引用）。
+判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。所有 guard 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出（见 §10.2 的 8 个 guard 脚本调用和 §10.7 的 `autonomy_policy_check.py` 引用）。
 
 三轴参考：
 

@@ -8,6 +8,12 @@
 
 The source root may link to `docs/harness/` for authoring ownership, doctrine, catalog traceability, and long-form design history. Distributed runtime semantics are stricter: if a skill needs a contract, checklist, template, script, or short reference while it is being executed in a target repository, that material must be in the same skill package and included by the adapter payload.
 
+## Self-contained Skill Rule
+
+Skills are distributed runtime units. If `docs/harness/` is absent from a target repository, every installed skill must still remain logically self-contained: its `SKILL.md`, bundled templates, bundled references, scripts, assets, and explicit runtime artifacts must be sufficient for an operator or agent to understand inputs, boundaries, outputs, forbidden actions, and acceptance criteria.
+
+`docs/harness/` may remain the source-repository maintenance truth and authoring trace. It must not be the runtime dependency that makes a deployed skill correct. Installed skills must not require project-relative docs paths, repo-external absolute paths, parent-directory escapes, or deploy-target paths outside the current skill package to decide what to do.
+
 Allowed runtime package surface:
 
 - `SKILL.md`: the primary executable instruction and runtime contract for the skill.
@@ -34,18 +40,19 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [worktrack-generic-worker-skill/](./worktrack-generic-worker-skill/) — 接收限定范围 Prompt 的通用执行 worker
   - [worktrack-doc-catch-up-skill/](./worktrack-doc-catch-up-skill/) — 将已验证实现事实追平到正确文档层
 - 已落地的 `RepoScope` 技能骨架：
-  - [harness-set-goal-skill/](./harness-set-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
+  - [repo-init-goal-skill/](./repo-init-goal-skill/) — 初始化 Repo Goal/Charter 与控制面参考信号
   - [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) — Milestone 写入/激活前的需求核实、追问和确认 review
   - [repo-status-skill/](./repo-status-skill/) — 代码仓库状态观察
   - [repo-whats-next-skill/](./repo-whats-next-skill/) — 代码仓库下一步判断
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
-  - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — Servo repo/runtime 管理空间清理（backlog 归档 + stale 分支清理 + control-state 安全压缩）
+  - [milestone-cleanup-skill/](./milestone-cleanup-skill/) — Milestone closeout 后的 repo/runtime cleanup report 与非破坏性 dry-run 维护
+  - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — legacy cleanup 兼容入口，保留给既有调用与旧 adapter alias
 - [milestone-init-skill/](./milestone-init-skill/) — Milestone 初始化/注册到 Pipeline
 - [milestone-status-skill/](./milestone-status-skill/) — Milestone 状态观测/验收分析器
-- [milestone-gate/](./milestone-gate/) — Milestone Gate 两层集成验收编排器（Layer 1 四轴 SubAgent 分派 + Layer 2 aggregation_rules 聚合）
-  - Milestone Gate 四轴检查（Layer 1 独立 SubAgent skills）：
+- [milestone-gate/](./milestone-gate/) — Milestone Gate 聚合器（消费顶层 Harness sibling axis reports + aggregation_rules 聚合）
+  - Milestone Gate 四轴检查（由顶层 Harness 作为 sibling axis carriers 分派）：
     - [milestone-blackbox-check/](./milestone-blackbox-check/) — 外部视角检查（跨 WT 集成、用户承诺、回归风险、外部一致性、覆盖缺口）
     - [milestone-whitebox-check/](./milestone-whitebox-check/) — 内部实现视角检查（接口契约、状态流转、依赖图、架构对齐、实现质量）
     - [milestone-anticheat-check/](./milestone-anticheat-check/) — 反作弊检查（mock abuse、证据复用、部分验证、gate 绕过、过期证据、自审偏见、假阳性风险）
@@ -92,13 +99,14 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | Canonical source | Docs/catalog owner |
 |------------------|--------------------|
 | [harness-skill/](./harness-skill/) | [docs/harness/catalog/supervisor.md](../../../docs/harness/catalog/supervisor.md) |
-| [harness-set-goal-skill/](./harness-set-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [repo-init-goal-skill/](./repo-init-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [milestone-pre-intake-skill/](./milestone-pre-intake-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-status-skill/](./repo-status-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-whats-next-skill/](./repo-whats-next-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-append-request-skill/](./repo-append-request-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-change-goal-skill/](./repo-change-goal-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [repo-refresh-skill/](./repo-refresh-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
+| [milestone-cleanup-skill/](./milestone-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
 | [milestone-init-skill/](./milestone-init-skill/) | [docs/harness/catalog/milestone/milestone-init-skill.md](../../../docs/harness/catalog/milestone/milestone-init-skill.md) |
 | [milestone-status-skill/](./milestone-status-skill/) | [docs/harness/catalog/milestone/milestone-status-skill.md](../../../docs/harness/catalog/milestone/milestone-status-skill.md) |

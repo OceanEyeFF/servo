@@ -17,7 +17,7 @@ DEFAULT_REPO_ANALYSIS_PATHS = (
     / "product"
     / "harness"
     / "skills"
-    / "harness-set-goal-skill"
+    / "repo-init-goal-skill"
     / "assets"
     / "repo"
     / "analysis.md",

@@ -54,7 +54,7 @@ Every `.aw`, `aw-*`, or `aw.marker` occurrence in distribution-relevant paths mu
 | `docs/servo-installer/reference/tui-aw-runtime-migration-repro.md` | `.aw`, `aw.marker` | `historical-doc-only` | Allowed as v0.5.7 repro and residual-risk evidence; must not describe current behavior as still broken after the fix. |
 | `docs/book.md`, `docs/servo-installer/README.md`, and project-maintenance navigation docs | `.aw`, `aw-*` | `navigation-only` | Allowed only when linking to an allowed compatibility, runbook, reference, or contract document. |
 | deploy tests and smoke tests | `.aw`, `aw-*`, `aw.marker` | `test-fixture-only` | Allowed when asserting migration, compatibility, marker identity, conflict blocking, legacy convergence, or historical output handling. |
-| `product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js` marker exclusion | `aw.marker` | `marker-identity-contract` | Allowed when excluding runtime marker files from canonical skill packaging. |
+| `product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js` marker exclusion | `aw.marker` | `marker-identity-contract` | Allowed when excluding runtime marker files from canonical skill packaging. |
 
 ## Remediation-Required Rules
 

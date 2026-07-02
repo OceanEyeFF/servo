@@ -14,7 +14,7 @@ skip_reason: null
 accepted_risk: []
 residual_risk_accepted: false
 accepted_residual_risk: []
-template_contract_ref: "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md"
+template_contract_ref: "./templates/pre-milestone-intake-review.template.md"
 ```
 
 ## Request Summary
@@ -73,7 +73,7 @@ risk_flags:
 
 ## Milestone Task Complexity Assessment
 
-Use this section to produce a structured complexity assessment for the proposed Milestone. Goal-driven milestones require full assessment (all fields required); work-collection milestones may use lightweight assessment (only starred fields). Missing assessment or incomplete required fields blocks Milestone creation/activation/Worktrack derivation. Field contract: `docs/harness/artifact/control/milestone.md#milestone-task-complexity-assessment`.
+Use this section to produce a structured complexity assessment for the proposed Milestone. Goal-driven milestones require full assessment (all fields required); work-collection milestones may use lightweight assessment (only starred fields). Missing assessment or incomplete required fields blocks Milestone creation/activation/Worktrack derivation. Field contract: bundled `milestone_task_complexity_assessment` fields below.
 
 ```yaml
 milestone_task_complexity_assessment:

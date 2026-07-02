@@ -1,3 +1,7 @@
+---
+artifact_type: "control-state"
+control_state_version: split
+---
 # Harness Control State
 
 > 这是 `.servo/control-state.md` 的模板来源，仅保留跨 Repo/Worktrack 的控制记忆。

@@ -15,7 +15,7 @@ CANONICAL_SCANNER = (
     / "product"
     / "harness"
     / "skills"
-    / "harness-set-goal-skill"
+    / "repo-init-goal-skill"
     / "scripts"
     / "complexity_signal_scanner.py"
 )

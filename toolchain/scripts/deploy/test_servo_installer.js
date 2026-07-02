@@ -417,8 +417,12 @@ function seedInstalledAgentsSkill(root, skillId = "demo-skill", options = {}) {
   const skillText = `# ${skillId}\n`;
   const payloadText = `${JSON.stringify(seeded.payload, null, 2)}\n`;
   writeFileSync(join(targetSkillDir, "SKILL.md"), skillText, "utf8");
-  writeFileSync(join(targetSkillDir, "payload.json"), payloadText, "utf8");
   const metadata = installer.payloadTargetMetadata(seeded.payload, seeded.binding);
+  writeFileSync(
+    join(targetSkillDir, "payload.json"),
+    installer.runtimePayloadDescriptorText(seeded.payload, seeded.binding),
+    "utf8",
+  );
   const payloadFingerprint = installer.computePayloadFingerprint(
     seeded.binding,
     { sourceRoot: root },
@@ -502,7 +506,11 @@ function seedInstalledClaudeSkill(root, skillId = "demo-skill", options = {}) {
     "\ndisable-model-invocation: true\n---\n",
   );
   writeFileSync(join(targetSkillDir, "SKILL.md"), skillText, "utf8");
-  writeFileSync(join(targetSkillDir, "payload.json"), payloadText, "utf8");
+  writeFileSync(
+    join(targetSkillDir, "payload.json"),
+    installer.runtimePayloadDescriptorText(seeded.payload, seeded.binding),
+    "utf8",
+  );
   const metadata = installer.payloadTargetMetadata(seeded.payload, seeded.binding);
   const payloadFingerprint = installer.computePayloadFingerprint(
     seeded.binding,
@@ -1492,7 +1500,14 @@ test("verifyAgentsBackend passes cached payload text into deployed skill verific
     writeFileSync(join(canonicalDir, "SKILL.md"), skillText, "utf8");
     writeFileSync(payloadPath, payloadText, "utf8");
     writeFileSync(join(targetSkillDir, "SKILL.md"), skillText, "utf8");
-    writeFileSync(join(targetSkillDir, "payload.json"), payloadText, "utf8");
+    writeFileSync(
+      join(targetSkillDir, "payload.json"),
+      installer.runtimePayloadDescriptorText(payload, {
+        backend: "agents",
+        skillId: "demo-skill",
+      }),
+      "utf8",
+    );
     const binding = {
       backend: "agents",
       skillId: "demo-skill",
@@ -1530,7 +1545,21 @@ test("verifyAgentsBackend passes cached payload text into deployed skill verific
 
     const issueCodes = result.issues.map((currentIssue) => currentIssue.code);
     assert.equal(issueCodes.includes("payload-contract-invalid"), false);
-    assert.deepEqual(issueCodes, ["target-payload-drift"]);
+    assert.deepEqual(issueCodes, []);
+
+    writeFileSync(join(targetSkillDir, "payload.json"), payloadText, "utf8");
+    const driftResult = installer.verifyAgentsBackend(
+      {
+        sourceRoot: root,
+        targetRoot,
+        adapterSkillsDir: join(root, "product", "harness", "adapters", "agents", "skills"),
+      },
+      { bindings: [binding], loadedPayloads },
+    );
+
+    const driftIssueCodes = driftResult.issues.map((currentIssue) => currentIssue.code);
+    assert.equal(driftIssueCodes.includes("payload-contract-invalid"), false);
+    assert.deepEqual(driftIssueCodes, ["target-payload-drift"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -2415,6 +2444,14 @@ test("servo-installer install agents writes a clean target without Python and ve
     assert.equal(lstatSync(join(targetSkillDir, "payload.json")).mode & 0o777, 0o644);
     assert.equal(lstatSync(join(targetSkillDir, "aw.marker")).mode & 0o777, 0o644);
     assert.equal(readFileSync(join(targetSkillDir, "SKILL.md"), "utf8"), "# demo-skill\n");
+    const installedPayloadText = readFileSync(join(targetSkillDir, "payload.json"), "utf8");
+    const installedPayload = JSON.parse(installedPayloadText);
+    assert.equal(installedPayload.package_dir, ".");
+    assert.deepEqual(installedPayload.package_paths, ["SKILL.md", "payload.json", "aw.marker"]);
+    assert.equal(Object.hasOwn(installedPayload, "canonical_dir"), false);
+    assert.equal(Object.hasOwn(installedPayload, "canonical_paths"), false);
+    assert.equal(installedPayloadText.includes("product/harness"), false);
+    assert.equal(installedPayloadText.includes("../"), false);
 
     const result = installer.verifyAgentsBackend({
       sourceRoot: root,
@@ -5103,7 +5140,7 @@ test("migrate-runtime --yes rewrites .aw path references to .servo in text files
     // Verify .servo destination has rewritten paths
     const servoControl = readFileSync(join(root, ".servo", "control-state.md"), "utf8");
     assert.match(servoControl, /`\.servo\/control-state\.md`/);
-    assert.match(servoControl, /harness-set-goal-skill/);
+    assert.match(servoControl, /repo-init-goal-skill/);
     assert.doesNotMatch(servoControl, /`\.aw\/control-state\.md`/);
     assert.doesNotMatch(servoControl, /aw-set-harness-goal-skill/);
 

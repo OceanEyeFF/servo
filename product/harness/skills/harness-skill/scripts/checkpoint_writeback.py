@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-checkpoint_writeback.py — 将 checkpoint hash 写回到 control-state.md 的校验点写回工具。
+checkpoint_writeback.py — 将 checkpoint hash 写回到 control-state-repo.md 的校验点写回工具。
 
 Usage:
   python3 checkpoint_writeback.py --checkpoint-type observed
   python3 checkpoint_writeback.py --checkpoint-type doc-catch-up
-  python3 checkpoint_writeback.py --checkpoint-type observed --control-state .servo/control-state.md
+  python3 checkpoint_writeback.py --checkpoint-type observed --control-state .servo/control-state-repo.md
 
 Checkpoint types:
   observed     → latest_observed_checkpoint
@@ -13,7 +13,7 @@ Checkpoint types:
 
 Operations:
   1. 自动获取当前 HEAD hash（git rev-parse HEAD）
-  2. 定位 control-state.md 的 ## Baseline Traceability 节
+  2. 定位 control-state-repo.md 的 ## Baseline Traceability 节
   3. Upsert 对应 key（存在则替换，不存在则追加）
   4. 追加 verified_at: <timestamp> 到 verified_at_history list
   5. 更新 frontmatter 的 updated 时间戳
@@ -186,7 +186,7 @@ KEY_MAP = {
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Write checkpoint hash to control-state.md",
+        description="Write checkpoint hash to control-state-repo.md",
     )
     parser.add_argument(
         "--checkpoint-type",
@@ -196,8 +196,12 @@ def main():
     )
     parser.add_argument(
         "--control-state",
-        default=".servo/control-state.md",
-        help="Path to control-state.md (default: .servo/control-state.md)",
+        default=".servo/control-state-repo.md",
+        help=(
+            "Path to repo checkpoint state "
+            "(default: .servo/control-state-repo.md; legacy alias may point "
+            "to .servo/control-state.md)"
+        ),
     )
     args = parser.parse_args()
 
@@ -206,7 +210,7 @@ def main():
     # ── 获取 HEAD hash ──────────────────────────────────────────────
     head_hash = get_head_hash()
 
-    # ── 读取 control-state.md ───────────────────────────────────────
+    # ── 读取 control-state-repo.md ──────────────────────────────────
     original = read_file(args.control_state)
     lines = original.split("\n")
 

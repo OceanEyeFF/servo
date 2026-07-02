@@ -20,7 +20,7 @@ SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer install --backend 
 SERVO_HARNESS_TARGET_REPO_ROOT="$TARGET_REPO" servo-installer verify --backend claude
 ```
 
-Claude backend 的 deploy 入口为 `servo-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。
+Claude backend 的 deploy 入口为 `servo-installer --backend claude`（Node-only distribution）。冷启动 helper：`node product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js install-claude-skill --deploy-path "$TARGET_REPO"`。Coding CLI 内部的 skill 调用示例以 [Skills 使用教程](./recommended-usage.md) 为准。
 
 ## 二、Backend 标识与常见路径
 
@@ -63,14 +63,14 @@ Skill resolution probe. Do not call tools. Return compact JSON only with keys sk
 
 ## 六、受控例外
 
-`harness-set-goal-skill` 的 `scripts/deploy_servo.js` 可安装自身到 Claude 项目级 skill 目录：
+`repo-init-goal-skill` 的 `scripts/deploy_servo.js` 可安装自身到 Claude 项目级 skill 目录：
 
 ```bash
-node scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
-node scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
+node ./scripts/deploy_servo.js install-claude-skill --deploy-path "$DEPLOY_PATH"
+node ./scripts/deploy_servo.js generate --deploy-path "$DEPLOY_PATH" --install-claude-skill
 ```
 
-目标 `<deploy-path>/.claude/skills/harness-set-goal-skill/`，默认不覆盖（需 `--force`）；`--claude-root` 仅限受控 trial 环境；目标目录不能是 symlink。
+目标 `<deploy-path>/.claude/skills/repo-init-goal-skill/`，默认不覆盖（需 `--force`）；`--claude-root` 仅限受控 trial 环境；目标目录不能是 symlink。
 
 ## 七、Source 变更后的 operator 决策
 

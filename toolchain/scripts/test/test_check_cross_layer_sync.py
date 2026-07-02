@@ -20,7 +20,7 @@ def write_doc(path: Path, content: str) -> None:
 
 def test_charter_registry_uses_tracked_source_without_runtime_aw(tmp_path: Path) -> None:
     write_doc(
-        tmp_path / "product/harness/skills/harness-set-goal-skill/assets/goal-charter.md",
+        tmp_path / "product/harness/skills/repo-init-goal-skill/assets/goal-charter.md",
         "\n".join(
             [
                 "### Node Type Registry",
@@ -45,7 +45,7 @@ def test_charter_registry_uses_tracked_source_without_runtime_aw(tmp_path: Path)
 
 def test_charter_registry_does_not_promote_runtime_aw_truth(tmp_path: Path) -> None:
     write_doc(
-        tmp_path / "product/harness/skills/harness-set-goal-skill/assets/goal-charter.md",
+        tmp_path / "product/harness/skills/repo-init-goal-skill/assets/goal-charter.md",
         "\n".join(
             [
                 "### Node Type Registry",
@@ -161,7 +161,7 @@ def test_control_state_template_alignment_pass(tmp_path: Path) -> None:
         ]) + "\n",
     )
     write_doc(
-        tmp_path / "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        tmp_path / "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "\n".join([
             "## Handback Guard",
             "",
@@ -215,7 +215,7 @@ def test_plan_task_queue_template_alignment_pass(tmp_path: Path) -> None:
         terms,
     )
     write_doc(
-        tmp_path / "product/harness/skills/harness-set-goal-skill/assets/worktrack/plan-task-queue.md",
+        tmp_path / "product/harness/skills/repo-init-goal-skill/assets/worktrack/plan-task-queue.md",
         terms,
     )
 
@@ -246,7 +246,7 @@ def test_plan_task_queue_template_alignment_flags_missing_template_field(
         terms.replace("stop_condition\n", ""),
     )
     write_doc(
-        tmp_path / "product/harness/skills/harness-set-goal-skill/assets/worktrack/plan-task-queue.md",
+        tmp_path / "product/harness/skills/repo-init-goal-skill/assets/worktrack/plan-task-queue.md",
         terms,
     )
 

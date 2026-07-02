@@ -34,6 +34,7 @@ ROOT_ALLOWED_NAMES = {
     ".claudeignore",
     ".nav",
     ".pytest_cache",
+    ".ruff_cache",
     ".spec-workflow",
     ".test",
 }
@@ -67,6 +68,7 @@ GENERIC_RUNTIME_FILENAMES = PRODUCT_STATE_FILENAMES | {"session.json"}
 PRODUCT_BANNED_SEGMENTS = {
     "__pycache__",
     ".pytest_cache",
+    ".ruff_cache",
     ".autoworkflow",
     ".spec-workflow",
     "cache",
@@ -81,6 +83,7 @@ PRODUCT_ALLOWED_HIDDEN_DIRS = {
 DOCS_BANNED_SEGMENTS = {
     "__pycache__",
     ".pytest_cache",
+    ".ruff_cache",
     "build",
     "cache",
     "dist",
@@ -94,6 +97,7 @@ TOOLCHAIN_BANNED_SEGMENTS = {
     ".claude",
     ".nav",
     ".pytest_cache",
+    ".ruff_cache",
     ".spec-workflow",
     "__pycache__",
     "adapters",
@@ -176,6 +180,10 @@ def is_git_ignored_path(repo_root: Path, relative_path: str) -> bool:
     return completed.returncode == 0
 
 
+def is_untracked_ignored_path(repo_root: Path, relative_path: str, tracked_paths: set[str]) -> bool:
+    return not is_tracked_path(relative_path, tracked_paths) and is_git_ignored_path(repo_root, relative_path)
+
+
 def normalize_real_path(path: Path) -> str:
     raw = os.path.realpath(path)
     normalized = raw.replace("\\", "/").rstrip("/")
@@ -225,10 +233,17 @@ def check_root_allowlist(repo_root: Path, tracked_paths: set[str], report: Folde
         report.add_issue("FL001", name, "root object is not registered in the folder allowlist")
     report.add_info(f"checked {checked} root objects against the folder allowlist")
 
-    if is_tracked_path(".pytest_cache", tracked_paths):
-        report.add_issue("FL013", ".pytest_cache", "ephemeral cache may exist locally but must not be tracked")
-    else:
-        report.add_info("checked .pytest_cache tracked state")
+    checked_cache_tracking = False
+    for cache_path in (".pytest_cache", ".ruff_cache"):
+        checked_cache_tracking = True
+        if is_tracked_path(cache_path, tracked_paths):
+            report.add_issue(
+                "FL013",
+                cache_path,
+                "ephemeral cache may exist locally but must not be tracked",
+            )
+    if checked_cache_tracking:
+        report.add_info("checked local cache tracked state")
 
 
 def check_first_level_allowlist(repo_root: Path, report: FolderLogicReport, rules: FolderRules) -> None:
@@ -292,10 +307,12 @@ def check_codex_layer(repo_root: Path, tracked_paths: set[str], report: FolderLo
     report.add_info(f"checked {checked} .codex entries against the execution config layer")
 
 
-def check_product_patterns(repo_root: Path, report: FolderLogicReport) -> None:
+def check_product_patterns(repo_root: Path, tracked_paths: set[str], report: FolderLogicReport) -> None:
     checked = 0
     for relative_path in iter_relative_paths(repo_root / "product", repo_root):
         checked += 1
+        if is_untracked_ignored_path(repo_root, relative_path, tracked_paths):
+            continue
         name = Path(relative_path).name
         if relative_path == "product/.servo_template" or relative_path.startswith("product/.servo_template/"):
             continue
@@ -310,10 +327,12 @@ def check_product_patterns(repo_root: Path, report: FolderLogicReport) -> None:
     report.add_info(f"checked {checked} product/ paths for misplaced runtime content")
 
 
-def check_docs_patterns(repo_root: Path, report: FolderLogicReport) -> None:
+def check_docs_patterns(repo_root: Path, tracked_paths: set[str], report: FolderLogicReport) -> None:
     checked = 0
     for relative_path in iter_relative_paths(repo_root / "docs", repo_root):
         checked += 1
+        if is_untracked_ignored_path(repo_root, relative_path, tracked_paths):
+            continue
         absolute_path = repo_root / relative_path
         name = absolute_path.name
         if path_has_segment(relative_path, DOCS_BANNED_SEGMENTS):
@@ -330,10 +349,12 @@ def check_docs_patterns(repo_root: Path, report: FolderLogicReport) -> None:
     report.add_info(f"checked {checked} docs/ paths for misplaced scripts and runtime content")
 
 
-def check_toolchain_patterns(repo_root: Path, report: FolderLogicReport) -> None:
+def check_toolchain_patterns(repo_root: Path, tracked_paths: set[str], report: FolderLogicReport) -> None:
     checked = 0
     for relative_path in iter_relative_paths(repo_root / "toolchain", repo_root):
         checked += 1
+        if is_untracked_ignored_path(repo_root, relative_path, tracked_paths):
+            continue
         name = Path(relative_path).name
         if path_has_segment(relative_path, TOOLCHAIN_BANNED_SEGMENTS):
             report.add_issue(
@@ -347,12 +368,14 @@ def check_toolchain_patterns(repo_root: Path, report: FolderLogicReport) -> None
     report.add_info(f"checked {checked} toolchain/ paths for misplaced canonical or runtime content")
 
 
-def check_tools_patterns(repo_root: Path, report: FolderLogicReport) -> None:
+def check_tools_patterns(repo_root: Path, tracked_paths: set[str], report: FolderLogicReport) -> None:
     checked = 0
     for relative_path in iter_relative_paths(repo_root / "tools", repo_root):
         checked += 1
+        if is_untracked_ignored_path(repo_root, relative_path, tracked_paths):
+            continue
         name = Path(relative_path).name
-        if name in {"__pycache__", ".pytest_cache"} or name.endswith((".pyc", ".pyo")):
+        if name in {"__pycache__", ".pytest_cache", ".ruff_cache"} or name.endswith((".pyc", ".pyo")):
             report.add_issue("FL014", relative_path, "tools/ must not contain runtime cache content")
     report.add_info(f"checked {checked} tools/ paths for runtime cache content")
 
@@ -422,10 +445,10 @@ def run_checks(repo_root: Path, rules: FolderRules | None = None) -> FolderLogic
     check_root_allowlist(repo_root, tracked_paths, report, effective_rules)
     check_first_level_allowlist(repo_root, report, effective_rules)
     check_codex_layer(repo_root, tracked_paths, report, effective_rules)
-    check_product_patterns(repo_root, report)
-    check_docs_patterns(repo_root, report)
-    check_toolchain_patterns(repo_root, report)
-    check_tools_patterns(repo_root, report)
+    check_product_patterns(repo_root, tracked_paths, report)
+    check_docs_patterns(repo_root, tracked_paths, report)
+    check_toolchain_patterns(repo_root, tracked_paths, report)
+    check_tools_patterns(repo_root, tracked_paths, report)
     check_tracked_exceptions(tracked_paths, report, effective_rules)
     check_nav_layer(repo_root, report)
     return report

@@ -17,7 +17,7 @@ Harness Skills 在 CodingAgent 中通过 slash command 调用：
 
 | Skill | 用途 | 调用方式 |
 |-------|------|---------|
-| `harness-set-goal-skill` | 初始化 `.servo/` 并生成 Goal Charter | `/harness-set-goal-skill` |
+| `repo-init-goal-skill` | 初始化 `.servo/` 并生成 Goal Charter | `/repo-init-goal-skill` |
 | `harness-skill` | 启动 Harness 控制回路，逐项推进 Milestone | `/harness-skill` + 参数 |
 | `repo-whats-next-skill` | 分析仓库当前状态，列出候选 Milestone | `/repo-whats-next-skill` |
 | `repo-change-goal-skill` | 修改仓库目标（Goal Charter 变更） | `/repo-change-goal-skill` |
@@ -46,7 +46,7 @@ Harness 支持两个 backend，共享同一套合同和验证标准，差异仅�
 npx servo-installer diagnose --backend agents --json
 npx servo-installer install --backend agents
 npx servo-installer verify --backend agents
-/harness-set-goal-skill
+/repo-init-goal-skill
 ```
 → 完整步骤见 [init-greenfield.md](./init-greenfield.md)
 
@@ -54,7 +54,7 @@ npx servo-installer verify --backend agents
 
 ```
 npx servo-installer diagnose --backend agents --json
-/harness-set-goal-skill
+/repo-init-goal-skill
 ```
 → 完整步骤见 [init-with-code.md](./init-with-code.md)
 

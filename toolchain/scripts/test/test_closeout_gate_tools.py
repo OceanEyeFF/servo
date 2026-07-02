@@ -89,7 +89,7 @@ NPM_VERSION = json.loads((closeout_acceptance_gate.REPO_ROOT / "package.json").r
 NPM_VERSION_STDOUT = f"servo-installer {NPM_VERSION}\n"
 CLAUDE_SKILL_DIR_NAMES = closeout_acceptance_gate.CLAUDE_REQUIRED_PAYLOAD_SKILLS
 CLAUDE_TARGET_DIR_BY_SKILL = {
-    "harness-set-goal-skill": "harness-set-goal-skill",
+    "repo-init-goal-skill": "repo-init-goal-skill",
 }
 
 
@@ -156,7 +156,7 @@ def successful_npm_command_result(
                 npm_exec_target_root("claude") / CLAUDE_TARGET_DIR_BY_SKILL.get(skill_name, skill_name)
                 for skill_name in CLAUDE_SKILL_DIR_NAMES
             ]
-        return [npm_exec_target_root("agents") / "servo-harness-skill"]
+        return [npm_exec_target_root("agents") / "harness-skill"]
 
     if command[:4] == ["npm", "pack", "--dry-run", "--json"]:
         packed_paths = (
@@ -697,6 +697,8 @@ def test_run_command_disables_python_bytecode(monkeypatch, tmp_path) -> None:
     def fake_run(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
         captured["command"] = command
         captured["env"] = kwargs["env"]
+        captured["stdin"] = kwargs["stdin"]
+        captured["timeout"] = kwargs["timeout"]
         return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
 
     monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_run)
@@ -705,6 +707,24 @@ def test_run_command_disables_python_bytecode(monkeypatch, tmp_path) -> None:
 
     assert result["passed"] is True
     assert captured["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
+    assert captured["stdin"] == subprocess.DEVNULL
+    assert captured["timeout"] == closeout_acceptance_gate.COMMAND_TIMEOUT_SECONDS
+
+
+def test_run_command_returns_structured_timeout(monkeypatch, tmp_path) -> None:
+    def fake_run(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
+        raise subprocess.TimeoutExpired(command, timeout=3, output="partial", stderr="waiting")
+
+    monkeypatch.setenv("SERVO_CLOSEOUT_GATE_COMMAND_TIMEOUT_SECONDS", "3")
+    monkeypatch.setattr(closeout_acceptance_gate.subprocess, "run", fake_run)
+
+    result = closeout_acceptance_gate.run_command([sys.executable, "--version"], cwd=tmp_path)
+
+    assert result["passed"] is False
+    assert result["returncode"] == 124
+    assert result["stdout"] == "partial"
+    assert "waiting" in result["stderr"]
+    assert "command timed out after 3s" in result["stderr"]
 
 
 def test_run_static_gate_uses_in_memory_syntax_check(tmp_path) -> None:
@@ -818,7 +838,7 @@ def test_run_test_gate_includes_contract_tests(monkeypatch, tmp_path) -> None:
     assert any(command[-1] == "toolchain/scripts/test/test_path_governance_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_governance_semantic_check.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_complexity_signal_scanner.py" for command in commands)
-    assert any(command[-1] == "toolchain/scripts/test/test_set_harness_goal_e2e_fixture.py" for command in commands)
+    assert any(command[-1] == "toolchain/scripts/test/test_repo_init_goal_e2e_fixture.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/test_agents_adapter_contract.py" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_cli" for command in commands)
     assert any(command[-1] == "toolchain/scripts/test/servo_installer_tui" for command in commands)
@@ -990,7 +1010,7 @@ def test_run_test_gate_fails_on_unexpected_npm_packlist(monkeypatch, tmp_path) -
 def test_root_npm_package_packlist_rejects_forbidden_python_payload(monkeypatch, tmp_path) -> None:
     write_root_package_json(tmp_path)
     packed_paths = set(closeout_acceptance_gate.ROOT_NPM_REQUIRED_PACKAGE_FILES)
-    packed_paths.add("product/harness/skills/harness-set-goal-skill/scripts/deploy_aw.py")
+    packed_paths.add("product/harness/skills/repo-init-goal-skill/scripts/deploy_aw.py")
 
     def fake_run_command(command: list[str], *, cwd: Path, extra_env: dict[str, str] | None = None) -> dict:
         assert command == ["npm", "pack", "--dry-run", "--json"]

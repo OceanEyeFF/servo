@@ -1,13 +1,13 @@
 ---
 title: "Milestone Gate 证据聚合合同"
 status: active
-updated: 2026-06-23
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-07-01
 ---
 # Milestone Gate 证据聚合合同
 
-> 定义从 N 个 worktrack gate evidence 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 WT2（aggregator implementation）的输入合同。
+> 定义从 N 个 worktrack gate evidence 与四个显式 axis reports 到 milestone-level verdict 的 per-milestone 可配置聚合规则。本 artifact 是 `milestone-gate` Layer 2 aggregator 的输入/输出合同。
 
 ## 一、概述
 
@@ -15,16 +15,52 @@ last_verified: 2026-06-23
 
 Milestone Gate 不是"全部 WT 都过了 = milestone 过了"的简单布尔 AND。不同 milestone 对证据的要求不同——release milestone 要求所有 critical WT 无矛盾，docs milestone 允许部分 soft-fail，demo milestone 可以接受 limited evidence。
 
-本 artifact 定义 per-milestone 可配置的 `aggregation_rules`，覆盖四个维度：
+Milestone Gate 分为两个职责面：
+
+- **Axis dispatch**：由顶层 Harness 在 `worktrack_list_finished == true` 后执行。Harness 准备四份 sibling input package，并把 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check` 和 `milestone-composite-check` 作为同级 axis carrier 分派。四个 axis carrier 互相不可见。
+- **Aggregation**：由 `milestone-gate` skill 执行。它只消费显式 `axis_reports`、closed worktrack verdicts、`target_type_rules` 与 `aggregation_rules`，不得在内部继续分派 SubAgent 或补跑 axis checks。
+
+这个扁平化编排避免依赖"SubAgent 内部继续唤起 SubAgent"的运行时能力。若顶层 Harness 不能真实分派 sibling axis carrier，必须把运行时缺口写入 axis dispatch evidence；`milestone-gate` 只能据此产出 `blocked` / non-pass verdict，不能把 same-carrier 四轴执行声明为真实 pass。
+
+本 artifact 定义 per-milestone 可配置的 `aggregation_rules`，覆盖五个维度：
 
 1. **证据权重**（weight_rules）：哪些 WT 的结论对 milestone verdict 贡献更大
 2. **矛盾处理**（contradiction_rules）：两个 critical WT 结论矛盾时的 resolution protocol
-3. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
-4. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
+3. **目标类型路由**（target_type_rules）：program/code 与 non-program 目标的轴适用性和替代验收规则
+4. **Composite lane 消费**（composite_lane_rules）：composite acceptance lanes 在 milestone 级的角色
+5. **轴报告输入**（axis_reports）：四个 sibling axis carrier 的显式报告、隔离与运行时证据
+6. **退化路径**（degenerate_and_rules）：无矛盾等简化场景的显式退化记录
 
-### 与 MS-20260623-002 的接口
+### 与 Worktrack single-acceptance 的接口
 
-本 artifact 消费 MS-20260623-002 定义的 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记和 `completion_signals_trace` 是 aggregation_rules 的输入。
+本 artifact 消费 [single-acceptance verdict](../worktrack/single-acceptance-contract.md) 与 [closeout evidence bundle](../worktrack/closeout-evidence-bundle.md) 格式。每个已闭环 worktrack 的 `verdict`（pass / soft-fail / hard-fail / blocked）、`critical_failure` 标记、`completion_signals_trace`、`closeout_evidence_bundle_ref` 和 `closeout_bundle_status` 是 aggregation_rules 的输入。
+
+### 与四轴报告的接口
+
+四轴报告不是 `milestone-gate` 内部临时产物，而是顶层 Harness dispatch 的正式输入。每个 axis report 至少需要包含：
+
+- `axis`: `blackbox` / `whitebox` / `anticheat` / `composite`
+- `report_ref`: 稳定 evidence ref 或内联报告位置
+- `verdict`: `pass` / `soft_fail` / `hard_fail` / `blocked` / `not_applicable`
+- `severity`
+- `target_type`
+- `target_scenario`
+- `axis_applicability_state`
+- `expected_method`
+- `substitute_method`
+- `substitution_evidence_ref`
+- `substitute_verdict`
+- `evidence_covers_completion_signal`
+- `slice_coverage` when `target_type = mixed` or `axis_applicability_state = split`
+- `unknown_target_inference` when target type or scenario is missing or contradictory
+- `carrier`
+- `runtime_dispatch_profile`
+- `isolation_guarantee`
+- `carrier_isolation_broken`
+- `checklist_results`
+- `missing_evidence`
+
+`milestone-gate` 必须把缺失 axis report、隔离被破坏、或运行时无法证明 sibling carrier 的情况作为聚合输入处理，不得在聚合阶段自行创建新 axis verdict。
 
 ## 二、aggregation_rules schema
 
@@ -35,6 +71,7 @@ aggregation_rules:
   enabled: true | false           # false 时使用退化 AND（§六）
   weight_rules: { ... }
   contradiction_rules: { ... }
+  target_type_rules: { ... }
   composite_lane_rules: { ... }
   degenerate_and_rules: { ... }
 ```
@@ -48,6 +85,7 @@ aggregation_rules:
 | `enabled` | boolean | 否 | `true` |
 | `weight_rules` | object | 是（enabled=true 时） | — |
 | `contradiction_rules` | object | 是（enabled=true 时） | — |
+| `target_type_rules` | object | 否（新 milestone 推荐显式声明） | `target_type: unknown`，不得默认通过 |
 | `composite_lane_rules` | object | 是（enabled=true 时） | — |
 | `degenerate_and_rules` | object | 否 | 见 §六 |
 
@@ -168,7 +206,229 @@ Contradiction block 不能在 aggregation 内部自动解除。合法解除路�
 - 新 verification WT 通过 gate（closeout record 写入）
 - Programmer 在 milestone gate evidence 中显式记录 resolution
 
-## 五、composite_lane_rules：Composite lane 消费
+## 五、target_type_rules：目标类型与轴适用性
+
+### 目的
+
+Milestone Gate 必须先识别当前 milestone 的目标类型，再选择黑盒、白盒、反作弊和复合验收轴的取证方法。程序/代码目标需要真实软件工程验收；非程序目标不能被强行套入运行时测试语义。
+
+### Schema
+
+```yaml
+target_type_rules:
+  target_type: program_code | non_program_artifact | mixed | unknown
+  target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_type_confidence: high | medium | low
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario_confidence: high | medium | low
+  operator_situation: string | N/A
+  axis_applicability:
+    blackbox:
+      state: applicable | not_applicable | substituted | split | blocked
+      expected_method: external_behavior_scenario | artifact_acceptance_review | operator_simulation | N/A
+      substituted_by: composite | professional_review | policy_check | N/A
+      reason: string
+    whitebox:
+      state: applicable | not_applicable | substituted | split | blocked
+      expected_method: structural_internal_analysis | artifact_structure_review | policy_structure_review | N/A
+      substituted_by: composite | professional_review | policy_check | N/A
+      reason: string
+    anticheat:
+      state: applicable | not_applicable | substituted | split | blocked
+      expected_method: evidence_integrity_review | N/A
+      substituted_by: N/A
+      reason: string
+    composite:
+      state: applicable | not_applicable | substituted | split | blocked
+      expected_method: composite_acceptance_lanes | professional_review | N/A
+      substituted_by: N/A
+      reason: string
+  substitution_evidence_required: true
+  substitution_evidence_contract:
+    substitute_method: artifact_acceptance_review | policy_conformance | reader_operator_simulation | cross_reference_validation | traceability_review | professional_review | research_evidence_review | artifact_structure_review
+    substitution_evidence_ref: string | N/A
+    substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+    evidence_covers_completion_signal: true | false
+  slice_coverage:                 # required when target_type = mixed
+    - slice_id: string
+      slice_target_type: program_code | non_program_artifact | unknown
+      slice_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | unknown
+      axis: blackbox | whitebox | anticheat | composite
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      expected_method: string
+      substitute_method: string | N/A
+      evidence_ref: string | N/A
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+```
+
+### Target routing matrix
+
+| target_type | blackbox | whitebox | anticheat | composite |
+|-------------|-----------|-----------|------------|-----------|
+| `program_code` | `applicable`; use externally observable behavior scenarios, user-visible workflows, CLI/API responses, integration behavior, or regression scenarios. Must not read full implementation code. | `applicable`; use structural/internal evidence such as control flow, data flow, state transfer, interface contracts, dependency paths, and architecture alignment. May read implementation code. | `applicable`; verify evidence provenance, dispatch/profile integrity, and bypass risk. | `applicable`; consume code-review, feature-completeness, related-influence, intent-completeness, operator-simulation, and professional-review lanes. |
+| `non_program_artifact` | Usually `substituted` or `not_applicable`; use artifact acceptance review, reader/operator simulation, policy conformance, cross-reference validation, or professional review. Do not force runtime scenario tests when no program exists. | Usually `substituted` or `not_applicable`; use artifact structure review, rule consistency, traceability, terminology/interface consistency, or governance conformance. Do not pretend this is code-internal white-box testing. | `applicable`; evidence integrity still matters for docs, skill text, workflow policy, and research artifacts. | `applicable`; composite lanes are often the primary non-program acceptance surface. |
+| `mixed` | Split by worktrack, completion signal, or artifact component. Program/code slices use behavior scenarios; non-program slices use substitute acceptance. | Split by worktrack, completion signal, or artifact component. Program/code slices use structural/internal analysis; non-program slices use artifact structure review. | `applicable` across all slices. | `applicable`; must record slice-level coverage. |
+| `unknown` | `blocked` unless the gate can produce a justified type inference. | `blocked` unless the gate can produce a justified type inference. | `blocked` if evidence boundary is unclear. | `blocked` or `substituted` only with explicit programmer or gate evidence. |
+
+### Scenario routing matrix
+
+`target_scenario` refines how the four canonical `target_type` values are applied to real operator situations. It must not introduce a fifth target type and must not relax the evidence rules above.
+
+| target_scenario | target_type mapping | blackbox hint | whitebox hint | anticheat / composite hint |
+|-----------------|---------------------|---------------|---------------|----------------------------|
+| `runnable_workflow` | usually `program_code` | External behavior scenarios from completion signals, CLI/API/UI/log/file output, or integration behavior. | Structural/internal analysis of the runnable path. | Both remain applicable. |
+| `config_environment` | `program_code`, `mixed`, or `non_program_artifact` | If config changes runtime behavior, use operator-triggered config scenarios; if it is only rule text, use substitute artifact review. | Check config schema, defaulting, load path, state propagation, or substitute with policy/artifact structure review. | Evidence provenance and composite related-influence/operator lanes are often material. |
+| `experiment_execution` | `program_code`, `mixed`, or `non_program_artifact` | Runnable experiment scripts use observable execution/result scenarios; reports use substitute research evidence review. | Reproducible code path for scripts; traceability/research structure for reports. | Stale evidence, evidence reuse, and external dependency boundaries must remain visible. |
+| `workflow_policy` | usually `non_program_artifact` or `mixed` | Substitute with reader/operator simulation, policy conformance, and traceability review. | Substitute with policy structure, rule-chain, terminology, and cross-reference review. | Still applicable because policy evidence can be stale, self-biased, or bypassed. |
+| `documentation_or_skill_contract` | usually `non_program_artifact` | Substitute with artifact acceptance review and reader/operator simulation. | Substitute with artifact structure review, field consistency, prompt/control-flow traceability, and cross-reference validation. | Composite lanes are often the primary acceptance surface. |
+| `research_or_plan_artifact` | usually `non_program_artifact` | Substitute with research evidence review and professional review. | Substitute with claim/assumption/traceability structure review. | Anticheat checks source quality, reuse, and stale claims. |
+| `mixed_delivery` | `mixed` | Split by worktrack, completion signal, component, or delivery path. | Split the same way; program slices keep software semantics. | Must preserve slice coverage and lane records across all slices. |
+| `unknown` | `unknown` | Non-pass until a high-confidence traceable inference exists. | Non-pass until a high-confidence traceable inference exists. | Block or request programmer review when evidence boundaries are unclear. |
+
+Unknown fallback requires a structured inference record with `inferred_target_type`, `inferred_target_scenario`, `confidence`, `evidence_refs`, `uncertainty`, and `recommended_axis_profile`. `medium`, `low`, or contradictory confidence cannot produce a pass; it remains non-pass or blocked until clarified.
+
+### Axis applicability profiles by scenario
+
+These profiles define the default axis state for the common scenario when no milestone-specific override exists. A profile is routing evidence, not a verdict. A milestone may override a profile only by recording the reason and preserving the same substitution evidence contract.
+
+| target_scenario | blackbox default | whitebox default | anticheat default | composite default |
+|-----------------|------------------|------------------|-------------------|-------------------|
+| `runnable_workflow` | `applicable`; external behavior scenario evidence is required. | `applicable`; structural/internal evidence is required. | `applicable`; dispatch, evidence freshness, reuse, bypass, and bias remain in scope. | `applicable`; consume lane records according to review depth. |
+| `config_environment` | `applicable` when config changes runtime behavior; `substituted` with `policy_conformance` or `reader_operator_simulation` when the deliverable is config policy text only. | `applicable` when code loads or propagates config; `substituted` with `artifact_structure_review` or `policy_conformance` for config contracts or run rules. | `applicable`; config evidence is still vulnerable to stale refs, partial validation, and bypass. | `applicable`; related-influence and operator-simulation lanes are especially relevant. |
+| `experiment_execution` | `applicable` for executable experiment workflows; `substituted` with `research_evidence_review` / `professional_review` for reports and conclusions. | `applicable` for experiment code; `substituted` with traceability/research structure review for non-code results. | `applicable`; A2 evidence reuse and A5 stale evidence are material. | `applicable`; feature-completeness, intent-completeness, and professional-review lanes must preserve external dependency gaps. |
+| `workflow_policy` | usually `substituted` with `reader_operator_simulation`, `policy_conformance`, or `traceability_review`; do not force runtime scenarios unless a program slice exists. | usually `substituted` with `policy_structure_review`, `artifact_structure_review`, or `cross_reference_validation`. | `applicable`; policy evidence can still bypass gates or carry self-review bias. | `applicable`; lane records are often the main acceptance surface. |
+| `documentation_or_skill_contract` | usually `substituted` with `artifact_acceptance_review`, `reader_operator_simulation`, or `cross_reference_validation`. | usually `substituted` with `artifact_structure_review`, field-contract consistency, or prompt/control-flow traceability. | `applicable`; artifact evidence credibility still matters. | `applicable`; code-review may be non-code review, but lane status must stay explicit. |
+| `research_or_plan_artifact` | usually `substituted` with `research_evidence_review`, `traceability_review`, or `professional_review`. | usually `substituted` with claim/assumption/evidence structure review. | `applicable`; source quality, reuse, and stale claim detection remain in scope. | `applicable`; professional-review and intent-completeness carry much of the acceptance burden. |
+| `mixed_delivery` | `split`; each program slice uses behavior scenarios and each non-program slice uses substitution evidence. | `split`; each program slice uses structure analysis and each non-program slice uses artifact/policy/research structure review. | `applicable`; must cover all slices and preserve per-slice evidence gaps. | `applicable`; must preserve slice-level lane coverage. |
+| `unknown` | `blocked` unless a high-confidence traceable inference resolves the scenario. | `blocked` unless a high-confidence traceable inference resolves the scenario. | `blocked` if the evidence boundary is unclear. | `blocked` or questions_required until scope and mandatory lane set can be classified. |
+
+Substitution boundaries:
+
+- Blackbox substitution may only replace runtime behavior testing for non-runnable or non-program slices. It cannot replace an available program slice's external behavior scenario.
+- Whitebox substitution may only replace software internal analysis for non-code artifact structure, policy rule chains, research reasoning, or contract consistency. It cannot use blackbox behavior evidence as internal structure evidence.
+- Anticheat is not a substitute for blackbox or whitebox. It remains an evidence credibility axis; if a scenario has no meaningful evidence boundary, the result is `blocked`, not `not_applicable`.
+- Composite is not a substitute for missing axis evidence unless the axis explicitly records `substituted` and its substitute evidence contract is satisfied. Composite lane records must stay distinct from blackbox/whitebox findings.
+
+### Applicability state is not verdict
+
+`axis_applicability.state` is a routing fact, not a pass/fail verdict:
+
+- `applicable` means the axis must run and produce its normal verdict.
+- `not_applicable` means the axis does not apply to this target type; aggregation must record it separately and must not coerce it to `pass`.
+- `substituted` means the axis's usual software-testing method is replaced by an artifact-appropriate method; aggregation may treat the axis as satisfied only when the substitute evidence is present and accepted.
+- `split` means a mixed delivery or scenario must provide slice-level coverage; the state itself is not a pass.
+- `blocked` means the milestone gate cannot legally complete until target type, evidence, or substitute method is clarified.
+
+### Substitute acceptance evidence contract
+
+For non-program artifact slices, `substituted` is valid only when the substitute method matches the artifact and the evidence is concrete enough for a later reviewer to replay the judgment. The allowed substitute methods are:
+
+| substitute_method | Primary use | Required evidence |
+|-------------------|-------------|-------------------|
+| `artifact_acceptance_review` | docs, skill text, workflow policy, planning artifacts | purpose / completion signal / acceptance criterion mapping with explicit pass, gap, or blocked status |
+| `policy_conformance` | governance rules, run protocols, adapter or deploy policy text | checked rule refs, applicable must/must-not clauses, outcome, and exceptions |
+| `reader_operator_simulation` | user-facing or operator-facing instructions and interactive prompts | reader/operator path walked, expected action, observed ambiguity, failure point, and outcome |
+| `cross_reference_validation` | artifact with links, paths, field names, or upstream/downstream refs | reference target, existence/semantic check result, stale or missing refs |
+| `traceability_review` | completion signals, criteria, evidence linkage | per-signal or per-criterion evidence refs and uncovered items |
+| `professional_review` | research, policy, UX/interaction, or domain-specific judgment | reviewer perspective, judgment basis, verdict, and residual risk |
+| `research_evidence_review` | research claims and option analysis | source quality, claim boundary, counterevidence/limitations, and supported conclusion |
+| `artifact_structure_review` | schemas, field contracts, structured docs, skill output contracts | required sections/fields, internal consistency, terminology/interface consistency, and downstream fit |
+
+Minimal fields for every substituted axis:
+
+- `substitute_method`: one of the artifact-appropriate methods above.
+- `substitution_evidence_ref`: stable reference to evidence, a changed file section, command output, or reviewer record.
+- `substitute_verdict`: `pass`, `soft_fail`, `hard_fail`, `blocked`, or `not_applicable`.
+- `evidence_covers_completion_signal`: boolean, or an equivalent per-signal trace.
+- `substitution_evidence_summary`: short statement of what was checked and what remains uncovered.
+
+`substitute_verdict = pass` is required before aggregation may treat a substituted axis as satisfied. `soft_fail`, `hard_fail`, `blocked`, missing evidence, placeholder evidence, or evidence that does not cover the relevant completion signal must keep the axis unsatisfied or blocked according to milestone policy.
+
+### Mixed target slice coverage
+
+When `target_type = mixed`, aggregation must evaluate slices before producing a milestone-level verdict. A slice can be a worktrack, completion signal, artifact component, or delivery path. Each slice records `slice_id`, `slice_target_type`, `slice_target_scenario`, `axis`, `applicability_state`, `expected_method`, `substitute_method`, `evidence_ref`, and verdict.
+
+Program/code slices keep normal software validation semantics: black-box behavior scenarios and white-box structural/internal analysis. Non-program slices use substitute acceptance. Anti-cheat and composite remain applicable across slices unless their evidence boundary is explicitly blocked. A pass on one slice type cannot cover missing evidence on another slice type.
+
+Required `slice_coverage` semantics:
+
+- Every completion signal or accepted delivery component must map to at least one slice.
+- Each slice must declare `slice_target_type`, `slice_target_scenario`, `axis`, `applicability_state`, `expected_method`, `evidence_ref`, and verdict.
+- A program slice with missing blackbox or whitebox evidence keeps that axis unsatisfied even when a non-program slice has substitute evidence.
+- A non-program slice with missing substitute evidence keeps that slice unsatisfied even when program behavior tests pass.
+- Anticheat and composite must preserve the slice or lane evidence state for every slice; they may not collapse mixed evidence into a milestone-level prose summary.
+- Missing, incomplete, contaminated, or historical-gap slice evidence is non-positive evidence. It may be accepted later only by final acceptance manual exception while preserving the original gap.
+
+### Unknown target fallback
+
+Unknown target handling is a routing guard, not a convenience default. When `target_type`, `target_scenario`, or their sources are missing or contradictory, the Gate must build an inference record before any axis verdict can be considered satisfied:
+
+```yaml
+unknown_target_inference:
+  inferred_target_type: program_code | non_program_artifact | mixed | unknown
+  inferred_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  confidence: high | medium | low
+  evidence_refs: []
+  uncertainty:
+    - string
+  contradictory_evidence_refs: []
+  recommended_axis_profile:
+    blackbox: applicable | substituted | split | blocked
+    whitebox: applicable | substituted | split | blocked
+    anticheat: applicable | blocked
+    composite: applicable | blocked
+  questions_required: []
+```
+
+Inference rules:
+
+- `confidence: high` requires at least one approved artifact source and no contradictory target evidence.
+- `confidence: medium` or `low` is not enough for a pass. The milestone remains non-pass or `blocked`, and `questions_required` must explain what is missing.
+- `inferred_target_type: unknown`, `inferred_target_scenario: unknown`, empty `evidence_refs`, or non-empty unresolved `contradictory_evidence_refs` forces `axis_applicability_resolved: false`.
+- The recommended axis profile is a proposed route for recovery or programmer clarification. It is not a verdict and does not satisfy any axis by itself.
+
+### Final verdict interaction
+
+Milestone Gate final verdict must evaluate each axis through an `axis_satisfied` predicate instead of raw verdict equality:
+
+```text
+axis_satisfied(axis) =
+  axis.applicability.state == applicable
+    AND axis.verdict == pass
+  OR axis.applicability.state == substituted
+    AND axis.substitute_method is artifact_appropriate
+    AND axis.substitution_evidence_ref != N/A
+    AND axis.substitute_verdict == pass
+    AND axis.substitution_evidence_present == true
+    AND axis.evidence_covers_completion_signal == true
+```
+
+`not_applicable` can remove an axis from mandatory pass calculation only when the target type and reason are explicit. It does not create positive evidence and must remain visible in `composite_lane_verdicts`.
+
+### Aggregator execution order and final verdict priority
+
+Aggregator 必须按固定顺序执行，不能先看 raw axis verdict 再回填 target type：
+
+1. 解析 `target_type_rules`、`axis_applicability`、替代验收字段与 mixed `slice_coverage`。
+2. 计算 `weight_rules`。
+3. 检测 `contradiction_rules`。
+4. 消费 `composite_lane_rules`，并使用 `axis_satisfied(axis)` 判断 mandatory applicable / substituted 轴是否满足。
+5. 在 Step 0 已解析完成的前提下，才允许触发 `degenerate_and_rules`。
+
+最终 verdict 的阻断优先级：
+
+| 优先级 | 条件 | verdict |
+|--------|------|---------|
+| 0 | `target_type = unknown`、`target_scenario = unknown` 且无高置信可追溯推断、`axis_applicability_resolved = false`、替代证据缺失、mixed 缺少 `slice_coverage`、或 `aggregation_rules_missing` 导致无法解释轴适用性 | `blocked` |
+| 1 | veto-power 轴适用且 hard_fail / blocked，或 mandatory substituted 轴 `axis_satisfied = false` | `blocked` |
+| 2 | `contradiction_blocked = true` | `blocked` |
+| 3a | 所有 weight ≥ 3 的 WT pass，所有 mandatory applicable / substituted axes 满足 `axis_satisfied = true`，显式 `not_applicable` 轴均有 target_type reason | `pass` |
+| 3b | 任一 weight ≥ 3 的 WT hard-fail，且无 critical fail | `soft-fail` |
+| 3c | 任一 weight ≥ 4 的 WT hard-fail | `hard-fail` |
+| 4 | 退化 AND 条件全部满足，且 Step 0 适用性解析完成 | `pass`（标记 `degenerate_and_applied`） |
+
+## 六、composite_lane_rules：Composite lane 消费
 
 ### 目的
 
@@ -188,34 +448,57 @@ Composite acceptance lanes（black-box / white-box / anti-cheat / composite）�
 composite_lane_rules:
   consumption_mode: independent_axes_with_weight_modifier
   lane_axes:
-    black_box:
+    blackbox:
       aggregate: "lane-level verdict = AND of all WT black-box lane findings"
       veto_power: true   # black-box fail → milestone blocked，无论 per-WT aggregation 结果
-    white_box:
+    whitebox:
       aggregate: "lane-level verdict = AND of all WT white-box lane findings"
       veto_power: true
-    anti_cheat:
+    anticheat:
       aggregate: "lane-level verdict = AND of all WT anti-cheat signals; any high-severity finding → lane fail"
       veto_power: true   # cheating signal → milestone blocked
+      severity_config_ref: "product/harness/skills/milestone-anticheat-check/SKILL.md#Severity-Configuration-Contract"
     composite:
       aggregate: "lane-level verdict = AND of all WT composite lane findings"
       veto_power: false  # composite lane 是总体判断，不单独 block
+  anticheat_severity_config:
+    schema_version: "anticheat-severity-config/v1"
+    required_check_ids: [A1, A2, A3, A4, A5, A6, A7]
+    required_fields:
+      - default_severity
+      - soft_fail_triggers
+      - hard_fail_triggers
+      - blocking_triggers
+      - aggregation_impact
+    aggregation_impact_contract:
+      hard_fail: "veto_power=true; milestone_gate_verdict=blocked"
+      blocked: "veto_power=true; milestone_gate_verdict=blocked"
+      high_severity: "weight_modifier.enabled=true; target_wt_weight=0"
+    severity_distribution_contract:
+      max_default_high_checks: 2
+      default_high_reserved_for: "direct evidence-chain breakage, not broad suspicion"
+      trigger_override_allowed: true
+      required_decision_fields:
+        - assessment_mode
+        - quantitative_indicators
+        - scenario_judgment
+        - severity_override
   weight_modifier:
     # 有限 B 降级：lane finding 可调整特定 WT 的权重，但不替代四轴判定
     enabled: true
     rules:
-      - lane: anti_cheat
+      - lane: anticheat
         finding: high_severity
         target_wt_weight: 0        # cheating signal 将对应 WT 的权重清零
-      - lane: black_box
+      - lane: blackbox
         finding: high_severity
         target_wt_weight: 0        # black-box 严重缺陷将对应 WT 权重清零
   final_verdict:
     pass_condition: |
       per_WT_aggregation_verdict == pass
-      AND black_box_verdict == pass
-      AND white_box_verdict == pass
-      AND anti_cheat_verdict == pass
+      AND axis_satisfied(blackbox)
+      AND axis_satisfied(whitebox)
+      AND axis_satisfied(anticheat)
       AND composite_verdict != hard_fail
 ```
 
@@ -225,11 +508,11 @@ composite_lane_rules:
 - **Veto power**：black-box 测试失败就是失败，不应被其他 WT 的 pass 覆盖
 - **有限 B 降级**：anti-cheat finding 可以将特定 WT 的权重清零，防止 cheating WT 的 pass 拉高聚合分数
 
-### 与 WT3（三轴→四轴映射）的交接
+### 与 Worktrack composite lane 的交接
 
-WT3 将 worktrack 的 implementation-validation-policy 三轴映射到 milestone 的 black-box-white-box-anti-cheat-composite 四轴。本 artifact 定义的 `lane_axes` 的 aggregate 逻辑是 WT3 映射的消费方。
+Worktrack 级 implementation / validation / policy 证据会被 closeout 和 composite acceptance lane 汇总后输入 Milestone Gate 四轴。本 artifact 定义的 `lane_axes` aggregate 逻辑是这些 lane 结论在 milestone 级的消费方。
 
-## 六、degenerate_and_rules：退化 AND 判定
+## 七、degenerate_and_rules：退化 AND 判定
 
 ### 触发条件
 
@@ -240,8 +523,10 @@ degenerate_and_rules:
   trigger_conditions:
     all_satisfied:
       - no_contradiction_detected: true       # 无任何矛盾
-      - no_anti_cheat_high_severity: true      # 无反作弊高严重信号
+      - no_anticheat_high_severity: true      # 无反作弊高严重信号
       - all_lanes_consistent: true             # 所有 lane 一致（无 lane 级矛盾）
+      - axis_applicability_resolved: true      # 所有轴均有 applicable / substituted / not_applicable / blocked 之一，且无 blocked
+      - all_mandatory_axes_satisfied: true     # mandatory applicable / substituted 轴均满足 axis_satisfied
       - no_weight_override_applied: true        # 无手动权重覆盖
       - all_critical_wt_pass: true             # 所有 weight ≥ 4 的 WT 均 pass
   recording_required: true
@@ -261,7 +546,19 @@ degenerate_and_rules:
 
 退化 AND 不是静止跳过：如果将来任何退化条件不再满足（如新 WT 引入了矛盾），退化解锁，正常规则重新激活。退化理由记录确保 audit trail 可解释"为什么这次 milestone gate 看起来是简单 AND"。
 
-## 七、与 WT2（evidence-aggregator）的交接
+## 八、顶层四轴分派与 milestone-gate aggregator 交接
+
+### 顶层 Harness axis dispatch contract
+
+当 `worktrack_list_finished == true` 且 goal-driven milestone 需要 Milestone Gate 时，顶层 Harness 必须先执行四轴 sibling dispatch，再调用 `milestone-gate` 聚合。推荐流程：
+
+1. 从 milestone-status-skill 的观察结果准备共享 facts：`milestone_id`、closed worktrack list、milestone artifact refs、target type hints、aggregation rules、closeout/evidence refs。
+2. 为四个 axis 生成互相隔离的 input package。每份 package 只包含该 axis 需要的输入，不包含其他 axis 的 verdict、finding 或 report ref。
+3. 使用 `dispatch_mode_recommend.py` 和 runtime dispatch profile 记录实际载体选择。若 `runtime_dispatch_mode = delegated` 且不能真实分派，axis dispatch 必须返回 runtime gap，不得自动降级成聚合通过。
+4. 将四个 axis report 写入稳定 evidence refs，或以内联结构传入 `milestone-gate`，但二者都必须保留每轴的 `runtime_dispatch_profile` 和 `isolation_guarantee`。
+5. 调用 `milestone-gate` 时传入 `axis_reports`。`milestone-gate` 只聚合，不重新执行 axis skill。
+
+同一当前载体顺序运行四轴只能作为 fallback evidence 或 manual exception 的事实来源，不能满足真实四轴隔离。若 milestone 最终由 programmer 手动接受，必须记录为 acceptance override，而不是把 `milestone_gate_verdict` 改写为 `pass`。
 
 ### aggregator 的输入
 
@@ -272,41 +569,223 @@ aggregator_input:
       single_acceptance_verdict: { ... }  # from single-acceptance-contract.md
       gate_evidence: { ... }              # implementation/validation/policy gate verdicts
       closeout_record: { ... }
+      closeout_evidence_bundle_ref: ".servo/milestone/...#WT-xxx-Closeout-Evidence-Bundle"
+      closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing
       composite_lane_findings:            # per-WT composite lane findings
-        black_box: pass | soft_fail | hard_fail
-        white_box: pass | soft_fail | hard_fail
-        anti_cheat: pass | high_severity
+        blackbox: pass | soft_fail | hard_fail
+        whitebox: pass | soft_fail | hard_fail
+        anticheat: pass | high_severity
         composite: pass | soft_fail | hard_fail
+  axis_reports:
+    blackbox:
+      axis: blackbox
+      report_ref: string
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      severity: low | medium | high
+      carrier: subagent | current-carrier | human | missing
+      runtime_dispatch_profile: { ... }
+      isolation_guarantee: true | false
+      carrier_isolation_broken: true | false
+      target_type: program_code | non_program_artifact | mixed | unknown
+      target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+      axis_applicability_state: applicable | not_applicable | substituted | split | blocked
+      expected_method: string
+      checklist_results: [ ... ]
+      missing_evidence: [ ... ]
+    whitebox: { ... }
+    anticheat: { ... }
+    composite: { ... }
+  axis_dispatch_profile:
+    dispatch_owner: top_level_harness
+    dispatch_model: sibling_delegated | mixed | current_carrier_fallback | missing
+    required_axes: [blackbox, whitebox, anticheat, composite]
+    completed_axes: [blackbox, whitebox, anticheat, composite]
+    missing_axes: []
+    delegation_attempted_by_axis:
+      blackbox: true | false
+      whitebox: true | false
+      anticheat: true | false
+      composite: true | false
+    per_axis_runtime_dispatch_profile:
+      blackbox: { ... }
+      whitebox: { ... }
+      anticheat: { ... }
+      composite: { ... }
+    carrier_isolation_broken_any: true | false
+    same_carrier_cross_axis: true | false
+    dispatch_gap_reason: string | N/A
+    nested_axis_dispatch_attempted: false
   aggregation_rules: { ... }              # per-milestone 配置，来自本 artifact
+  target_type_rules: { ... }              # target_type、target_scenario 与 axis_applicability
+  manual_exception:
+    present: true | false
+    exception_type: programmer_acceptance_override | N/A
+    reason: string | N/A
+    accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
+    anti_cheat_findings_preserved: true | false | N/A
+    historical_gap_preserved: true | false | N/A
+    manual_exception_followup_ref: string | N/A
 ```
+
+Before Layer 1 dispatch, each sibling axis input package must pass clean-room lint. The package records `context_refs`, `allowed_ref_categories`, `forbidden_ref_categories`, and `input_gap_classification`. Inputs that include prior control-state axis labels, broad backlog reads, prior milestone Gate reports, or sibling axis reports are contaminated and must be rejected or surfaced as `input_gap` / non-pass axis facts before aggregation.
+
+Each per-axis `runtime_dispatch_profile` that claims spawned SubAgent execution must include `parent_runtime_dispatch_record_ref`, `spawned_subagent_record_ref`, `carrier_instance_id`, and `isolation_boundary`. Current-carrier fallback or ambiguous spawned-axis claims cannot prove sibling isolation unless a concrete runtime boundary violation is recorded. Blackbox reports additionally carry `input_gap_classification` so missing `target_type`, `aggregation_rules`, `completion_signals_trace`, or scenario inputs are separated from actual behavior scenario failures.
 
 ### aggregator 的输出
 
 ```yaml
 aggregator_output:
   milestone_gate_verdict: pass | soft_fail | hard_fail | blocked
+  milestone_gate_execution_model:
+    dispatch_owner: top_level_harness
+    aggregation_owner: milestone-gate
+    axis_dispatch_consumed: true | false
+    nested_axis_dispatch_attempted: false
+  axis_report_status: complete | missing | contaminated | isolation_broken | blocked_axis
+  axis_report_status_by_axis:
+    blackbox: present | missing | stale | contaminated | blocked
+    whitebox: present | missing | stale | contaminated | blocked
+    anticheat: present | missing | stale | contaminated | blocked
+    composite: present | missing | stale | contaminated | blocked
+  axis_dispatch_profile: { ... }
+  aggregation_rules_applied: true | false
+  aggregation_rules_missing: true | false
+  aggregation_rules_source: string
+  target_type: program_code | non_program_artifact | mixed | unknown
+  target_type_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+  target_scenario_source: programmer_declared | milestone_artifact | gate_input | inferred_from_worktracks | unknown
+  target_scenario_confidence: high | medium | low
+  operator_situation: string | N/A
+  axis_applicability_resolved: true | false
+  axis_satisfaction:
+    blackbox:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    whitebox:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    anticheat:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+    composite:
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      axis_satisfied: true | false
+      reason: string
+      evidence_refs: [string]
+  substitution_evidence_summary:
+    by_axis:
+      blackbox | whitebox | anticheat | composite:
+        substitute_method: string | N/A
+        substitution_evidence_ref: string | N/A
+        substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+        evidence_covers_completion_signal: true | false | N/A
+        checked_scope: string
   per_worktrack_weights: { ... }          # 每个 WT 的最终权重（含 overrides）
   contradiction_findings: [...]           # 已检测到的矛盾
   contradiction_resolution_status:         # 若有矛盾
     blocked: true | false
     resolution_path: new_verification_worktrack | programmer_resolution | none
   composite_lane_verdicts:                 # 四轴聚合结论
-    black_box: pass | soft_fail | hard_fail
-    white_box: pass | soft_fail | hard_fail
-    anti_cheat: pass | high_severity
-    composite: pass | soft_fail | hard_fail
+    blackbox:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
+    whitebox:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
+    anticheat:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
+    composite:
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      substituted_by: string | N/A
+      axis_satisfied: true | false
+      veto_triggered: true | false
+      weight_modifier_applied: true | false
+      substitute_method: string | N/A
+      substitution_evidence_ref: string | N/A
+      substitute_verdict: pass | soft_fail | hard_fail | blocked | not_applicable | N/A
+      evidence_covers_completion_signal: true | false | N/A
+  slice_coverage:                         # required for target_type = mixed
+    - slice_id: string
+      slice_target_type: program_code | non_program_artifact | unknown
+      slice_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | unknown
+      axis: blackbox | whitebox | anticheat | composite
+      applicability_state: applicable | not_applicable | substituted | split | blocked
+      expected_method: string
+      substitute_method: string | N/A
+      evidence_ref: string | N/A
+      verdict: pass | soft_fail | hard_fail | blocked | not_applicable
+  unknown_target_inference:                # required when target type/scenario is missing or contradictory
+    inferred_target_type: program_code | non_program_artifact | mixed | unknown
+    inferred_target_scenario: runnable_workflow | config_environment | experiment_execution | workflow_policy | documentation_or_skill_contract | research_or_plan_artifact | mixed_delivery | unknown
+    confidence: high | medium | low
+    evidence_refs: []
+    uncertainty: []
+    contradictory_evidence_refs: []
+    recommended_axis_profile: { ... }
+    questions_required: []
   degenerate_and_applied: true | false
   degenerate_and_reason: string | N/A
+  manual_exception:
+    present: true | false
+    exception_type: programmer_acceptance_override | N/A
+    gate_verdict_preserved: pass | soft_fail | hard_fail | blocked | N/A
+    reason: string | N/A
+  accepted_gate_verdict_preserved_as: pass | soft_fail | hard_fail | blocked | N/A
+  anti_cheat_findings_preserved: true | false | N/A
+  historical_gap_preserved: true | false | N/A
+  manual_exception_followup_ref: string | N/A
   aggregation_summary: string
 ```
 
-### WT2 实现时需注意
+### Aggregator 实现时需注意
 
-- `per_worktrack_weights` 的计算顺序：先取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
+- `axis_reports` 缺失、被污染、无法追溯或缺少 `runtime_dispatch_profile` 时，`axis_applicability_resolved` 不得为 true；最终 verdict 必须为 `blocked`，除非该 axis 被 target type 明确 `not_applicable` 且不需要 positive evidence。
+- Axis input package lint failure is non-pass evidence. Reports produced from packages that read prior control-state axis labels, broad backlog files, prior milestone Gate reports, or sibling axis reports must be marked `contaminated` or surfaced through `input_gap_classification`; they cannot become clean-room axis pass evidence.
+- A spawned SubAgent carrier claim is valid only when the runtime dispatch profile preserves parent dispatch linkage, spawned SubAgent record linkage, a concrete carrier instance, and the isolation boundary. Ambiguous claims and current-carrier masquerading do not satisfy `isolation_guarantee`.
+- `closeout_evidence_bundle_ref` 缺失、bundle 不完整、bundle contaminated，或只有 prose closeout summary 时，不得后验合成 self-review、dispatch provenance 或 composite lane evidence。该 worktrack 必须以 `missing` / `incomplete` / `contaminated` / `historical_gap` 状态进入 axis checks 和 aggregation。
+- `axis_dispatch_profile.same_carrier_cross_axis == true` 或 `carrier_isolation_broken_any == true` 时，聚合器必须把真实四轴隔离视为未满足。该事实可被 programmer final acceptance override 接受，但 `milestone_gate_verdict` 仍应保持 `blocked` 或其他真实 non-pass verdict。
+- `manual_exception` 只描述 final acceptance override，不参与 `axis_satisfied(axis)` 计算，不得把 `blocked` 改写成 `pass`。
+- `historical_gap` is visible non-positive evidence, distinct from `missing`, `incomplete`, and `contaminated`; it is not a waiver and not a pass. Aggregation may let programmer final acceptance acknowledge the legacy gap, but it must preserve the original `historical_gap` status and must not synthesize positive evidence or synthetic pass evidence from it.
+- `anticheat` 轴的 finding 是 evidence credibility verdict，不是可被 manual exception 消除的普通 residual risk。若 anticheat 报告 evidence reuse、same-carrier contamination、stale checkpoint、gate bypass、self-review bias 或 `historical_gap`，manual exception 只能说明 programmer 接受该风险继续 closeout；原 finding、severity、affected evidence refs、historical gap fields、`axis_report_status` 和 `axis_report_status_by_axis` 必须原样保留，并显式记录 `anti_cheat_findings_preserved: true` 与 `historical_gap_preserved: true`。
+- `milestone_gate_verdict` 与 `milestone_acceptance_verdict` 是两层不同结论：前者回答 Gate 是否通过，后者回答 programmer 是否在看到 Gate 结果后接受 milestone。`accepted_with_manual_exception` 只能出现在 final acceptance 层，不能反向改变 Gate verdict、axis verdict 或 anti-cheat verdict。
+- `per_worktrack_weights` 的计算顺序：先解析 target_type_rules 与 axis_applicability，再取 node_type_weights 默认值，再应用 overrides，再应用 composite_lane weight_modifier
 - contradiction detection 在 weight 应用之后执行——先确定哪些 WT 是 critical，再检测 critical 之间的矛盾
 - block lift 不可自动：aggregator 检测到之前在同一 milestone 下的 contradiction resolution（新 verification WT 的 closeout），自动重算但保留 block 直到 resolution 的 evidence 满足 block_lift_condition
 
-## 八、示例：Release Milestone 的 aggregation_rules
+## 九、示例：Release Milestone 的 aggregation_rules
 
 ```yaml
 aggregation_rules:
@@ -330,12 +809,25 @@ aggregation_rules:
         - path_id: programmer_resolution
     partial_contradiction:
       handling: record_as_risk
+  target_type_rules:
+    target_type: program_code
+    target_type_source: milestone_artifact
+    target_type_confidence: high
+    target_scenario: runnable_workflow
+    target_scenario_source: milestone_artifact
+    target_scenario_confidence: high
+    operator_situation: "operator runs the delivered workflow and observes runtime behavior"
+    axis_applicability:
+      blackbox: { state: applicable, expected_method: external_behavior_scenario }
+      whitebox: { state: applicable, expected_method: structural_internal_analysis }
+      anticheat: { state: applicable, expected_method: evidence_integrity_review }
+      composite: { state: applicable, expected_method: composite_acceptance_lanes }
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
-      black_box: { veto_power: true }
-      white_box: { veto_power: true }
-      anti_cheat: { veto_power: true }
+      blackbox: { veto_power: true }
+      whitebox: { veto_power: true }
+      anticheat: { veto_power: true }
       composite: { veto_power: false }
     weight_modifier:
       enabled: true
@@ -343,7 +835,7 @@ aggregation_rules:
     recording_required: true
 ```
 
-## 九、示例：Docs Milestone 的 aggregation_rules
+## 十、示例：Docs Milestone 的 aggregation_rules
 
 ```yaml
 aggregation_rules:
@@ -360,15 +852,38 @@ aggregation_rules:
         weight_both_are_at_least: 2       # 但阈值更低（docs WT 默认 weight=3）
     resolution:
       default_action: block
+  target_type_rules:
+    target_type: non_program_artifact
+    target_type_source: milestone_artifact
+    target_type_confidence: high
+    target_scenario: documentation_or_skill_contract
+    target_scenario_source: milestone_artifact
+    target_scenario_confidence: high
+    operator_situation: "reviewer reads and applies the delivered artifact contract"
+    axis_applicability:
+      blackbox:
+        state: substituted
+        expected_method: artifact_acceptance_review
+        substituted_by: operator_simulation
+      whitebox:
+        state: substituted
+        expected_method: artifact_structure_review
+        substituted_by: professional_review
+      anticheat:
+        state: applicable
+        expected_method: evidence_integrity_review
+      composite:
+        state: applicable
+        expected_method: composite_acceptance_lanes
   composite_lane_rules:
     consumption_mode: independent_axes_with_weight_modifier
     lane_axes:
-      black_box: { veto_power: false }    # docs milestone 不强依赖 black-box
-      white_box: { veto_power: true }
-      anti_cheat: { veto_power: false }
+      blackbox: { veto_power: false }    # docs milestone 不强依赖 black-box
+      whitebox: { veto_power: true }
+      anticheat: { veto_power: true }    # evidence credibility finding 仍可 block
       composite: { veto_power: false }
     weight_modifier:
-      enabled: false                      # docs milestone 不需要权重修饰
+      enabled: true                       # anti-cheat high severity 仍将对应 WT 权重清零
   degenerate_and_rules:
     recording_required: true
 ```
@@ -376,27 +891,38 @@ aggregation_rules:
 注意 release vs docs milestone 的区别：
 
 - release 的 black-box 和 anti-cheat 有 veto power
-- docs 的 white-box（review quality）有 veto power，但 black-box 没有
+- docs 的 white-box（review quality）和 anti-cheat 有 veto power，但 black-box 没有
+- 若 operator 手动偏离 anti-cheat veto 或 weight modifier 默认值，必须作为 bounded manual exception 记录，且不得删除、降级或覆盖 anti-cheat findings、severity、affected evidence refs 或 `historical_gap` 字段
 - 这体现了"不同 milestone 对证据的要求不同"
 
-## 十、约束与保证
+## 十一、约束与保证
 
 ### 不变式
 
 - **Contradiction block 不可自动解除**：aggregator 不能因为"后来的 WT 都过了"就静默消解之前的矛盾
 - **Weight 不超过 node_type 的语义边界**：docs WT 的 weight 不能超过 feature WT（overrides 除外，需显式理由）
 - **Veto power 不可被 per-WT aggregation 覆盖**：black-box fail 即 milestone blocked，无论其他 WT 如何
+- **Target type 先于轴 verdict**：未解析 target_type 或 axis_applicability 时，不得把黑盒/白盒轴默认为 pass
+- **Axis report 先于聚合 verdict**：未收到四轴显式报告时，`milestone-gate` 不得在内部补跑轴检查或制造默认 axis verdict
+- **Same-carrier fallback 不是隔离 pass**：current-carrier 顺序执行四轴只能产生运行时缺口或 manual exception evidence，不能满足 sibling axis isolation
+- **Manual exception 不是 anti-cheat 消音器**：programmer 可以接受 blocked Gate 的业务风险，但不得删除、降级或改写 anti-cheat finding；证据可信度 verdict 必须保留给后续审计和 follow-up milestone。
+- **Acceptance verdict 不反写 Gate verdict**：`milestone_acceptance_verdict: accepted_with_manual_exception` 不等价于 `milestone_gate_verdict: pass`。任何读者必须同时读取 preserved Gate verdict 和 acceptance override，不能只看最终 completed 状态。
+- **not_applicable 不是 pass**：`not_applicable` 只能移出 mandatory pass 计算，不能提供正向完成证据
+- **substituted 必须有证据**：`substituted` 只有在替代验收证据存在并通过时才可视为 axis satisfied
 - **退化 AND 必须记录**：即使当前 evidence 状态简单到不需要聚合规则，也必须说明"为什么简单"而不是"跳过了规则"
 
 ### 向后兼容
 
 - 已完成的 milestone（completed/superseded）不需要补充 aggregation_rules
-- 活跃 milestone 如果尚未声明 aggregation_rules，默认使用 `enabled: false`（退化 AND），但必须在 milestone gate evidence 中标记 `aggregation_rules_missing: true` 作为 warning
-- 此行为确保 MS-20260623-003 合入后不影响正在执行的 other milestones
+- 活跃 milestone 如果尚未声明 aggregation_rules，默认使用 `enabled: false`（退化 AND），但必须在 milestone gate evidence 中标记 `aggregation_rules_missing: true`。当缺失规则导致 target type 或 axis applicability 无法解释时，最终 verdict 必须为 `blocked`；只有适用性已由其他可追踪输入解析完成时，它才是 warning。
+- 旧 milestone 缺少 `target_type_rules` 时，Milestone Gate 必须在 evidence 中记录 `target_type: unknown` 或一个有来源的 runtime inference；不得把缺失解释为 program_code、non_program_artifact 或 pass
+- 此行为确保新 Gate 语义不会静默改变旧 milestone 的目标类型判断。
 
-## 十一、相关文档
+## 十二、相关文档
 
 - [Single-Acceptance Contract](../worktrack/single-acceptance-contract.md) — 被消费的 verdict 格式
 - [Worktrack Contract](../worktrack/contract.md) — worktrack 级 gate 定义
 - [Milestone Artifact Control](../control/milestone.md) — milestone gate 的上级定义
-- [harness-skill §8](../../../../product/harness/skills/harness-skill/SKILL.md) — 三轴 Gate 模型
+- [milestone-gate](../../../../product/harness/skills/milestone-gate/SKILL.md) — 可执行 Gate aggregator，消费顶层 Harness 提供的显式四轴报告
+- [milestone-blackbox-check](../../../../product/harness/skills/milestone-blackbox-check/SKILL.md) — 外部行为场景与非程序替代验收轴
+- [milestone-whitebox-check](../../../../product/harness/skills/milestone-whitebox-check/SKILL.md) — 内部结构分析与非程序结构替代审查轴

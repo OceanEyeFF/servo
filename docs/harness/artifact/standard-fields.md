@@ -1,9 +1,9 @@
 ---
 title: "Standard Fields Vocabulary"
 status: active
-updated: "2026-06-05"
+updated: "2026-06-28"
 owner: "servo-kernel"
-last_verified: 2026-06-13
+last_verified: 2026-06-28
 ---
 
 # Standard Fields Vocabulary
@@ -34,6 +34,50 @@ last_verified: 2026-06-13
 | `continuation_ready` | `boolean` | 是否可继续推进 | All |
 | `continuation_blockers` | `string[]` | 继续阻塞项列表 | All |
 | `continuation_decision` | `string` | 继续决策说明 | `harness-skill` |
+
+## Milestone Gate 目标类型与轴适用性字段
+
+| 标准字段名 | 类型 | 说明 | 适用 Skill |
+|-----------|------|------|-----------|
+| `target_type` | `program_code \| non_program_artifact \| mixed \| unknown` | Milestone Gate 目标类型。决定 blackbox / whitebox / anti-cheat / composite 轴的取证方法 | `milestone-gate`, milestone axis skills |
+| `target_type_source` | `programmer_declared \| milestone_artifact \| gate_input \| inferred_from_worktracks \| unknown` | target_type 来源；推断来源必须可追踪 | `milestone-gate`, milestone axis skills |
+| `target_type_confidence` | `high \| medium \| low` | target_type 判定置信度 | `milestone-gate`, milestone axis skills |
+| `target_type_rules` | `object` | Milestone Gate 目标类型、来源、置信度、轴适用性、替代验收要求和 mixed slice 覆盖的封套；聚合器必须先解析它再聚合 verdict | `milestone-gate` |
+| `axis` | `blackbox \| whitebox \| anticheat \| composite` | Milestone Gate 轴标识 | Milestone axis skills |
+| `verdict` | `pass \| soft_fail \| hard_fail \| blocked \| not_applicable` | 单轴 verdict。`not_applicable` 只能表示轴不适用，不等于 pass | Milestone axis skills |
+| `axis_applicability` | `object` | 四轴适用性封套，按 axis 记录 state、expected_method、substituted_by 与 reason | `milestone-gate` |
+| `axis_applicability_resolved` | `boolean` | 四轴适用性是否已解析完成；为 `false` 时 Milestone Gate 最终 verdict 必须阻断 | `milestone-gate` |
+| `axis_applicability_state` | `applicable \| not_applicable \| substituted \| split \| blocked` | 单轴适用性状态；这是路由事实，不是成功 verdict | Milestone axis skills |
+| `axis_applicability_reason` | `string` | 单轴适用或不适用理由 | Milestone axis skills |
+| `applicability_state` | `applicable \| not_applicable \| substituted \| split \| blocked` | `composite_lane_verdicts` 和 `slice_coverage` 内的 lane-local 适用性状态字段；语义等同 `axis_applicability_state`，不代表 pass | `milestone-gate` |
+| `expected_method` | `string` | 该轴对当前 target_type 应使用的验收方法，如 `external_behavior_scenario` 或 `structural_internal_analysis` | Milestone axis skills |
+| `axis_satisfaction` | `object` | 聚合器输出的轴满足度封套，按 axis 记录 applicability_state、axis_satisfied、reason 和 evidence refs | `milestone-gate` |
+| `axis_satisfied` | `boolean` | 轴满足度谓词结果；`applicable` 轴要求 raw verdict pass，`substituted` 轴要求合格替代证据，`not_applicable` 本身为 false | `milestone-gate` |
+| `substituted_by` | `string \| N/A` | 当 `axis_applicability_state = substituted` 时，记录替代验收来源 | Milestone axis skills |
+| `substitution_evidence_ref` | `string \| N/A` | 替代验收证据引用；缺失时 substituted 不能视为 satisfied | `milestone-gate`, milestone axis skills |
+| `substitute_method` | `artifact_acceptance_review \| policy_conformance \| reader_operator_simulation \| cross_reference_validation \| traceability_review \| professional_review \| research_evidence_review \| artifact_structure_review \| string` | 非程序 artifact 替代验收方法；必须贴合 artifact 类型和 axis 语义 | `milestone-gate`, milestone axis skills |
+| `substitute_verdict` | `pass \| soft_fail \| hard_fail \| blocked \| not_applicable` | 替代验收自身的 verdict；只有 `pass` 且 evidence 完整时，`substituted` 才可视为 satisfied | `milestone-gate`, milestone axis skills |
+| `substitution_evidence_present` | `boolean` | 替代证据是否存在且非占位；为 `false` 时不得把 `substituted` 视为通过 | `milestone-gate`, milestone axis skills |
+| `substitution_evidence_summary` | `string` | 替代验收检查内容、覆盖范围、缺口和残留风险摘要 | `milestone-gate`, milestone axis skills |
+| `evidence_covers_completion_signal` | `boolean` | 替代证据是否覆盖对应 completion signal 或 acceptance criterion | `milestone-gate`, milestone axis skills |
+| `slice_id` | `string` | mixed target 的切片标识；切片可对应 worktrack、completion signal、artifact component 或交付路径 | `milestone-gate`, milestone axis skills |
+| `slice_target_type` | `program_code \| non_program_artifact \| unknown` | mixed target 中单个切片的目标类型 | `milestone-gate`, milestone axis skills |
+| `slice_coverage` | `object[]` | mixed target 的逐切片覆盖记录，至少包含 slice_id、slice_target_type、axis、applicability_state、expected_method、substitute_method、evidence_ref 和 verdict | `milestone-gate` |
+| `veto_triggered` | `boolean` | Milestone Gate lane 是否触发 veto-power 阻断 | `milestone-gate` |
+| `weight_modifier_applied` | `boolean` | Milestone Gate lane finding 是否已对对应 WT 权重应用修饰 | `milestone-gate` |
+| `axis_reports` | `object` | 顶层 Harness sibling axis dispatch 产出的四轴显式报告封套，供 `milestone-gate` 聚合消费 | `harness-skill`, `milestone-gate` |
+| `axis_report_status` | `complete \| missing \| contaminated \| isolation_broken \| blocked_axis` | 四轴报告封套的整体状态；任何非 `complete` 值都属于 non-pass Gate fact | `milestone-gate` |
+| `axis_report_status_by_axis` | `object` | 每个 axis report 的明细状态：present / missing / stale / contaminated / blocked | `milestone-gate` |
+| `axis_dispatch_profile` | `object` | 四轴 sibling dispatch 的运行时画像，记录 dispatch owner/model、required/completed/missing axes、per-axis delegation/runtime profile、same-carrier fallback、runtime gap 与 nested dispatch attempt | `harness-skill`, `milestone-gate` |
+| `milestone_gate_execution_model` | `object` | Milestone Gate 执行模型，区分 top-level axis dispatch 与 `milestone-gate` aggregation，且记录是否尝试 nested dispatch | `milestone-gate` |
+| `nested_axis_dispatch_attempted` | `boolean` | `milestone-gate` 是否尝试在内部继续分派四轴；新合同下必须为 false | `milestone-gate` |
+| `same_carrier_cross_axis` | `boolean` | 四轴是否在同一 carrier 上顺序执行，若为 true 不满足真实四轴隔离 | `harness-skill`, `milestone-gate`, milestone axis skills |
+| `manual_exception` | `object` | Programmer final acceptance override 记录；只描述验收例外，不改写 gate verdict | `harness-skill`, `milestone-gate` |
+| `accepted_gate_verdict_preserved_as` | `pass \| soft_fail \| hard_fail \| blocked \| N/A` | manual exception 中保留的真实 Gate verdict | `harness-skill`, `milestone-gate` |
+| `milestone_gate_verdict` | `pass \| soft_fail \| hard_fail \| blocked` | Milestone Gate 证据层 verdict；manual exception 不得把它改写为 pass | `milestone-gate`, `milestone-status-skill` |
+| `milestone_acceptance_verdict` | `achieved \| blocked \| accepted \| accepted_with_manual_exception \| N/A` | Final acceptance 层结论；可记录 programmer override，但不得反写 Gate verdict | `milestone-status-skill`, `harness-skill` |
+| `anti_cheat_findings_preserved` | `boolean` | manual exception 后是否保留原 anticheat finding、severity、evidence refs 与 affected scope；必须为 true 才能审计 | `milestone-gate`, `milestone-anticheat-check` |
+| `manual_exception_followup_ref` | `string \| N/A` | manual exception 产生的后续 milestone/worktrack/evidence 引用；无 follow-up 时必须显式 N/A | `harness-skill`, `milestone-status-skill` |
 
 ## 审批 & 权限字段
 

@@ -1,9 +1,9 @@
 ---
 title: "Deploy Mapping Spec"
 status: active
-updated: 2026-05-22
+updated: 2026-07-01
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-07-01
 ---
 # Deploy Mapping Spec
 
@@ -13,11 +13,13 @@ last_verified: 2026-06-13
 
 ## 映射链路
 
-`canonical source -> backend payload source -> payload descriptor -> target entry -> verify`；canonical source 是唯一 truth（`product/harness/skills/`），backend payload source 是分发载体（`adapters/<backend>/skills/`），payload descriptor 只描述分发所需信息，target entry 是 live install 落点且不回写 source。
+`canonical source -> backend payload source -> source payload descriptor -> target entry -> verify`；canonical source 是唯一 truth（`product/harness/skills/`），backend payload source 是分发载体（`adapters/<backend>/skills/`），source payload descriptor 只描述从 source 取哪些文件以及写入哪个 target entry，target entry 是 live install 落点且不回写 source。
+
+安装到 `.agents/skills/` 或 `.claude/skills/` 后，目标目录内的 `payload.json` 不再复制 source payload descriptor 原文。installer 必须写入运行态 package-local descriptor：`payload_policy=runtime-package-local`、`reference_distribution=package-local-files`、`package_dir="."`，并用 `package_paths` / `required_payload_files` 列出当前包内文件。安装态 descriptor 不得包含 `canonical_dir`、`canonical_paths`、`product/harness/*` source path 或 parent-directory escape。
 
 聚合 backend (`--backend bundle`) 在同一命令调用中同时实例化 agents 与 claude 两组 mapping 链路。canonical source 共享（一个 canonical source 同时驱动两组 backend payload source），但 `backend payload source -> payload descriptor -> target entry -> verify` 这一段在两个 backend 上各自独立运行，互不交叉：
 
-- agents 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/agents/skills/{skill_id}/` -> agents payload descriptor -> `<targetRepoRoot>/.agents/skills/servo-{skill_id}/` -> agents verify
+- agents 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/agents/skills/{skill_id}/` -> agents payload descriptor -> `<targetRepoRoot>/.agents/skills/{skill_id}/` -> agents verify
 - claude 端：`product/harness/skills/{skill_id}/` -> `product/harness/adapters/claude/skills/{skill_id}/` -> claude payload descriptor -> `<targetRepoRoot>/.claude/skills/{skill_id}/` -> claude verify
 
 bundle 不创建第三条链路；它只是 dispatcher 决定"同时驱动这两条链路"的 control-plane 行为。
@@ -35,19 +37,21 @@ bundle 不创建第三条链路；它只是 dispatcher 决定"同时驱动这两
 
 `canonical_dir`、`target_dir`、`target_entry_name`、`required_payload_files` 都必须是安全相对路径，不跳出各自根目录。
 
-聚合 backend (`--backend bundle`) 不引入新的字段。每个字段的"最小要求"不变，仅 `target_dir` 唯一性以 per-root 视角解读：agents 根内的 `servo-{skill_id}` 与 claude 根内的 `{skill_id}` 因物理位于不同 target root，**不构成跨根唯一性冲突**。
+这些最小字段属于 backend payload source，不属于安装态 `payload.json`。安装态 `payload.json` 的最小字段是身份字段、`target_dir`、`target_entry_name`、`payload_policy=runtime-package-local`、`reference_distribution=package-local-files`、`package_dir="."`、`package_paths`、`required_payload_files` 和必要的 legacy metadata。
+
+聚合 backend (`--backend bundle`) 不引入新的字段。每个字段的"最小要求"不变，仅 `target_dir` 唯一性以 per-root 视角解读：agents 根内的 `{skill_id}` 与 claude 根内的 `{skill_id}` 因物理位于不同 target root，**不构成跨根唯一性冲突**。
 
 ## 当前稳定 target 命名
 
 | backend | 当前稳定 `target_dir` 约定 |
 | --- | --- |
-| `agents` | `servo-{skill_id}` |
+| `agents` | `{skill_id}` |
 | `claude` | `{skill_id}` |
-| `bundle` | 同时实例化两组：agents 端 = `servo-{skill_id}`（在 `<targetRepoRoot>/.agents/skills/` 下），claude 端 = `{skill_id}`（在 `<targetRepoRoot>/.claude/skills/` 下） |
+| `bundle` | 同时实例化两组：agents 端 = `{skill_id}`（在 `<targetRepoRoot>/.agents/skills/` 下），claude 端 = `{skill_id}`（在 `<targetRepoRoot>/.claude/skills/` 下） |
 
 `bundle` 行的 `target_dir` 是 dispatcher 同时构造的双 binding 集合；每条 binding 仍各自满足前两行的稳定约定。`bundle` 不引入新的 target 命名规则，仅显式声明“两个 distribution 的 binding 在同一命令中同时存在”。
 
-Legacy agents target dirs named `aw-{skill_id}` remain recognized only through `legacy_target_dirs`. `diagnose` and `update` may report them as replaceable legacy target dirs; `update --yes` and `migrate-runtime --reinstall` converge them to the current `servo-{skill_id}` target dirs through the normal prune -> check -> install -> verify chain.
+Legacy agents target dirs named `servo-{skill_id}` or `aw-{skill_id}` remain recognized only through `legacy_target_dirs`. `diagnose` and `update` may report them as replaceable legacy target dirs; `update --yes` and `migrate-runtime --reinstall` converge them to the current `{skill_id}` target dirs through the normal prune -> check -> install -> verify chain.
 
 > 双根 path-disjoint 不变量：bundle 模式下，`<targetRepoRoot>/.agents/skills/` 与 `<targetRepoRoot>/.claude/skills/` 必须解析为物理不重叠的目录（dispatcher 在 context 构造阶段 reject `--agents-root` 与 `--claude-root` 解析后指向同一目录的组合）；详见 `distribution-entrypoint-contract.md` § "Aggregate Backend (`--backend bundle`)" § "Dual-Root Failure Short-Circuit" 第 3 条与 `payload-provenance-trust-boundary.md`。
 
@@ -55,9 +59,9 @@ Legacy agents target dirs named `aw-{skill_id}` remain recognized only through `
 
 - `check_paths_exist` 只读取当前 source 声明的目标路径，用于写入前冲突扫描
 - `diagnose` 与 `verify` 读取同一映射信息，退出语义不同
-- `install` 只写当前 descriptor 声明的 live payload
+- `install` 只写当前 descriptor 声明的 live payload；其中 target `payload.json` 由 installer 生成 package-local runtime descriptor，不复制 source descriptor 原文
 
-最小读取项：source 是否合法（无重复 `target_dir`）、target entry 与 `required_payload_files` 存在且类型正确、payload descriptor 身份字段与当前 binding 一致、live install 与当前 source 对齐。
+最小读取项：source 是否合法（无重复 `target_dir`）、target entry 与 `required_payload_files` 存在且类型正确、source payload descriptor 身份字段与当前 binding 一致、target `payload.json` 与 installer 生成的 runtime descriptor 一致、live install 与当前 source 对齐。`aw.marker` 的 fingerprint 仍基于 source payload descriptor 与 canonical files 计算，用于检测 source drift；target `payload.json` 的文本对齐则基于 runtime descriptor。
 
 聚合 backend (`--backend bundle`) 模式下，命令读取面是两组单 backend 读取面的并集：
 

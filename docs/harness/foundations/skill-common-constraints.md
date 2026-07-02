@@ -22,7 +22,7 @@ last_verified: 2026-06-13
 
 ## C-2: 控制状态约束
 
-- 变更 `Harness Control State` 的行为仅在 `Close`（`worktrack-close-skill`、`repo-refresh-skill`）、`SetGoal`（`harness-set-goal-skill`）或 `ChangeGoal`（`repo-change-goal-skill`）阶段合法
+- 变更 `Harness Control State` 的行为仅在 `Close`（`worktrack-close-skill`、`repo-refresh-skill`）、`SetGoal`（`repo-init-goal-skill`）或 `ChangeGoal`（`repo-change-goal-skill`）阶段合法
 - 其余所有 Skill 必须返回结构化输出供监督器（`harness-skill`）决策
 - 状态更新的唯一合法依据是经过 Gate 裁决后的判定结果；子代理的返回结果不能直接作为状态更新依据
 

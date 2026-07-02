@@ -61,7 +61,7 @@ npx servo-installer verify --backend agents
 在 Coding CLI 中调用：
 
 ```
-/harness-set-goal-skill
+/repo-init-goal-skill
 ```
 
 这一步会创建 `.servo/` 目录并生成 Goal Charter，定义仓库的长期目标、工程节点类型和系统不变量。
@@ -84,7 +84,7 @@ Worktrack 则是把 Milestone 根据项目实际情况落到实处的多个子�
 
 - **Milestone**：一组相关 Worktrack 的集合，有明确的 `purpose`（目的）、
   `completion_signals`（确认达成所有完成条件）和 `acceptance_criteria`（验收标准）。
-  Milestone 来自对仓库目标的分析和规划——在创建前需要经过 pre-milestone intake 确认范围与风险。
+  Milestone 来自具体工程情境的规划：用户追加、repo 当前状态、已有 backlog、pre-milestone intake 和 repo-whats-next 的事实判断会共同塑造它。Goal Charter 提供抽象目标、系统不变量和越界判断依据，但不要求每个 Milestone 都能从 Goal Charter 直接推导。
 - **Worktrack**：单个受约束的执行单元，有独立的 Git 分支、Contract、
   Plan/Task Queue 和 Gate Evidence。
 

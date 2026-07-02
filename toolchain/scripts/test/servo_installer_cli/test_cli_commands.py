@@ -155,7 +155,7 @@ def test_cli_agents_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 def test_cli_claude_command_lifecycle(repo_root: Path, node_path: str, tmp_path: Path) -> None:
     target_repo = tmp_path / "claude-target"
     target_root = target_repo / ".claude" / "skills"
-    installed_skill = target_root / "harness-set-goal-skill" / "SKILL.md"
+    installed_skill = target_root / "repo-init-goal-skill" / "SKILL.md"
     harness_skill = target_root / "harness-skill" / "SKILL.md"
 
     diagnose = assert_json_payload(
@@ -169,7 +169,7 @@ def test_cli_claude_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
     )
     assert update_json["backend"] == "claude"
     assert update_json["blocking_issue_count"] == 0
-    assert str(target_root / "harness-set-goal-skill") in update_json["planned_target_paths"]
+    assert str(target_root / "repo-init-goal-skill") in update_json["planned_target_paths"]
     assert str(target_root / "harness-skill") in update_json["planned_target_paths"]
 
     update_dry_run = run_servo_installer(repo_root, node_path, target_repo, "update", "--backend", "claude")
@@ -186,7 +186,7 @@ def test_cli_claude_command_lifecycle(repo_root: Path, node_path: str, tmp_path:
 
     install = run_servo_installer(repo_root, node_path, target_repo, "install", "--backend", "claude")
     assert_success(install)
-    assert "installed skill harness-set-goal-skill" in install.stdout
+    assert "installed skill repo-init-goal-skill" in install.stdout
     assert installed_skill.is_file()
     assert harness_skill.is_file()
     assert "disable-model-invocation: true" in harness_skill.read_text(encoding="utf-8")

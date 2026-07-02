@@ -1,9 +1,9 @@
 ---
 title: "Milestone Skills"
 status: active
-updated: 2026-06-23
+updated: 2026-06-28
 owner: servo-kernel
-last_verified: 2026-06-23
+last_verified: 2026-06-28
 ---
 # Milestone Skills
 
@@ -15,11 +15,11 @@ last_verified: 2026-06-23
 |------|-------|-------|----------|
 | [milestone-init-skill.md](./milestone-init-skill.md) | Init Milestone Skill | RepoScope | Milestone 初始化/注册算子 |
 | [milestone-status-skill.md](./milestone-status-skill.md) | Milestone Status Skill | RepoScope | Milestone 聚合观测/验收分析器（Sensor） |
-| — | milestone-gate | RepoScope | Milestone Gate 两层集成验收（Orchestrator） |
-| — | milestone-blackbox-check | RepoScope | Gate Layer 1 — blackbox 轴检查 |
-| — | milestone-whitebox-check | RepoScope | Gate Layer 1 — whitebox 轴检查 |
-| — | milestone-anticheat-check | RepoScope | Gate Layer 1 — anticheat 轴检查 |
-| — | milestone-composite-check | RepoScope | Gate Layer 1 — composite 轴检查 |
+| — | milestone-gate | RepoScope | Milestone Gate 聚合器；消费顶层 Harness 提供的四轴 `axis_reports`，按 target_type / axis_applicability / aggregation_rules 产出 verdict |
+| — | milestone-blackbox-check | RepoScope | Gate axis — blackbox 轴检查：程序目标使用外部可观察行为场景，非程序目标使用替代验收或不适用记录 |
+| — | milestone-whitebox-check | RepoScope | Gate axis — whitebox 轴检查：程序目标使用内部结构/实现分析，非程序目标使用结构替代审查或不适用记录 |
+| — | milestone-anticheat-check | RepoScope | Gate axis — anticheat 轴检查 |
+| — | milestone-composite-check | RepoScope | Gate axis — composite 轴检查 |
 
 ## Skill 关系
 
@@ -35,25 +35,30 @@ milestone-init-skill                    milestone-status-skill (Sensor)
                                                  │
                                     ┌────────────┘
                                     ▼
-                          milestone-gate (Orchestrator)
+             top-level Harness sibling axis dispatch
+             ┌──────────────────────────────────────┐
+             │ blackbox │ whitebox │ anticheat │ composite │
+             └──────────┴──────────┴───────────┴───────────┘
+                                      │ axis_reports
+                                      ▼
+                          milestone-gate (Aggregator)
                           ┌──────────────────────────┐
-                          │ Layer 1: 4 轴 SubAgent    │
-                          │  ├─ blackbox-check       │
-                          │  ├─ whitebox-check       │
-                          │  ├─ anticheat-check      │
-                          │  └─ composite-check      │
-                          │ Layer 2: Aggregator      │
-                          │  weight→contradiction    │
-                          │  →composite_lane         │
-                          │  →degenerate             │
-                          │  →milestone_gate_verdict │
+                          │ consume explicit reports │
+                          │ target_type              │
+                          │ →axis_applicability      │
+                          │ weight→contradiction     │
+                          │ →composite_lane          │
+                          │ →degenerate              │
+                          │ →milestone_gate_verdict  │
                           └──────────────────────────┘
 ```
 
 - **milestone-init-skill**：写操作，创建和激活 milestone
 - **milestone-status-skill**：读操作，观测和分析 milestone 状态（Sensor）
-- **milestone-gate**：Gate orchestrator，仅在 worktrack_list_finished 时触发
-- **4 轴检查**：Layer 1 隔离 SubAgent，并行执行、轴间不可见
+- **milestone-gate**：Gate aggregator，仅在顶层 Harness 已提供四轴 `axis_reports` 后运行；必须先解析 `target_type_rules` / `axis_applicability`，再按 `axis_satisfied` 聚合 verdict。不得在内部继续分派四个 axis SubAgent。
+- **blackbox 轴**：程序目标检查用户/operator 可观察行为场景；非程序目标记录 artifact-appropriate 替代验收或 `not_applicable`，不得把不适用当作 pass。
+- **whitebox 轴**：程序目标检查内部结构、控制流、数据流、状态传递、接口、依赖和架构路径；非程序目标使用结构替代审查或 `not_applicable`，不得把外部行为场景当作白盒通过依据。
+- **4 轴检查**：由顶层 Harness 作为 sibling axis carriers 分派；并行或顺序取决于 runtime，但每轴的 `runtime_dispatch_profile`、`isolation_guarantee` 和 fallback 必须被记录。same-carrier fallback 不能声明为真实四轴隔离 pass。
 
 ## Canonical 入口
 
@@ -80,7 +85,7 @@ canonical executable source：
 |------|-----------|
 | RepoScope.Decide 建议 create/activate milestone | `milestone-init-skill` |
 | RepoScope.Observe 有 active milestone | `milestone-status-skill` |
-| worktrack_list_finished → Gate 触发 | `milestone-gate`（SubAgent delegated 推荐） |
+| worktrack_list_finished → Gate 触发 | 顶层 Harness 先分派四个 sibling axis carriers，再调用 `milestone-gate` 聚合 |
 | Worktrack closeout 后检查 milestone 进度 | `milestone-status-skill` |
 
 ## 边界

@@ -87,10 +87,10 @@ Scanner output is evidence, not verdict. A scanner may report thresholds, counts
 The canonical local scanner command is:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
+PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json
 ```
 
-Claude backend installs the same scanner at `.claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
+Claude backend installs the same scanner at `.claude/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py`; this repository also keeps the local governance wrapper at `toolchain/scripts/test/complexity_signal_scanner.py`.
 
 The scanner output is a valid `scanner_evidence_ref` source when captured as runtime evidence. It reports `thresholds`, `complexity_signals`, compose/service/package/CI/deploy/migration/data/debt/code-size observations, and safety metadata. It is read-only: no network access, no service start, no docker/database/deploy execution, and no destructive writes. The scanner skips secret-like paths and does not emit file contents, but it does bounded reads of non-secret-like text/code files for aggregate signals.
 
@@ -147,7 +147,7 @@ Weak-doc findings may use `.servo/repo/temporary-understanding.md` as runtime ev
 
 ## Consumers
 
-- `harness-set-goal-skill` may create or reference the gate during existing-code adoption when weak-doc or complex-project signals are found.
+- `repo-init-goal-skill` may create or reference the gate during existing-code adoption when weak-doc or complex-project signals are found.
 - `milestone-pre-intake-skill` produces or updates `complex_project_entry_gate`, `operator_safety_policy`, and `dialog_review_questions` for high-risk Milestone requests.
 - `milestone-init-skill` consumes the gate and blocks create / upsert / activate when `milestone_blocking_decision` says to block.
 - `repo-whats-next-skill` checks the gate before deriving a Worktrack from an active Milestone.

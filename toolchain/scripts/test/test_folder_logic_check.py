@@ -303,6 +303,21 @@ def test_toolchain_cache_content_fails(tmp_path: Path) -> None:
     assert "toolchain/scripts/demo.pyo" in issue_paths(report)
 
 
+def test_gitignored_ruff_cache_under_toolchain_passes_but_tracked_fails(tmp_path: Path) -> None:
+    repo_root = create_valid_repo(tmp_path)
+    write_file(repo_root / ".gitignore", ".ruff_cache/\n")
+    write_file(repo_root / "toolchain/scripts/test/.ruff_cache/CACHEDIR.TAG", "cache\n")
+
+    untracked_report = run_checks(repo_root)
+    assert "toolchain/scripts/test/.ruff_cache" not in issue_paths(untracked_report)
+
+    git(repo_root, "add", "toolchain/scripts/test/.ruff_cache/CACHEDIR.TAG", force=True)
+    tracked_report = run_checks(repo_root)
+
+    assert "FL006" in issue_codes(tracked_report)
+    assert "toolchain/scripts/test/.ruff_cache" in issue_paths(tracked_report)
+
+
 def test_product_and_docs_bytecode_files_fail(tmp_path: Path) -> None:
     repo_root = create_valid_repo(tmp_path)
     write_file(repo_root / "product/harness/demo.pyc", "cache\n")

@@ -1,13 +1,13 @@
 ---
 title: "旧版本处理"
 status: active
-updated: 2026-05-27
+updated: 2026-07-02
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-07-02
 ---
 # 旧版本处理
 
-> 本文是面向 v0.6.0 之前版本接入的仓库（下文统称「旧版仓库」）的临时兼容说明——这些仓库使用 autoworkflow 分发体系，仍保留 `.aw/` 目录（`.servo/` 的前身）及该时代的旧版 control state，或保留旧版 installer 管理的 skill target 目录。本文在 `0.5.x`–`0.6.x` 的旧版迁移窗口内有效，预计 `0.7.0` 起不再提供旧版迁移支持后移除此文档。
+> 本文是面向 v0.6.0 之前版本接入的仓库（下文统称「旧版仓库」）的临时兼容说明——这些仓库使用 autoworkflow 分发体系，仍保留 `.aw/` 目录（`.servo/` 的前身）及该时代的旧版 control state，或保留旧版 installer 管理的 skill target 目录。0.7.x 仍保留本兼容说明；移除旧版迁移支持需要独立 worktrack 与验证，不能在 v0.7.0 release readiness 中静默完成。
 
 ## 范围
 
@@ -33,8 +33,8 @@ last_verified: 2026-06-13
 
 本文是过渡期支持文档。
 
-- 在 `0.5.x`–`0.6.x` 旧版迁移窗口内保留本文。
-- 预计在 `0.7.0` 移除本文。
+- 本文覆盖从 `0.5.x`–`0.6.x` 来源仓库升级到当前 `servo-installer` 的旧版迁移窗口。
+- `0.7.x` release line 仍保留本文和对应 operator 迁移路径；是否移除需独立 worktrack 与验证，不属于 v0.7.0 release execution。
 - 移除前必须确认面向 operator 的 runbook 不再需要针对 `.aw/` 旧版 control state 或旧 `aw-*` agent target 目录的专门处理。
 - 移除本文不得静默删除运行时迁移代码；任何代码移除均需独立的 worktrack 与验证。
 

@@ -17,6 +17,7 @@ from governance_semantic_check import (
     check_aw_residue_classification_contract,
     check_branch_policy_contract,
     check_canonical_skill_packages_are_minimal,
+    check_cleanup_contract,
     check_closeout_record_contract,
     check_conservative_backfill_contract,
     check_complex_project_entry_gate_contract,
@@ -485,8 +486,8 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(
     for relative_path in (
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "product/.servo_template/control-state.md",
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
@@ -498,7 +499,7 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(
             "默认\nSubAgent\n权限边界\nDispatch Decision Policy\nsubagent_dispatch_mode\nsubagent_dispatch_mode_override_scope\nworktrack-contract-primary\nglobal-override\nruntime_dispatch_mode\nauto\ndelegated\ncurrent-carrier\nruntime fallback\n",
         )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
         "product/.servo_template/worktrack/contract.md",
     ):
@@ -522,8 +523,8 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
     for relative_path in (
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "product/.servo_template/control-state.md",
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
@@ -535,7 +536,7 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
             "默认\nSubAgent\n权限边界\nDispatch Decision Policy\nsubagent_dispatch_mode\nsubagent_dispatch_mode_override_scope\nworktrack-contract-primary\nglobal-override\nruntime_dispatch_mode\nauto\ndelegated\ncurrent-carrier\nruntime fallback\ndispatch package unsafe\n",
         )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
         "product/.servo_template/worktrack/contract.md",
     ):
@@ -582,7 +583,7 @@ def _write_runtime_dispatch_profile_sources(tmp_path: Path, text: str) -> None:
         "docs/harness/artifact/control/control-state.md",
         "product/harness/skills/harness-skill/SKILL.md",
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "product/.servo_template/control-state.md",
     ):
         write_doc(tmp_path / relative_path, text)
@@ -638,10 +639,10 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(
 def _write_user_defined_servo_controls_sources(tmp_path: Path, text: str) -> None:
     for relative_path in (
         "docs/harness/artifact/control/control-state.md",
-        "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "product/.servo_template/control-state.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, text)
 
@@ -885,7 +886,7 @@ def _write_worktrack_task_window_sources(tmp_path: Path, text: str) -> None:
         "product/harness/skills/worktrack-schedule-skill/SKILL.md",
         "product/harness/skills/worktrack-schedule-skill/templates/plan-task-queue.template.md",
         "product/.servo_template/worktrack/plan-task-queue.md",
-        "product/harness/skills/harness-set-goal-skill/assets/worktrack/plan-task-queue.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/plan-task-queue.md",
     ):
         write_doc(tmp_path / relative_path, text)
 
@@ -926,7 +927,7 @@ def test_check_review_evidence_four_lane_contract_flags_missing_lane(
     for relative_path in (
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
         "docs/harness/catalog/worktrack.md",
-        "product/harness/skills/harness-set-goal-skill/assets/worktrack/gate-evidence.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
         "docs/harness/artifact/worktrack/gate-evidence.md",
     ):
         write_doc(
@@ -992,6 +993,26 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
     assert any("next_repo_scope_action" in item for item in report.failures)
 
 
+def test_check_cleanup_contract_flags_legacy_auto_apply_term(
+    tmp_path: Path,
+) -> None:
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/milestone-cleanup-skill/SKILL.md",
+        "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
+    ):
+        write_doc(
+            tmp_path / relative_path,
+            "milestone-cleanup-skill\n"
+            "在非交互模式下，low-risk 清理（仅 backlog 清理）可自动执行\n",
+        )
+
+    report = SemanticReport()
+    check_cleanup_contract(tmp_path, report)
+
+    assert any("stale auto-apply term" in item for item in report.failures)
+
+
 def test_check_repo_whats_next_overview_fallback_contract_flags_missing_term(
     tmp_path: Path,
 ) -> None:
@@ -1020,7 +1041,7 @@ def _write_worktrack_intake_review_sources(tmp_path: Path, text: str) -> None:
         "docs/harness/foundations/runtime-control-loop.md",
         "docs/harness/artifact/worktrack/contract.md",
         "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
-        "product/harness/skills/harness-set-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/.servo_template/worktrack/contract.md",
     ):
         write_doc(tmp_path / relative_path, text)
@@ -1090,7 +1111,7 @@ def _write_branch_policy_sources(tmp_path: Path, text: str) -> None:
         "product/harness/skills/worktrack-status-skill/SKILL.md",
         "product/harness/skills/worktrack-recover-skill/SKILL.md",
         "docs/harness/artifact/control/control-state.md",
-        "product/harness/skills/harness-set-goal-skill/assets/control-state.md",
+        "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
         "product/.servo_template/control-state.md",
         "docs/harness/foundations/runtime-state-hydration.md",
         "docs/harness/foundations/runtime-control-loop.md",
@@ -2001,7 +2022,7 @@ def test_check_complex_project_entry_gate_contract_accepts_required_terms(
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
@@ -2038,7 +2059,7 @@ def test_check_complex_project_entry_gate_contract_flags_missing_safety_terms(
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
@@ -2085,7 +2106,7 @@ def test_check_complex_project_entry_gate_contract_flags_unresolved_default_gap(
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
@@ -2136,7 +2157,7 @@ def test_check_complex_project_entry_gate_contract_flags_reinforcement_routing_g
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
@@ -2189,7 +2210,7 @@ def test_check_complex_project_entry_gate_contract_flags_unresolved_without_bloc
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/templates/pre-milestone-intake-review.template.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
@@ -2241,7 +2262,7 @@ def test_check_complex_project_entry_gate_contract_flags_pre_intake_mode_default
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
         "product/harness/skills/repo-whats-next-skill/SKILL.md",
@@ -2307,7 +2328,7 @@ def test_check_complex_project_entry_gate_contract_flags_pre_intake_inline_mode_
         "docs/harness/catalog/repo.md",
         "docs/harness/catalog/milestone/milestone-init-skill.md",
         "product/harness/skills/harness-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
         "product/harness/skills/milestone-pre-intake-skill/SKILL.md",
         "product/harness/skills/milestone-init-skill/SKILL.md",
         "product/harness/skills/repo-whats-next-skill/SKILL.md",
@@ -2359,7 +2380,7 @@ def test_check_complexity_signal_scanner_contract_accepts_required_terms(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+        "product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
         "toolchain/scripts/test/test_complexity_signal_scanner.py",
         "toolchain/scripts/test/README.md",
         "docs/harness/artifact/repo/complex-project-entry-gate.md",
@@ -2368,7 +2389,7 @@ def test_check_complexity_signal_scanner_contract_accepts_required_terms(
         write_doc(tmp_path / relative_path, required_text)
     write_doc(
         tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
-        "CANONICAL_SCANNER = 'product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py'\n",
+        "CANONICAL_SCANNER = 'product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py'\n",
     )
 
     report = SemanticReport()
@@ -2397,7 +2418,7 @@ def test_check_complexity_signal_scanner_contract_flags_missing_safety_terms(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+        "product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
         "toolchain/scripts/test/test_complexity_signal_scanner.py",
         "toolchain/scripts/test/README.md",
         "docs/harness/artifact/repo/complex-project-entry-gate.md",
@@ -2406,7 +2427,7 @@ def test_check_complexity_signal_scanner_contract_flags_missing_safety_terms(
         write_doc(tmp_path / relative_path, required_without_safety)
     write_doc(
         tmp_path / "toolchain/scripts/test/complexity_signal_scanner.py",
-        "CANONICAL_SCANNER = 'product/harness/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py'\n",
+        "CANONICAL_SCANNER = 'product/harness/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py'\n",
     )
 
     report = SemanticReport()
@@ -2443,9 +2464,9 @@ def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
         "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
         "docs/harness/catalog/repo.md",
     ):
@@ -2453,8 +2474,8 @@ def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_
 
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/SKILL.md",
-            "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
+            "product/harness/skills/repo-init-goal-skill/SKILL.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md",
         ],
         "required_payload_files": [
             "SKILL.md",
@@ -2464,8 +2485,8 @@ def test_check_weak_doc_temporary_understanding_contract_accepts_required_terms_
         ],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2501,21 +2522,21 @@ def test_check_weak_doc_temporary_understanding_contract_flags_payload_gap(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
         "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
         "docs/harness/catalog/repo.md",
     ):
         write_doc(tmp_path / relative_path, required_text)
 
     payload = {
-        "canonical_paths": ["product/harness/skills/harness-set-goal-skill/SKILL.md"],
+        "canonical_paths": ["product/harness/skills/repo-init-goal-skill/SKILL.md"],
         "required_payload_files": ["SKILL.md", "payload.json", "aw.marker"],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2550,22 +2571,22 @@ def test_check_weak_doc_temporary_understanding_contract_flags_truth_boundary_ga
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
         "docs/harness/workflow-families/large-undocumented-repo-onboarding.md",
         "docs/harness/catalog/repo.md",
     ):
         write_doc(tmp_path / relative_path, incomplete_text)
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/assets/repo/temporary-understanding.md"
+            "product/harness/skills/repo-init-goal-skill/assets/repo/temporary-understanding.md"
         ],
         "required_payload_files": ["assets/repo/temporary-understanding.md"],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2595,8 +2616,9 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
             "scanner output is evidence",
             "weak-doc",
             "scripts/complexity_signal_scanner.py",
-            ".agents/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
-            ".claude/skills/harness-set-goal-skill/scripts/complexity_signal_scanner.py",
+            "./scripts/complexity_signal_scanner.py",
+            "scanner_command_basis",
+            "installed repo-init-goal-skill package root",
             "trigger_conditions: pending_observed_signal_review",
             "Record only observed signals in trigger_conditions",
             "allowed_high_risk_command_modes: pending_programmer_confirmation",
@@ -2617,17 +2639,17 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, required_text)
 
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
@@ -2635,8 +2657,8 @@ def test_check_repo_init_complex_gate_contract_accepts_required_terms_and_payloa
         ],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2667,21 +2689,21 @@ def test_check_repo_init_complex_gate_contract_flags_payload_gap(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, required_text)
 
     payload = {
-        "canonical_paths": ["product/harness/skills/harness-set-goal-skill/SKILL.md"],
+        "canonical_paths": ["product/harness/skills/repo-init-goal-skill/SKILL.md"],
         "required_payload_files": ["SKILL.md"],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2718,17 +2740,17 @@ def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, required_text)
 
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
@@ -2736,8 +2758,8 @@ def test_check_repo_init_complex_gate_contract_flags_reinforcement_routing_gap(
         ],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2792,10 +2814,10 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/README.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, safe_text)
 
@@ -2811,13 +2833,13 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
     )
     write_doc(
         tmp_path
-        / "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+        / "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         unsafe_template,
     )
 
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
@@ -2825,8 +2847,8 @@ def test_check_repo_init_complex_gate_contract_flags_unsafe_template_defaults(
         ],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -2875,10 +2897,10 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
         ]
     )
     for relative_path in (
-        "product/harness/skills/harness-set-goal-skill/SKILL.md",
-        "product/harness/skills/harness-set-goal-skill/assets/README.md",
-        "product/harness/skills/harness-set-goal-skill/assets/repo/README.md",
-        "product/harness/skills/harness-set-goal-skill/scripts/deploy_servo.js",
+        "product/harness/skills/repo-init-goal-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/README.md",
+        "product/harness/skills/repo-init-goal-skill/assets/repo/README.md",
+        "product/harness/skills/repo-init-goal-skill/scripts/deploy_servo.js",
     ):
         write_doc(tmp_path / relative_path, required_text)
 
@@ -2890,13 +2912,13 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
     )
     write_doc(
         tmp_path
-        / "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+        / "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         unsafe_template,
     )
 
     payload = {
         "canonical_paths": [
-            "product/harness/skills/harness-set-goal-skill/assets/repo/complex-project-entry-gate.md",
+            "product/harness/skills/repo-init-goal-skill/assets/repo/complex-project-entry-gate.md",
         ],
         "required_payload_files": [
             "assets/repo/complex-project-entry-gate.md",
@@ -2904,8 +2926,8 @@ def test_check_repo_init_complex_gate_contract_flags_inline_mode_defaults(
         ],
     }
     for relative_path in (
-        "product/harness/adapters/agents/skills/harness-set-goal-skill/payload.json",
-        "product/harness/adapters/claude/skills/harness-set-goal-skill/payload.json",
+        "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
+        "product/harness/adapters/claude/skills/repo-init-goal-skill/payload.json",
     ):
         write_doc(tmp_path / relative_path, f"{json.dumps(payload)}\n")
 
@@ -3026,6 +3048,7 @@ def test_check_path_governance_docs_list_gitignore_entries_accepts_complete_list
                 "`.autoworkflow/`",
                 "`.spec-workflow/`",
                 "`.logs/`",
+                "`.ruff_cache/`",
                 "`**/__pycache__/`",
                 "`.pytest_cache/`",
                 "`*.pyc`",
@@ -3483,6 +3506,32 @@ def test_check_runtime_artifact_consistency_flags_suspended_primary_status(
     check_runtime_artifact_consistency(tmp_path, report)
 
     assert any("invalid primary status 'suspended'" in item for item in report.failures)
+
+
+def test_check_runtime_artifact_consistency_ignores_milestone_sidecar_artifacts(
+    tmp_path: Path,
+) -> None:
+    _write_runtime_artifacts(tmp_path)
+    write_doc(
+        tmp_path / ".servo/milestone/MS-001-gate-verdict.md",
+        "\n".join(
+            [
+                "# Gate Verdict",
+                "",
+                "## milestone_id",
+                'milestone_id: "MS-001"',
+                "",
+                "## status",
+                'status: "pass"',
+                "",
+            ]
+        ),
+    )
+
+    report = SemanticReport()
+    check_runtime_artifact_consistency(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_runtime_artifact_consistency_flags_active_worktrack_closed(

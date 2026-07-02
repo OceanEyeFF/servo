@@ -7,7 +7,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ## 概览
 
-本技能实现 Milestone Gate 四轴复合验收中的 **anti-cheat lane**（反作弊轴），对应 `milestone-gate-aggregation.md` 中定义的 `composite_lane_rules.lane_axes.anti_cheat`。它不评判代码是否正确，只评判**证据是否可信**。
+本技能实现 Milestone Gate 四轴复合验收中的 **anti-cheat lane**（反作弊轴），对应 `milestone-gate-aggregation.md` 中定义的 `composite_lane_rules.lane_axes.anticheat`。它不评判代码是否正确，只评判**证据是否可信**。
 
 本技能检查以下 7 个反作弊维度（A1-A7），针对当前 milestone 下所有已闭环的 worktrack，逐条检测 fake-pass 信号：
 
@@ -15,15 +15,17 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 |----|---------|---------|
 | A1 | Mock abuse | 证据是否依赖 mock/stub/fake 而非真实集成路径 |
 | A2 | Evidence reuse | 同一份证据是否被多个 WT 重复引用且缺乏独立验证 |
-| A3 | Partial validation | WT 是否仅在自身范围内验证，从未跨 WT 集成验证 |
+| A3 | Partial validation | 存在真实跨 WT 集成/共享行为/完成依赖时，WT 是否只做了自身范围验证 |
 | A4 | Gate bypass | WT 是否跳过了标准 gate 步骤（self-review / gate evidence / closeout record） |
-| A5 | Stale evidence | 证据是否来自过期基线（与当前 milestone 分支 HEAD 不一致） |
-| A6 | Self-review bias | 同一载体是否同时担任实现者与审查者 |
+| A5 | Stale evidence | 证据是否来自过期基线（优先依据 source refs / checkpoint / observed hash） |
+| A6 | Self-review bias | 同一载体或证据来源是否造成 evidence credibility bias |
 | A7 | False positive risk | governance check 全 pass 但实际全部配置为 warning 而非 error |
 
 当 `Harness` 处于 milestone composite acceptance 阶段，已收集该 milestone 所有已闭环 WT 的 single-acceptance verdict、gate evidence、closeout record、self-review record 与 dispatch profile，且需要产出 anti-cheat lane verdict 以供 `milestone-gate-aggregation` 的 composite verdict 综合时，使用这个技能。
 
 这个技能设计为**隔离 SubAgent** 运行：它 MUST NOT 接收或消费其他轴（blackbox、whitebox、composite）的 verdict。若任何其他轴的结论被注入上下文，必须标记 `isolation_guarantee: false` 并记录泄露来源。
+
+`target_type` / `target_scenario` 只能帮助解释证据可信度风险，不能让 anti-cheat 变成代码审查，也不能让该轴被 blackbox、whitebox 或 composite 替代。只要 milestone 存在可用于 Gate 的证据链，anti-cheat 默认适用；若证据边界本身不清，结果应为 `blocked` 而不是 `not_applicable`。
 
 ## 何时使用
 
@@ -40,17 +42,119 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 1. 确认本轴隔离边界：确认上下文中没有其他轴（blackbox / whitebox / composite）的 verdict。若已泄露，先记录 `isolation_guarantee: false` 与泄露来源，再继续执行。
 2. 载入当前 milestone 下所有已闭环 WT 的最小必要产物：
+   - 当前 milestone 的 `target_type`、`target_scenario`、`target_scenario_source` 和 `operator_situation`（若声明），用于解释证据可信度风险；不得用它们评判代码正确性
    - 每个 WT 的 `single_acceptance_verdict`（来自 `single-acceptance-contract.md`）
    - 每个 WT 的 `gate_evidence`（包含 implementation/validation/policy 三面证据路径与时效性标签）
    - 每个 WT 的 `closeout_record`
    - 每个 WT 的 `self_review_record`（来自 `self-review-contract.md`）
    - 每个 WT 的 `dispatch_profile`（carrier identity、SubAgent 标记、模型标识）
-3. 载入当前 milestone 的 `aggregation_rules`（若声明），特别是 `composite_lane_rules.anti_cheat` 段。
+3. 载入当前 milestone 的 `aggregation_rules`（若声明），特别是 `composite_lane_rules.anticheat` 段。
 4. 对 A1-A7 逐项执行反作弊检测。
 5. 将每条检测结果归类为 `pass` / `soft_fail` / `hard_fail` / `blocked`，并记录对应的 `severity`、`evidence_refs` 和 `finding`。
 6. 综合 7 项检测结果产出 `anticheat_verdict`。
 7. 在综合前，确认没有跨轴泄露：若本轴上下文被注入了其他轴的 verdict，在 verdict 中显式记录。
 8. 返回结构化 `anti-cheat lane report`。在 milestone gate 综合之前停止。
+
+## Severity Configuration Contract
+
+每次运行本技能时，必须把实际使用的 `anticheat_severity_config` 暴露在报告中，或用 `severity_config_ref` 指向本节。A1-A7 的 default severity、soft/hard/blocking triggers、判定方法和聚合影响不得只藏在 prose 推理中。
+
+`default_severity` 是初始风险等级，不是最终 severity。最终 severity 必须由 `trigger_type`、命中范围、WT 权重、是否存在可量化证据、以及是否需要情景判断共同决定。默认 high 必须稀缺：A1-A7 中默认 high 最多 2 个；其余检查默认使用 medium 或 low，并在实际 hard/blocking trigger 命中时通过 `severity_override` 升级。适合计数、比例、hash、ref 或 carrier identity 判断的检查优先转换为量化指标；需要判断业务语义、WT 类型合理性或 operator 影响时使用情景分析，并在 finding 中写明判断依据。
+
+```yaml
+anticheat_severity_config:
+  schema_version: "anticheat-severity-config/v1"
+  aggregation_defaults:
+    veto_power: true
+    hard_fail_impact: "milestone_gate_verdict=blocked"
+    blocked_impact: "milestone_gate_verdict=blocked"
+    max_default_high_checks: 2
+    severity_assignment_policy: "default high is reserved for direct evidence-chain breakage; trigger-specific overrides may escalate medium/low defaults"
+    high_severity_weight_modifier:
+      enabled: true
+      target_wt_weight: 0
+  checks:
+    A1:
+      default_severity: medium
+      assessment_mode: hybrid
+      quantitative_indicators: ["mock_fixture_ratio", "real_integration_evidence_count", "affected_wt_weight"]
+      scenario_judgment: "node_type determines whether fixture-heavy evidence is legitimate or suspicious"
+      soft_fail_triggers: ["mock_or_fixture_present_with_real_integration_evidence"]
+      hard_fail_triggers: ["feature_or_release_all_mock_based_without_real_integration"]
+      blocking_triggers: ["validation_evidence_missing_or_unreadable"]
+      severity_override: "hard_fail on feature/release all-mock evidence escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A2:
+      default_severity: medium
+      assessment_mode: quantitative
+      quantitative_indicators: ["reused_evidence_ref_count", "affected_wt_count", "critical_wt_coverage_count"]
+      scenario_judgment: "shared baseline evidence may be legitimate when each WT independently reruns it"
+      soft_fail_triggers: ["unexplained_reuse_without_critical_coverage"]
+      hard_fail_triggers: ["reuse_across_three_or_more_wt_or_all_critical_wt"]
+      blocking_triggers: ["evidence_refs_missing_or_hash_unavailable"]
+      severity_override: "hard_fail reuse across three or more WT or all critical WT escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A3:
+      default_severity: medium
+      assessment_mode: hybrid
+      quantitative_indicators: ["cross_wt_dependency_count", "integration_evidence_count", "uncovered_dependency_count"]
+      scenario_judgment: "first decide whether cross-WT integration is truly required for this milestone"
+      soft_fail_triggers: ["cross_wt_integration_required_but_coverage_incomplete"]
+      hard_fail_triggers: ["cross_wt_integration_required_and_no_cross_wt_evidence"]
+      blocking_triggers: ["cannot_determine_cross_wt_integration_requirement"]
+      severity_override: "hard_fail with required integration and no evidence escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+    A4:
+      default_severity: high
+      assessment_mode: quantitative
+      quantitative_indicators: ["missing_required_gate_record_count", "affected_wt_count", "placeholder_required_section_count"]
+      scenario_judgment: "N/A"
+      soft_fail_triggers: ["required_gate_sections_present_but_empty_or_placeholder"]
+      hard_fail_triggers: ["self_review_gate_evidence_or_closeout_gate_verdict_missing"]
+      blocking_triggers: ["closeout_record_unavailable_for_required_wt"]
+      severity_override: "N/A; direct gate-record breakage is default high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A5:
+      default_severity: high
+      assessment_mode: quantitative
+      quantitative_indicators: ["stale_source_ref_count", "claimed_checkpoint_mismatch_count", "freshness_label_conflict_count"]
+      scenario_judgment: "mtime is auxiliary only; git/source refs dominate"
+      soft_fail_triggers: ["reused_or_mixed_evidence_with_clear_refs_but_no_refresh_note"]
+      hard_fail_triggers: ["source_ref_older_than_claimed_checkpoint_marked_fresh"]
+      blocking_triggers: ["source_ref_checkpoint_or_observed_hash_missing"]
+      severity_override: "N/A; stale evidence falsely marked fresh is default high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "high_severity_weight_modifier"]
+    A6:
+      default_severity: medium
+      assessment_mode: quantitative
+      quantitative_indicators: ["implementer_reviewer_overlap_count", "self_gate_overlap_count", "carrier_identity_missing_count"]
+      scenario_judgment: "A6 records provenance bias; independent review coverage belongs to composite C1"
+      soft_fail_triggers: ["self_review_overlap_used_as_only_credibility_evidence"]
+      hard_fail_triggers: ["self_gate_overlap"]
+      blocking_triggers: ["dispatch_profile_or_carrier_identity_missing"]
+      severity_override: "self_gate_overlap escalates to high because gate independence is broken"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "medium_severity_records_risk", "conditional_high_severity_weight_modifier"]
+    A7:
+      default_severity: low
+      assessment_mode: quantitative
+      quantitative_indicators: ["warning_rule_count", "error_rule_count", "unreadable_severity_config_count"]
+      scenario_judgment: "N/A"
+      soft_fail_triggers: ["governance_rule_severity_config_unreadable"]
+      hard_fail_triggers: ["all_governance_rules_warning_no_error_rules"]
+      blocking_triggers: ["policy_evidence_required_but_missing"]
+      severity_override: "all-warning governance rule configuration escalates to high"
+      aggregation_impact: ["hard_fail_veto", "blocked_veto", "conditional_high_severity_weight_modifier"]
+```
+
+报告中的 `checklist_results[]` 必须记录 `check_id`、`verdict`、`severity`、`severity_source`（`default` / `explicit_override` / `trigger_override`）、`trigger_type`（`soft_fail_trigger` / `hard_fail_trigger` / `blocking_trigger` / `not_triggered`）、`assessment_mode`、`quantitative_indicators`、`scenario_judgment`、`aggregation_impact` 和 `evidence_refs`。任何 explicit override 必须给出 source ref；无 source ref 的 explicit override 无效。trigger override 必须引用命中的 trigger 和证据范围。
+
+## Historical Gap Policy
+
+`historical_gap` is visible non-positive evidence. It is distinct from `missing`, `incomplete`, and `contaminated`: `missing` means evidence should exist under the current contract, `incomplete` means a linked record lacks required fields, `contaminated` means present evidence is unreliable, and `historical_gap` means an older Worktrack predates the capture contract.
+
+`historical_gap` is not a waiver and not a pass. It must remain in `missing_evidence`, `checklist_results[].evidence_state`, `bundle_completeness.historical_gap_fields`, or equivalent structured output so later reviewers can distinguish legacy absence from current process failure.
+
+Manual exception may accept the residual delivery risk, but it must preserve `historical_gap` fields and anti-cheat findings. When manual exception is present, the report must record `historical_gap_preserved: true`. It must not erase, rewrite, or convert historical gaps into synthetic pass evidence.
 
 ## 逐项检测细则
 
@@ -82,24 +186,35 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
    - 检查每个引用 WT 的 scope 是否真的与该证据相关
    - 若证据产生于 WT-A，被 WT-B 引用但 WT-B 的 scope 与该证据无直接关系 → `hard_fail`
    - 若证据是共享的 milestone 级 baseline（如 verifier 脚本），且各 WT 均独立运行之 → `pass`
-4. 判定规则：
+6. 判定规则：
    - 存在至少一个不可解释的复用 → 至少 `soft_fail`
    - 存在 3 个以上不可解释的复用，或复用覆盖所有 critical WT → `hard_fail`
    - 无复用或所有复用均可解释 → `pass`
 
 ### A3 — Partial Validation Detection
 
-**检测目标**：检测 WT 是否仅在自身 scope 内验证，从未覆盖跨 WT 集成点。
+**检测目标**：检测在存在真实跨 WT 集成、共享行为或完成依赖时，WT 是否仅在自身 scope 内验证，从未覆盖跨 WT 集成点。若 milestone 的 WT 彼此独立（如 docs-only、单模块、无共享行为/状态/接口、无完成依赖），A3 不应 hard-fail。
 
 **检测方法**：
 
-1. 对该 milestone 下所有 WT 的 `completion_signals` 做交叉对比。
-2. 检查每个 WT 的 gate evidence 中是否包含对**其他 WT scope** 的引用或测试。
-3. 判定规则：
-   - 所有 WT 的 gate evidence 均只覆盖自身 scope，没有任何跨 WT 引用 → `hard_fail`
-   - 至少存在 1 个 WT 覆盖了跨 WT 集成验证且该覆盖可信 → `pass`
-   - 部分 WT 有跨 WT 验证但覆盖不完整 → `soft_fail`
-   - 若该 milestone 仅含 1 个 WT → `N/A`（无需跨 WT 验证）
+1. 先判定 `cross_wt_integration_required`，依据 WT contract、`completion_signals`、`impacted_modules`、changed paths、milestone purpose、`aggregation_rules` 与 closeout record。
+2. 以下情况视为需要跨 WT 集成验证：
+   - 某 WT 的 deliverable 依赖另一 WT 的输出、状态或接口。
+   - 多个 WT 共同修改 shared interface、shared config、control state、canonical skill entrypoint、deploy path 或同一用户可观察 workflow。
+   - milestone acceptance 明确要求 integrated workflow、end-to-end path、operator path 或跨 WT 行为。
+   - closeout / gate evidence 明确声明 `merge_required`、`integration_target_ref` 或完成依赖。
+3. 以下情况可以判定 `cross_wt_integration_required: false`：
+   - 所有 WT 均为 docs-only 或彼此独立的单模块文本/配置调整。
+   - WT 之间没有共享运行时行为、公共接口、共同入口、状态传递或完成依赖。
+   - 每个 WT 的 acceptance signal 可在自身 scope 内被完整证明，且 milestone purpose 不要求集成路径。
+4. 若 `cross_wt_integration_required: false`，A3 verdict 应为 `N/A` 或 `pass_with_rationale`，必须记录 rationale 与 source refs；不得因缺少跨 WT 引用直接 hard-fail。
+5. 若 `cross_wt_integration_required: true`，再检查 gate evidence 是否包含可信跨 WT 集成引用、测试、smoke/dogfood 记录、operator path 证据或合并后验证。
+6. 判定规则：
+   - `cross_wt_integration_required: true` 且所有 WT 的 gate evidence 均只覆盖自身 scope，没有任何跨 WT 引用 → `hard_fail`
+   - `cross_wt_integration_required: true` 且至少存在 1 个可信跨 WT 集成验证覆盖所有关键依赖 → `pass`
+   - `cross_wt_integration_required: true` 但覆盖不完整或只覆盖低风险依赖 → `soft_fail`
+   - 无法判定是否存在真实跨 WT 依赖 → `blocked`，记录缺失字段，不得默认 hard-fail
+   - milestone 仅含 1 个 WT → `N/A`（无需跨 WT 验证）
 
 ### A4 — Gate Bypass Detection
 
@@ -119,22 +234,26 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 ### A5 — Stale Evidence Detection
 
-**检测目标**：检测证据是否基于过期基线产生。
+**检测目标**：检测证据是否基于过期基线产生。A5 的主证据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。
 
 **检测方法**：
 
-1. 获取当前 milestone 分支的 HEAD commit timestamp。
-2. 获取每个 WT 的 closeout commit timestamp。
-3. 对比每个 WT 的 evidence 文件最后修改时间与 HEAD timestamp。
+1. 获取当前 milestone 分支的 HEAD commit 与 `milestone_input_checkpoint`。
+2. 获取每个 WT 的 `checkpoint_base_ref`、`observed_git_hash`、`closeout_commit`、`merge_commit`、evidence source refs 与 evidence freshness label。
+3. 先比较 ref/hash 关系：证据声称覆盖的 commit 是否等于或包含当前 milestone 聚合所要求的 checkpoint。
+4. 再比较 closeout/merge timeline：证据是否产生于 WT closeout 之前、merge 之前，或是否在后续 WT merge 后仍被错误标记为覆盖全 milestone。
+5. 最后才使用文件系统 mtime 作为辅助交叉检查。mtime 与 ref/hash 冲突时，优先相信 git/source ref 并记录 mtime discrepancy。
 4. 判定规则：
-   - 任何 evidence 的最后修改时间早于当前 milestone 分支 HEAD 且该 evidence 被 WT 标记为 `fresh` → `hard_fail`（时效性标签造假）
-   - evidence 被标记为 `reused` 或 `mixed` 但超过 7 天未刷新 → `soft_fail`
-   - 所有 evidence 时效性标签与时间戳一致 → `pass`
-   - 若无法获取文件时间戳（例如 evidence 为内联记录而非文件）→ 标记该 check 为 `blocked`，记录缺失数据
+   - 任何 evidence 的 `observed_git_hash` / source ref 明确早于所声称覆盖的 checkpoint，且被标记为 `fresh` 或 full milestone coverage → `hard_fail`
+   - evidence 只覆盖某 WT closeout commit，却被复用为后续 WT merge 后的 milestone-level fresh evidence → `hard_fail`
+   - evidence 被标记为 `reused` 或 `mixed`，source refs 清楚但缺少后续刷新说明 → `soft_fail`
+   - source refs / checkpoint / observed hash 与 freshness 标签一致 → `pass`
+   - 缺少 ref/hash/source checkpoint 导致无法判断 → `blocked`，记录缺失字段
+   - 仅文件 mtime 早于 milestone branch HEAD，但 ref/hash 能证明证据覆盖正确 checkpoint → 不得 hard-fail；记录 `mtime_auxiliary_only: true`
 
 ### A6 — Self-Review Bias Detection
 
-**检测目标**：检测同一载体是否同时承担实现和审查角色。
+**检测目标**：检测同一载体或证据来源是否同时承担实现、审查、gate 或证据生产角色，从而造成 evidence credibility bias。A6 关注的是证据可信度偏倚与 provenance 风险，不负责衡量独立 review 覆盖完整性；独立 review 覆盖由 composite C1 判定。
 
 **检测方法**：
 
@@ -146,7 +265,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
    - `implementer == reviewer` → `self-review overlap: true`
    - `implementer == gate_judge` → `self-gate overlap: true`
 3. 判定规则：
-   - 任一 WT 存在 `self-review overlap` → 至少 `soft_fail`
+   - 任一 WT 存在 `self-review overlap` 且该 self-review 被用作唯一可信度证据 → 至少 `soft_fail`
    - 同一 carrier 出现在该 milestone 下 3 个以上 WT 的 implementer 位置且从不出现在 reviewer 位置 → `pass`（专一角色，无偏倚）
    - 存在 `self-gate overlap` → `hard_fail`（gate 裁决必须独立）
    - 所有 WT 实现者与审查者严格分离 → `pass`
@@ -160,6 +279,8 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
        overlap: true
        overlap_type: "self-review" | "self-gate"
    ```
+
+**边界说明**：A6 可以报告 `self-review overlap`、`self-gate overlap`、`evidence_producer == reviewer`、同一 carrier 反复产出并审查同类证据等 provenance 风险；但不得因为缺少独立 reviewer 覆盖而单独 hard-fail。若问题是“有没有独立 review 覆盖每个 WT”，应在 composite C1 中判定，并在 A6 中只记录为相关背景或 `see_composite_C1`。
 
 ### A7 — False Positive Risk Detection
 
@@ -202,7 +323,7 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 根据 `milestone-gate-aggregation.md` 的 `composite_lane_rules`：
 
-- 本 lane 的 `verdict` 作为 `lane_axes.anti_cheat.aggregate verdict` 输出
+- 本 lane 的 `verdict` 作为 `lane_axes.anticheat.aggregate verdict` 输出
 - 本 lane 有 `veto_power: true`：`hard_fail` 或 `blocked` → milestone blocked，无论其他轴结果
 - 任何 `high` severity finding → 触发 `weight_modifier`：将对应 WT 的权重清零（cheating signal 使该 WT 失去对 milestone verdict 的贡献权重）
 
@@ -226,6 +347,11 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 ### 反作弊信息包
 
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `aggregation_rules`（若声明）
 - `per_worktrack.single_acceptance_verdict`：N 个 WT 的 single-acceptance verdict 摘要
 - `per_worktrack.gate_evidence`：N 个 WT 的 gate evidence 路径与时效性标签
@@ -240,6 +366,11 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 - `轴标识`：`anti-cheat`
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `检查时间戳`
 - `carrier`：subagent | current-carrier
 - `isolation_guarantee`：true | false
@@ -273,6 +404,11 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 - `轴标识`
 - `milestone_id`
+- `target_type`
+- `target_scenario`
+- `target_scenario_source`
+- `target_scenario_confidence`
+- `operator_situation`
 - `carrier`
 - `isolation_guarantee`
 - `checklist_results[].check_id`
@@ -302,10 +438,10 @@ description: 当 Milestone Gate 进入四轴复合验收，且需要对当前 mi
 
 1. **Permission boundary**：Read-only。可读取 evidence metadata、dispatch profiles、closeout records 和 aggregation_rules。MUST NOT 修改任何代码、evidence 或 control state。
 2. **Isolation**：MUST NOT 接收或读取其他轴（blackbox、whitebox、composite）的 verdict。若另一轴 verdict 被注入上下文，必须标记 `isolation_guarantee: false` 并记录泄露来源（文件路径或注入方式）。隔离被破坏时，仍产出 verdict 但置信度降级为 `low`。
-3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。
+3. **SubAgent requirement**：设计为隔离 SubAgent 运行。当 SubAgent 不可用时，fallback 到 current-carrier 必须标记 `carrier_isolation_broken: true` 并降级置信度。在同一个 current-carrier 上下文中运行所有四轴的行为禁止发生 — 若检测到，必须返回 `blocked` 并标记 `cross-axis-contamination: true`。若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
 4. **Anti-cheat is NOT code review**：本技能不评判代码正确性、性能、安全性或架构质量。它只评判证据的可信度。即使所有代码从技术角度正确，若检测到 fake evidence 信号，仍必须报告 `hard_fail` 且不可被其他轴覆盖。
 5. **False positive handling**：若某条检测看起来命中反作弊 pattern 但存在可解释的合法理由（如 `A1` 中 test-type WT 合理使用 mock），其 verdict 应记录为 `pass` 并附带解释。不得压制检测结果或静默降级 — 合法理由必须显式记录在 `finding` 字段中。
-6. **Stale evidence 时效性**：A5 比较的基线是 milestone 分支 HEAD，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 以最晚 HEAD 为准，但在 finding 中解释时间线。
+6. **Stale evidence 时效性**：A5 的主判断依据是 source refs、checkpoint refs、observed git hash、merge commit、closeout commit 与 milestone input checkpoint；milestone 分支 HEAD 是目标基线，不是 main/master。若 milestone 分支在 WT closeout 之后有新的 commit（如另一个 WT 的 closeout），A5 应基于 ref/hash 关系解释时间线。文件系统 mtime 只能作为辅助信号，不得作为唯一 hard-fail 依据。
 7. **Veto power 不可被稀释**：anti-cheat lane 有 veto_power，任何 `hard_fail` 或 `blocked` 必须导致 milestone gate 综合时为 `blocked`。per-WT aggregation 的 pass 不可覆盖 anti-cheat 的 hard_fail — 此行为由 `milestone-gate-aggregation.md` 保证，本技能只负责产出准确的 lane verdict。
 8. **数据缺失不可视为通过**：若某 WT 缺失 `dispatch_profile`、`closeout_record` 或 `gate_evidence`，导致 A1-A7 中某项无法检测，该项 verdict 必须为 `blocked`（而非 `pass` 或静默跳过）。`blocked` 项必须显式暴露缺失数据及影响的 check_id。
 9. **跨 WT 矛盾与 A2 的区别**：A2 检测证据复用但未独立验证。若两 WT 的 single-acceptance verdict 互相矛盾（如一个 pass 一个 hard-fail 但共享同一 evidence），A2 标记为复用风险，而矛盾本身应由 `contradiction_rules`（聚合规则的矛盾检测）处理。本技能不负责矛盾裁决 — 只负责指出证据复用可能掩盖了矛盾。

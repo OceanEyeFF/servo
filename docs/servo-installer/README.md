@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Documentation"
 status: active
-updated: 2026-05-27
+updated: 2026-07-02
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-07-02
 ---
 # servo-installer Documentation
 
@@ -87,7 +87,7 @@ operator 执行具体任务时使用。
 |------|---------|
 | `managed-files-ownership.md` | 文件所有权分类：installer payload / .servo/ 运行时 / deploy target / 用户自有 |
 | `existing-code-adoption.md` | 既有代码库接入 Harness 时的 `.servo/repo/discovery-input.md` 生成边界 |
-| `legacy-version-handling.md` | 0.5.x/0.6.x 兼容窗口内旧 `.aw/` runtime 和旧 `aw-*` target dirs 的处理说明；预计 0.7.x 移除 |
+| `legacy-version-handling.md` | 0.5.x/0.6.x 来源的旧 `.aw/` runtime 和旧 `aw-*` target dirs 的处理说明；0.7.x 仍保留兼容说明，移除需独立 worktrack 与验证 |
 | `tui-aw-runtime-migration-repro.md` | TUI first option 未触发 `.aw -> .servo` runtime migration 的 v0.5.7 复现记录、手动 Windows 步骤和旧文档残留扫描风险 |
 
 ### tui/ — TUI 合同与实现

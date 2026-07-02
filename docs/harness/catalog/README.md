@@ -1,9 +1,9 @@
 ---
 title: Harness Skill Catalog
 status: active
-updated: 2026-06-14
+updated: 2026-06-30
 owner: servo-kernel
-last_verified: 2026-06-14
+last_verified: 2026-06-30
 ---
 
 # Harness Skill Catalog
@@ -46,11 +46,11 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 | Catalog surface | Canonical executable source |
 |-----------------|-----------------------------|
 | [supervisor.md](./supervisor.md) | [harness-skill](../../../product/harness/skills/harness-skill/) |
-| [repo.md](./repo.md) | [harness-set-goal-skill](../../../product/harness/skills/harness-set-goal-skill/), [milestone-pre-intake-skill](../../../product/harness/skills/milestone-pre-intake-skill/), [repo-status-skill](../../../product/harness/skills/repo-status-skill/), [repo-whats-next-skill](../../../product/harness/skills/repo-whats-next-skill/), [repo-append-request-skill](../../../product/harness/skills/repo-append-request-skill/), [repo-change-goal-skill](../../../product/harness/skills/repo-change-goal-skill/), [repo-refresh-skill](../../../product/harness/skills/repo-refresh-skill/), [worktrack-cleanup-skill](../../../product/harness/skills/worktrack-cleanup-skill/) |
+| [repo.md](./repo.md) | [repo-init-goal-skill](../../../product/harness/skills/repo-init-goal-skill/), [milestone-pre-intake-skill](../../../product/harness/skills/milestone-pre-intake-skill/), [repo-status-skill](../../../product/harness/skills/repo-status-skill/), [repo-whats-next-skill](../../../product/harness/skills/repo-whats-next-skill/), [repo-append-request-skill](../../../product/harness/skills/repo-append-request-skill/), [repo-change-goal-skill](../../../product/harness/skills/repo-change-goal-skill/), [repo-refresh-skill](../../../product/harness/skills/repo-refresh-skill/), [milestone-cleanup-skill](../../../product/harness/skills/milestone-cleanup-skill/), [worktrack-cleanup-skill](../../../product/harness/skills/worktrack-cleanup-skill/) |
 | [milestone/milestone-init-skill.md](./milestone/milestone-init-skill.md) | [milestone-init-skill](../../../product/harness/skills/milestone-init-skill/) |
 | [milestone/milestone-status-skill.md](./milestone/milestone-status-skill.md) | [milestone-status-skill](../../../product/harness/skills/milestone-status-skill/) |
-| — Milestone Gate orchestrator（Layer 2） | [milestone-gate](../../../product/harness/skills/milestone-gate/) |
-| — Milestone Gate four-axis check（Layer 1） | [milestone-blackbox-check](../../../product/harness/skills/milestone-blackbox-check/), [milestone-whitebox-check](../../../product/harness/skills/milestone-whitebox-check/), [milestone-anticheat-check](../../../product/harness/skills/milestone-anticheat-check/), [milestone-composite-check](../../../product/harness/skills/milestone-composite-check/) |
+| — Milestone Gate aggregator | [milestone-gate](../../../product/harness/skills/milestone-gate/) |
+| — Milestone Gate sibling axis checks | [milestone-blackbox-check](../../../product/harness/skills/milestone-blackbox-check/), [milestone-whitebox-check](../../../product/harness/skills/milestone-whitebox-check/), [milestone-anticheat-check](../../../product/harness/skills/milestone-anticheat-check/), [milestone-composite-check](../../../product/harness/skills/milestone-composite-check/) |
 | [worktrack.md](./worktrack.md) | [worktrack-status-skill](../../../product/harness/skills/worktrack-status-skill/), [worktrack-init-skill](../../../product/harness/skills/worktrack-init-skill/), [worktrack-schedule-skill](../../../product/harness/skills/worktrack-schedule-skill/), [worktrack-dispatch-skill](../../../product/harness/skills/worktrack-dispatch-skill/), [worktrack-generic-worker-skill](../../../product/harness/skills/worktrack-generic-worker-skill/), [worktrack-doc-catch-up-skill](../../../product/harness/skills/worktrack-doc-catch-up-skill/), [worktrack-review-evidence-skill](../../../product/harness/skills/worktrack-review-evidence-skill/), [worktrack-test-evidence-skill](../../../product/harness/skills/worktrack-test-evidence-skill/), [worktrack-rule-check-skill](../../../product/harness/skills/worktrack-rule-check-skill/), [worktrack-gate-skill](../../../product/harness/skills/worktrack-gate-skill/), [worktrack-recover-skill](../../../product/harness/skills/worktrack-recover-skill/), [worktrack-close-skill](../../../product/harness/skills/worktrack-close-skill/), [repo-writeback-skill](../../../product/harness/skills/repo-writeback-skill/) |
 
 Deploy targets such as `.agents/` or `.claude/` may consume these sources after deployment, but they are not canonical source locations.

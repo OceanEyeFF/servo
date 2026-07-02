@@ -64,6 +64,16 @@ writeback_instruction:
     - check: "file_parseable"
     - check: "field_value_equals"
     - check: "no_extra_fields_modified"
+  evidence_passthrough:
+    closeout_evidence_bundle_ref: string | N/A
+    closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing | N/A
+    dispatch_provenance:
+      status: captured | linked | incomplete | missing | historical_gap | contaminated | N/A
+      runtime_dispatch_record_ref: string | N/A
+      subagent_dispatch_record_refs: []
+      missing_dispatch_record_refs: []
+      dispatch_result_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | N/A
+      resolved_runtime_dispatch_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | incomplete | missing | contaminated | N/A
 ```
 
 ### 支持的操作
@@ -84,6 +94,7 @@ writeback_instruction:
    b. 字段路径合法（在目标文件 schema 范围内）
    c. 值类型与目标字段匹配
    d. 非破坏性操作（不删除关键字段、不修改 protected sections）
+   e. 若写入 closed worktrack / closeout evidence / milestone closeout refs，`evidence_passthrough` 必须携带 closeout handoff 中的 dispatch provenance 字段；缺失或不一致时返回 `writeback_blocked: evidence_passthrough_incomplete`
 3. 执行写入：
    a. 读取目标文件全文
    b. 定位目标 YAML block
@@ -113,11 +124,21 @@ writeback_instruction:
   - `completed/blocked/deferred`: integer
   - `pipeline_summary`: string pattern `planned=N / active=N / completed=N / superseded=N`
   - `latest_closed_worktrack_commit`: string
+  - `closeout_evidence_bundle_ref`: string
+  - `closeout_bundle_status`: string enum (`complete` / `incomplete` / `contaminated` / `historical_gap` / `missing`)
+  - `dispatch_provenance.status`: string enum (`captured` / `linked` / `incomplete` / `missing` / `historical_gap` / `contaminated`)
+  - `runtime_dispatch_record_ref`: string
+  - `subagent_dispatch_record_refs`: list
+  - `missing_dispatch_record_refs`: list
+  - `dispatch_result_status`: string enum (`delegated` / `current_carrier_fallback` / `permission_blocked` / `runtime_gap` / `dispatch_package_unsafe` / `blocked` / `historical_gap` / `N/A`)
+  - `resolved_runtime_dispatch_status`: string enum (`delegated` / `current_carrier_fallback` / `permission_blocked` / `runtime_gap` / `dispatch_package_unsafe` / `blocked` / `historical_gap` / `incomplete` / `missing` / `contaminated`)
 
 ### 非破坏性操作
 
 - 不得删除以下字段：`milestone_id`、`title`、`created_by`、`created_at`
 - 不得修改 `status: completed` → `status: planned`（不可逆状态变更需 programmer 审批）
+- 不得删除或降级 closeout handoff 中已有的 `closeout_evidence_bundle_ref`、`closeout_bundle_status`、`dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、`dispatch_result_status`、`resolved_runtime_dispatch_status`。
+- 若调用方只提供 prose closeout summary 或 carrier 自述，writeback 必须返回 `writeback_blocked: dispatch_provenance_missing` 或保留上游明确的 `historical_gap`；不得合成 `delegated`、`current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe` 或 `blocked`。
 
 ## 后校验规则
 
@@ -153,18 +174,18 @@ harness-skill §10.7.6 定义的 acceptance writeback 事务最小写入集合�
 
 任一步骤 fail，标记 `writeback_incomplete`，不继续后续步骤。
 
-## 与 worktrack-cleanup-skill 的边界
+## 与 milestone-cleanup-skill 的边界
 
-| 维度 | .repo-writeback-skill | worktrack-cleanup-skill |
+| 维度 | .repo-writeback-skill | milestone-cleanup-skill |
 |------|----------------------|---------------------|
-| **操作对象** | `.servo/` artifact 文件内容（字段值） | 本地 git 分支 + backlog 条目归档 + control-state 压缩 |
-| **操作性质** | 字段级内容变更（写、改、迁移） | 文件系统/分支清理（删、归档、压缩） |
-| **典型动作** | 更新 progress_counter、追加 commit hash、迁移 backlog 条目 | 删除已合并 worktrack/milestone 分支、归档 history、压缩滚动日志 |
-| **事务保证** | 文件级事务（预校验→重写→后校验） | 安全守卫（不碰 remote、不删未合并分支、不删 baseline） |
-| **触发时机** | 每次 worktrack closeout / milestone acceptance / checkpoint 更新 | Milestone final acceptance 后（merge → refresh → cleanup 第三阶段） |
-| **副作用** | 仅修改 `.servo/` 文件内容 | 删除本地分支、修改 backlog 条目归属、compact control-state |
+| **操作对象** | `.servo/` artifact 文件内容（字段值） | repo runtime cleanup report、dry-run 清理候选、本地 git 分支 + backlog 条目归档 + control-state 压缩 |
+| **操作性质** | 字段级内容变更（写、改、迁移） | 默认 report/dry-run；显式批准后才执行文件系统/分支清理（删、归档、压缩） |
+| **典型动作** | 更新 progress_counter、追加 commit hash、迁移 backlog 条目 | 生成 runtime maintenance sweep report、报告可清理分支、归档 history、压缩滚动日志 |
+| **事务保证** | 文件级事务（预校验→重写→后校验） | 安全守卫（不碰 remote、不删未合并分支、不删 baseline；自动 closeout 只 report/dry-run） |
+| **触发时机** | 每次 worktrack closeout / milestone acceptance / checkpoint 更新 | Milestone final acceptance / repo refresh 后、下一次 milestone activation 判定前 |
+| **副作用** | 仅修改 `.servo/` 文件内容 | 默认无清理副作用；apply 经批准后才删除本地分支、修改 backlog 条目归属或 compact control-state |
 
-**关键区分**：writeback 改"文件里写了什么"，cleanup 改"磁盘上有什么分支"。两者不同时执行，但可能在同一 closeout 链中先后调用。
+**关键区分**：writeback 改"文件里写了什么"，cleanup report 先说明"运行空间里有什么清理候选"。两者不同时执行，但可能在同一 closeout 链中先后调用；自动 closeout 链不得把 report finding 升级为 apply 授权。
 
 ## .servo/ 跟踪模式
 
@@ -195,13 +216,22 @@ writeback_instruction:
     worktrack_id: "WT-xxx"
     commit_ref: "wt-xxx@abc1234"
     merge_target: "ms/MS-20260623-002-worktrack-lifecycle-complete"
+    closeout_evidence_bundle_ref: ".servo/...#closeout-evidence-bundle"
+    closeout_bundle_status: "complete"
+    dispatch_provenance:
+      status: "linked"
+      runtime_dispatch_record_ref: ".servo/...#runtime-dispatch-WT-xxx"
+      subagent_dispatch_record_refs: []
+      missing_dispatch_record_refs: []
+      dispatch_result_status: "delegated"
+      resolved_runtime_dispatch_status: "delegated"
 ```
 
 自动执行：
 
 - milestone artifact: `progress_counter.completed += 1`, `updated = now`
 - control-state: 追加 `latest_closed_worktrack_commit`, 更新 `active_milestone_progress`
-- worktrack-backlog: upsert 条目 status = `done`
+- worktrack-backlog: upsert 条目 status = `done`；若写入 evidence refs，同步保留 `closeout_evidence_bundle_ref`、`closeout_bundle_status` 与完整 `dispatch_provenance` passthrough 字段
 
 ### M2: worktrack-init-register
 
@@ -418,6 +448,7 @@ writeback_result:
 - 不得静默修改未被声明的字段。
 - 写回失败不得伪装成成功；writeback_incomplete 必须暴露具体失败字段和原因。
 - 不得跳过预校验或后校验。
+- writeback 不 dereference 或合成 dispatch records。它只能验证调用方传入的 provenance payload 结构完整并原样写入目标字段；需要 dereference 时返回调用方补证。
 
 ## 资源
 

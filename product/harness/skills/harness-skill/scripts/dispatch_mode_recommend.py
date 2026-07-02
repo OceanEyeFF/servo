@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Dispatch Mode Recommend — Dispatch Decision Policy 确定性分类。
 
-根据 8 个决策因子推荐 SubAgent 或 Current-Carrier 模式。
+根据 8 个决策因子推荐 delegated 或 current-carrier 模式。
 
 用法:
   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/dispatch_mode_recommend.py \\
@@ -167,7 +167,7 @@ def main():
 
     if score_subagent > score_current:
         result = {
-            "recommended_mode": "subagent",
+            "recommended_mode": "delegated",
             "confidence": "medium",
             "reasons": reasons,
             "needs_llm_review": False,
