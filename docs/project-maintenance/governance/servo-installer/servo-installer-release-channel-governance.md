@@ -18,7 +18,7 @@ last_verified: 2026-07-02
 2026-07-02 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.6.1`；`next` -> `0.7.0-rc.1`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`、`0.6.0-rc.1`、`0.6.1-rc.0`、`0.6.1-rc.1`、`0.6.1-rc.2`、`0.6.1-rc.3`、`0.6.1-rc.4`、`0.6.1-rc.5`、`0.6.1`、`0.7.0-rc.0`、`0.7.0-rc.1`
+- npm registry 真实状态：`latest` -> `0.6.1`；`next` -> `0.7.0-rc.2`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`、`0.6.0-rc.1`、`0.6.1-rc.0`、`0.6.1-rc.1`、`0.6.1-rc.2`、`0.6.1-rc.3`、`0.6.1-rc.4`、`0.6.1-rc.5`、`0.6.1`、`0.7.0-rc.0`、`0.7.0-rc.1`、`0.7.0-rc.2`
 - GitHub Release `v0.5.8` 已发布，target commit `ad363e818adc5da01049f1808db9376830c05d09`；npm `servo-installer@0.5.8` 的 `gitHead` 同为 `ad363e818adc5da01049f1808db9376830c05d09`
 - publish workflow run `26509952967` completed successfully for `v0.5.8`
 - npm `servo-installer@0.5.8` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.8.tgz`
@@ -46,18 +46,22 @@ last_verified: 2026-07-02
 - GitHub Release `v0.7.0-rc.1` 已发布为 prerelease；npm `servo-installer@0.7.0-rc.1` 的 `gitHead` 为 `c309ec3833e7549778a727d1d91fdae93c763964`
 - npm `servo-installer@0.7.0-rc.1` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.1.tgz`
 - `next` npx smoke：`servo-installer@next` selector resolved to `0.7.0-rc.1` and passed WT-v070-npx-installer-installation-smoke; `latest` stayed `0.6.1`.
+- GitHub Release `v0.7.0-rc.2` 已发布为 prerelease，target commit `cbde0df5a84074baeddba8e773b47379f5efaa1c`；npm `servo-installer@0.7.0-rc.2` 的 `gitHead` 同为 `cbde0df5a84074baeddba8e773b47379f5efaa1c`
+- publish workflow run `28602829071` completed successfully for `v0.7.0-rc.2`
+- npm `servo-installer@0.7.0-rc.2` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.2.tgz`
+- `next` npx smoke：`servo-installer@next` selector resolved to `0.7.0-rc.2` and passed registry npx smoke; pinned selector `servo-installer@0.7.0-rc.2` also passed registry npx smoke; `latest` stayed `0.6.1`.
 
 ## 当前 source release tuple
 
-2026-07-02，当前 source release tuple 是 `v0.7.0-rc.2` RC candidate，channel 为 `next`。
+2026-07-02，当前 source release tuple 是 `v0.7.0-rc.2` RC，channel 为 `next`。
 
 - root `package.json` version：`0.7.0-rc.2`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.2`
 - approval lock：`approvedVersion=0.7.0-rc.2`、`approvedGitTag=v0.7.0-rc.2`、`approvedChannel=next`
-- release scope：当前 source tuple 用于 WT3 publish approval 前的 RC source readiness；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
-- publish status：`v0.7.0-rc.2` 尚未发布；WT3 approval 仍 required。此页不得把 rc.2 写成 GitHub Release、npm package、`next` dist-tag 或 registry npx smoke 事实，直到对应 publish 和 post-publish verification 完成。
+- release scope：当前 source tuple 是已发布的 `next` channel RC；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
+- publish status：`v0.7.0-rc.2` 已通过 GitHub Release prerelease 触发 Trusted Publishing 发布到 npm `next`，GitHub Release、workflow、registry、dist-tag 和 registry npx smoke 均已完成 post-publish verification。
 
-注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前仍解析到已发布的 `0.7.0-rc.1`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据，也不得把未发布的 rc.2 source tuple 写成 registry 事实。
+注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前解析到已发布的 `0.7.0-rc.2`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
