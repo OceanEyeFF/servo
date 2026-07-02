@@ -421,6 +421,8 @@ def test_runtime_skill_docs_use_package_local_script_commands() -> None:
     cleanup_docs = [
         "product/harness/skills/milestone-cleanup-skill/SKILL.md",
         "product/harness/skills/worktrack-cleanup-skill/SKILL.md",
+    ]
+    cleanup_installed_docs = [
         ".agents/skills/milestone-cleanup-skill/SKILL.md",
         ".agents/skills/worktrack-cleanup-skill/SKILL.md",
         ".claude/skills/milestone-cleanup-skill/SKILL.md",
@@ -444,18 +446,26 @@ def test_runtime_skill_docs_use_package_local_script_commands() -> None:
     bare_python_runtime = "python3 " + "scripts/"
     bare_node_deploy = "node " + "scripts/deploy_servo.js"
 
-    for relative_path in cleanup_docs:
+    optional_installed_paths = (
+        cleanup_installed_docs
+        + repo_init_goal_installed_runtime_docs
+        + repo_init_goal_installed_asset_docs
+    )
+    existing_optional_paths = [
+        path for path in optional_installed_paths if (REPO_ROOT / path).exists()
+    ]
+
+    for relative_path in cleanup_docs + [
+        path for path in existing_optional_paths if "cleanup-skill" in path
+    ]:
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert bare_python_runtime not in text, relative_path
         assert "python3 ./scripts/control_state_compact.py" in text, relative_path
         assert "python3 ./scripts/runtime_maintenance_sweep.py" in text, relative_path
 
-    optional_installed_paths = repo_init_goal_installed_runtime_docs + repo_init_goal_installed_asset_docs
-    existing_optional_paths = [
-        path for path in optional_installed_paths if (REPO_ROOT / path).exists()
-    ]
-
-    for relative_path in repo_init_goal_runtime_docs + repo_init_goal_asset_docs + existing_optional_paths:
+    for relative_path in repo_init_goal_runtime_docs + repo_init_goal_asset_docs + [
+        path for path in existing_optional_paths if "repo-init-goal-skill" in path
+    ]:
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert bare_node_deploy not in text, relative_path
         assert "node ./scripts/deploy_servo.js" in text, relative_path
