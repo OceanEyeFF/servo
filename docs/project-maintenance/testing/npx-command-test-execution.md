@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-06-17
+updated: 2026-07-02
 owner: servo-kernel
-last_verified: 2026-06-17
+last_verified: 2026-07-02
 ---
 # npx Command Test Execution
 
@@ -21,7 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
-- last_registry_smoke: 2026-06-17 `servo-installer` (`0.6.1`, `latest`) passed with `--skip-remote`; `next` remained `0.6.1-rc.5`
+- last_registry_smoke: 2026-07-02 registry facts checked; `latest` is `0.6.1`, `next` is `0.7.0-rc.1`; WT-v070-npx-installer-installation-smoke accepted `servo-installer@next -> 0.7.0-rc.1` registry smoke and stable `servo-installer -> 0.6.1` baseline smoke
 
 ## Boundary
 
