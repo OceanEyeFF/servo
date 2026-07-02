@@ -49,17 +49,15 @@ last_verified: 2026-07-02
 
 ## 当前 source release tuple
 
-2026-07-02，当前 source release tuple 是 `v0.7.0-rc.1` RC candidate，channel 为 `next`。
+2026-07-02，当前 source release tuple 是 `v0.7.0-rc.2` RC candidate，channel 为 `next`。
 
-- root `package.json` version：`0.7.0-rc.1`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.1`
-- approval lock：`approvedVersion=0.7.0-rc.1`、`approvedGitTag=v0.7.0-rc.1`、`approvedChannel=next`
-- release scope：当前 source tuple 和 registry `next` 包面用于 RC 验证；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
-- publish status：GitHub Release `v0.7.0-rc.1` 已创建为 prerelease；npm `servo-installer@0.7.0-rc.1` 已发布；`next` dist-tag 已指向 `0.7.0-rc.1`；`latest` 仍指向 `0.6.1`。
-- npm `servo-installer@0.7.0-rc.1` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.1.tgz`
-- registry `next` npx smoke：`servo-installer@next` selector resolved to `0.7.0-rc.1` and passed WT-v070-npx-installer-installation-smoke.
+- root `package.json` version：`0.7.0-rc.2`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.2`
+- approval lock：`approvedVersion=0.7.0-rc.2`、`approvedGitTag=v0.7.0-rc.2`、`approvedChannel=next`
+- release scope：当前 source tuple 用于 WT3 publish approval 前的 RC source readiness；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
+- publish status：`v0.7.0-rc.2` 尚未发布；WT3 approval 仍 required。此页不得把 rc.2 写成 GitHub Release、npm package、`next` dist-tag 或 registry npx smoke 事实，直到对应 publish 和 post-publish verification 完成。
 
-注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前解析到 `0.7.0-rc.1`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据。
+注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前仍解析到已发布的 `0.7.0-rc.1`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据，也不得把未发布的 rc.2 source tuple 写成 registry 事实。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
