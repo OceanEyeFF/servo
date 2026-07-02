@@ -905,7 +905,7 @@ status: "active"
 > 仅当 programmer 明确表达持久授权或更改默认策略时，才可更新本文件。
 >
 > `runtime_dispatch_profile` 及其 12 子字段已从本文件删除。
-> Schema 定义保留在 `docs/harness/artifact/control/control-state.md`。
+> 运行时字段以本文件内联结构、随包脚本与当前 `.servo` artifacts 为准。
 > 运行时填充逻辑不变 (由 Dispatch 步骤写入本轮 evidence)。
 
 ## User-Defined Servo Controls

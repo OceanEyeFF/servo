@@ -286,6 +286,25 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         needs_approval=True,
         description="Milestone 初始化可能扩大 scope，需要审批",
     ),
+    "init_milestone::milestone-init-skill": PolicyProfile(
+        allowed_rules=[
+            "artifact_hydration",
+            "status_consistency_check",
+            "scaffold_validation",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "milestone-init-skill 只允许在 pre-milestone intake、complex "
+            "entry gate、Milestone Review Gate、branch guard 与 programmer "
+            "activation approval 均已通过后，对既有 planned milestone 执行"
+            "非 release/non-destructive 的 bounded create/upsert/activate；"
+            "新增目标、范围扩张、release/publish/tag/push/deploy、protected "
+            "branch mutation 和 destructive cleanup 仍由前置 guards 与 "
+            "forbidden/stop 边界阻断"
+        ),
+    ),
 
     # ── init_worktrack ──
     "init_worktrack::init-worktrack-skill": PolicyProfile(

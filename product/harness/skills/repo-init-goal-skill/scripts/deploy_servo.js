@@ -1297,9 +1297,9 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 		truth_status: "temporary-inferred",
 		gate_truth_status: "runtime-evidence",
 		scanner_command:
-			"PYTHONDONTWRITEBYTECODE=1 python3 .agents/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
-		scanner_command_alternatives:
-			"PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py --repo <repo> --json",
+			"PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complexity_signal_scanner.py --repo <repo> --json",
+		scanner_command_basis:
+			"run from the installed repo-init-goal-skill package root",
 		scanner_output_role: "scanner output is evidence, not verdict",
 		docker_compose_permission: "pending_programmer_confirmation",
 		database_migration_permission: "pending_programmer_confirmation",

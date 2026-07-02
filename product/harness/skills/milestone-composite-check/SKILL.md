@@ -360,7 +360,7 @@ composite_verdict:
 
 - Milestone Gate 证据聚合合同 — §五 composite_lane_rules：composite acceptance lanes 在 milestone 级的消费规则和 veto power 定义。
 - Composite Milestone Acceptance — composite acceptance 的 lane 定义、verdict model 和 fallback 规则。
-- Composite Lane Evidence Records — `docs/harness/artifact/worktrack/composite-lane-records.md` 定义 per-WT lane record schema、status 语义和 closeout bundle link shape。
+- Composite Lane Evidence Records — 随包字段说明定义 per-WT lane record schema、status 语义和 closeout bundle link shape；运行时不得依赖源码仓库文档路径。
 - milestone-gate-aggregation.md — Milestone Gate 聚合合同，定义 composite_lane_rules 和 Layer 2 聚合逻辑。本技能（composite lane check）是 Layer 2 的输入之一。
 - milestone.md — Milestone artifact 合同，定义 aggregation_rules 字段和 composite_acceptance 配置。
 - Skill 公共约束已内联于 §硬约束

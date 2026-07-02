@@ -1,6 +1,6 @@
 # Repo Goal / Charter
 
-> 这是 `.servo/goal-charter.md` 的模板来源，用来记录当前 repo 的长期目标和方向。Source-side authoring trace: `docs/harness/artifact/repo/goal-charter.md`。
+> 这是 `.servo/goal-charter.md` 的模板来源，用来记录当前 repo 的长期目标和方向。运行时字段以本模板内联结构为准。
 
 ## Metadata
 

@@ -355,6 +355,39 @@ def test_autonomy_policy_cleanup_copies_reject_stale_safe_delete_wording() -> No
         assert "安全删除" not in default_block
 
 
+def test_autonomy_policy_allows_canonical_milestone_init_after_route_guards(tmp_path: Path) -> None:
+    control_state = tmp_path / ".servo" / "control-state.md"
+    control_state.parent.mkdir(parents=True)
+    control_state.write_text(
+        "# control\n\n- route_decision: activate planned milestone after guards\n",
+        encoding="utf-8",
+    )
+
+    result = run_script(
+        "autonomy_policy_check.py",
+        [
+            "--operation",
+            "init_milestone",
+            "--skill",
+            "milestone-init-skill",
+            "--control-state",
+            str(control_state),
+        ],
+        tmp_path,
+    )
+    payload = parse_stdout_json(result)
+
+    assert result.returncode == 0, result.stderr
+    assert payload["allowed"] is True
+    assert payload["blocked"] is False
+    assert payload["needs_approval"] is False
+    assert payload["forbidden_hit"] == []
+    assert payload["stop_condition_hit"] == []
+    assert "pre-milestone intake" in str(payload["reason"])
+    assert "release/publish/tag/push/deploy" in str(payload["reason"])
+    assert "未在 POLICY_MAP" not in str(payload["reason"])
+
+
 def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> None:
     result = run_script(
         "dispatch_mode_recommend.py",

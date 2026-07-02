@@ -70,7 +70,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
    - 未确认的 `complex_project_entry_gate` 默认必须 `entry_verdict = blocked` 且 `milestone_blocking_decision = block_create, block_upsert, block_activate, block_derive_worktrack`
    - unresolved gate blocking default: missing, blank, placeholder, pending, or incomplete gate 不能解释为 `clear` 或 `not_applicable`
    - scanner output is evidence, not verdict；scanner 阈值只能作为 LLM 判定依据，不能单独写成 Goal Charter truth
-   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；Agents backend 路径为 `.agents/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py`，Claude backend 路径为 `.claude/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py`
+   - 生成的 scanner command 必须引用随 skill payload 分发的 `scripts/complexity_signal_scanner.py`；执行时以当前已安装 skill package 根为基准，例如 `PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complexity_signal_scanner.py --repo <repo> --json`
    - 后续 `goal-charter.md` 可以引用 discovery 中的候选目标信号，但必须经用户确认
    - 后续 `repo/snapshot-status.md` 可以吸收 discovery 中的状态线索，但应按初始化时的当前状态重写
    - 后续 `control-state.md` 只能把 discovery / temporary understanding 作为 linked evidence / note，不能把其中字段提升为控制指令
@@ -138,7 +138,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
      ```
    - `assets/` 目录遵循 Codex Skills 标准，存放本技能所需的模板、资源和参考文档
    - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
-   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到 `<deploy-path>/.claude/skills/repo-init-goal-skill/`
+   - 如果目标 repo 需要给 Claude Code 暴露同一个初始化技能，可在生成时追加 `--install-claude-skill`，将本技能包复制到由 deploy helper 管理的 Claude skill target root 下
    - 也可以单独运行 `node ./scripts/deploy_servo.js install-claude-skill --deploy-path <目标 repo / worktree 根>`；默认不覆盖已有 `.claude` skill 文件，只有显式传入 `--force` 才会覆盖本技能包内的对应文件
    - Claude helper 允许 `--claude-root` 指向 operator 管理的 symlink / mount 层；但拒绝 `repo-init-goal-skill/` 目标目录本身是 symlink，也拒绝该 skill 目录内部已有 symlink，保持 copy install 不依赖外部源码路径
    - 如果目标 skill 目录本身不是 symlink，但经允许的 root symlink / mount 解析后就是当前运行的技能包，安装视为已完成并 no-op
@@ -246,9 +246,9 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 | `assets/worktrack/contract.md` | 工作追踪契约模板骨架 | `.servo/worktrack/contract.md`（直接复制） |
 | `assets/worktrack/gate-evidence.md` | 关卡证据模板骨架 | `.servo/worktrack/gate-evidence.md`（直接复制） |
 | `assets/worktrack/plan-task-queue.md` | 计划任务队列模板骨架 | `.servo/worktrack/plan-task-queue.md`（直接复制） |
-| `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选安装本技能到 `<deploy-path>/.claude/skills/repo-init-goal-skill/` |
+| `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选把本技能安装到由 deploy helper 管理的 Claude skill target root 下 |
 
-这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_servo.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 `.claude/skills` root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.servo` 模板源码根的行为必须返回 blocked。
+这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_servo.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 Claude skill target root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.servo` 模板源码根的行为必须返回 blocked。
 
 最小用法：
 

@@ -8,6 +8,12 @@
 
 The source root may link to `docs/harness/` for authoring ownership, doctrine, catalog traceability, and long-form design history. Distributed runtime semantics are stricter: if a skill needs a contract, checklist, template, script, or short reference while it is being executed in a target repository, that material must be in the same skill package and included by the adapter payload.
 
+## Self-contained Skill Rule
+
+Skills are distributed runtime units. If `docs/harness/` is absent from a target repository, every installed skill must still remain logically self-contained: its `SKILL.md`, bundled templates, bundled references, scripts, assets, and explicit runtime artifacts must be sufficient for an operator or agent to understand inputs, boundaries, outputs, forbidden actions, and acceptance criteria.
+
+`docs/harness/` may remain the source-repository maintenance truth and authoring trace. It must not be the runtime dependency that makes a deployed skill correct. Installed skills must not require project-relative docs paths, repo-external absolute paths, parent-directory escapes, or deploy-target paths outside the current skill package to decide what to do.
+
 Allowed runtime package surface:
 
 - `SKILL.md`: the primary executable instruction and runtime contract for the skill.

@@ -262,9 +262,9 @@ SUBAGENT_DEFAULT_REQUIRED_TERMS = [
     "dispatch package unsafe",
 ]
 EXECUTION_POLICY_TEMPLATE_REQUIRED_TERMS = [
-    "Execution Policy canonical semantics are not repeated here",
+    "Execution Policy runtime defaults are embedded below",
     "execution_policy_contract_ref",
-    "docs/harness/artifact/worktrack/contract.md#execution-policy",
+    "bundled-runtime-semantics",
     "runtime_dispatch_mode",
     "dispatch_mode_source",
     "allowed_values",
@@ -975,8 +975,7 @@ REPO_INIT_COMPLEX_GATE_REQUIRED_TERMS = [
     "scanner output is evidence",
     "weak-doc",
     "scripts/complexity_signal_scanner.py",
-    ".agents/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
-    ".claude/skills/repo-init-goal-skill/scripts/complexity_signal_scanner.py",
+    "./scripts/complexity_signal_scanner.py",
 ]
 REPO_INIT_COMPLEX_GATE_PAYLOAD_PATHS = [
     "product/harness/adapters/agents/skills/repo-init-goal-skill/payload.json",
@@ -1080,11 +1079,27 @@ PACKAGE_EXTERNAL_RUNTIME_FORBIDDEN_PATTERNS = [
     re.compile(r"execution_policy_contract_ref:\s*docs/harness/"),
     re.compile(r"以\s*`?docs/harness/[^`\\s]*`?\s*为准"),
     re.compile(r"最终内容应与\s*`?docs/harness/"),
+    re.compile(
+        r"(?:Schema|schema|字段|合同|contract|authority|定义|语义|source|来源)"
+        r".*docs/harness/"
+    ),
+    re.compile(r"\.(?:agents|claude)/skills/[^`\\s]+/scripts/"),
     re.compile(r"toolchain/scripts/test/complexity_signal_scanner\\.py"),
 ]
 SOURCE_TRACE_MARKERS = [
     "Source-side authoring trace",
     "Source-side authoring traces",
+]
+SELF_CONTAINED_SKILL_RULE_CONTRACT = "product/harness/skills/README.md"
+SELF_CONTAINED_SKILL_RULE_REQUIRED_TERMS = [
+    "Self-contained Skill Rule",
+    "distributed runtime units",
+    "docs/harness/` is absent",
+    "logically self-contained",
+    "runtime dependency",
+    "project-relative docs paths",
+    "parent-directory escapes",
+    "outside the current skill package",
 ]
 AW_RESIDUE_CONTRACT_REQUIRED_TERMS = [
     "compatibility-allowed",
@@ -1683,6 +1698,20 @@ def line_has_source_trace(line: str) -> bool:
 def check_distributed_skill_packages_are_self_contained(
     repo_root: Path, report: SemanticReport
 ) -> None:
+    rule_contract_path = repo_root / SELF_CONTAINED_SKILL_RULE_CONTRACT
+    if not rule_contract_path.is_file():
+        report.add_failure(
+            f"missing self-contained skill rule contract: {SELF_CONTAINED_SKILL_RULE_CONTRACT}"
+        )
+    else:
+        rule_text = rule_contract_path.read_text(encoding="utf-8")
+        for term in SELF_CONTAINED_SKILL_RULE_REQUIRED_TERMS:
+            if term not in rule_text:
+                report.add_failure(
+                    f"self-contained skill rule contract missing required term {term!r}: "
+                    f"{SELF_CONTAINED_SKILL_RULE_CONTRACT}"
+                )
+
     skills_root = repo_root / CANONICAL_DISTRIBUTED_SKILLS_DIR
     if not skills_root.is_dir():
         report.add_failure(

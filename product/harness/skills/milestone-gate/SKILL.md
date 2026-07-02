@@ -149,7 +149,7 @@ Blackbox 轴的 `input_gap_classification` 必须区分输入缺口与真实行�
 
 1. **per-WT closeout evidence bundles**：每个已闭环 WT 的 `closeout_evidence_bundle_ref`、`closeout_bundle_status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`dispatch_provenance_status`、`dispatch_result_status`、`resolved_runtime_dispatch_status`、`composite_lane_records`、`verdict`、`node_type`、`critical_failure`
 2. **axis_reports**：顶层 Harness sibling axis carriers 产出的 4 个结构化报告
-3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证 docs/harness 合同的目标类型与四轴适用性封套
+3. **target_type_rules / axis_applicability**：来自 milestone artifact、轴输出或已验证运行时合同的目标类型与四轴适用性封套
 4. **aggregation_rules**：来自 milestone artifact 的 `aggregation_rules` 字段。若缺失，默认使用 `enabled: false`（退化 AND），标记 `aggregation_rules_missing: true`
 5. **axis_dispatch_profile / axis_report_status**：顶层 Harness 分派与隔离证据
 

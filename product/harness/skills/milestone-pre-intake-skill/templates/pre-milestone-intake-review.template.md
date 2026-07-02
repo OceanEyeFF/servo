@@ -73,7 +73,7 @@ risk_flags:
 
 ## Milestone Task Complexity Assessment
 
-Use this section to produce a structured complexity assessment for the proposed Milestone. Goal-driven milestones require full assessment (all fields required); work-collection milestones may use lightweight assessment (only starred fields). Missing assessment or incomplete required fields blocks Milestone creation/activation/Worktrack derivation. Field contract: `docs/harness/artifact/control/milestone.md#milestone-task-complexity-assessment`.
+Use this section to produce a structured complexity assessment for the proposed Milestone. Goal-driven milestones require full assessment (all fields required); work-collection milestones may use lightweight assessment (only starred fields). Missing assessment or incomplete required fields blocks Milestone creation/activation/Worktrack derivation. Field contract: bundled `milestone_task_complexity_assessment` fields below.
 
 ```yaml
 milestone_task_complexity_assessment:

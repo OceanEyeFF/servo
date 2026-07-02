@@ -36,7 +36,7 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
      - `critical_failure (upstream)`：blocking 原因源于上游依赖（如上游 WT 未合并、milestone baseline 未就绪、外部 contract 不满足）→ 记录阻断来源，可选 defer 到上游解决后重试（非本 WT 的责任范围）。
    - 两步均 clear 后，进入收尾阶段判定。
    - 更新后的 closeout pipeline 顺序：`Self-Review → Single-Acceptance → Closeout Gate → 准备合并请求 → PR → Merge → Doc-Catch-Up → Refresh → Cleanup → return RepoScope`
-   - closeout 输出必须同时形成 `closeout_evidence_bundle`，字段合同见 `docs/harness/artifact/worktrack/closeout-evidence-bundle.md`。该 bundle 记录 self-review、single-acceptance、Worktrack Gate、Closeout Gate、dispatch provenance、composite lane records、repo-refresh checkpoint 与 historical gap 状态；其中 dispatch provenance 必须链接 `docs/harness/artifact/worktrack/dispatch-evidence-records.md` 定义的 `runtime_dispatch_record` / `subagent_dispatch_record` refs；composite acceptance 必须链接 `docs/harness/artifact/worktrack/composite-lane-records.md` 定义的六条 `composite_lane_record` refs/statuses；不得用 prose closeout summary 替代。
+   - closeout 输出必须同时形成 `closeout_evidence_bundle`。该 bundle 记录 self-review、single-acceptance、Worktrack Gate、Closeout Gate、dispatch provenance、composite lane records、repo-refresh checkpoint 与 historical gap 状态；其中 dispatch provenance 必须链接 runtime evidence 中的 `runtime_dispatch_record` / `subagent_dispatch_record` refs；composite acceptance 必须链接六条 `composite_lane_record` refs/statuses；不得用 prose closeout summary 替代。
 5. 判断当前收尾阶段：
    - `准备合并请求`
    - `合并请求已开`
