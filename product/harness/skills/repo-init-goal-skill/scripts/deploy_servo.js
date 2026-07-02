@@ -1300,6 +1300,8 @@ function resolveKeyedValue(key, selectedTemplateIds, args) {
 			"PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complexity_signal_scanner.py --repo <repo> --json",
 		scanner_command_basis:
 			"run from the installed repo-init-goal-skill package root",
+		scanner_command_alternatives:
+			"PYTHONDONTWRITEBYTECODE=1 python3 <repo-init-goal-skill-package-root>/scripts/complexity_signal_scanner.py --repo <repo> --json; use the skill package script path when the operator is not running from the package root, so the command does not depend on the user project relative path.",
 		scanner_output_role: "scanner output is evidence, not verdict",
 		docker_compose_permission: "pending_programmer_confirmation",
 		database_migration_permission: "pending_programmer_confirmation",
