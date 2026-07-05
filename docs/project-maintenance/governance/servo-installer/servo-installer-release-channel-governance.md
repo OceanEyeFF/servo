@@ -15,10 +15,10 @@ last_verified: 2026-07-05
 
 ## 当前 registry 事实
 
-2026-07-02 已核对 npm registry：
+2026-07-05 已核对 npm registry：
 
 - **版本号纠正**：`4.4.x` 系列（`v4.4.0`、`v4.4.0-rc.0`、`v4.4.1-rc.0`、`v4.4.1-rc.1`、`v4.4.1`）为错误发布的版本号，不进入 semver 主序列
-- npm registry 真实状态：`latest` -> `0.6.1`；`next` -> `0.7.0-rc.2`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`、`0.6.0-rc.1`、`0.6.1-rc.0`、`0.6.1-rc.1`、`0.6.1-rc.2`、`0.6.1-rc.3`、`0.6.1-rc.4`、`0.6.1-rc.5`、`0.6.1`、`0.7.0-rc.0`、`0.7.0-rc.1`、`0.7.0-rc.2`
+- npm registry 真实状态：`latest` -> `0.6.1`；`next` -> `0.7.0-rc.3`；已发布版本：`0.5.3`、`0.5.4`、`0.5.5`、`0.5.6`、`0.5.7`、`0.5.8`、`0.6.0-rc.0`、`0.6.0-rc.1`、`0.6.1-rc.0`、`0.6.1-rc.1`、`0.6.1-rc.2`、`0.6.1-rc.3`、`0.6.1-rc.4`、`0.6.1-rc.5`、`0.6.1`、`0.7.0-rc.0`、`0.7.0-rc.1`、`0.7.0-rc.2`、`0.7.0-rc.3`
 - GitHub Release `v0.5.8` 已发布，target commit `ad363e818adc5da01049f1808db9376830c05d09`；npm `servo-installer@0.5.8` 的 `gitHead` 同为 `ad363e818adc5da01049f1808db9376830c05d09`
 - publish workflow run `26509952967` completed successfully for `v0.5.8`
 - npm `servo-installer@0.5.8` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.5.8.tgz`
@@ -50,18 +50,22 @@ last_verified: 2026-07-05
 - publish workflow run `28602829071` completed successfully for `v0.7.0-rc.2`
 - npm `servo-installer@0.7.0-rc.2` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.2.tgz`
 - `next` npx smoke：`servo-installer@next` selector resolved to `0.7.0-rc.2` and passed registry npx smoke; pinned selector `servo-installer@0.7.0-rc.2` also passed registry npx smoke; `latest` stayed `0.6.1`.
+- GitHub Release `v0.7.0-rc.3` 已发布为 prerelease，target commit `3945775fc0ba331f18b1a15f62cee4fcf268dd9f`；npm `servo-installer@0.7.0-rc.3` 的 `gitHead` 同为 `3945775fc0ba331f18b1a15f62cee4fcf268dd9f`
+- publish workflow run `28727925679` completed successfully for `v0.7.0-rc.3`
+- npm `servo-installer@0.7.0-rc.3` tarball URL：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.3.tgz`
+- `next` npx smoke：`servo-installer@next` selector resolved to `0.7.0-rc.3` and passed registry npx smoke; pinned selector `servo-installer@0.7.0-rc.3` also passed registry npx smoke; registry-only `.servo` reconcile dogfood passed with second dry-run `0` changes; `latest` stayed `0.6.1`.
 
 ## 当前 source release tuple
 
-2026-07-05，当前 source release tuple 是 `v0.7.0-rc.3` RC candidate，channel 为 `next`。
+2026-07-05，当前 source release tuple 是已发布的 `v0.7.0-rc.3` RC，channel 为 `next`。
 
 - root `package.json` version：`0.7.0-rc.3`
 - local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.3`
 - approval lock：`approvedVersion=0.7.0-rc.3`、`approvedGitTag=v0.7.0-rc.3`、`approvedChannel=next`
-- release scope：当前 source tuple 是 pre-publish `next` channel RC candidate；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
-- publish status：`v0.7.0-rc.3` 尚未发布；尚无 GitHub Release、publish workflow、npm registry dist-tag、tarball、`gitHead` 或 registry npx smoke 事实。发布触发必须等 WT3 release execution route 的显式批准。
+- release scope：当前 source tuple 对应已发布的 `next` channel RC；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
+- publish status：`v0.7.0-rc.3` 已通过 GitHub Release `published` trigger + npm Trusted Publishing 发布到 npm `next`。GitHub Release URL：`https://github.com/OceanEyeFF/servo/releases/tag/v0.7.0-rc.3`；workflow run：`28727925679`；npm `gitHead`：`3945775fc0ba331f18b1a15f62cee4fcf268dd9f`；tarball：`https://registry.npmjs.org/servo-installer/-/servo-installer-0.7.0-rc.3.tgz`。
 
-注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前仍解析到已发布的 `0.7.0-rc.2`，直到 `0.7.0-rc.3` 通过单独批准的 release execution route 发布完成。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据，也不得把本地 source tuple 写成 registry proof。
+注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前解析到已发布的 `0.7.0-rc.3`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 
