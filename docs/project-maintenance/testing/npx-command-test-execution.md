@@ -1,9 +1,9 @@
 ---
 title: "npx Command Test Execution"
 status: active
-updated: 2026-07-02
+updated: 2026-07-05
 owner: servo-kernel
-last_verified: 2026-07-02
+last_verified: 2026-07-05
 ---
 # npx Command Test Execution
 
@@ -21,7 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
-- last_registry_smoke: 2026-07-02 registry facts checked; `latest` is `0.6.1`, `next` is `0.7.0-rc.2`; post-publish registry smoke accepted both `servo-installer@next -> 0.7.0-rc.2` and pinned `servo-installer@0.7.0-rc.2`; stable `servo-installer -> 0.6.1` remained unchanged
+- last_registry_smoke: 2026-07-05 registry facts checked; `latest` is `0.6.1`, `next` is `0.7.0-rc.3`; post-publish registry smoke accepted both `servo-installer@next -> 0.7.0-rc.3` and pinned `servo-installer@0.7.0-rc.3`; registry-only reconcile dogfood passed with second dry-run `0` changes; stable `servo-installer -> 0.6.1` remained unchanged
 
 ## Boundary
 
@@ -58,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
+
+2026-07-05 post-publish verification for `servo-installer@next` and pinned `servo-installer@0.7.0-rc.3` passed after `0.7.0-rc.3` publication. `next -> 0.7.0-rc.3`, `latest -> 0.6.1`, registry npx smoke passed in `--skip-remote` mode for empty-local, existing-work-local, and empty-beta targets with no remote mutation. Registry-only `.servo` reconcile dogfood from the published package also passed on 3 disposable targets, with second dry-run `0` changes, safe diff pass, and originals unchanged.
 
 2026-07-02 post-publish verification for `servo-installer@next` and pinned `servo-installer@0.7.0-rc.2` passed after `0.7.0-rc.2` publication. `next -> 0.7.0-rc.2`, `latest -> 0.6.1`, registry npx smoke passed in `--skip-remote` mode for empty-local, existing-work-local, and empty-beta targets with no remote mutation.
 
