@@ -1,13 +1,17 @@
 ---
 title: "Gate Evidence"
 status: active
-updated: 2026-05-13
+updated: 2026-07-03
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-07-03
 ---
 # Gate Evidence
 
 为状态转移裁决提供证据。最少应包含 review/validation/policy 三类证据面。review evidence 使用 `review_profile` 按风险选择 lane，而非对所有变更均固定使用四路 SubAgent。四个可用 review lanes 为：`static-semantic-review`（静态语义解释）、`test-review`（测试 review）、`project-security-review`（security review）、`complexity-performance-review`（代码复杂度和性能 review）。无法分派所选 lanes 时记录 fallback 原因。还需记录每条证据面的 freshness/缺失状态、残余风险、上游约束信号、gate intake readiness、`verdict` 和后续动作。
+
+Gate Evidence 还必须保留 SubAgent role / mode provenance：`task_producing_subagent` 与 `review_acceptance_subagent` 不可混同，执行产物的 `producer_carrier_ref` 不得被当成独立审查或验收的 `review_carrier_ref` / `acceptance_carrier_ref`。`evidence_provenance` 必须说明证据来自 delegated SubAgent、专用 skill、human executor 还是 `current-carrier fallback`。使用 `current-carrier fallback` 时必须给出机器可检查的 `fallback_reason_code`：`runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe` 或 `not_applicable`，并保留 `fallback_reason`。
+
+SubAgent-first 是条件偏好：只有 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety` 成立，且 `task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 适合拆分时，review/acceptance 才应优先使用独立 SubAgent。运行时不支持、权限禁止、任务强耦合/共享状态、包不安全或审查不适用时，可以使用 current carrier，但必须按上述 fallback code 记录。
 
 ## review_profile 字段
 
@@ -61,6 +65,17 @@ Verdict 判定流程：
 2. 逐面评估是否存在问题及严重度
 3. 汇总所有发现后按上述四种 verdict 做出判定
 4. 记录 verdict、判据摘要、吸收项（如有）和后续动作
+
+## Post-Feedback Update Revalidation
+
+当 Worktrack 在 review feedback、Worktrack Gate feedback、Closeout Gate feedback、Self-Review 或 Single-Acceptance feedback 之后发生 post-review/post-gate updates，Gate Evidence 必须记录并接收更新后的验证证据。更新前的 Gate/review/acceptance evidence 只能作为历史输入，不能作为 final acceptance evidence，直到 validation and acceptance evaluation 在更新后重新完成。
+
+Gate evidence 的 freshness envelope 必须包含：
+
+- `updated_files_or_artifacts`: feedback 后更新的文件或 artifact 列表，或明确的 `none`。
+- `post_update_validation_timestamp`: 覆盖这些更新后的验证时间戳，使用带时区的 ISO-8601 字符串。
+
+如果 `updated_files_or_artifacts` 非 `none`，但缺少 `post_update_validation_timestamp`，或当前 validation/acceptance evidence 早于这些更新，`verdict` 不得为 final acceptance 可用的 `pass`；必须将缺口写入缺失证据或时效性阻塞项，并路由回验证/验收重跑。
 
 ## 低严重度吸收规则
 

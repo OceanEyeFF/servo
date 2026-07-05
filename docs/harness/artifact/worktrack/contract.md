@@ -1,9 +1,9 @@
 ---
 title: "Worktrack Contract"
 status: active
-updated: 2026-06-05
+updated: 2026-07-03
 owner: servo-kernel
-last_verified: 2026-06-13
+last_verified: 2026-07-03
 ---
 # Worktrack Contract
 
@@ -94,7 +94,36 @@ Execution Policy 控制本 worktrack 的执行载体选择，不替代 `ControlS
 - `dispatch_mode_source`: 默认 `worktrack-contract`。
 - `fallback_reason_required`: 默认 `yes`。
 
-语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能分派就分派"。`delegated` 必须分派否则返回 gap/block。`current-carrier` 关闭分派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口或 `dispatch package unsafe` 不能分派，须记录 fallback reason，并使用 `runtime fallback` 标记运行时回退。
+语义：`auto` 按 [Dispatch Decision Policy](../../foundations/dispatch-decision-policy.md) 选择 SubAgent、专用 skill、generic worker 或 current-carrier；它不表示"能分派就分派"。默认偏好是 `SubAgent-first`，但只在 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety` 成立，并且 `task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 适合委派时成立。`delegated` 必须分派否则返回 gap/block。`current-carrier` 关闭分派。优先级：`worktrack-contract-primary` 下 `runtime_dispatch_mode` 优先；仅 `global-override` 时 `control-state` 覆盖。contract 未声明时使用 `control-state` 的 repo 默认值。`subagent_dispatch_mode_override_scope` 决定是否允许 repo 级覆盖本合同（默认不得跨过 worktrack 合同权限边界）。若因权限边界、运行时缺口、耦合/共享状态、`dispatch package unsafe` 或不适用原因不能分派，须记录 `fallback_reason`，并使用 `runtime fallback` 标记运行时回退。
+
+### SubAgent Role / Mode Provenance
+
+Worktrack evidence 必须区分 `task_producing_subagent` 与 `review_acceptance_subagent`：
+
+- `task_producing_subagent`: 产出实现、修复、文档、测试或验证动作的执行载体。
+- `review_acceptance_subagent`: 产出 review、acceptance、Gate 可消费独立判断的审查/验收载体。
+
+两类 evidence/provenance 不可混同。执行证据至少记录 `producer_carrier_ref`；review/acceptance 证据至少记录 `review_carrier_ref` 或 `acceptance_carrier_ref`；聚合证据必须保留 `evidence_provenance`，并明确这些 refs 是否来自不同 carrier。若 review/acceptance 与 task-producing 使用同一 current carrier，则不得声明独立 SubAgent evidence，只能声明 `current-carrier fallback`。
+
+`current-carrier fallback` 必须有机器可检查原因：
+
+```yaml
+fallback_reason_code: runtime_gap | permission_blocked | coupling_or_shared_state | dispatch_package_unsafe | not_applicable
+fallback_reason: "human-readable reason"
+```
+
+缺少 `fallback_reason_code` 的 current-carrier fallback 不能作为完整 review/acceptance provenance。缺少 `producer_carrier_ref`、`review_carrier_ref` / `acceptance_carrier_ref` 或 `evidence_provenance` 时，Gate / Close 必须把证据标记为 missing、incomplete 或 contaminated，而不是从 prose summary 补造 provenance。
+
+## Post-Feedback Update Revalidation
+
+当 Worktrack 在 review feedback、Worktrack Gate feedback、Closeout Gate feedback、Self-Review 或 Single-Acceptance feedback 之后又修改文件或运行时 artifact 时，必须重新进入 Verify，并重新执行 validation and acceptance evaluation。post-review/post-gate updates 会使更新前的 Gate/review/acceptance evidence 失去 final acceptance evidence 资格；这些旧证据只能作为历史输入引用，不能作为 closeout 的最终验收依据，直到更新后的 validation and acceptance 重新完成。
+
+更新后的证据包必须包含以下机器可检查字段：
+
+- `updated_files_or_artifacts`: feedback 后被修改的文件、文档、runtime artifact 或其他可追溯产物列表；若确认无更新，必须写 `none` 并给出依据。
+- `post_update_validation_timestamp`: 覆盖上述 `updated_files_or_artifacts` 后形成的验证时间戳，使用带时区的 ISO-8601 字符串；若无法产生，必须标记为缺失证据并阻塞 final acceptance。
+
+Gate、review、validation、Single-Acceptance 与 Closeout Gate 在接收证据时必须比较上述字段与证据 freshness：若 final acceptance evidence 早于任一 post-feedback update，或者缺少 `updated_files_or_artifacts` / `post_update_validation_timestamp`，本轮不得宣称验收完成，必须返回验证或验收重跑路径。
 
 ## Closeout Checklist
 

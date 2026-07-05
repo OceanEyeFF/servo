@@ -36,6 +36,7 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
    - 当已有结果已经满足要求时，复用新鲜且可信的结果
    - 当要求仍缺乏证据时，运行恰好缺失的检查
    - 当所需证据无法安全产出时，将要求标记为被阻塞或未覆盖
+   - 若 review/Gate/Closeout/Self-Review/Single-Acceptance feedback 之后发生 post-review/post-gate updates，必须重新收集覆盖 `updated_files_or_artifacts` 的验证证据，并记录更新后的 `post_update_validation_timestamp`；更新前的 Gate/review/acceptance evidence 不能作为 final acceptance evidence。
 6. 应用验证分诊，让失败、阻塞或未覆盖的要求始终保持显式；只有狭窄的低严重度残留才允许折叠进 `残留风险`。
 7. 产出一份固定格式的 `验证证据报告`。
 8. 在进入审查综合、关卡判定、恢复规划或收尾之前停止。
@@ -67,6 +68,8 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
 - `当前工作追踪状态`
 - `节点策略`
 - `相关变更摘要`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `受影响模块`
 - `可用测试表面`
 - `现有证据`
@@ -89,6 +92,8 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
 - `验证结果`
 - `已运行或已复用检查`
 - `证据产物`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `置信度`
 - `置信度理由`
 - `残留风险`
@@ -106,6 +111,7 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
 
 - 充分证据必须来自可复现的自动化检查、明确关联验收标准的测试结果或可验证的命令输出；自称完成的手动检查、一个绿色差异、或模糊的信心表述本身不能作为充分证据出现在输出中。
 - 唯一合法行为是复用新鲜度依据明确标记且未过期的验证证据；新鲜度依据不明确的验证证据必须被标记为 `未知` 并禁止复用。
+- post-review/post-gate updates 会让更新前的 validation and acceptance evidence 失去 final acceptance evidence 资格。若 `updated_files_or_artifacts` 非 `none`，但没有更新后的 `post_update_validation_timestamp`，或检查结果早于更新，验证证据必须标记为未覆盖/被阻塞并要求重跑，不得报告为已准备好进入关卡。
 - `残留风险` 的输出只能容纳低严重度容忍项；失败检查、被阻塞要求或未覆盖要求必须显式出现在 `未覆盖或被阻塞项` 中，其行为禁止被吸收到 `残留风险` 中。
 - 当结果主要由不稳定或受环境约束的证据构成时，唯一合法行为是报告 `低置信度` 并显式说明不稳定性来源；报告高置信度的行为必须返回 blocked。
 
@@ -139,6 +145,8 @@ description: 当 Harness 处于工作追踪范围，且需要一轮限定范围�
 - `已复用检查`
 - `分检查结果`
 - `证据路径或命令`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `置信度`
 - `置信度理由`
 - `残留风险`

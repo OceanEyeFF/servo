@@ -318,6 +318,52 @@ RUNTIME_DISPATCH_PROFILE_COMPATIBILITY_TERMS = [
     "permission blocked",
     "dispatch package unsafe",
 ]
+SUBAGENT_ROLE_MODE_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+    "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+    "product/harness/skills/worktrack-gate-skill/SKILL.md",
+    "product/harness/skills/worktrack-close-skill/SKILL.md",
+    "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
+    "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
+    "docs/harness/artifact/worktrack/contract.md",
+    "docs/harness/artifact/worktrack/gate-evidence.md",
+]
+SUBAGENT_ROLE_MODE_REQUIRED_TERMS = [
+    "task_producing_subagent",
+    "review_acceptance_subagent",
+    "producer_carrier_ref",
+    "review_carrier_ref",
+    "acceptance_carrier_ref",
+    "evidence_provenance",
+    "current-carrier fallback",
+    "fallback_reason_code",
+]
+SUBAGENT_FIRST_CONTRACT_PATHS = [
+    "product/harness/skills/harness-skill/SKILL.md",
+    "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+    "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+    "product/harness/skills/worktrack-gate-skill/SKILL.md",
+    "docs/harness/artifact/worktrack/contract.md",
+    "docs/harness/artifact/worktrack/gate-evidence.md",
+]
+SUBAGENT_FIRST_CONDITIONAL_TERMS = [
+    "SubAgent-first",
+    "runtime_supports_subagent",
+    "permission_allows_delegation",
+    "dispatch_package_safety",
+    "task_coupling",
+    "state_sharing_need",
+    "risk_profile",
+    "context_budget_fit",
+]
+SUBAGENT_FALLBACK_REASON_CODES = [
+    "runtime_gap",
+    "permission_blocked",
+    "coupling_or_shared_state",
+    "dispatch_package_unsafe",
+    "not_applicable",
+]
 USER_DEFINED_SERVO_CONTROLS_PATHS = [
     "docs/harness/artifact/control/control-state.md",
     "product/harness/skills/repo-init-goal-skill/assets/control-state.md",
@@ -538,6 +584,23 @@ CLOSEOUT_RECORD_REQUIRED_TERMS = [
     "cleanup_done",
     "remaining_risks",
     "next_repo_scope_action",
+]
+POST_UPDATE_REVALIDATION_CONTRACT_PATHS = [
+    "docs/harness/artifact/worktrack/contract.md",
+    "docs/harness/artifact/worktrack/gate-evidence.md",
+    "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
+    "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
+    "product/harness/skills/worktrack-gate-skill/SKILL.md",
+    "product/harness/skills/worktrack-close-skill/SKILL.md",
+    "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+    "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
+]
+POST_UPDATE_REVALIDATION_REQUIRED_TERMS = [
+    "updated_files_or_artifacts",
+    "post_update_validation_timestamp",
+    "post-review/post-gate updates",
+    "final acceptance evidence",
+    "validation and acceptance",
 ]
 CLEANUP_CONTRACT_PATHS = [
     "product/harness/skills/harness-skill/SKILL.md",
@@ -2110,6 +2173,42 @@ def check_runtime_dispatch_profile_contract(
     report.add_info(f"checked {checked} runtime dispatch profile contract sources")
 
 
+def check_subagent_role_mode_contract(repo_root: Path, report: SemanticReport) -> None:
+    checked = 0
+    for relative_path in SUBAGENT_ROLE_MODE_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing SubAgent role/mode contract source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in SUBAGENT_ROLE_MODE_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"SubAgent role/mode contract missing required term {term!r}: {relative_path}"
+                )
+        for code in SUBAGENT_FALLBACK_REASON_CODES:
+            if code not in text:
+                report.add_failure(
+                    f"SubAgent role/mode contract missing fallback_reason_code {code!r}: {relative_path}"
+                )
+
+    for relative_path in SUBAGENT_FIRST_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in SUBAGENT_FIRST_CONDITIONAL_TERMS:
+            if term not in text:
+                report.add_failure(
+                    "SubAgent-first conditional contract missing required term "
+                    f"{term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} SubAgent role/mode contract sources")
+
+
 def check_user_defined_servo_controls_contract(
     repo_root: Path, report: SemanticReport
 ) -> None:
@@ -2344,6 +2443,27 @@ def check_closeout_record_contract(repo_root: Path, report: SemanticReport) -> N
                     f"closeout record contract missing required term {term!r}: {relative_path}"
                 )
     report.add_info(f"checked {checked} closeout record contract sources")
+
+
+def check_post_update_revalidation_contract(
+    repo_root: Path, report: SemanticReport
+) -> None:
+    checked = 0
+    for relative_path in POST_UPDATE_REVALIDATION_CONTRACT_PATHS:
+        path = repo_root / relative_path
+        if not path.exists():
+            report.add_failure(
+                f"missing post-update revalidation contract source: {relative_path}"
+            )
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8")
+        for term in POST_UPDATE_REVALIDATION_REQUIRED_TERMS:
+            if term not in text:
+                report.add_failure(
+                    f"post-update revalidation contract missing required term {term!r}: {relative_path}"
+                )
+    report.add_info(f"checked {checked} post-update revalidation contract sources")
 
 
 def check_cleanup_contract(repo_root: Path, report: SemanticReport) -> None:
@@ -3577,6 +3697,7 @@ def main() -> int:
     check_subagent_dispatch_default_contract(repo_root, report)
     check_dispatch_context_contract(repo_root, report)
     check_runtime_dispatch_profile_contract(repo_root, report)
+    check_subagent_role_mode_contract(repo_root, report)
     check_user_defined_servo_controls_contract(repo_root, report)
     check_low_risk_autonomy_policy_contract(repo_root, report)
     check_harness_entry_profile_route_hint_contract(repo_root, report)
@@ -3587,6 +3708,7 @@ def main() -> int:
     check_debug_evidence_contract(repo_root, report)
     check_decision_traceability_contract(repo_root, report)
     check_closeout_record_contract(repo_root, report)
+    check_post_update_revalidation_contract(repo_root, report)
     check_cleanup_contract(repo_root, report)
     check_repo_whats_next_overview_fallback_contract(repo_root, report)
     check_worktrack_intake_review_contract(repo_root, report)

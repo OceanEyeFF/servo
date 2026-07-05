@@ -37,6 +37,8 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
    - `审查`
    - `测试`
    - `策略`
+   - 若存在 review/Gate/Closeout/Self-Review/Single-Acceptance feedback 之后的 Worktrack 更新，还必须验证 post-review/post-gate updates 的 `updated_files_or_artifacts` 与 `post_update_validation_timestamp` 已在更新后证据中出现。
+   - `task_producing_subagent` 与 `review_acceptance_subagent` 的 `evidence_provenance` 已分开记录；`producer_carrier_ref` 不得被复用为独立的 `review_carrier_ref` / `acceptance_carrier_ref`，除非证据显式标记 `current-carrier fallback` 并给出机器可检查 `fallback_reason_code`。
 4. 在三个必需层面上评估当前轮次：
    - `实现关卡`
    - `验证关卡`
@@ -98,6 +100,13 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 ### 关卡信息包
 
 - `所需证据维度`
+- `task_producing_subagent`
+- `review_acceptance_subagent`
+- `producer_carrier_ref`
+- `review_carrier_ref`
+- `acceptance_carrier_ref`
+- `evidence_provenance`
+- `fallback_reason_code`
 - `节点类型`
 - `适用 gate_criteria`
 - `证据维度`
@@ -118,6 +127,7 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 - `实现关卡`
 - `验证关卡`
 - `策略关卡`
+- `SubAgent role / mode provenance`
 - `review_dimensions`: performance / architecture / security / quality / tests
 - `节点类型`
 - `适用 gate_criteria`
@@ -156,12 +166,15 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 本技能特有约束：
 
 - Review evidence 的五类覆盖（性能、架构、安全、质量、测试）必须各自独立被接收、标为不适用并说明理由，或暴露为缺失证据。将五类覆盖缺口吞并到笼统的 implementation-gate 通过结论的行为禁止发生。
+- Gate 接收 review/acceptance evidence 前必须验证 `task_producing_subagent` 与 `review_acceptance_subagent` 的 provenance 分离。缺少 `producer_carrier_ref`、`review_carrier_ref` / `acceptance_carrier_ref` 或 `evidence_provenance` 时，必须暴露为缺失证据；相同 carrier 只能作为 `current-carrier fallback` 接收，且必须有 `fallback_reason_code`（`runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe`、`not_applicable`）。
+- `SubAgent-first` 是条件偏好，不是 Gate 可硬编码的放行条件。Gate 只能检查 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety`、`task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 和 `fallback_reason_code` 是否被证据记录；不得因未委派而自动失败，除非缺少合法 fallback reason。
 - 各层面判断的唯一合法呈现形式是独立的结构化判定结果（实现关卡、验证关卡、策略关卡）。压缩成模糊整体判定结果的行为必须被阻断。
 - 从本技能直接跳进恢复、合并、收尾或代码仓库刷新的行为必须被阻断。本技能只给出判定结果与允许的下一路由，后续动作由相应阶段算子（Recover/Close/RepoScope）执行。
 - 仅当低严重度发现跨越至少两个层面或形成系统性模式，并威胁验收、恢复或操作员语义时，将其升级为 `软失败` 或 `硬失败` 才合法。停留在单一层面且未形成威胁的低严重度发现必须保留在残留风险中，仅凭数量升级的行为必须被阻断。
 - 当 `可能存在上游约束问题` 是决定性或重复出现时，建议路由的唯一合法方向是向上游路由（规则检查、约定修订或恢复重新定界）。建议纯实现重试的行为必须被阻断。
 - 当 `证据维度` 已经承载了维度封套时，唯一合法的字段结构是保持维度的封套层级。将审查/测试接收扩张成新的平铺顶层字段的行为必须被阻断。
 - 过期维度证据被聚合进关卡判定后，其唯一合法身份是已处理的过期证据。将其当成新鲜证据的行为必须被阻断。
+- post-review/post-gate updates 会使更新前的 Gate/review/acceptance evidence 失去 final acceptance evidence 资格。若 `updated_files_or_artifacts` 非 `none`，但缺少更新后的 `post_update_validation_timestamp`，或 validation and acceptance evidence 早于更新，整体判定不得输出可用于最终验收的通过结论，必须暴露为时效性阻塞并返回验证/验收重跑。
 - 仅当维度封套已解释清楚置信度依据时，综合出高置信度才合法；否则必须降级置信度并说明理由。
 - Gate 裁决的唯一合法前置条件是 Evidence 已经就绪。跳过 Evidence 直接做 Gate 裁决的行为禁止发生。Evidence 必须在前，Gate 必须在后，二者不可合并为单一步骤。
 - 状态更新的唯一合法依据是经过 Gate 裁决后的判定结果。子代理的返回结果不能直接作为状态更新的依据，必须经过 Gate 裁决。
@@ -186,6 +199,7 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 - `当前轮次`
 - `所需证据维度`
 - `证据维度`
+- `SubAgent role / mode provenance`
 - `实现关卡`
 - `验证关卡`
 - `策略关卡`
@@ -196,6 +210,8 @@ description: 当 Harness 处于 WorktrackScope.judging，且需要基于现有�
 - `决定性证据`
 - `缺失或冲突证据`
 - `时效性阻塞项`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `残留风险`
 - `已应用低严重度吸收`
 - `低严重度吸收理由`

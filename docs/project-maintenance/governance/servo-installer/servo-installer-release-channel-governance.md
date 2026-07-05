@@ -1,9 +1,9 @@
 ---
 title: "servo-installer Release Channel Governance"
 status: active
-updated: 2026-07-02
+updated: 2026-07-05
 owner: servo-kernel
-last_verified: 2026-07-02
+last_verified: 2026-07-05
 ---
 # servo-installer Release Channel Governance
 
@@ -53,15 +53,15 @@ last_verified: 2026-07-02
 
 ## 当前 source release tuple
 
-2026-07-02，当前 source release tuple 是 `v0.7.0-rc.2` RC，channel 为 `next`。
+2026-07-05，当前 source release tuple 是 `v0.7.0-rc.3` RC candidate，channel 为 `next`。
 
-- root `package.json` version：`0.7.0-rc.2`
-- local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.2`
-- approval lock：`approvedVersion=0.7.0-rc.2`、`approvedGitTag=v0.7.0-rc.2`、`approvedChannel=next`
-- release scope：当前 source tuple 是已发布的 `next` channel RC；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
-- publish status：`v0.7.0-rc.2` 已通过 GitHub Release prerelease 触发 Trusted Publishing 发布到 npm `next`，GitHub Release、workflow、registry、dist-tag 和 registry npx smoke 均已完成 post-publish verification。
+- root `package.json` version：`0.7.0-rc.3`
+- local scaffold `toolchain/scripts/deploy/package.json` version：`0.7.0-rc.3`
+- approval lock：`approvedVersion=0.7.0-rc.3`、`approvedGitTag=v0.7.0-rc.3`、`approvedChannel=next`
+- release scope：当前 source tuple 是 pre-publish `next` channel RC candidate；stable `v0.7.0` / `latest` release 需要单独的 release approval route 更新 source tuple 到 stable semver，并重新完成 pre-publish checks。
+- publish status：`v0.7.0-rc.3` 尚未发布；尚无 GitHub Release、publish workflow、npm registry dist-tag、tarball、`gitHead` 或 registry npx smoke 事实。发布触发必须等 WT3 release execution route 的显式批准。
 
-注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前解析到已发布的 `0.7.0-rc.2`。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据。
+注意：`0.6.1` 是当前 stable release；默认 `servo-installer` 解析到 `latest` 的 `0.6.1`。RC 试用 selector `servo-installer@next` 当前仍解析到已发布的 `0.7.0-rc.2`，直到 `0.7.0-rc.3` 通过单独批准的 release execution route 发布完成。尚未发布 stable `0.7.0`，不得把 `next` RC 证据写成 `latest` stable 证据，也不得把本地 source tuple 写成 registry proof。
 
 npm dist-tag 由 publish workflow 写入；此页只写已由 registry 和 GitHub 查询复核过的事实。`4.4.x` 相关 git tag 保留作为历史记录，不在 npm registry 中发布。
 

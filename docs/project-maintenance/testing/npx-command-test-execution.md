@@ -21,7 +21,7 @@ Release channel -> Channel Governance; publish readiness -> Pre-Publish Governan
 - default_target_count: 3
 - feedback_log_artifact: `servo-installer-npx-run.log`
 - remote_mutation_allowed: false; real_npm_publish_allowed: false
-- last_registry_smoke: 2026-07-02 registry facts checked; `latest` is `0.6.1`, `next` is `0.7.0-rc.1`; WT-v070-npx-installer-installation-smoke accepted `servo-installer@next -> 0.7.0-rc.1` registry smoke and stable `servo-installer -> 0.6.1` baseline smoke
+- last_registry_smoke: 2026-07-02 registry facts checked; `latest` is `0.6.1`, `next` is `0.7.0-rc.2`; post-publish registry smoke accepted both `servo-installer@next -> 0.7.0-rc.2` and pinned `servo-installer@0.7.0-rc.2`; stable `servo-installer -> 0.6.1` remained unchanged
 
 ## Boundary
 
@@ -58,6 +58,8 @@ RC channel pin:
 ```bash
 node toolchain/scripts/test/servo_installer_registry_npx_smoke.js --package servo-installer@next --skip-remote
 ```
+
+2026-07-02 post-publish verification for `servo-installer@next` and pinned `servo-installer@0.7.0-rc.2` passed after `0.7.0-rc.2` publication. `next -> 0.7.0-rc.2`, `latest -> 0.6.1`, registry npx smoke passed in `--skip-remote` mode for empty-local, existing-work-local, and empty-beta targets with no remote mutation.
 
 2026-06-26 post-publish verification for `servo-installer@next` passed after `0.7.0-rc.1` publication. `next -> 0.7.0-rc.1`, `latest -> 0.6.1`, registry npx smoke passed.
 

@@ -48,6 +48,27 @@
 - allowed_values: auto / delegated / current-carrier
 - fallback_reason_required: yes
 
+## SubAgent Role / Mode Provenance
+
+> Distinguish task_producing_subagent from review_acceptance_subagent; do not reuse producer evidence as independent review or acceptance evidence. If current-carrier fallback is used, record a machine-checkable fallback_reason_code.
+
+- task_producing_subagent:
+- review_acceptance_subagent:
+- producer_carrier_ref:
+- review_carrier_ref:
+- acceptance_carrier_ref:
+- evidence_provenance:
+- current-carrier fallback:
+- fallback_reason_code: runtime_gap | permission_blocked | coupling_or_shared_state | dispatch_package_unsafe | not_applicable
+- fallback_reason:
+
+## Post-Feedback Update Revalidation
+
+> If post-review/post-gate updates occur, final acceptance evidence is not reusable until validation and acceptance rerun after the updated files or artifacts below.
+
+- updated_files_or_artifacts:
+- post_update_validation_timestamp:
+
 ## Task Goal
 
 -

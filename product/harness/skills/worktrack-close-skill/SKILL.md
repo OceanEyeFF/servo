@@ -34,9 +34,11 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
    - **Single-Acceptance**：执行 Single-Acceptance Contract 定义的单体验收，对照 worktrack contract 的 `completion_signals` 逐条验证。产出 structured single-acceptance verdict。`accepted` / `accepted_with_notes` 允许继续；`blocked` 触发 critical failure 升级阻断，需区分以下子路径：
      - `critical_failure (own WT)`：blocking 原因源于当前 WT 自身（如 completion_signals 未通过、证据缺失）→ 必须修复后才可重试收尾，不得绕过。
      - `critical_failure (upstream)`：blocking 原因源于上游依赖（如上游 WT 未合并、milestone baseline 未就绪、外部 contract 不满足）→ 记录阻断来源，可选 defer 到上游解决后重试（非本 WT 的责任范围）。
+   - **Post-Feedback Update Revalidation**：若 review feedback、Worktrack Gate feedback、Closeout Gate feedback、Self-Review 或 Single-Acceptance feedback 之后发生 post-review/post-gate updates，Close 不得把更新前的 Gate/review/acceptance evidence 当作 final acceptance evidence。Single-Acceptance 和 Closeout Gate 必须接收更新后的 `updated_files_or_artifacts` 与 `post_update_validation_timestamp`，并确认 validation and acceptance evaluation 已在更新后重跑；否则 closeout 阶段阻塞并回到验证/验收重跑。
    - 两步均 clear 后，进入收尾阶段判定。
    - 更新后的 closeout pipeline 顺序：`Self-Review → Single-Acceptance → Closeout Gate → 准备合并请求 → PR → Merge → Doc-Catch-Up → Refresh → Cleanup → return RepoScope`
    - closeout 输出必须同时形成 `closeout_evidence_bundle`。该 bundle 记录 self-review、single-acceptance、Worktrack Gate、Closeout Gate、dispatch provenance、composite lane records、repo-refresh checkpoint 与 historical gap 状态；其中 dispatch provenance 必须链接 runtime evidence 中的 `runtime_dispatch_record` / `subagent_dispatch_record` refs；composite acceptance 必须链接六条 `composite_lane_record` refs/statuses；不得用 prose closeout summary 替代。
+   - closeout evidence 必须保留 `task_producing_subagent` 与 `review_acceptance_subagent` 的 role provenance。`producer_carrier_ref`、`review_carrier_ref`、`acceptance_carrier_ref` 和 `evidence_provenance` 必须分开写入；若收尾只能使用 `current-carrier fallback` 验收，必须记录 `fallback_reason_code`，不得把 task-producing carrier 的自述提升为独立 acceptance。
 5. 判断当前收尾阶段：
    - `准备合并请求`
    - `合并请求已开`
@@ -123,6 +125,13 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
     - `missing_dispatch_record_refs`
     - `dispatch_result_status`
     - `resolved_runtime_dispatch_status`
+    - `task_producing_subagent`
+    - `review_acceptance_subagent`
+    - `producer_carrier_ref`
+    - `review_carrier_ref`
+    - `acceptance_carrier_ref`
+    - `evidence_provenance`
+    - `fallback_reason_code`
   - `composite_lane_records`
     - `code_review`
       - `status`
@@ -179,6 +188,12 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
       - `contaminated_reason`
       - `not_applicable_reason`
   - `repo_refresh_checkpoint`
+  - `post_feedback_update_revalidation`
+    - `updated_files_or_artifacts`
+    - `post_update_validation_timestamp`
+    - `validation_after_update_status`
+    - `acceptance_after_update_status`
+    - `pre_update_final_acceptance_evidence_status`
   - `bundle_completeness`
 - `dispatch_provenance_summary`
   - `dispatch_provenance.status`
@@ -259,8 +274,10 @@ description: 当 Harness 处于 WorktrackScope.closing，且需要一轮限定�
 - `代码仓库刷新交接` 的基线追溯字段必须显式填充。省略基线追溯字段的行为必须被阻断
 - `closeout_record` 不单独写入新的长期 Worktrack artifact；它必须作为 `关闭工作追踪报告` 与 `代码仓库刷新交接` 的结构化 section 输出，并由 repo-refresh 后续写入 repo 级 backlog / snapshot。省略 `decision_refs` 或闭环状态字段的行为必须显式说明原因
 - `closeout_evidence_bundle` 是 closeout report / repo-refresh handoff 中的结构化 evidence envelope。若某项 evidence 未在执行时捕获，必须写为 `missing`；若历史 Worktrack 因旧合同未捕获，必须写为 `historical_gap`；不得后验合成 self-review、dispatch provenance 或 composite lane evidence。
+- `closeout_evidence_bundle.post_feedback_update_revalidation` 必须保留 `updated_files_or_artifacts` 与 `post_update_validation_timestamp`。当 `updated_files_or_artifacts` 非 `none` 时，更新前的 final acceptance evidence 必须标记为 stale/history，不得作为 closeout 的验收依据；缺少更新后 validation and acceptance evidence 时必须阻塞 Close。
 - `dispatch_provenance` 的唯一合法正向证据是 linked `runtime_dispatch_record_ref` 与 `subagent_dispatch_record_refs`。Close 可以保留、转写和标记这些 refs 的状态，并必须在 `closeout_evidence_bundle.dispatch_provenance` 和 `代码仓库刷新交接.dispatch_provenance_summary` 中原样携带 `dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；不得从 closeout prose、carrier 自述、模型名或 touched files 推断 delegated SubAgent execution。
 - 如果 Close 无法 dereference 预期的 dispatch record，必须将 `dispatch_provenance.status` 标记为 `missing` / `incomplete` / `historical_gap` / `contaminated` 之一，并设置对应的 `resolved_runtime_dispatch_status`；不得把 `current_carrier_fallback`、`delegated`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked`、`historical_gap` 压缩成 prose summary 或 generic failure。
+- Close 必须把 `task_producing_subagent` 与 `review_acceptance_subagent` 的 `evidence_provenance` 原样传播到 `closeout_evidence_bundle`。若 `producer_carrier_ref` 与 `review_carrier_ref` / `acceptance_carrier_ref` 相同，只有在 `current-carrier fallback` 且 `fallback_reason_code` 为 `runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe` 或 `not_applicable` 时才能继续；否则 closeout bundle 必须标记为 `contaminated` 或 `incomplete`。
 - `composite_lane_records` 的唯一合法正向证据是 linked `composite_lane_record`。Close 必须为 `code-review`、`feature-completeness`、`related-influence`、`intent-completeness`、`operator-simulation`、`professional-review` 六条 lane 都输出 link envelope，状态值只能是 `captured` / `linked` / `incomplete` / `missing` / `historical_gap` / `contaminated` / `not_applicable`。每条 lane 必须保留 `record_ref`、`producer_ref`、`validation_ref`、`missing_required_fields`、`contaminated_reason` 和 `not_applicable_reason`；lane record 本体必须保留 findings、absorbed issue refs、residual risks、verdict、carrier/fallback 与 freshness。
 - 如果 Close 只能看到 prose composite review、旧式 lane paragraph 或旧式 scalar `*_ref`，必须将对应 lane 标记为 `incomplete`、`missing` 或 `historical_gap`，除非该 ref 可 dereference 为完整 `worktrack-composite-lane-record/v1`。不得从 closeout prose summary 合成 lane verdict、findings、absorbed issue refs、residual risks 或 validation refs。
 - `代码仓库刷新交接` 必须同时填充节点策略字段，并说明 expected baseline 与 actual checkpoint 是否匹配

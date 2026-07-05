@@ -31,6 +31,8 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 
 如果运行时不能真实并行委派，必须显式记录 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`，并在同一份审查证据中保留所选 lanes 的覆盖状态；唯一合法行为是在当前载体内完成所选 lane 的覆盖并显式记录 fallback 原因；把当前载体内的串行分析伪装成已创建 SubAgent 的行为必须显式暴露为 `runtime fallback`。
 
+Review evidence 是 `review_acceptance_subagent` 证据，不是 `task_producing_subagent` 的自查摘要。每条 lane 必须记录 `review_carrier_ref`、可选 `acceptance_carrier_ref`、上游 `producer_carrier_ref`、`evidence_provenance` 和独立性判断；若 review carrier 与 task-producing carrier 相同，必须标记为 `current-carrier fallback`，填写 `fallback_reason_code`（`runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe` 或 `not_applicable`），且不得声称独立 SubAgent review。默认偏好是 `SubAgent-first`，但必须同时满足 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety`，并确认 `task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 适合拆分审查。
+
 它会在最终 `通过/软失败/硬失败/阻塞` 关卡判定之前停止，并应用噪声控制边界，避免低严重度的审查残留持续膨胀为新的伪阻塞项。
 
 ## 何时使用
@@ -58,6 +60,7 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
    - `混合`
    - `过期`
    - `未知`
+   - 若 review/Gate/Closeout/Self-Review/Single-Acceptance feedback 之后发生 post-review/post-gate updates，必须把更新前审查输入标记为历史输入，不得作为 final acceptance evidence；审查证据必须记录 `updated_files_or_artifacts` 与更新后的 `post_update_validation_timestamp` 可用性。
 7. 只收集并综合审查维度：
    - 差异与变更摘要审查信号
    - 结构或架构审查信号
@@ -112,12 +115,21 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 - `review_profile`
 - `selected_review_lanes`
 - `四路 SubAgent lane`（仅 `deep` 或需要完整覆盖时）
+- `task_producing_subagent`
+- `review_acceptance_subagent`
+- `producer_carrier_ref`
+- `review_carrier_ref`
+- `acceptance_carrier_ref`
+- `evidence_provenance`
+- `fallback_reason_code`
 - `当前工作追踪状态`
 - `工作追踪约定摘要`
 - `节点策略`
 - `变更摘要`
 - `差异或补丁引用`
 - `现有审查输入`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `静态或结构信号`
 - `性能/架构/安全/质量/测试审查信号`
 - `已知风险`
@@ -132,6 +144,13 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 - `selected_review_lanes`
 - `四路 SubAgent 覆盖`（仅 `deep` 或需要完整覆盖时）
 - `四路 SubAgent 输出摘要`
+- `task_producing_subagent`
+- `review_acceptance_subagent`
+- `producer_carrier_ref`
+- `review_carrier_ref`
+- `acceptance_carrier_ref`
+- `evidence_provenance`
+- `fallback_reason_code`
 - `输入产物`
 - `时效性`
 - `维度判定结果`
@@ -173,12 +192,14 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 - 必须先确定 `review_profile`，再选择 review lanes；不得对低风险小改默认强制四路 review。
 - 当 `review_profile: deep` 且运行时支持真实 SubAgent 委派、权限边界允许时，必须并行分派四个 review SubAgent；降级成单个泛化 review 的行为必须显式暴露为 `runtime fallback`。
 - 所选 review lane 必须分别保留输入范围、输出摘要、覆盖状态和缺失证据；把结果压成无法追溯的一段综合意见的行为必须显式暴露并标记为覆盖不足。
+- Review/acceptance evidence 的唯一合法独立性来源是 `review_acceptance_subagent` 的 carrier provenance。缺少 `review_carrier_ref` / `acceptance_carrier_ref`，或与 `producer_carrier_ref` 相同但缺少 `fallback_reason_code` 时，必须标记为独立性缺失，不得作为独立验收证据。
 - 审查证据至少应显式覆盖五类 review 面：代码性能、Repo 架构、代码安全、代码质量、测试。若某一类不适用于当前 docs-only 或 policy-only 变更，应写明 `不适用` 与理由，而不是静默省略。
 - 输出只能分别呈现原始发现、综合后的审查判定与后续动作三个独立段落；把三者混成一段模糊摘要的行为禁止出现在审查证据的输出中。
 - 仅当低严重度发现已经实质威胁验收、恢复、面向操作员的语义或约定完整性时，将其扩展成新的 `后续动作` 才合法；否则必须将其折叠进 `残留风险`。
 - 唯一合法行为是 `发现` 中最多保留三个低严重度代表项；超过三个时必须将其余项聚合进 `残留风险`。
 - 唯一合法行为是将重复或边界驱动的症状标记为 `可能存在上游约束问题` 并在 `上游约束信号` 中显式暴露；未标记状态必须返回 blocked。
 - 证据时效性标签必须与实际验证时间一致；过期输入仅可作为过期证据出现在输出中。
+- post-review/post-gate updates 之后，更新前的 Gate/review/acceptance evidence 不能作为 final acceptance evidence。若 `updated_files_or_artifacts` 非 `none`，审查证据必须暴露是否存在更新后的 `post_update_validation_timestamp`，并把缺失或早于更新的 validation and acceptance evidence 标为时效性阻塞。
 - 唯一合法行为是输出 `置信度` 时附带具体的 `置信度理由`；缺少 `置信度理由` 时 `置信度` 字段必须留空或标记为 `未评估`。
 - 低严重度吸收机制的输出只能是代表性风险摘要；后续动作列表的行为禁止出现在低严重度吸收的输出中。
 
@@ -213,6 +234,8 @@ description: 当 Harness 处于工作追踪范围.验证中，且需要一轮限
 - `使用的审查输入`
 - `输入产物`
 - `时效性`
+- `updated_files_or_artifacts`
+- `post_update_validation_timestamp`
 - `维度判定结果`
 - `审查判定结果`
 - `发现`
