@@ -15,7 +15,9 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 
 这个技能也是执行前最后一道限定范围防线。如果调度包对单轮而言过大，这个技能应拒绝它并返回调度阶段，而不是把过大的初始切片强行规范成一次执行。
 
-执行载体选择必须由可开关参数控制：先读取 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`worktrack-generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。只有 `auto` 命中 runtime fallback、权限边界禁止委派，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。Runtime decision inputs: `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety`。
+执行载体选择必须由可开关参数控制：先读取 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope` 来判断覆盖意图。默认值 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有该字段明确设为 `global-override` 时，`.servo/control-state.md` 的 `subagent_dispatch_mode` 才作为全局覆盖。若 worktrack 未声明 `runtime_dispatch_mode`，再使用 control-state 的 `subagent_dispatch_mode` 作为 repo 级默认值；最终默认值为 `auto`。`auto` 基于任务耦合度、状态共享需求、并行价值、风险和 context budget 选择 `SubAgent`、专用 skill、`worktrack-generic-worker-skill` 或 `current-carrier`；它不表示"能委派就委派"。`delegated` 表示必须真实委派，无法委派时应返回运行时缺口或权限阻塞；自动改为当前载体执行的行为必须被阻断。`current-carrier` 表示显式关闭 SubAgent 委派。默认偏好是 `SubAgent-first`，但只在 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety` 成立，并且 `task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 适合委派时成立。只有 `auto` 命中 runtime fallback、权限边界禁止委派、耦合/共享状态不适合拆分，或交接包不满足安全分派条件时，才允许在当前载体内执行同一份限定范围任务/信息约定，并明确报告为运行时回退，而不是伪装成子代理分派。Runtime decision inputs: `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety`。
+
+分派输出必须区分 `task_producing_subagent` 与 `review_acceptance_subagent`。本技能只为 task-producing execution 创建或链接 `producer_carrier_ref`；review/acceptance carrier 只能由 Verify / Acceptance / Gate 路径记录为 `review_carrier_ref` 或 `acceptance_carrier_ref`。`evidence_provenance` 不得把 task-producing carrier 的完成摘要当成独立 review/acceptance evidence。使用 `current-carrier fallback` 时必须写入机器可检查的 `fallback_reason_code`，允许值为 `runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe`、`not_applicable`，并保留 `fallback_reason` 说明。
 
 ## 何时使用
 
@@ -69,6 +71,7 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 - 仅当调度包已经携带显式的原子性理由时，通过合并实现、清理和验证工作来放宽首个面向执行切片的行为才合法；否则必须保持原切片粒度或返回调度阶段。
 - 仅当宿主运行时真的创建了委派载体时，声称使用了委派式 `子代理` 才合法；否则必须显式报告未委派原因（`runtime fallback`、`permission blocked` 或 `dispatch package unsafe`），不得伪装成子代理分派。
 - 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界。
+- 发生 `current-carrier fallback` 时，必须填写 `fallback_reason_code`，且只能使用 `runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe`、`not_applicable`；仅填写自然语言 `fallback_reason` 不足以通过分派证据验收。
 - `runtime_dispatch_record` 与 `subagent_dispatch_record` 是 structured evidence boundary。缺失记录只能标记 `missing` / `historical_gap` / `blocked`，不得用 prose synthesis、模型名、执行者自述或 closeout summary 后验补造。
 
 ## 预期输出
@@ -101,6 +104,13 @@ description: 当 Harness 处于 WorktrackScope.dispatching，且需要一轮不�
 - `是否使用回退`
 - `回退理由`
 - `fallback_reason`
+- `fallback_reason_code`
+- `task_producing_subagent`
+- `review_acceptance_subagent`
+- `producer_carrier_ref`
+- `review_carrier_ref`
+- `acceptance_carrier_ref`
+- `evidence_provenance`
 - `runtime_dispatch_record_ref`
 - `subagent_dispatch_record_refs`
 - `dispatch_result_status`

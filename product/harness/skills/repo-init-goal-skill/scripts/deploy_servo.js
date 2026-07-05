@@ -1933,7 +1933,7 @@ function collectMigrationChanges(templateRoot, deployPath, specs) {
 }
 
 function parseTemplate(content) {
-	const lines = content.split("\n");
+	const lines = content.split("\n").map((line) => line.replace(/\r$/, ""));
 	const frontmatter = {};
 	let bodyStart = 0;
 
@@ -1976,7 +1976,12 @@ function parseTemplate(content) {
 		} else if (fieldMatch) {
 			const indent = fieldMatch[1].length;
 			const key = fieldMatch[2];
-			const value = (fieldMatch[3] || "").trim();
+			const value = fieldValueWithContinuation(
+				lines,
+				i,
+				indent,
+				fieldMatch[3] || "",
+			);
 			const target = currentSubSection || currentSection;
 			if (target) {
 				target.fields.push({ key, value, indent });
@@ -1985,6 +1990,25 @@ function parseTemplate(content) {
 	}
 
 	return { frontmatter, sections };
+}
+
+function fieldValueWithContinuation(lines, startIndex, fieldIndent, rawValue) {
+	const value = rawValue.trim();
+	if (value !== "") return value;
+
+	for (let i = startIndex + 1; i < lines.length; i++) {
+		const line = lines[i];
+		if (/^#{1,6}\s+/.test(line)) return value;
+
+		const fieldMatch = line.match(/^(\s*)- ([a-z0-9_-]+):\s*(.*)$/);
+		if (fieldMatch && fieldMatch[1].length <= fieldIndent) return value;
+
+		if (line.trim() !== "" && line.search(/\S/) > fieldIndent) {
+			return "__multiline_value__";
+		}
+	}
+
+	return value;
 }
 
 function isEffectiveEmpty(value) {

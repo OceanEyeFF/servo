@@ -11,6 +11,20 @@
 - required_evidence_lanes:
 - review_profile:
 
+## SubAgent Role / Mode Provenance
+
+> Keep task_producing_subagent separate from review_acceptance_subagent. evidence_provenance must identify delegated SubAgent, dedicated skill, human executor, or current-carrier fallback. current-carrier fallback requires fallback_reason_code.
+
+- task_producing_subagent:
+- review_acceptance_subagent:
+- producer_carrier_ref:
+- review_carrier_ref:
+- acceptance_carrier_ref:
+- evidence_provenance:
+- current-carrier fallback:
+- fallback_reason_code: runtime_gap | permission_blocked | coupling_or_shared_state | dispatch_package_unsafe | not_applicable
+- fallback_reason:
+
 ## Review Lane
 
 > review_profile 驱动 review lane 选择：`light` / `standard` / `risky` / `deep`。review lanes 支持并行 `SubAgent` 执行；`deep` 使用四路 review 覆盖；运行时无法委派所选 lanes 时记录 fallback。lane ids 为 `static-semantic-review`（静态语义解释）、`test-review`（测试 review）、`project-security-review`（security review）、`complexity-performance-review`（代码复杂度和性能 review）。
@@ -41,10 +55,15 @@
 - confidence:
 - ready_for_gate:
 - residual_risks:
+- updated_files_or_artifacts:
+- post_update_validation_timestamp:
 
 ### Supporting Detail
 - input_ref:
 - freshness:
+- post-review/post-gate updates:
+- final acceptance evidence:
+- validation and acceptance:
 - missing_evidence:
 - upstream_constraint_signals:
 - low_severity_absorption_applied:

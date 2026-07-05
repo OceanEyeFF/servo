@@ -19,6 +19,7 @@ from governance_semantic_check import (
     check_canonical_skill_packages_are_minimal,
     check_cleanup_contract,
     check_closeout_record_contract,
+    check_post_update_revalidation_contract,
     check_conservative_backfill_contract,
     check_complex_project_entry_gate_contract,
     check_complexity_signal_scanner_contract,
@@ -50,6 +51,7 @@ from governance_semantic_check import (
     check_root_tool_shims_disable_bytecode,
     check_runtime_artifact_consistency,
     check_runtime_dispatch_profile_contract,
+    check_subagent_role_mode_contract,
     check_low_risk_autonomy_policy_contract,
     check_user_defined_servo_controls_contract,
     check_required_handoffs,
@@ -636,6 +638,101 @@ def test_check_runtime_dispatch_profile_contract_accepts_complete_sources(
     assert report.failures == []
 
 
+def _write_subagent_role_mode_sources(
+    tmp_path: Path, text: str, conditional_text: str | None = None
+) -> None:
+    for relative_path in (
+        "product/harness/skills/harness-skill/SKILL.md",
+        "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
+        "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+        "product/harness/skills/worktrack-gate-skill/SKILL.md",
+        "product/harness/skills/worktrack-close-skill/SKILL.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
+        "docs/harness/artifact/worktrack/contract.md",
+        "docs/harness/artifact/worktrack/gate-evidence.md",
+    ):
+        body = text
+        if conditional_text and relative_path != (
+            "product/harness/skills/worktrack-close-skill/SKILL.md"
+        ):
+            body += conditional_text
+        write_doc(tmp_path / relative_path, body)
+
+
+SUBAGENT_ROLE_MODE_TEST_TEXT = (
+    "task_producing_subagent\n"
+    "review_acceptance_subagent\n"
+    "producer_carrier_ref\n"
+    "review_carrier_ref\n"
+    "acceptance_carrier_ref\n"
+    "evidence_provenance\n"
+    "current-carrier fallback\n"
+    "fallback_reason_code\n"
+    "runtime_gap\n"
+    "permission_blocked\n"
+    "coupling_or_shared_state\n"
+    "dispatch_package_unsafe\n"
+    "not_applicable\n"
+)
+
+SUBAGENT_FIRST_CONDITIONAL_TEST_TEXT = (
+    "SubAgent-first\n"
+    "runtime_supports_subagent\n"
+    "permission_allows_delegation\n"
+    "dispatch_package_safety\n"
+    "task_coupling\n"
+    "state_sharing_need\n"
+    "risk_profile\n"
+    "context_budget_fit\n"
+)
+
+
+def test_check_subagent_role_mode_contract_flags_missing_role_term(
+    tmp_path: Path,
+) -> None:
+    _write_subagent_role_mode_sources(
+        tmp_path,
+        SUBAGENT_ROLE_MODE_TEST_TEXT.replace("review_acceptance_subagent\n", ""),
+        SUBAGENT_FIRST_CONDITIONAL_TEST_TEXT,
+    )
+
+    report = SemanticReport()
+    check_subagent_role_mode_contract(tmp_path, report)
+
+    assert any("review_acceptance_subagent" in item for item in report.failures)
+
+
+def test_check_subagent_role_mode_contract_flags_missing_fallback_code(
+    tmp_path: Path,
+) -> None:
+    _write_subagent_role_mode_sources(
+        tmp_path,
+        SUBAGENT_ROLE_MODE_TEST_TEXT.replace("coupling_or_shared_state\n", ""),
+        SUBAGENT_FIRST_CONDITIONAL_TEST_TEXT,
+    )
+
+    report = SemanticReport()
+    check_subagent_role_mode_contract(tmp_path, report)
+
+    assert any("coupling_or_shared_state" in item for item in report.failures)
+
+
+def test_check_subagent_role_mode_contract_accepts_complete_sources(
+    tmp_path: Path,
+) -> None:
+    _write_subagent_role_mode_sources(
+        tmp_path,
+        SUBAGENT_ROLE_MODE_TEST_TEXT,
+        SUBAGENT_FIRST_CONDITIONAL_TEST_TEXT,
+    )
+
+    report = SemanticReport()
+    check_subagent_role_mode_contract(tmp_path, report)
+
+    assert report.failures == []
+
+
 def _write_user_defined_servo_controls_sources(tmp_path: Path, text: str) -> None:
     for relative_path in (
         "docs/harness/artifact/control/control-state.md",
@@ -991,6 +1088,61 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
     check_closeout_record_contract(tmp_path, report)
 
     assert any("next_repo_scope_action" in item for item in report.failures)
+
+
+def test_check_post_update_revalidation_contract_flags_missing_machine_field(
+    tmp_path: Path,
+) -> None:
+    required_text = (
+        "updated_files_or_artifacts\n"
+        "post-review/post-gate updates\n"
+        "final acceptance evidence\n"
+        "validation and acceptance\n"
+    )
+    for relative_path in (
+        "docs/harness/artifact/worktrack/contract.md",
+        "docs/harness/artifact/worktrack/gate-evidence.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
+        "product/harness/skills/worktrack-gate-skill/SKILL.md",
+        "product/harness/skills/worktrack-close-skill/SKILL.md",
+        "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+        "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_post_update_revalidation_contract(tmp_path, report)
+
+    assert any("post_update_validation_timestamp" in item for item in report.failures)
+
+
+def test_check_post_update_revalidation_contract_accepts_required_terms(
+    tmp_path: Path,
+) -> None:
+    required_text = (
+        "updated_files_or_artifacts\n"
+        "post_update_validation_timestamp\n"
+        "post-review/post-gate updates\n"
+        "final acceptance evidence\n"
+        "validation and acceptance\n"
+    )
+    for relative_path in (
+        "docs/harness/artifact/worktrack/contract.md",
+        "docs/harness/artifact/worktrack/gate-evidence.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
+        "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
+        "product/harness/skills/worktrack-gate-skill/SKILL.md",
+        "product/harness/skills/worktrack-close-skill/SKILL.md",
+        "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
+        "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
+    ):
+        write_doc(tmp_path / relative_path, required_text)
+
+    report = SemanticReport()
+    check_post_update_revalidation_contract(tmp_path, report)
+
+    assert report.failures == []
 
 
 def test_check_cleanup_contract_flags_legacy_auto_apply_term(
