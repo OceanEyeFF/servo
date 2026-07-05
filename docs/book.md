@@ -1,9 +1,9 @@
 ---
 title: "Docs Book Spine"
 status: active
-updated: 2026-06-30
+updated: 2026-07-05
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-05
 ---
 # Docs Book Spine
 
@@ -157,8 +157,9 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 3. [project-maintenance/testing/dogfood-target-repo-registry.md](./project-maintenance/testing/dogfood-target-repo-registry.md)
 4. [project-maintenance/testing/python-script-test-execution.md](./project-maintenance/testing/python-script-test-execution.md)
 5. [project-maintenance/testing/npx-command-test-execution.md](./project-maintenance/testing/npx-command-test-execution.md)
-6. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
-7. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
+6. [project-maintenance/testing/servo-installer-dogfood-layering.md](./project-maintenance/testing/servo-installer-dogfood-layering.md)
+7. [project-maintenance/testing/codex-post-deploy-behavior-tests.md](./project-maintenance/testing/codex-post-deploy-behavior-tests.md)
+8. [project-maintenance/testing/claude-post-deploy-behavior-tests.md](./project-maintenance/testing/claude-post-deploy-behavior-tests.md)
 
 #### 3.3 社区推广与对外技术叙事
 

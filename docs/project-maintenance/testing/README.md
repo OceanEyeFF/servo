@@ -1,9 +1,9 @@
 ---
 title: "Testing Runbooks"
 status: active
-updated: 2026-06-17
+updated: 2026-07-06
 owner: servo-kernel
-last_verified: 2026-06-17
+last_verified: 2026-07-06
 ---
 # Testing Runbooks
 
@@ -52,6 +52,7 @@ last_verified: 2026-06-17
 |---|---|---|
 | 运行 Python 脚本/治理检查/closeout gate | [python-script-test-execution.md](./python-script-test-execution.md) | 固定 `PYTHONDONTWRITEBYTECODE=1 python3 ...` 口径 |
 | 验证 `npx servo-installer`/registry package/本地 `.tgz` | [npx-command-test-execution.md](./npx-command-test-execution.md) | registry `npx` smoke、本地 package smoke、多临时 workdir |
+| 选择 `servo-installer` dogfood 层级 | [servo-installer-dogfood-layering.md](./servo-installer-dogfood-layering.md) | L0-L6 分层，按执行环境、副作用边界、执行者区分 Harness 自动层和人工真实环境 evidence lane |
 | 回归 `servo-installer` CLI/TUI 全命令面 | `toolchain/scripts/test/servo_installer_cli/` 和 `servo_installer_tui/` | CLI 覆盖 agents/claude 命令生命周期；TUI 通过 PTY 覆盖菜单交互 |
 | npm publish 前跑本地 `.tgz` package smoke | [npx-command-test-execution.md](./npx-command-test-execution.md) | 发布前 local package smoke 命令和最小通过证据 |
 | 选择长期 dogfood / target-repo 验证对象 | [dogfood-target-repo-registry.md](./dogfood-target-repo-registry.md) | 固定 5 个长期 target repos，并约束原仓库只读/临时副本 mutation 策略 |
