@@ -244,6 +244,14 @@ The future execution Milestone may proceed only while each selected lane remains
 - The lane depends on forbidden authority: release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply.
 - L5/L6 manual evidence is counted as Harness automated execution, or L6 lacks separate explicit authorization.
 
+## Final Milestone Handoff
+
+MS-20260705-001 is ready for Milestone Gate as a planning and contract closeout. WT1 established the L0-L6 dogfood taxonomy, WT2 bound each layer to its side-effect envelope, WT3 defined automated sandbox and manual real-environment evidence packets, and WT4 converted those contracts into the next `npx servo-installer@next` test-plan handoff without running the real command.
+
+The closed scope remains limited to taxonomy, boundary, evidence, and handoff design. Harness automation covers only L0-L4 metadata, read-only invocation, disposable target, fixture copy/projection, and existing-work disposable-copy lanes. L5/L6 remain programmer-run or separately authorized manual evidence lanes that Harness may record and check without claiming automated execution.
+
+Activation of MS-20260705-002, or any equivalent future registry dogfood Milestone, requires a separate explicit authorization before real `npx servo-installer@next` execution. This handoff grants no release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply authority.
+
 ## Downstream Use
 
 - Side-effect boundary work must state that L0-L4 automated side effects are limited to disposable/copy workspaces, and that L5-L6 real-environment side effects are not default-automated.
