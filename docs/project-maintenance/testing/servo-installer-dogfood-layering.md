@@ -183,11 +183,72 @@ Manual packets remain programmer-run or separately authorized real-environment l
 - L6 evidence requires separate explicit authorization for each route. Without that authorization, the result is blocked, even if an operator already performed an action.
 - Any packet that relies on release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply is invalid for this Milestone.
 
+## Next npx Test Plan Handoff
+
+This planning Milestone defines the downstream `npx servo-installer@next` test-plan handoff shape only. It does not run real `npx servo-installer@next`; real execution belongs to later `MS-20260705-002` or an equivalent future authorized Milestone.
+
+The default automated plan lanes are L0-L4. L5 and L6 are optional manual evidence lanes only: manual evidence may be recorded and checked, but must not be counted as Harness automated execution. L6 requires separate explicit authorization for the specific route, target, backup, rollback, evidence, and stop conditions.
+
+Forbidden authority remains unchanged for the handoff: no release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply.
+
+### L0 Registry / Release-Channel Facts
+
+Objective: establish read-only selector, registry, package, GitHub, and release-channel facts for the future `servo-installer@next` test without package execution or target selection.
+
+Side-effect boundary: metadata observation only. The lane must not execute the package, create a target workspace, mutate registry or release state, or invoke any mutation-capable operation.
+
+Expected evidence packet: an L0 automated sandbox packet using WT3 fields with `package_selector`, `resolved_package_facts`, `command_list` or API observation list, `log_refs`, `run_root` marked not applicable with reason, `target_path_allowlist_result` stating no target path was selected, empty `write_manifest`, original-manifest fields marked not applicable with reason, second dry-run convergence marked not applicable with reason, `packet_result`, and `cleanup_state`.
+
+### L1 Read-Only Invocation
+
+Objective: prove the selected package can be resolved and invoked only in non-target-writing modes for later validation.
+
+Side-effect boundary: read-only package invocation only. The lane must not select a target path, generate `.servo`, `.agents`, `.claude`, deploy output, package output, installer apply output, or perform target writes.
+
+Expected evidence packet: an L1 automated sandbox packet using WT3 fields with `package_selector`, `resolved_package_facts`, `run_root` when used or not-applicable reason when no filesystem run root exists, `target_path_allowlist_result` stating no target path was selected, `command_list` limited to read-only invocation modes selected by the future Milestone, `log_refs`, empty `write_manifest`, original-manifest fields marked not applicable with reason, second dry-run convergence marked not applicable with reason, `packet_result`, and `cleanup_state`.
+
+### L2 Fresh Disposable Target
+
+Objective: exercise installer behavior against a fresh disposable target created for the future run.
+
+Side-effect boundary: writes may occur only inside a unique temp run root and the allowlisted fresh target root. No current repo, daily repo, non-allowlisted path, release authority, or onsite apply is allowed.
+
+Expected evidence packet: an L2 automated sandbox packet using WT3 fields with `package_selector`, `resolved_package_facts`, `run_root`, `target_path_allowlist_result`, `copy_source_path` marked not applicable with reason, `copied_target_path` marked not applicable when no copy source is used, `command_list` chosen by the future Milestone, `log_refs`, `write_manifest`, `original_manifest_before_after` and `original_unchanged_result` marked not applicable when no original source exists, `second_dry_run_convergence_result`, `packet_result`, and `cleanup_state`.
+
+### L3 Fixture Clone / Projection
+
+Objective: evaluate dry-run, projection, reconcile intent, or bounded apply observation against a copied fixture or projection in the future run.
+
+Side-effect boundary: copy-on-write only. The original fixture or projection source is read-only, and all writes must stay inside the copied target under the unique temp run root and allowlisted target root.
+
+Expected evidence packet: an L3 automated sandbox packet using WT3 fields with `package_selector`, `resolved_package_facts`, `run_root`, `target_path_allowlist_result`, `copy_source_path`, `copied_target_path`, `command_list` chosen by the future Milestone, `log_refs`, `write_manifest`, `original_manifest_before_after`, `original_unchanged_result`, `second_dry_run_convergence_result`, `packet_result`, and `cleanup_state`.
+
+### L4 Existing-Work Disposable Copy
+
+Objective: evaluate behavior around existing files, user edits, managed and unmanaged state, and preservation expectations against a disposable copy in the future run.
+
+Side-effect boundary: copy-on-write only. The original existing-work repo or fixture is read-only, and all writes must stay inside the copied target under the unique temp run root and allowlisted target root.
+
+Expected evidence packet: an L4 automated sandbox packet using WT3 fields with `package_selector`, `resolved_package_facts`, `run_root`, `target_path_allowlist_result`, `copy_source_path`, `copied_target_path`, `command_list` chosen by the future Milestone, `log_refs`, `write_manifest`, `original_manifest_before_after`, `original_unchanged_result`, `second_dry_run_convergence_result`, `packet_result`, and `cleanup_state`.
+
+### Go / No-Go Conditions
+
+The future execution Milestone may proceed only while each selected lane remains inside its layer boundary and packet contract. Stop or mark the packet blocked when any of these conditions occur:
+
+- Target path is outside the allowlist, points at the current repo, points at a daily real repo, or otherwise bypasses the approved disposable/copy target boundary.
+- A run writes outside the unique temp run root or outside the allowlisted target root.
+- The original fixture, repo, source, or manifest changes when copy-on-write or original-unchanged proof is required.
+- A second dry-run fails to converge and no clear non-convergence reason is recorded.
+- Any required WT3 packet field is missing, uses an invalid `not_applicable` claim, or omits the layer-specific reason.
+- Evidence is stale for the current selector, resolved version, source commit, target snapshot, or environment state.
+- The lane depends on forbidden authority: release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply.
+- L5/L6 manual evidence is counted as Harness automated execution, or L6 lacks separate explicit authorization.
+
 ## Downstream Use
 
 - Side-effect boundary work must state that L0-L4 automated side effects are limited to disposable/copy workspaces, and that L5-L6 real-environment side effects are not default-automated.
 - WT3 evidence contract work defines automated sandbox evidence and manual real-environment evidence as separate packet shapes without redesigning the L0-L6 taxonomy or WT2 side-effect boundaries.
-- WT4 `npx servo-installer@next` test-plan work may consume these packet shapes as evidence requirements, but this document does not design the WT4 execution plan, command matrix, target matrix, or run sequence.
+- WT4 `npx servo-installer@next` test-plan work may consume these packet shapes as evidence requirements and the handoff shape above, but this document does not select concrete commands, targets, target repositories, or run sequence.
 - WT4 `npx servo-installer@next` test-plan work should default to L0-L4 automation and select commands only inside the WT2 side-effect envelope. It should not add release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply authority.
 - L5/L6 may be optional manual evidence lanes for the later test plan, but must remain programmer-run or separately authorized real-environment lanes.
 - A manually completed Windows test belongs to L5 or L6 manual evidence, depending on whether it was readonly/smoke or apply/repair/destructive-risk. It must not be mixed into automated L2-L4 evidence.
