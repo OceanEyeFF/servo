@@ -123,40 +123,71 @@ Executor: programmer, or a separately authorized route with explicit target, bac
 
 Boundary: L6 is a manual real-environment evidence lane, never part of default automated dogfood. Harness may record and check evidence, but must not claim it executed the real-environment operation. L6 requires explicit authorization for each route.
 
-## Evidence Families
+## Evidence Contract
 
-### Automated Sandbox Evidence
+WT3 defines the evidence packet shapes that later work may collect for the existing L0-L6 taxonomy and WT2 side-effect boundaries. These packet shapes do not rename layers, loosen side-effect rules, or authorize any release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply.
 
-Automated L0-L4 evidence should record:
+Evidence must identify whether it is automated sandbox evidence for L0-L4 or manual real-environment evidence for L5/L6. A manual packet may be recorded and checked by Harness, but it is not Harness-executed automated evidence.
 
-- run root
-- package selector and resolved facts
-- target path allowlist result
-- command list and logs
-- write manifest
-- original fixture or repo manifest before and after
-- original manifest unchanged result
-- second dry-run result, or non-convergence reason
-- cleanup state for the temp run root
+### Automated Sandbox Evidence Packet (L0-L4)
 
-### Manual Real-Environment Evidence
+Each L0-L4 automated packet must include these fields:
 
-Manual L5-L6 evidence should record:
+- `layer_id`: one of `L0`, `L1`, `L2`, `L3`, or `L4`.
+- `package_selector`: requested package selector, such as `servo-installer@next`, exact version, tag, or local selector used by the bounded test.
+- `resolved_package_facts`: resolved package name, version, dist-tag or selector resolution, tarball or package metadata where observed, `gitHead` when available, and source of those facts.
+- `run_root`: unique temp run root for the automated run, or an explicit not-applicable reason for metadata-only L0 evidence that has no filesystem target.
+- `target_path_allowlist_result`: allowlist decision for every target path, including target path, allowed/blocked result, and reason. L0/L1 packets that have no target path must record that no target path was selected.
+- `copy_source_path`: original fixture, source, repo, or manifest path used for copy-on-write. L3/L4 packets must record the source path. L0/L1/L2 packets may record `not_applicable` when no copied source is used, with the layer-specific reason.
+- `copied_target_path`: copied fixture, projection, repo, or disposable target path used for write-capable/copy-layer execution. L3/L4 packets must record the copied target path under the run root. L0/L1/L2 packets may record `not_applicable` when no copied source is used; L2 packets that use a fresh disposable target must still identify that target through `target_path_allowlist_result` and `write_manifest`.
+- `command_list`: ordered commands or API invocations executed by Harness.
+- `log_refs`: durable references to command output, diagnostic logs, or captured stdout/stderr summaries.
+- `write_manifest`: files created, changed, or deleted inside the allowed disposable/copy target, or an explicit empty manifest for read-only layers.
+- `original_manifest_before_after`: original fixture, source, repo, or manifest snapshot before and after the run, or an explicit not-applicable reason when no original source is involved.
+- `original_unchanged_result`: pass/fail result proving the original fixture, source, repo, or manifest remained unchanged, or an explicit not-applicable result tied to the previous field.
+- `second_dry_run_convergence_result`: convergence result for the second dry-run, including `changes=[]` or equivalent when it converged, or a clear non-convergence reason when it did not. Metadata-only or read-only layers must record why this check is not applicable.
+- `packet_result`: aggregate result for this automated packet, one of `pass`, `fail`, `blocked`, `stale`, or `not_applicable`, with the reason and the field or check that determined the result.
+- `cleanup_state`: temp run root and target cleanup result, retained artifact location, or reason cleanup was intentionally deferred.
 
-- OS, shell, Node, and npm versions
-- package selector and resolved package facts
-- target type
-- executed actions
-- write locations, if any
-- operator conclusion
-- cleanup state
-- whether the run was readonly, smoke, apply, repair, or destructive-risk
-- whether Harness only recorded evidence rather than executing the test
+Automated packets must stay inside the WT2 side-effect envelope for their layer. For L2-L4, writes are valid only under the unique temp run root and allowlisted target root. For L3/L4 copy-on-write lanes, `copy_source_path` must identify the original read-only source and `copied_target_path` must identify the mutable copy. For L0/L1, write manifests must be empty and the packet must show that no mutation-capable target operation was invoked.
+
+### Manual Real-Environment Evidence Packet (L5/L6)
+
+Each L5/L6 manual packet must include these fields:
+
+- `layer_id`: `L5` for real-environment readonly/smoke evidence or `L6` for real-environment apply, repair, cleanup, or destructive-risk evidence.
+- `mode`: one of `readonly`, `smoke`, `apply`, `repair`, or `destructive-risk`.
+- `environment`: OS, shell, Node version, and npm version.
+- `package_selector`: requested package selector, such as `servo-installer@next`, exact version, or tag.
+- `resolved_package_facts`: resolved package name, version, dist-tag or selector resolution, tarball or package metadata where observed, `gitHead` when available, and source of those facts.
+- `target_type`: target class, such as Windows workspace, WSL workspace, daily repo, disposable local repo, or other operator environment.
+- `actions`: ordered operator-run actions and commands, with enough detail to distinguish readonly, smoke, apply, repair, or destructive-risk behavior.
+- `write_locations`: paths written, if any; otherwise an explicit statement that no writes were observed or intended.
+- `operator_conclusion`: programmer/operator conclusion, including pass/fail/blocked and the reason.
+- `cleanup_state`: cleanup performed, retained artifacts, rollback state, or reason cleanup was not performed.
+- `harness_execution_statement`: explicit statement that Harness recorded and checked this evidence but did not execute the real-environment test.
+- `authorization_ref`: required for L6; the separate explicit authorization that named target, backup, rollback, evidence, and stop conditions. L5 may record not applicable when no L6 authority is involved.
+- `packet_result`: aggregate result for this manual packet, one of `pass`, `fail`, `blocked`, `stale`, or `not_applicable`, with the reason and the field, authorization state, or operator conclusion that determined the result.
+
+Manual packets remain programmer-run or separately authorized real-environment lanes. They must not be counted as Harness automated execution, and L6 is blocked unless the packet includes a separate explicit authorization reference for that specific route.
+
+### Freshness and Pass/Fail Rules
+
+- Missing required fields block the packet. A field may be `not_applicable` only when the packet records the layer-specific reason.
+- A packet with a missing required field, missing required authorization, or invalid `not_applicable` claim must set `packet_result` to `blocked` and must not be counted as pass evidence.
+- Evidence from an earlier package selector, resolved version, source commit, target snapshot, or environment state must be labeled `stale` and must not be counted as fresh pass evidence.
+- A stale packet must set `packet_result` to `stale`; stale evidence cannot be upgraded into a fresh `pass` without rerunning or recollecting the affected evidence for the current selector, version, source, target snapshot, and environment state.
+- Stale evidence may remain as historical context only when its stale reason is explicit.
+- Manual L5/L6 evidence cannot satisfy an automated L0-L4 execution requirement.
+- Automated L0-L4 evidence cannot claim real-environment coverage beyond the disposable or copy workspace that it actually executed.
+- L6 evidence requires separate explicit authorization for each route. Without that authorization, the result is blocked, even if an operator already performed an action.
+- Any packet that relies on release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply is invalid for this Milestone.
 
 ## Downstream Use
 
 - Side-effect boundary work must state that L0-L4 automated side effects are limited to disposable/copy workspaces, and that L5-L6 real-environment side effects are not default-automated.
-- WT3 evidence contract work must encode automated sandbox evidence and manual real-environment evidence as separate evidence families. It should include fields for run root, target allowlist result, copy-on-write source/target, write manifest, original manifest unchanged result, second dry-run convergence result, and non-convergence reason without redesigning the L0-L6 taxonomy.
+- WT3 evidence contract work defines automated sandbox evidence and manual real-environment evidence as separate packet shapes without redesigning the L0-L6 taxonomy or WT2 side-effect boundaries.
+- WT4 `npx servo-installer@next` test-plan work may consume these packet shapes as evidence requirements, but this document does not design the WT4 execution plan, command matrix, target matrix, or run sequence.
 - WT4 `npx servo-installer@next` test-plan work should default to L0-L4 automation and select commands only inside the WT2 side-effect envelope. It should not add release, publish, package version mutation, tag, dist-tag, GitHub Release, push, PR, deploy, force, destructive cleanup, current-repo installer apply, or default onsite apply authority.
 - L5/L6 may be optional manual evidence lanes for the later test plan, but must remain programmer-run or separately authorized real-environment lanes.
 - A manually completed Windows test belongs to L5 or L6 manual evidence, depending on whether it was readonly/smoke or apply/repair/destructive-risk. It must not be mixed into automated L2-L4 evidence.
