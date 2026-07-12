@@ -503,7 +503,7 @@ def test_skill_source_traceability_accepts_bidirectional_mapping(
 | Canonical source | Docs/catalog owner |
 |------------------|--------------------|
 | [alpha-skill/](./alpha-skill/) | [docs/harness/catalog/repo.md](../../../docs/harness/catalog/repo.md) |
-| [beta-skill/](./beta-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
+| [beta-skill/](./beta-skill/) | [docs/harness/catalog/milestone.md](../../../docs/harness/catalog/milestone.md) |
 """,
     )
     write_file(
@@ -515,11 +515,11 @@ def test_skill_source_traceability_accepts_bidirectional_mapping(
 | Catalog surface | Canonical executable source |
 |-----------------|-----------------------------|
 | [repo.md](./repo.md) | [alpha-skill](../../../product/harness/skills/alpha-skill/) |
-| [worktrack.md](./worktrack.md) | [beta-skill](../../../product/harness/skills/beta-skill/) |
+| [milestone.md](./milestone.md) | [beta-skill](../../../product/harness/skills/beta-skill/) |
 """,
     )
     write_file(tmp_path / "docs/harness/catalog/repo.md", "# Repo\n")
-    write_file(tmp_path / "docs/harness/catalog/worktrack.md", "# Worktrack\n")
+    write_file(tmp_path / "docs/harness/catalog/milestone.md", "# Milestone\n")
 
     report = CheckReport()
     check_skill_source_traceability(tmp_path, report)
@@ -552,17 +552,21 @@ def test_skill_source_traceability_flags_missing_source_backlink(
 | Catalog surface | Canonical executable source |
 |-----------------|-----------------------------|
 | [repo.md](./repo.md) | [alpha-skill](../../../product/harness/skills/alpha-skill/) |
-| [worktrack.md](./worktrack.md) | [beta-skill](../../../product/harness/skills/beta-skill/) |
+| [milestone.md](./milestone.md) | [beta-skill](../../../product/harness/skills/beta-skill/) |
 """,
     )
     write_file(tmp_path / "docs/harness/catalog/repo.md", "# Repo\n")
-    write_file(tmp_path / "docs/harness/catalog/worktrack.md", "# Worktrack\n")
+    write_file(tmp_path / "docs/harness/catalog/milestone.md", "# Milestone\n")
 
     report = CheckReport()
     check_skill_source_traceability(tmp_path, report)
 
     assert (
-        "skill source missing docs owner traceability: "
+        "canonical skill source missing from package inventory: "
+        "product/harness/skills/beta-skill"
+    ) in report.failures
+    assert (
+        "catalog skill source missing reciprocal docs owner traceability: "
         "product/harness/skills/beta-skill"
     ) in report.failures
 
@@ -598,7 +602,7 @@ def test_skill_source_traceability_flags_missing_catalog_mapping(
     check_skill_source_traceability(tmp_path, report)
 
     assert (
-        "catalog traceability missing canonical skill source: "
+        "docs-owned skill source missing reciprocal catalog traceability: "
         "product/harness/skills/alpha-skill"
     ) in report.failures
 
@@ -634,14 +638,14 @@ def test_skill_source_traceability_rejects_skill_links_in_wrong_columns(
     report = CheckReport()
     check_skill_source_traceability(tmp_path, report)
 
-    assert (
-        "skill source missing docs owner traceability: "
-        "product/harness/skills/alpha-skill"
-    ) in report.failures
-    assert (
-        "catalog traceability missing canonical skill source: "
-        "product/harness/skills/alpha-skill"
-    ) in report.failures
+    assert any(
+        failure.startswith("docs owner traceability contains non-skill source target:")
+        for failure in report.failures
+    )
+    assert any(
+        failure.startswith("catalog traceability contains non-skill source target:")
+        for failure in report.failures
+    )
 
 
 def test_skill_source_traceability_flags_deploy_target_links(

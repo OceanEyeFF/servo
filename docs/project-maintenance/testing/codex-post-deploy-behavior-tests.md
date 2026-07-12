@@ -1,9 +1,9 @@
 ---
 title: "Codex Post-Deploy Behavior Tests"
 status: active
-updated: 2026-06-30
+updated: 2026-07-10
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-10
 ---
 # Codex Post-Deploy Behavior Tests
 
@@ -49,7 +49,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js install --backend agents --
 node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
 ```
 
-当前 `agents` install 已包含全部 30 个 skills（含 Milestone Gate 四轴检查、milestone-cleanup-skill + repo-writeback-skill）；`repo-init-goal-skill` 自带 `.servo/` 初始化资产。
+当前 `agents` install 已包含全部 32 个 skills；`repo-init-goal-skill` 自带 `.servo/` 初始化资产。具体 canonical package inventory 以 `product/harness/skills/README.md` 与 adapter completeness check 为准，本运行手册不复制 Worktrack Skill 内部合同。
 
 ## 五、选择观察策略
 

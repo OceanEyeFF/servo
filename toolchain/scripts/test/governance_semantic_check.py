@@ -60,12 +60,6 @@ REQUIRED_HANDOFF_LINKS = {
         "product/harness/skills/README.md",
         "product/harness/adapters/README.md",
     ],
-    "docs/harness/artifact/worktrack/README.md": [
-        "docs/harness/artifact/worktrack/contract.md",
-        "docs/harness/artifact/worktrack/plan-task-queue.md",
-        "docs/harness/artifact/worktrack/gate-evidence.md",
-        "docs/harness/artifact/worktrack/debug-evidence.md",
-    ],
 }
 FOUNDATIONS_AUTHORITY_STEMS = [
     "root-directory-layering",
@@ -179,7 +173,6 @@ SUBAGENT_DEFAULT_CONTRACT_PATHS = [
     "docs/harness/artifact/control/control-state.md",
     "docs/harness/artifact/worktrack/contract.md",
     "docs/harness/foundations/Harness运行协议.md",
-    "docs/harness/catalog/worktrack.md",
 ]
 EXECUTION_POLICY_TEMPLATE_REFERENCE_PATHS = [
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
@@ -323,7 +316,6 @@ SUBAGENT_ROLE_MODE_CONTRACT_PATHS = [
     "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
     "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
     "product/harness/skills/worktrack-gate-skill/SKILL.md",
-    "product/harness/skills/worktrack-close-skill/SKILL.md",
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
     "docs/harness/artifact/worktrack/contract.md",
@@ -500,7 +492,6 @@ WORKTRACK_TASK_WINDOW_REQUIRED_TERMS = [
 ]
 REVIEW_EVIDENCE_FOUR_LANE_CONTRACT_PATHS = [
     "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
-    "docs/harness/catalog/worktrack.md",
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
     "docs/harness/artifact/worktrack/gate-evidence.md",
 ]
@@ -562,28 +553,21 @@ WORKTRACK_BACKLOG_TRACEABILITY_REQUIRED_TERMS = [
     "decision_refs",
 ]
 CLOSEOUT_RECORD_CONTRACT_PATHS = [
-    "docs/harness/artifact/worktrack/README.md",
     "product/harness/skills/worktrack-close-skill/SKILL.md",
 ]
 CLOSEOUT_RECORD_REQUIRED_TERMS = [
-    "closeout_record",
     "worktrack_id",
-    "branch",
-    "base_ref",
-    "head_ref",
-    "merge_commit",
-    "pr",
+    "ready_to_close",
+    "accepted implementation checkpoint",
+    "current implementation checkpoint",
+    "close target",
+    "approval",
+    "merge/no-merge",
+    "closeout_ref",
+    "repo_refresh_handoff_ref",
     "files_changed",
-    "acceptance_result",
-    "gate_verdict",
     "evidence_refs",
-    "decision_refs",
-    "docs_updated",
-    "snapshot_refreshed",
-    "backlog_updated",
-    "cleanup_done",
     "remaining_risks",
-    "next_repo_scope_action",
 ]
 POST_UPDATE_REVALIDATION_CONTRACT_PATHS = [
     "docs/harness/artifact/worktrack/contract.md",
@@ -591,7 +575,6 @@ POST_UPDATE_REVALIDATION_CONTRACT_PATHS = [
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
     "product/harness/skills/worktrack-gate-skill/SKILL.md",
-    "product/harness/skills/worktrack-close-skill/SKILL.md",
     "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
     "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
 ]
@@ -646,7 +629,6 @@ BRANCH_POLICY_FIELD_CONTRACT_PATHS = [
     "docs/harness/artifact/standard-fields.md",
     "product/harness/skills/worktrack-init-skill/SKILL.md",
     "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
-    "product/harness/skills/worktrack-close-skill/SKILL.md",
     "product/harness/skills/repo-refresh-skill/SKILL.md",
     "product/harness/skills/worktrack-status-skill/SKILL.md",
     "product/harness/skills/worktrack-recover-skill/SKILL.md",

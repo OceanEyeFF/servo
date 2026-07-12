@@ -12,7 +12,7 @@ last_verified: 2026-06-30
 当前入口：
 
 - [repo/README.md](./repo/README.md)：`RepoScope` 的长期基线对象
-- [worktrack/README.md](./worktrack/README.md)：`WorktrackScope` 的局部转移对象，包含 contract、queue、dispatch、gate 与 debug evidence
+- `worktrack/`：当前 legacy consumer 仍使用的具体 contract、queue、dispatch、gate、debug 与 closeout evidence；按需直接进入 [contract.md](./worktrack/contract.md)、[plan-task-queue.md](./worktrack/plan-task-queue.md) 或 [gate-evidence.md](./worktrack/gate-evidence.md)
 - [control/README.md](./control/README.md)：Harness supervisor 自身依赖的控制对象
 - [runtime-artifact-lifecycle.md](./runtime-artifact-lifecycle.md)：`.servo/` runtime artifact 的保留、归档、晋升、维护周期与 report-first cleanup 合同
 - [standard-fields.md](./standard-fields.md)：所有 Skill 结构化输出的标准字段词汇表

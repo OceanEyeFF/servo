@@ -54,6 +54,8 @@ PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_che
 
 `docs/book.md` 和章节入口只描述当前版本中已经存在的文档拓扑、owner 和维护规则。仅为未来迁移、后续 Worktrack 或尚未落地的重构切片服务的计划，不应作为 `docs/` 长期 truth surface 保留；这类后续动作应留在 Harness runtime/backlog 中记录，待实际内容存在后再同步到 book 与最近章节入口。
 
+Canonical Skill package completeness 以 `product/harness/skills/README.md` 到实际 package 目录的链接为准。Docs Owner reciprocal traceability 只检查仍在 Supervisor、Repo 或 Milestone catalog 中声明 owner 的 Skill；Worktrack package 不需要为了运行合同额外维护 catalog backlink，也不得用名称前缀豁免 package completeness。
+
 `status: superseded` 文档可以保留在 `docs/` 中作为历史引用，但不能作为当前 truth owner 或主线阅读步骤。`docs/book.md` 和章节 `README.md` 若需要链接它们，必须放在 `Retained Historical References` 或 `Historical References` 章节下，并在周边文字说明当前 owner 或接管路径。若 superseded 文档不再需要历史追溯，应移出 `docs/` 或删除；大批量删除仍需单独审批。
 
 Canonical skill source traceability 采用两端索引机制：`docs/harness/catalog/README.md#Canonical Source Traceability` 从 catalog surface 指向 `product/harness/skills/` source root，canonical source 必须位于表格第二列；`product/harness/skills/README.md#Docs Owner Traceability` 从每个 source 目录反链到 docs/catalog owner，canonical source 必须位于表格第一列。新增、重命名或退役 skill source 时必须同步这两端索引。`.agents/` 与 `.claude/` 只能作为 deploy target / consumer，不得出现在 canonical source traceability 中。

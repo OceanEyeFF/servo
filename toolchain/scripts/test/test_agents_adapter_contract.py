@@ -48,6 +48,8 @@ EXPECTED_AGENTS_SKILLS = {
     "worktrack-cleanup-skill",
     "worktrack-test-evidence-skill",
     "worktrack-status-skill",
+    "worktrack-plan-work-skill",
+    "worktrack-review-skill",
 }
 EXPECTED_CLAUDE_SKILLS = {
     *EXPECTED_AGENTS_SKILLS,
@@ -55,6 +57,8 @@ EXPECTED_CLAUDE_SKILLS = {
 AGENTS_TARGET_DIR_OVERRIDES = {}
 CLAUDE_TARGET_DIR_OVERRIDES = {}
 AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
+    "worktrack-plan-work-skill": [],
+    "worktrack-review-skill": [],
     "repo-init-goal-skill": [
         "harness-set-goal-skill",
         "set-harness-goal-skill",
@@ -99,6 +103,8 @@ AGENTS_LEGACY_TARGET_DIR_OVERRIDES = {
     "worktrack-test-evidence-skill": ["test-evidence-skill", "aw-test-evidence-skill"],
 }
 CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
+    "worktrack-plan-work-skill": [],
+    "worktrack-review-skill": [],
     "harness-skill": ["servo-harness-skill"],
     "repo-init-goal-skill": [
         "harness-set-goal-skill",
@@ -119,6 +125,15 @@ CLAUDE_LEGACY_TARGET_DIR_OVERRIDES = {
     "worktrack-rule-check-skill": ["aw-rule-check-skill"],
     "worktrack-schedule-skill": ["aw-schedule-worktrack-skill"],
     "worktrack-test-evidence-skill": ["aw-test-evidence-skill"],
+}
+NORMAL_PATH_REQUIRED_FILES = {
+    "harness-skill": {
+        "SKILL.md",
+        "scripts/autonomy_policy_check.py",
+        "scripts/worktrack_setup_check.py",
+    },
+    "worktrack-plan-work-skill": {"SKILL.md"},
+    "worktrack-review-skill": {"SKILL.md"},
 }
 
 
@@ -386,6 +401,29 @@ class AgentsAdapterContractTest(unittest.TestCase):
             canonical_paths,
         )
         self.assertIn("references/overview-fallback-mode.md", required_payload_files)
+
+    def test_normal_path_payloads_include_explicit_required_files(self) -> None:
+        for backend_dir in (ADAPTER_SKILLS_DIR, CLAUDE_ADAPTER_SKILLS_DIR):
+            for skill_id, required_files in NORMAL_PATH_REQUIRED_FILES.items():
+                payload = load_json(backend_dir / skill_id / "payload.json")
+                canonical_dir = payload["canonical_dir"]
+                canonical_paths = payload["canonical_paths"]
+                payload_files = payload["required_payload_files"]
+
+                self.assertIsInstance(canonical_dir, str)
+                self.assertIsInstance(canonical_paths, list)
+                self.assertIsInstance(payload_files, list)
+                for relative_path in required_files:
+                    self.assertIn(
+                        f"{canonical_dir}/{relative_path}",
+                        canonical_paths,
+                        f"{backend_dir.name}/{skill_id} omits {relative_path}",
+                    )
+                    self.assertIn(
+                        relative_path,
+                        payload_files,
+                        f"{backend_dir.name}/{skill_id} does not require {relative_path}",
+                    )
 
     def test_agents_installer_diagnose_json_reports_missing_root_without_failure(
         self,

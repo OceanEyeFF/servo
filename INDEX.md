@@ -31,6 +31,7 @@ Agent 默认只读 [`AGENTS.md`](./AGENTS.md)、本页，以及当前任务命�
 | 看文档真相层、全量阅读顺序、章节边界与路径维护规则 | [`docs/book.md`](./docs/book.md) |
 | 看 Harness 主线与分层合同 | [`docs/harness/README.md`](./docs/harness/README.md) |
 | 改执行前工作追踪边界 | [`docs/harness/artifact/worktrack/contract.md`](./docs/harness/artifact/worktrack/contract.md) |
+| 改 Worktrack PlanWork / Review / Close 运行合同 | [`product/harness/skills/README.md`](./product/harness/skills/README.md) 后进入对应 `SKILL.md` |
 | 改阅读路由或写回规则 | [`AGENTS.md`](./AGENTS.md) / [`review-verify-handbook.md`](./docs/project-maintenance/governance/review-verify-handbook.md) |
 | 改业务源码 | [`product/README.md`](./product/README.md) |
 | 改工具脚本、部署或评测 | [`toolchain/README.md`](./toolchain/README.md) |

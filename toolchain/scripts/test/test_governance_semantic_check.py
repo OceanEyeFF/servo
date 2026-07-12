@@ -183,13 +183,6 @@ def test_check_required_handoffs_flags_missing_link(tmp_path: Path) -> None:
     write_doc(tmp_path / "docs/harness/README.md", "")
     write_doc(tmp_path / "docs/harness/foundations/README.md", "")
     write_doc(tmp_path / "docs/harness/artifact/README.md", "")
-    write_doc(
-        tmp_path / "docs/harness/artifact/worktrack/README.md",
-        "[contract](./contract.md)\n"
-        "[queue](./plan-task-queue.md)\n"
-        "[gate](./gate-evidence.md)\n"
-        "[debug](./debug-evidence.md)\n",
-    )
     write_doc(tmp_path / "docs/harness/artifact/worktrack/contract.md", "")
     write_doc(tmp_path / "docs/harness/artifact/worktrack/plan-task-queue.md", "")
     write_doc(tmp_path / "docs/harness/artifact/worktrack/gate-evidence.md", "")
@@ -494,7 +487,6 @@ def test_check_subagent_dispatch_default_contract_flags_missing_term(
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
         "docs/harness/foundations/Harness运行协议.md",
-        "docs/harness/catalog/worktrack.md",
     ):
         write_doc(
             tmp_path / relative_path,
@@ -531,7 +523,6 @@ def test_check_subagent_dispatch_default_contract_flags_template_prose_duplicati
         "docs/harness/artifact/control/control-state.md",
         "docs/harness/artifact/worktrack/contract.md",
         "docs/harness/foundations/Harness运行协议.md",
-        "docs/harness/catalog/worktrack.md",
     ):
         write_doc(
             tmp_path / relative_path,
@@ -646,16 +637,13 @@ def _write_subagent_role_mode_sources(
         "product/harness/skills/worktrack-dispatch-skill/SKILL.md",
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
         "product/harness/skills/worktrack-gate-skill/SKILL.md",
-        "product/harness/skills/worktrack-close-skill/SKILL.md",
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
         "docs/harness/artifact/worktrack/contract.md",
         "docs/harness/artifact/worktrack/gate-evidence.md",
     ):
         body = text
-        if conditional_text and relative_path != (
-            "product/harness/skills/worktrack-close-skill/SKILL.md"
-        ):
+        if conditional_text:
             body += conditional_text
         write_doc(tmp_path / relative_path, body)
 
@@ -1023,7 +1011,6 @@ def test_check_review_evidence_four_lane_contract_flags_missing_lane(
 ) -> None:
     for relative_path in (
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
-        "docs/harness/catalog/worktrack.md",
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
         "docs/harness/artifact/worktrack/gate-evidence.md",
     ):
@@ -1074,11 +1061,10 @@ def test_check_decision_traceability_contract_flags_missing_decision_refs(
 
 def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> None:
     closeout_terms = (
-        "closeout_record\nworktrack_id\nbranch\nbase_ref\nhead_ref\nmerge_commit\npr\n"
-        "files_changed\nacceptance_result\ngate_verdict\nevidence_refs\ndecision_refs\n"
-        "docs_updated\nsnapshot_refreshed\nbacklog_updated\ncleanup_done\nremaining_risks\n"
+        "worktrack_id\nready_to_close\naccepted implementation checkpoint\n"
+        "current implementation checkpoint\nclose target\napproval\nmerge/no-merge\n"
+        "closeout_ref\nfiles_changed\nevidence_refs\nremaining_risks\n"
     )
-    write_doc(tmp_path / "docs/harness/artifact/worktrack/README.md", closeout_terms)
     write_doc(
         tmp_path / "product/harness/skills/worktrack-close-skill/SKILL.md",
         closeout_terms,
@@ -1087,7 +1073,7 @@ def test_check_closeout_record_contract_flags_missing_field(tmp_path: Path) -> N
     report = SemanticReport()
     check_closeout_record_contract(tmp_path, report)
 
-    assert any("next_repo_scope_action" in item for item in report.failures)
+    assert any("repo_refresh_handoff_ref" in item for item in report.failures)
 
 
 def test_check_post_update_revalidation_contract_flags_missing_machine_field(
@@ -1105,7 +1091,6 @@ def test_check_post_update_revalidation_contract_flags_missing_machine_field(
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
         "product/harness/skills/worktrack-gate-skill/SKILL.md",
-        "product/harness/skills/worktrack-close-skill/SKILL.md",
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
         "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
     ):
@@ -1133,7 +1118,6 @@ def test_check_post_update_revalidation_contract_accepts_required_terms(
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
         "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
         "product/harness/skills/worktrack-gate-skill/SKILL.md",
-        "product/harness/skills/worktrack-close-skill/SKILL.md",
         "product/harness/skills/worktrack-review-evidence-skill/SKILL.md",
         "product/harness/skills/worktrack-test-evidence-skill/SKILL.md",
     ):
@@ -1258,7 +1242,6 @@ def _write_branch_policy_sources(tmp_path: Path, text: str) -> None:
         "docs/harness/artifact/standard-fields.md",
         "product/harness/skills/worktrack-init-skill/SKILL.md",
         "product/harness/skills/worktrack-init-skill/templates/contract.template.md",
-        "product/harness/skills/worktrack-close-skill/SKILL.md",
         "product/harness/skills/repo-refresh-skill/SKILL.md",
         "product/harness/skills/worktrack-status-skill/SKILL.md",
         "product/harness/skills/worktrack-recover-skill/SKILL.md",

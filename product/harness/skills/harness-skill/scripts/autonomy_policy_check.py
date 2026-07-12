@@ -85,6 +85,18 @@ EVIDENCE_REQUIRED: dict[str, str] = {
     "repo_refresh_checkpoint":     "Repo 刷新 checkpoint",
 }
 
+PLACEHOLDER_VALUES = {
+    "",
+    "n/a",
+    "none",
+    "null",
+    "pending",
+    "not_started",
+    "tbd",
+    "unknown",
+}
+LEGACY_GATE_VALUES = {"pass", "pass_with_residuals"}
+
 
 # ──────────────────────────────────────────────
 # 操作 → 策略命中映射
@@ -151,6 +163,14 @@ POLICY_MAP: dict[str, PolicyProfile] = {
                         "status_consistency_check"],
         description="Worktrack 内队列调度：在 allowed 范围内",
     ),
+    "schedule::worktrack-plan-work-skill": PolicyProfile(
+        allowed_rules=["worktrack_queue_scheduling", "artifact_hydration",
+                       "status_consistency_check"],
+        description=(
+            "worktrack-plan-work-skill plan/redo phase 只允许在当前 "
+            "Worktrack Contract 内刷新队列；不得扩大 scope 或执行 Review/Close"
+        ),
+    ),
 
     # ── verify ──
     "verify::review-evidence-skill": PolicyProfile(
@@ -168,6 +188,14 @@ POLICY_MAP: dict[str, PolicyProfile] = {
     "verify::gate-skill": PolicyProfile(
         allowed_rules=["bounded_local_verification"],
         description="Gate 裁决：在 allowed 范围内",
+    ),
+    "verify::worktrack-review-skill": PolicyProfile(
+        allowed_rules=["bounded_local_verification", "artifact_hydration",
+                       "status_consistency_check"],
+        description=(
+            "worktrack-review-skill 只执行限定范围 review 与 validation "
+            "assessment；不得修改实现或 closeout state"
+        ),
     ),
 
     # ── dispatch ──
@@ -210,6 +238,22 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "delete/move/archive、release/publish/tag/push/deploy、受保护"
             "分支 mutation、secret/database/external quota 仍由 forbidden/stop"
             "边界阻断"
+        ),
+    ),
+    "dispatch::worktrack-plan-work-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_dispatch",
+            "artifact_hydration",
+            "status_consistency_check",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-plan-work-skill work/redo phase 只允许在当前 Contract、"
+            "selected task、mutation boundary 与 validation requirements 内执行；"
+            "source mutation、scope expansion、release/deploy/remote/destructive "
+            "动作仍需各自显式审批"
         ),
     ),
 
@@ -328,6 +372,22 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "worktrack_list 中且 intake review ready 的 Worktrack；新增/"
             "移除/重排 Worktrack、目标变更或 Contract scope expansion "
             "仍需独立审批"
+        ),
+    ),
+    "init_worktrack::worktrack-plan-work-skill": PolicyProfile(
+        allowed_rules=[
+            "bounded_worktrack_init",
+            "artifact_hydration",
+            "status_consistency_check",
+            "scaffold_validation",
+        ],
+        forbidden_hit=[],
+        stop_condition_hit=[],
+        needs_approval=False,
+        description=(
+            "worktrack-plan-work-skill setup phase 只在 worktrack_setup_check.py "
+            "can_setup=true 且 intake/branch/baseline/approval guards 全部通过后，"
+            "按 allowed_write_surface 合成 setup；脚本本身保持 check-only"
         ),
     ),
 
@@ -513,6 +573,14 @@ REQUIRED_EVIDENCE: dict[str, list[str]] = {
     ],
 }
 
+# Setup preflight runs before the Worktrack Contract exists. The deterministic
+# worktrack setup checker supplies intake/scope/branch evidence, so this profile
+# only requires the upstream route decision at the generic policy layer.
+PROFILE_REQUIRED_EVIDENCE: dict[str, list[str]] = {
+    "init_worktrack::worktrack-plan-work-skill": ["route_decision"],
+    "close::worktrack-close-skill": ["worktrack_contract_scope"],
+}
+
 
 def resolve_profile(operation: str, skill: str) -> PolicyProfile:
     """按 operation::skill 精确查找策略 profile，fallback 到 operation 默认。"""
@@ -546,12 +614,16 @@ def resolve_profile(operation: str, skill: str) -> PolicyProfile:
 # 证据检查辅助
 # ──────────────────────────────────────────────
 
-def check_evidence(operation: str, control_state_path: str) -> dict[str, Any]:
+def check_evidence(
+    operation: str, control_state_path: str, skill: str = ""
+) -> dict[str, Any]:
     """检查指定 operation 所需的证据是否存在。
 
     返回 {evidence_required_complete: bool, evidence_missing: [str, ...]}。
     """
-    required = REQUIRED_EVIDENCE.get(operation, [])
+    required = PROFILE_REQUIRED_EVIDENCE.get(
+        f"{operation}::{skill}", REQUIRED_EVIDENCE.get(operation, [])
+    )
     if not required:
         return {
             "evidence_required_complete": True,
@@ -641,6 +713,59 @@ def _check_evidence_item(item: str, control_state_content: str,
         return False
 
 
+def _control_field(content: str, field: str) -> str:
+    match = re.search(
+        rf"^\s*-\s*{re.escape(field)}:\s*(.*?)\s*$", content, re.MULTILINE
+    )
+    if not match:
+        return ""
+    return match.group(1).strip().strip("`\"'")
+
+
+def _meaningful(value: object) -> bool:
+    return isinstance(value, str) and value.strip().lower() not in PLACEHOLDER_VALUES
+
+
+def validate_legacy_close_authority(control_state_path: str) -> dict[str, Any]:
+    """Validate the exact legacy Gate authority used by the current default route."""
+    missing: list[str] = []
+    try:
+        with open(control_state_path, encoding="utf-8") as handle:
+            content = handle.read()
+    except OSError:
+        content = ""
+
+    value = _control_field(content, "worktrack_gate_verdict")
+    authority_ref = _control_field(content, "worktrack_gate_verdict_ref")
+    residual_ref = _control_field(
+        content, "worktrack_gate_residual_acceptance_ref"
+    )
+
+    if value not in LEGACY_GATE_VALUES:
+        missing.append("eligible_legacy_gate_verdict")
+    if not _meaningful(authority_ref):
+        missing.append("legacy_gate_verdict_ref")
+    if value == "pass_with_residuals" and not _meaningful(residual_ref):
+        missing.append("legacy_gate_residual_acceptance_ref")
+
+    complete = not missing
+    return {
+        "complete": complete,
+        "source": "legacy_gate_contract",
+        "authority": {
+            "worktrack_gate_verdict": value,
+            "worktrack_gate_verdict_ref": authority_ref,
+            "worktrack_gate_residual_acceptance_ref": residual_ref,
+        },
+        "missing": missing,
+        "reason": (
+            "eligible legacy Gate authority"
+            if complete
+            else "legacy Gate authority is not eligible"
+        ),
+    }
+
+
 # ──────────────────────────────────────────────
 # 主逻辑
 # ──────────────────────────────────────────────
@@ -677,7 +802,16 @@ def main() -> None:
     profile = resolve_profile(operation, skill)
 
     # ── 2. 证据检查 ──
-    evidence = check_evidence(operation, control_state_path)
+    evidence = check_evidence(operation, control_state_path, skill)
+    close_authority: dict[str, Any] | None = None
+    if operation == "close" and skill == "worktrack-close-skill":
+        close_authority = validate_legacy_close_authority(control_state_path)
+        if not close_authority["complete"]:
+            evidence["evidence_required_complete"] = False
+            evidence["evidence_missing"] = [
+                *evidence["evidence_missing"],
+                *[f"close_authority:{item}" for item in close_authority["missing"]],
+            ]
 
     # ── 3. 组装结果 ──
     # allowed = 至少命中一条 allowed 规则
@@ -727,6 +861,10 @@ def main() -> None:
         reason_parts.append(
             f"证据缺失: {', '.join(evidence['evidence_missing'])}"
         )
+    if close_authority is not None:
+        reason_parts.append(
+            f"close authority: {close_authority['source']} / {close_authority['reason']}"
+        )
 
     result = {
         "operation": operation,
@@ -742,6 +880,8 @@ def main() -> None:
         "evidence_missing": evidence["evidence_missing"],
         "reason": " | ".join(reason_parts),
     }
+    if close_authority is not None:
+        result["close_authority"] = close_authority
 
     print(json.dumps(result, indent=2, ensure_ascii=False))
 

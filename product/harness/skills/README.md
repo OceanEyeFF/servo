@@ -47,6 +47,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [repo-append-request-skill/](./repo-append-request-skill/) — 追加请求分类与路由
   - [repo-change-goal-skill/](./repo-change-goal-skill/) — 修改 Repo 目标
   - [repo-refresh-skill/](./repo-refresh-skill/) — 代码仓库刷新
+  - [repo-writeback-skill/](./repo-writeback-skill/) — 对 `.servo/` 控制面执行事务化写回
   - [milestone-cleanup-skill/](./milestone-cleanup-skill/) — Milestone closeout 后的 repo/runtime cleanup report 与非破坏性 dry-run 维护
   - [worktrack-cleanup-skill/](./worktrack-cleanup-skill/) — legacy cleanup 兼容入口，保留给既有调用与旧 adapter alias
 - [milestone-init-skill/](./milestone-init-skill/) — Milestone 初始化/注册到 Pipeline
@@ -58,6 +59,8 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
     - [milestone-anticheat-check/](./milestone-anticheat-check/) — 反作弊检查（mock abuse、证据复用、部分验证、gate 绕过、过期证据、自审偏见、假阳性风险）
     - [milestone-composite-check/](./milestone-composite-check/) — 复合验收检查（code-review、feature-completeness、related-influence、intent-completeness、operator-simulation、professional-review lanes）
 - 已落地的 `WorktrackScope` 技能骨架：
+  - [worktrack-plan-work-skill/](./worktrack-plan-work-skill/) — 候选 normal path 的 setup synthesis、Plan、Work、affected validation 与 normal/redo round finalization
+  - [worktrack-review-skill/](./worktrack-review-skill/) — 独立读取完整 round chain、做技术验收并返回 ready-to-close/redo
   - [worktrack-status-skill/](./worktrack-status-skill/) — 工作追踪状态观察
   - [worktrack-init-skill/](./worktrack-init-skill/) — 初始化工作追踪
   - [worktrack-schedule-skill/](./worktrack-schedule-skill/) — 调度工作追踪
@@ -66,10 +69,10 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
   - [worktrack-rule-check-skill/](./worktrack-rule-check-skill/) — 规则检查
   - [worktrack-gate-skill/](./worktrack-gate-skill/) — 关卡判定
   - [worktrack-recover-skill/](./worktrack-recover-skill/) — 恢复工作追踪
-  - [worktrack-close-skill/](./worktrack-close-skill/) — 关闭工作追踪
+  - [worktrack-close-skill/](./worktrack-close-skill/) — 对 ready-to-close Worktrack 执行机械关闭与 Repo Refresh handoff
 - 上游技能目录见 [../../../docs/harness/catalog/README.md](../../../docs/harness/catalog/README.md)
-- 后续新增内容应从 `docs/harness/` 的操作员定义、工作流程与治理规则推导而来
-- 不应先复制局部提示词，再反向让它生长出本体论
+- Worktrack Skill 的 operational contract 由对应 `SKILL.md` 自己承接；`docs/harness/` 不是分发后运行前置
+- 上层 Harness 只拥有跨 Skill 调度与层级切换，不复制 PlanWork/Review/Close 内部流程
 
 这里适合放：
 
@@ -115,21 +118,7 @@ Trace links to docs are acceptable only as source-side ownership or authoring re
 | [milestone-whitebox-check/](./milestone-whitebox-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [milestone-anticheat-check/](./milestone-anticheat-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
 | [milestone-composite-check/](./milestone-composite-check/) | [docs/harness/artifact/control/milestone-gate-aggregation.md](../../../docs/harness/artifact/control/milestone-gate-aggregation.md) |
-| [worktrack-status-skill/](./worktrack-status-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-init-skill/](./worktrack-init-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-schedule-skill/](./worktrack-schedule-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-dispatch-skill/](./worktrack-dispatch-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-generic-worker-skill/](./worktrack-generic-worker-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-doc-catch-up-skill/](./worktrack-doc-catch-up-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-review-evidence-skill/](./worktrack-review-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-test-evidence-skill/](./worktrack-test-evidence-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-rule-check-skill/](./worktrack-rule-check-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-gate-skill/](./worktrack-gate-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-recover-skill/](./worktrack-recover-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [worktrack-close-skill/](./worktrack-close-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-| [repo-writeback-skill/](./repo-writeback-skill/) | [docs/harness/catalog/worktrack.md](../../../docs/harness/catalog/worktrack.md) |
-
-This table is the source-side backlink to the docs/catalog owner surface. Keep it synchronized when adding, renaming, retiring, or moving canonical skill source. Do not replace these links with deploy target paths.
+This table is the reciprocal backlink only for Skills that still have a Supervisor, Repo, or Milestone docs owner. The canonical package inventory above remains complete independently of docs ownership. Worktrack operational contracts live in their package-local `SKILL.md`; do not create a replacement Worktrack catalog solely to satisfy traceability. Never replace source/docs links with deploy-target paths.
 
 ## Source Baseline Versioning
 

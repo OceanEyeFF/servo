@@ -45,11 +45,9 @@ REQUIRED_ENTRY_PATHS = [
     "docs/harness/catalog/README.md",
     "docs/harness/catalog/supervisor.md",
     "docs/harness/catalog/repo.md",
-    "docs/harness/catalog/worktrack.md",
     "docs/harness/artifact/repo/README.md",
     "docs/harness/artifact/repo/goal-charter.md",
     "docs/harness/artifact/repo/snapshot-status.md",
-    "docs/harness/artifact/worktrack/README.md",
     "docs/harness/artifact/worktrack/contract.md",
     "docs/harness/artifact/worktrack/plan-task-queue.md",
     "docs/harness/artifact/worktrack/gate-evidence.md",
@@ -113,7 +111,6 @@ ENTRYPOINT_LINK_RULES = {
     "docs/harness/catalog/README.md": [
         "docs/harness/catalog/supervisor.md",
         "docs/harness/catalog/repo.md",
-        "docs/harness/catalog/worktrack.md",
         "docs/harness/catalog/milestone-status-skill.md",
         "docs/harness/foundations/Harness指导思想.md",
         "docs/harness/foundations/Harness运行协议.md",
@@ -130,7 +127,9 @@ ENTRYPOINT_LINK_RULES = {
     ],
     "docs/harness/artifact/README.md": [
         "docs/harness/artifact/repo/README.md",
-        "docs/harness/artifact/worktrack/README.md",
+        "docs/harness/artifact/worktrack/contract.md",
+        "docs/harness/artifact/worktrack/plan-task-queue.md",
+        "docs/harness/artifact/worktrack/gate-evidence.md",
         "docs/harness/artifact/control/README.md",
     ],
     "docs/harness/artifact/repo/README.md": [
@@ -139,12 +138,6 @@ ENTRYPOINT_LINK_RULES = {
         "docs/harness/artifact/repo/repo-analysis.md",
         "docs/harness/artifact/repo/snapshot-status.md",
         "docs/harness/artifact/repo/worktrack-backlog.md",
-    ],
-    "docs/harness/artifact/worktrack/README.md": [
-        "docs/harness/artifact/worktrack/contract.md",
-        "docs/harness/artifact/worktrack/plan-task-queue.md",
-        "docs/harness/artifact/worktrack/gate-evidence.md",
-        "docs/harness/artifact/worktrack/dispatch-packet.md",
     ],
     "docs/harness/artifact/control/README.md": [
         "docs/harness/artifact/control/append-request.md",
@@ -718,6 +711,14 @@ def resolved_markdown_targets_in_table_column(
     return targets
 
 
+def resolved_markdown_targets(repo_root: Path, markdown_file: Path) -> set[Path]:
+    text = markdown_file.read_text(encoding="utf-8")
+    return {
+        resolve_markdown_target(markdown_file, repo_root, target)
+        for target in iter_relative_markdown_targets(text)
+    }
+
+
 def markdown_target_relative_to_repo(
     repo_root: Path,
     markdown_file: Path,
@@ -782,6 +783,7 @@ def check_skill_source_traceability(repo_root: Path, report: CheckReport) -> Non
         "Canonical Source Traceability",
         1,
     )
+    source_inventory_targets = resolved_markdown_targets(repo_root, source_readme)
 
     if not source_owner_targets:
         report.add_failure(
@@ -807,15 +809,35 @@ def check_skill_source_traceability(repo_root: Path, report: CheckReport) -> Non
             f"{target}"
         )
 
+    skill_dir_set = set(skill_dirs)
+    for target in sorted(source_owner_targets - skill_dir_set):
+        report.add_failure(
+            "docs owner traceability contains non-skill source target: "
+            f"{to_relative_posix(target, repo_root)}"
+        )
+    for target in sorted(catalog_source_targets - skill_dir_set):
+        report.add_failure(
+            "catalog traceability contains non-skill source target: "
+            f"{to_relative_posix(target, repo_root)}"
+        )
+
     for skill_dir in skill_dirs:
-        if skill_dir not in source_owner_targets:
+        if skill_dir not in source_inventory_targets:
             report.add_failure(
-                "skill source missing docs owner traceability: "
+                "canonical skill source missing from package inventory: "
                 f"{to_relative_posix(skill_dir, repo_root)}"
             )
-        if skill_dir not in catalog_source_targets:
+
+    for skill_dir in sorted(source_owner_targets - catalog_source_targets):
+        if skill_dir in skill_dir_set:
             report.add_failure(
-                "catalog traceability missing canonical skill source: "
+                "docs-owned skill source missing reciprocal catalog traceability: "
+                f"{to_relative_posix(skill_dir, repo_root)}"
+            )
+    for skill_dir in sorted(catalog_source_targets - source_owner_targets):
+        if skill_dir in skill_dir_set:
+            report.add_failure(
+                "catalog skill source missing reciprocal docs owner traceability: "
                 f"{to_relative_posix(skill_dir, repo_root)}"
             )
 

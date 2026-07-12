@@ -1,16 +1,16 @@
 ---
 title: Harness Skill Catalog
 status: active
-updated: 2026-06-30
+updated: 2026-07-10
 owner: servo-kernel
-last_verified: 2026-06-30
+last_verified: 2026-07-10
 ---
 
 # Harness Skill Catalog
 
-`docs/harness/catalog/` 承接 `Codex` 语境下的 Harness skill inventory。
+`docs/harness/catalog/` 承接 Supervisor、Repo 与 Milestone 文档到 canonical Skill source 的映射。
 
-直接回答 Harness 在 Codex 中需要哪些 skills、它们服务于哪个控制层级、哪些已有 canonical executable source，以及哪些条目当前只保留 catalog 文档面。
+Canonical package inventory 由 [product/harness/skills/README.md](../../../product/harness/skills/README.md) 承接。Worktrack Skills 的运行合同由各自 `SKILL.md` 承接，不在 catalog 复制。
 
 Catalog 条目只允许承接：
 
@@ -25,7 +25,6 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 - [supervisor.md](./supervisor.md)：顶层 supervisor 入口
 - [repo.md](./repo.md)：RepoScope 能力入口
 - [milestone/README.md](./milestone/README.md)：Milestone Skills，Milestone 初始化与状态分析
-- [worktrack.md](./worktrack.md)：WorktrackScope 能力入口
 
 边界：
 
@@ -37,7 +36,7 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 
 | 当前材料 | 当前保留原因 | 当前权威 owner |
 |----------|--------------|----------------|
-| `supervisor.md`、`repo.md`、`worktrack.md` 中的运行策略摘要 | 用于解释 skill 选择和 handoff 字段，不作为独立规则正文 | doctrine / runtime protocol 归 [../foundations/README.md](../foundations/README.md)；正式对象字段归 [../artifact/README.md](../artifact/README.md)；workflow policy 归 [../workflow-families/README.md](../workflow-families/README.md) |
+| `supervisor.md`、`repo.md` 中的运行策略摘要 | 用于解释上层 skill 选择和 handoff 字段，不作为独立规则正文 | doctrine / runtime protocol 归 [../foundations/README.md](../foundations/README.md)；正式对象字段归 [../artifact/README.md](../artifact/README.md)；workflow policy 归 [../workflow-families/README.md](../workflow-families/README.md) |
 | `milestone/` 中的 milestone 行为摘要 | 用于固定两个 milestone skills 的 inventory surface | Milestone artifact 合同归 [../artifact/README.md](../artifact/README.md)；运行协议归 [../foundations/README.md](../foundations/README.md)；executable source 归 [../../../product/harness/skills/README.md](../../../product/harness/skills/README.md) |
 新增 catalog 页面时，若正文超过 inventory surface，需要先确认目标 owner；不能把分析、policy 或协议正文长期沉淀在 `catalog/`。
 
@@ -51,7 +50,6 @@ Catalog 不承接 doctrine 正文、runtime protocol、artifact contract、workf
 | [milestone/milestone-status-skill.md](./milestone/milestone-status-skill.md) | [milestone-status-skill](../../../product/harness/skills/milestone-status-skill/) |
 | — Milestone Gate aggregator | [milestone-gate](../../../product/harness/skills/milestone-gate/) |
 | — Milestone Gate sibling axis checks | [milestone-blackbox-check](../../../product/harness/skills/milestone-blackbox-check/), [milestone-whitebox-check](../../../product/harness/skills/milestone-whitebox-check/), [milestone-anticheat-check](../../../product/harness/skills/milestone-anticheat-check/), [milestone-composite-check](../../../product/harness/skills/milestone-composite-check/) |
-| [worktrack.md](./worktrack.md) | [worktrack-status-skill](../../../product/harness/skills/worktrack-status-skill/), [worktrack-init-skill](../../../product/harness/skills/worktrack-init-skill/), [worktrack-schedule-skill](../../../product/harness/skills/worktrack-schedule-skill/), [worktrack-dispatch-skill](../../../product/harness/skills/worktrack-dispatch-skill/), [worktrack-generic-worker-skill](../../../product/harness/skills/worktrack-generic-worker-skill/), [worktrack-doc-catch-up-skill](../../../product/harness/skills/worktrack-doc-catch-up-skill/), [worktrack-review-evidence-skill](../../../product/harness/skills/worktrack-review-evidence-skill/), [worktrack-test-evidence-skill](../../../product/harness/skills/worktrack-test-evidence-skill/), [worktrack-rule-check-skill](../../../product/harness/skills/worktrack-rule-check-skill/), [worktrack-gate-skill](../../../product/harness/skills/worktrack-gate-skill/), [worktrack-recover-skill](../../../product/harness/skills/worktrack-recover-skill/), [worktrack-close-skill](../../../product/harness/skills/worktrack-close-skill/), [repo-writeback-skill](../../../product/harness/skills/repo-writeback-skill/) |
 
 Deploy targets such as `.agents/` or `.claude/` may consume these sources after deployment, but they are not canonical source locations.
 

@@ -13,7 +13,7 @@ last_verified: 2026-06-13
 
 - 本项目的核心目标，是构建一个 `Codex-first` 的 AI coding harness 平台，并将其作为 repo-side contract layer 分发到多个项目中使用。
 - 当前仓库以 AI coding 的 repo-side contract layer 形态承接这个目标。
-- `docs/` 负责 truth boundary，`product/` 负责 canonical skills 与 adapters，`toolchain/` 负责部署、评测与治理脚本。
+- `docs/` 负责跨模块 truth boundary，`product/` 负责 canonical skills、Skill 自身 operational contract 与 adapters，`toolchain/` 负责部署、评测与治理脚本。
 - `Harness` 现在是一级认知与文档域；已批准输入、执行边界、路由和写回规则由 `AGENTS.md`、`docs/harness/artifact/` 与 `docs/project-maintenance/governance/` 承接，不再保留独立 adjacent-system 文档域。
 - `.agents/`、`.claude/` 是 deploy target，源码层在 `product/` 中。
 - 如果一个新目录说不清 owner 和层级，不要直接加到根目录。
@@ -32,7 +32,7 @@ last_verified: 2026-06-13
 - `AGENTS.md`、review/verify 流程或退出标准变化：扩读 `docs/project-maintenance/governance/review-verify-handbook.md`。
 - deployment / adapter 行为变化：扩读 `docs/project-maintenance/deploy/` 的相关入口与 `toolchain/README.md`。
 - Harness doctrine、workflow family、artifact 合同或 canonical skill 入口路径变化：扩读 `docs/harness/README.md`、局部 artifact/skill 入口和对应 governance 检查。
-- Worktrack 执行、调度、证据或关卡变化：扩读对应 `docs/harness/artifact/worktrack/` 局部合同，不默认预读全量 worktrack artifact。
+- Worktrack Skill 执行变化：先读对应 `product/harness/skills/*/SKILL.md`；只有命中 legacy artifact、跨模块架构或治理边界时，才扩读 `docs/harness/artifact/worktrack/` 的具体合同。
 
 ## Route Contract
 
@@ -65,7 +65,7 @@ last_verified: 2026-06-13
 - 根目录分层、一级子目录、hidden/state/mount 层或 `.nav/` 规则变化时，必须同步更新 foundations 文档和对应治理检查。
 - `AGENTS.md`、review/verify 流程或退出标准变化时，必须同步更新 `docs/project-maintenance/governance/review-verify-handbook.md`。
 - deployment / adapter 行为变化时，必须同步更新相关 `docs/project-maintenance/deploy/` 文档和 verify 命令说明。
-- Harness doctrine、workflow family、artifact 合同或 canonical skill 入口路径变化时，必须同步更新 `docs/harness/`、`product/*/skills/` 入口与对应治理检查。
+- Harness doctrine、workflow family、跨模块 artifact 合同或 canonical skill 入口路径变化时，必须同步正确 owner 与治理检查。Skill 私有运行步骤由对应 `SKILL.md` 自己承接，不为同步而复制到 `docs/harness/`。
 - 只有已验证结果才可以回写为长期真相；未验证的结论不要写进知识层。
 
 ## Root Rules
