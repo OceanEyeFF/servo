@@ -22,6 +22,11 @@ Normal entry receives:
 - deterministic `worktrack_setup_check.py` result
 - current implementation checkpoint
 
+The contribution must provide a concrete `branch_source.branch`, full
+`branch_source.checkpoint`, and `close_target`. The setup result must provide the
+derived `expected_branch`; it is evidence for PlanWork to act on, not an action
+performed by the checker.
+
 Redo entry receives:
 
 - the accepted Worktrack Contract reference
@@ -44,14 +49,25 @@ All runtime filenames are lowercase ASCII. YAML `round_id` values use uppercase 
 
 ## Normal Round
 
-1. Validate setup legality, authority, branch/checkpoint, mutation boundary, and validation requirements.
-2. Derive `.servo/tmp/<worktrack-id>/worktrack-r000.yaml` with `round_id: R000`.
-3. If R000 already exists, stop as blocked; never overwrite it.
-4. Create R000 before implementation mutation. Record the initial task, acceptance conditions, scope/constraints, start checkpoint, and the round plan.
-5. Read back Worktrack identity, round identity, and start checkpoint.
-6. Plan and perform only approved Work.
-7. Run affected validation against the implementation to be finalized.
-8. Execute the round finalization contract below.
+1. Validate setup legality, authority, mutation boundary, and validation requirements while still on `branch_source.branch`.
+2. Require `can_setup: true`, no setup approval stop, a concrete derived `expected_branch`, and a clean non-ignored worktree and index.
+3. Confirm the current branch equals `branch_source.branch` and `HEAD` equals the full `branch_source.checkpoint`. Recheck HEAD immediately before branch creation.
+4. Require `expected_branch` to be absent. An existing branch blocks and returns upward for an explicit recovery decision; normal entry does not infer resume authority or repair it.
+5. Create and switch to `expected_branch` from the exact source checkpoint. Read back the current branch and HEAD, and require them to equal `expected_branch` and `branch_source.checkpoint`.
+6. If branch creation, switch, or readback fails, return `blocked` before creating R000 or making any implementation change. The setup checker, Review, Close, and upper Orchestrator do not create or repair this branch.
+7. Derive `.servo/tmp/<worktrack-id>/worktrack-r000.yaml` with `round_id: R000`. If it already exists, stop as blocked; never overwrite it.
+8. Before implementation mutation, create R000 with:
+   - Worktrack identity, `round_id: R000`, initial task, and objective;
+   - acceptance checks;
+   - included/excluded scope and the approved write surface;
+   - constraints and approval boundaries;
+   - source branch, source checkpoint, current start checkpoint, and expected Worktrack branch;
+   - close target and the concrete plan for this round;
+   - `commit_sha: null` until confirmed finalization.
+9. Read back Worktrack identity, round identity, start checkpoint, and expected branch.
+10. Plan and perform only approved Work.
+11. Run affected validation against the implementation to be finalized.
+12. Execute the round finalization contract below.
 
 ## Redo Round
 
@@ -59,9 +75,16 @@ All runtime filenames are lowercase ASCII. YAML `round_id` values use uppercase 
 2. Require a contiguous completed chain and a Review comment for the latest rejected round.
 3. Derive the next round as `max(complete round number) + 1`.
 4. If the derived YAML exists, or the chain is missing/gapped, stop as blocked; never overwrite or skip an index.
-5. Create the matching lowercase YAML before mutation. Record the previous round, Review comment ref, blocking findings, checks to rerun, start checkpoint, and new round plan.
-6. Re-plan inside the unchanged objective, acceptance, scope, mutation, and approval boundaries.
-7. Perform Work, affected validation, and the same finalization used by a normal round.
+5. Confirm the current branch is the established Worktrack branch and `HEAD` equals the rejected round commit used as this round's start checkpoint. Redo validates this existing-branch premise; it does not recreate or repair the branch.
+6. Create the matching lowercase YAML before mutation. Record:
+   - Worktrack identity, derived round ID, previous round, and Review comment ref;
+   - blocking findings and the acceptance checks/validation to rerun;
+   - unchanged Worktrack authority/contract ref and approved write surface;
+   - current start checkpoint and the concrete plan for this round;
+   - `commit_sha: null` until confirmed finalization.
+7. Read back the round identity, previous-round relation, Review comment ref, and start checkpoint.
+8. Re-plan inside the unchanged objective, acceptance, scope, mutation, and approval boundaries.
+9. Perform Work, affected validation, and the same finalization used by a normal round.
 
 Queue recomposition inside existing authority is ordinary redo planning. Objective, acceptance, scope, write-surface, or approval expansion returns upward; redo is the only Review handback entry.
 
@@ -97,7 +120,7 @@ The first approved reconciliation round uses R000 and the same transaction. Its 
 ## Stops
 
 - source mutation, deletion, runtime round, or commit without explicit authority
-- branch/checkpoint mismatch, validation failure, or out-of-surface change
+- branch/checkpoint mismatch, an existing normal-entry target branch, branch creation/switch/readback failure, validation failure, or out-of-surface change
 - changed validation-only path or incomplete staging
 - malformed/incomplete round chain or existing derived round target
 - scope/objective/acceptance expansion
