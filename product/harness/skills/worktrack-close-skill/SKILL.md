@@ -11,7 +11,7 @@ This Skill performs mechanical Close for the Candidate Worktrack aggregate. It
 runs only after the upper Orchestrator accepts a fresh independent Review result
 and marks the Worktrack `ready_to_close`.
 
-Close does not consume a raw Review recommendation, normalize Candidate/legacy
+Close does not consume a raw Review recommendation, normalize ingress
 authority, re-judge acceptance, issue a Gate verdict, or decide Milestone
 completion. It is self-contained and requires no source-repo docs.
 
@@ -30,7 +30,7 @@ completion. It is self-contained and requires no source-repo docs.
 
 The accepted implementation checkpoint and current implementation checkpoint
 must be equal. Candidate Close does not accept `review_recommendation`, legacy
-Gate authority fields, `close_entry_mode`, or a Candidate/legacy selector.
+Gate authority fields, `close_entry_mode`, or any ingress selector.
 
 ## Mechanical Preconditions
 
@@ -161,8 +161,9 @@ create a Candidate no-merge mode.
 Candidate output does not emit legacy `closeout_ref`,
 `repo_refresh_handoff_ref`, `files_changed`, or `remaining_risks` fields. Those
 names identify excluded legacy interfaces, not Candidate Close authority.
-Candidate/legacy ingress selection belongs to the upper Orchestrator and occurs
-before validation; malformed Candidate input never falls back through Close.
+The upper Harness invokes this Skill only for the Candidate `ready_to_close`
+route. The canonical path has no Candidate/legacy selector, legacy fallback, or
+Gate-authority normalization for Close.
 
 ## Output
 

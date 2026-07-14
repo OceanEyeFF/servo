@@ -17,10 +17,8 @@ from _guard_utils import parse_yaml_field
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_WRITE_SURFACE = [
-    ".servo/worktrack/contract.md",
-    ".servo/worktrack/plan-task-queue.md",
-    ".servo/worktrack/gate-evidence.md",
-    ".servo/control-state-wt.md",
+    ".servo/worktrack/{worktrack_id}/initial-requirement.yaml",
+    ".servo/tmp/{worktrack_id}",
 ]
 DEFAULT_OUTPUT_KEYS = {
     "can_setup",
@@ -239,6 +237,27 @@ def main() -> None:
             missing.append("valid_worktrack_branch")
             expected_branch = ""
 
+    initial_requirement = (
+        repo_root
+        / f".servo/worktrack/{args.worktrack_id}/initial-requirement.yaml"
+        if repo_root and expected_branch
+        else Path()
+    )
+    if repo_root and expected_branch:
+        branch_exists = run_command(
+            ["git", "show-ref", "--verify", "--quiet", f"refs/heads/{expected_branch}"],
+            repo_root,
+        )
+        if branch_exists.returncode == 0:
+            blockers.append(f"derived Worktrack branch already exists: {expected_branch}")
+        elif branch_exists.returncode not in (0, 1):
+            blockers.append(f"unable to inspect derived Worktrack branch: {expected_branch}")
+            missing.append("worktrack_branch_absence")
+        if initial_requirement.exists():
+            blockers.append(
+                f"initial requirement target already exists: {initial_requirement}"
+            )
+
     current_branch = ""
     current_head = ""
     worktree_status = ""
@@ -316,6 +335,8 @@ def main() -> None:
                 "WorktrackScope",
                 "--function",
                 "Init",
+                "--worktrack-id",
+                args.worktrack_id,
             ],
             repo_root,
         )
@@ -349,13 +370,9 @@ def main() -> None:
         "blocked_why": blockers,
         "missing_evidence": sorted(set(missing)),
         "allowed_write_surface": [
-            *DEFAULT_WRITE_SURFACE,
-            *(
-                [f".servo/tmp/{args.worktrack_id}"]
-                if expected_branch
-                else []
-            ),
-        ],
+            item.format(worktrack_id=args.worktrack_id)
+            for item in DEFAULT_WRITE_SURFACE
+        ] if expected_branch else [],
         "approval_needed": approval_needed,
         "approval_reasons": approval_reasons,
         "expected_branch": expected_branch,

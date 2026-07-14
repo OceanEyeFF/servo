@@ -228,10 +228,7 @@ def test_setup_happy_path_is_check_only(tmp_path: Path) -> None:
     assert payload["missing_evidence"] == []
     assert payload["approval_needed"] is False
     assert payload["allowed_write_surface"] == [
-        ".servo/worktrack/contract.md",
-        ".servo/worktrack/plan-task-queue.md",
-        ".servo/worktrack/gate-evidence.md",
-        ".servo/control-state-wt.md",
+        ".servo/worktrack/WT-TEST/initial-requirement.yaml",
         ".servo/tmp/WT-TEST",
     ]
     assert payload["expected_branch"] == "wt/WT-TEST"
@@ -389,6 +386,40 @@ def test_setup_rejects_removed_authority_override_flags(tmp_path: Path) -> None:
     assert "unrecognized arguments" in result.stderr
 
 
+def test_setup_blocks_existing_candidate_branch(tmp_path: Path) -> None:
+    write_setup_fixture(tmp_path)
+    subprocess.run(
+        ["git", "branch", "wt/WT-TEST"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+
+    result = run_script("worktrack_setup_check.py", setup_args(), tmp_path)
+    payload = parse_json(result)
+
+    assert result.returncode == 1
+    assert payload["blocked"] is True
+    assert any("branch already exists" in item for item in payload["blocked_why"])
+
+
+def test_setup_blocks_existing_initial_requirement(tmp_path: Path) -> None:
+    write_setup_fixture(tmp_path)
+    requirement = tmp_path / ".servo/worktrack/WT-TEST/initial-requirement.yaml"
+    requirement.parent.mkdir(parents=True)
+    requirement.write_text("worktrack_id: WT-TEST\n", encoding="utf-8")
+
+    result = run_script("worktrack_setup_check.py", setup_args(), tmp_path)
+    payload = parse_json(result)
+
+    assert result.returncode == 1
+    assert payload["blocked"] is True
+    assert any(
+        "initial requirement target already exists" in item
+        for item in payload["blocked_why"]
+    )
+
+
 def test_run_guard_converts_non_object_json_to_structured_block(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -413,29 +444,13 @@ def test_run_guard_converts_non_object_json_to_structured_block(
     assert payload["missing_fields"] == ["fixture_guard.py:object_output"]
 
 
-def write_close_fixture(
-    tmp_path: Path,
-    *,
-    legacy_value: str = "",
-    legacy_ref: str = "",
-    residual_ref: str = "",
-) -> Path:
+def write_close_fixture(tmp_path: Path) -> Path:
     control = tmp_path / ".servo/control-state.md"
     control.parent.mkdir(parents=True, exist_ok=True)
-    lines = [
-        "# Control State",
-        "- route_decision: close accepted Worktrack",
-    ]
-    if legacy_value:
-        lines.append(f"- worktrack_gate_verdict: {legacy_value}")
-    if legacy_ref:
-        lines.append(f"- worktrack_gate_verdict_ref: {legacy_ref}")
-    if residual_ref:
-        lines.append(f"- worktrack_gate_residual_acceptance_ref: {residual_ref}")
-    control.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    contract = tmp_path / ".servo/worktrack/contract.md"
-    contract.parent.mkdir(parents=True, exist_ok=True)
-    contract.write_text("# Worktrack Contract\n", encoding="utf-8")
+    control.write_text(
+        "# Control State\n- route_decision: close ready Candidate Worktrack\n",
+        encoding="utf-8",
+    )
     return control
 
 
@@ -450,74 +465,23 @@ def close_args(control: Path) -> list[str]:
     ]
 
 
-def test_close_policy_accepts_exact_legacy_gate_contract(tmp_path: Path) -> None:
-    control = write_close_fixture(
-        tmp_path,
-        legacy_value="pass",
-        legacy_ref=".servo/worktrack/gate-report.md",
-    )
+def test_candidate_close_policy_does_not_require_legacy_gate_authority(
+    tmp_path: Path,
+) -> None:
+    control = write_close_fixture(tmp_path)
 
     result = run_script("autonomy_policy_check.py", close_args(control), tmp_path)
     payload = parse_json(result)
 
     assert result.returncode == 0, result.stderr
-    assert payload["close_authority"]["complete"] is True
-    assert payload["close_authority"]["source"] == "legacy_gate_contract"
-    assert payload["close_authority"]["authority"] == {
-        "worktrack_gate_verdict": "pass",
-        "worktrack_gate_verdict_ref": ".servo/worktrack/gate-report.md",
-        "worktrack_gate_residual_acceptance_ref": "",
-    }
-
-
-def test_close_policy_rejects_placeholder_legacy_ref(tmp_path: Path) -> None:
-    control = write_close_fixture(
-        tmp_path,
-        legacy_value="pass",
-        legacy_ref="N/A",
-    )
-
-    result = run_script("autonomy_policy_check.py", close_args(control), tmp_path)
-    payload = parse_json(result)
-
-    assert result.returncode == 1
-    assert "close_authority:legacy_gate_verdict_ref" in payload["evidence_missing"]
-
-
-def test_close_policy_requires_legacy_residual_acceptance(tmp_path: Path) -> None:
-    control = write_close_fixture(
-        tmp_path,
-        legacy_value="pass_with_residuals",
-        legacy_ref=".servo/worktrack/gate-report.md",
-    )
-
-    result = run_script("autonomy_policy_check.py", close_args(control), tmp_path)
-    payload = parse_json(result)
-
-    assert result.returncode == 1
-    assert (
-        "close_authority:legacy_gate_residual_acceptance_ref"
-        in payload["evidence_missing"]
-    )
-
-    accepted_control = write_close_fixture(
-        tmp_path,
-        legacy_value="pass_with_residuals",
-        legacy_ref=".servo/worktrack/gate-report.md",
-        residual_ref=".servo/worktrack/residual-acceptance.md",
-    )
-    accepted = run_script(
-        "autonomy_policy_check.py", close_args(accepted_control), tmp_path
-    )
-    assert accepted.returncode == 0, accepted.stderr
+    assert payload["allowed"] is True
+    assert payload["blocked"] is False
+    assert payload["evidence_required_complete"] is True
+    assert "close_authority" not in payload
 
 
 def test_close_policy_rejects_removed_candidate_authority_flag(tmp_path: Path) -> None:
-    control = write_close_fixture(
-        tmp_path,
-        legacy_value="pass",
-        legacy_ref=".servo/worktrack/gate-report.md",
-    )
+    control = write_close_fixture(tmp_path)
     result = run_script(
         "autonomy_policy_check.py",
         [*close_args(control), "--close-authority-json", "{}"],
@@ -549,9 +513,9 @@ def test_new_skill_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) ->
     contract.write_text("# Worktrack Contract\n", encoding="utf-8")
     cases = (
         ("init_worktrack", "worktrack-plan-work-skill"),
-        ("schedule", "worktrack-plan-work-skill"),
         ("dispatch", "worktrack-plan-work-skill"),
         ("verify", "worktrack-review-skill"),
+        ("close", "worktrack-close-skill"),
     )
 
     for operation, skill in cases:
@@ -578,45 +542,167 @@ def test_new_skill_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) ->
         assert "未在 POLICY_MAP" not in str(payload["reason"])
 
 
-def test_plan_setup_preflight_does_not_weaken_legacy_init_evidence(
+def write_round_yaml(
+    root: Path,
+    index: int,
+    *,
+    worktrack_id: str = "WT-TEST",
+    previous_round: str | None = None,
+) -> Path:
+    runtime = root / f".servo/tmp/{worktrack_id}"
+    runtime.mkdir(parents=True, exist_ok=True)
+    lines = [
+        f"worktrack_id: {worktrack_id}",
+        f"round_id: R{index:03d}",
+    ]
+    if index > 0:
+        previous = previous_round or f"R{index - 1:03d}"
+        lines.extend(
+            [
+                f"previous_round: {previous}",
+                "review_comment_ref: "
+                f".servo/tmp/{worktrack_id}/worktrack-r{index:03d}-review-comment.md",
+            ]
+        )
+    path = runtime / f"worktrack-r{index:03d}.yaml"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def write_review_comment(
+    root: Path,
+    index: int,
+    *,
+    worktrack_id: str = "WT-TEST",
+    reviewed_round: str | None = None,
+) -> Path:
+    runtime = root / f".servo/tmp/{worktrack_id}"
+    runtime.mkdir(parents=True, exist_ok=True)
+    path = runtime / f"worktrack-r{index:03d}-review-comment.md"
+    path.write_text(
+        textwrap.dedent(
+            f"""\
+            ---
+            worktrack_id: {worktrack_id}
+            reviewed_round: {reviewed_round or f'R{index - 1:03d}'}
+            next_round: R{index:03d}
+            ---
+            # Review Comment
+
+            Blocking findings and checks to rerun.
+            """
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def round_args(expect: str, worktrack_id: str = "WT-TEST") -> list[str]:
+    return ["--worktrack-id", worktrack_id, "--expect", expect]
+
+
+def test_round_chain_accepts_r000_for_review_and_is_check_only(
     tmp_path: Path,
 ) -> None:
-    control = tmp_path / ".servo/control-state.md"
-    control.parent.mkdir(parents=True)
-    control.write_text("# Control\n- route_decision: approved intake\n", encoding="utf-8")
+    write_setup_fixture(tmp_path)
+    write_round_yaml(tmp_path, 0)
+    before = repo_snapshot(tmp_path)
 
-    candidate = run_script(
-        "autonomy_policy_check.py",
-        [
-            "--operation",
-            "init_worktrack",
-            "--skill",
-            "worktrack-plan-work-skill",
-            "--control-state",
-            str(control),
-        ],
-        tmp_path,
-    )
-    legacy = run_script(
-        "autonomy_policy_check.py",
-        [
-            "--operation",
-            "init_worktrack",
-            "--skill",
-            "worktrack-init-skill",
-            "--control-state",
-            str(control),
-        ],
-        tmp_path,
-    )
+    result = run_script("worktrack_round_chain_check.py", round_args("review"), tmp_path)
+    payload = parse_json(result)
 
-    candidate_payload = parse_json(candidate)
-    legacy_payload = parse_json(legacy)
-    assert candidate.returncode == 0
-    assert candidate_payload["evidence_required_complete"] is True
-    assert legacy.returncode == 1
-    assert legacy_payload["evidence_required_complete"] is False
+    assert result.returncode == 0, result.stderr
+    assert payload == {
+        "valid": True,
+        "blocked": False,
+        "blocked_why": [],
+        "worktrack_id": "WT-TEST",
+        "expect": "review",
+        "latest_round": "R000",
+        "next_round": "R001",
+        "latest_round_ref": ".servo/tmp/WT-TEST/worktrack-r000.yaml",
+        "expected_review_comment_ref": (
+            ".servo/tmp/WT-TEST/worktrack-r001-review-comment.md"
+        ),
+        "expected_round_ref": ".servo/tmp/WT-TEST/worktrack-r001.yaml",
+    }
+    assert repo_snapshot(tmp_path) == before
+
+
+def test_round_chain_accepts_redo_then_next_review(tmp_path: Path) -> None:
+    write_setup_fixture(tmp_path)
+    write_round_yaml(tmp_path, 0)
+    write_review_comment(tmp_path, 1)
+
+    redo = run_script("worktrack_round_chain_check.py", round_args("redo"), tmp_path)
+    redo_payload = parse_json(redo)
+    assert redo.returncode == 0, redo.stderr
+    assert redo_payload["latest_round"] == "R000"
+    assert redo_payload["next_round"] == "R001"
+    assert redo_payload["expected_round_ref"].endswith("worktrack-r001.yaml")
+
+    write_round_yaml(tmp_path, 1)
+    review = run_script(
+        "worktrack_round_chain_check.py", round_args("review"), tmp_path
+    )
+    review_payload = parse_json(review)
+    assert review.returncode == 0, review.stderr
+    assert review_payload["latest_round"] == "R001"
+    assert review_payload["next_round"] == "R002"
+
+
+def test_round_chain_rejects_gap_and_identity_mismatch(tmp_path: Path) -> None:
+    write_setup_fixture(tmp_path)
+    write_round_yaml(tmp_path, 0)
+    write_review_comment(tmp_path, 2)
+    write_round_yaml(tmp_path, 2)
+
+    gap = run_script("worktrack_round_chain_check.py", round_args("review"), tmp_path)
+    gap_payload = parse_json(gap)
+    assert gap.returncode == 1
+    assert any("gap before R002" in item for item in gap_payload["blocked_why"])
+
+    runtime = tmp_path / ".servo/tmp/WT-TEST"
+    (runtime / "worktrack-r002-review-comment.md").unlink()
+    (runtime / "worktrack-r002.yaml").unlink()
+    write_review_comment(tmp_path, 1, reviewed_round="R999")
+
+    mismatch = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    mismatch_payload = parse_json(mismatch)
+    assert mismatch.returncode == 1
     assert any(
-        "worktrack_contract_scope" in item
-        for item in legacy_payload["evidence_missing"]
+        "reviewed_round must be R000" in item
+        for item in mismatch_payload["blocked_why"]
     )
+
+
+def test_round_chain_rejects_duplicate_case_and_existing_redo_target(
+    tmp_path: Path,
+) -> None:
+    write_setup_fixture(tmp_path)
+    write_round_yaml(tmp_path, 0)
+    runtime = tmp_path / ".servo/tmp/WT-TEST"
+    (runtime / "Worktrack-r000.yaml").write_text(
+        "worktrack_id: WT-TEST\nround_id: R000\n",
+        encoding="utf-8",
+    )
+
+    duplicate = run_script(
+        "worktrack_round_chain_check.py", round_args("review"), tmp_path
+    )
+    duplicate_payload = parse_json(duplicate)
+    assert duplicate.returncode == 1
+    assert any("must be lowercase" in item for item in duplicate_payload["blocked_why"])
+    assert any("duplicate" in item for item in duplicate_payload["blocked_why"])
+
+    (runtime / "Worktrack-r000.yaml").unlink()
+    write_review_comment(tmp_path, 1)
+    write_round_yaml(tmp_path, 1)
+    not_redo = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    not_redo_payload = parse_json(not_redo)
+    assert not_redo.returncode == 1
+    assert "round chain is not ready for redo" in not_redo_payload["blocked_why"]

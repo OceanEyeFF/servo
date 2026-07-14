@@ -163,15 +163,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
                         "status_consistency_check"],
         description="Worktrack 内队列调度：在 allowed 范围内",
     ),
-    "schedule::worktrack-plan-work-skill": PolicyProfile(
-        allowed_rules=["worktrack_queue_scheduling", "artifact_hydration",
-                       "status_consistency_check"],
-        description=(
-            "worktrack-plan-work-skill plan/redo phase 只允许在当前 "
-            "Worktrack Contract 内刷新队列；不得扩大 scope 或执行 Review/Close"
-        ),
-    ),
-
     # ── verify ──
     "verify::review-evidence-skill": PolicyProfile(
         allowed_rules=["bounded_local_verification"],
@@ -280,11 +271,11 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "worktrack-close-skill 可执行当前 Worktrack Contract 内的"
-            "非破坏性收尾、报告型 closeout 和 RepoScope refresh 交接；"
-            "merge、protected branch mutation、branch cleanup、cleanup apply/"
-            "delete/move/archive、release/publish/tag/push/deploy 仍需独立"
-            "审批或由 forbidden/stop 边界阻断"
+            "worktrack-close-skill 只处理 ready_to_close Candidate Worktrack，"
+            "执行 freshness/approval/branch legality、merge、finished handback "
+            "和 RepoScope refresh 交接；不消费 legacy Gate authority，"
+            "protected branch mutation、cleanup、release/publish/tag/push/deploy "
+            "仍需独立审批或由 forbidden/stop 边界阻断"
         ),
     ),
 
@@ -578,7 +569,7 @@ REQUIRED_EVIDENCE: dict[str, list[str]] = {
 # only requires the upstream route decision at the generic policy layer.
 PROFILE_REQUIRED_EVIDENCE: dict[str, list[str]] = {
     "init_worktrack::worktrack-plan-work-skill": ["route_decision"],
-    "close::worktrack-close-skill": ["worktrack_contract_scope"],
+    "close::worktrack-close-skill": ["route_decision"],
 }
 
 
@@ -803,15 +794,6 @@ def main() -> None:
 
     # ── 2. 证据检查 ──
     evidence = check_evidence(operation, control_state_path, skill)
-    close_authority: dict[str, Any] | None = None
-    if operation == "close" and skill == "worktrack-close-skill":
-        close_authority = validate_legacy_close_authority(control_state_path)
-        if not close_authority["complete"]:
-            evidence["evidence_required_complete"] = False
-            evidence["evidence_missing"] = [
-                *evidence["evidence_missing"],
-                *[f"close_authority:{item}" for item in close_authority["missing"]],
-            ]
 
     # ── 3. 组装结果 ──
     # allowed = 至少命中一条 allowed 规则
@@ -861,10 +843,6 @@ def main() -> None:
         reason_parts.append(
             f"证据缺失: {', '.join(evidence['evidence_missing'])}"
         )
-    if close_authority is not None:
-        reason_parts.append(
-            f"close authority: {close_authority['source']} / {close_authority['reason']}"
-        )
 
     result = {
         "operation": operation,
@@ -880,9 +858,6 @@ def main() -> None:
         "evidence_missing": evidence["evidence_missing"],
         "reason": " | ".join(reason_parts),
     }
-    if close_authority is not None:
-        result["close_authority"] = close_authority
-
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
     # ── 退出码：hard block → exit 1; 通过 → exit 0 ──

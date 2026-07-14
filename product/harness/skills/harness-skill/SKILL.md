@@ -61,9 +61,9 @@ Harness 的运行基于两条执行路径：
 
 **SubAgent role / mode contract**：执行平面必须区分 `task_producing_subagent` 与 `review_acceptance_subagent`。前者产出实现、修复、文档或验证动作；后者产出 review、acceptance 或 Gate 可消费的独立证据。两类 evidence/provenance 不可混同：`producer_carrier_ref`、`review_carrier_ref`、`acceptance_carrier_ref` 和 `evidence_provenance` 必须分别记录，且 review/acceptance evidence 不得把同一 task-producing carrier 的自述当成独立验收。默认偏好是 `SubAgent-first`，但只在 `runtime_supports_subagent`、`permission_allows_delegation`、`dispatch_package_safety` 成立，并且 `task_coupling`、`state_sharing_need`、`risk_profile`、`context_budget_fit` 适合委派时成立。使用 `current-carrier fallback` 时必须记录机器可检查的 `fallback_reason_code`：`runtime_gap`、`permission_blocked`、`coupling_or_shared_state`、`dispatch_package_unsafe` 或 `not_applicable`，并保留 `fallback_reason` 的具体说明。
 
-**单入口分流**：`harness-skill` 是唯一闭环 supervisor。Operator-facing profile / mode 只能作为 `route hint`：根据 `user_input`、`repo_state`、`milestone_state`、`worktrack_state`、`risk_signals` 与 `approval_signals` 判断应进入 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive 等 workflow path。Profile 不创建第二 controller、不创建第三 Scope、不拥有独立 Gate、不写长期 truth、不绕过 Worktrack Contract，也不得把 candidate milestone / candidate worktrack 解释成已批准执行范围。最终仍由 Harness 控制回路选择 Scope、Function、Skill / execution carrier，收集 Evidence，并执行 Gate。
+**单入口分流**：`harness-skill` 是唯一闭环 supervisor。Operator-facing profile / mode 只能作为 `route hint`：根据 `user_input`、`repo_state`、`milestone_state`、`worktrack_state`、`risk_signals` 与 `approval_signals` 判断应进入 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive 等 workflow path。Profile 不创建第二 controller、不创建第三 Scope、不拥有独立 Gate、不写长期 truth、不绕过已批准 Worktrack entry，也不得把 candidate milestone / candidate worktrack 解释成已批准执行范围。最终仍由 Harness 控制回路选择 Scope、Skill / execution carrier，并消费对应 evidence。
 
-**Operator mode matrix**：单入口的 operator mode matrix 是触发语义表，不是新状态机。它使用 hydrated control state 和 trigger signals 把输入投影到 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive；每个 mode 只影响 route estimate 与 stop/approval semantics。candidate milestone、candidate worktrack、suggested task、profile 和 operator-facing mode 都属于 not approved scope，必须经过正式 artifact 与 programmer confirmation 后才能成为 live milestone、Worktrack Contract 或执行任务。多种 trigger signals 同时命中时，按更严格 authority boundary 选择：release-sensitive 优先于 verify-and-close，verify-and-close 优先于 worktrack execution，缺证据时 blocked / handback 优先于任何 mutating route。
+**Operator mode matrix**：单入口的 operator mode matrix 是触发语义表，不是新状态机。它使用 hydrated control state 和 trigger signals 把输入投影到 status-and-next、pre-milestone discussion、milestone-open discussion、worktrack execution、verify-and-close 或 release-sensitive；每个 mode 只影响 route estimate 与 stop/approval semantics。candidate milestone、candidate worktrack、suggested task、profile 和 operator-facing mode 都属于 not approved scope，必须经过正式 artifact 与 programmer confirmation 后才能成为 live milestone、immutable Worktrack entry 或执行任务。多种 trigger signals 同时命中时，按更严格 authority boundary 选择：release-sensitive 优先于 verify-and-close，verify-and-close 优先于 worktrack execution，缺证据时 blocked / handback 优先于任何 mutating route。
 
 ---
 
@@ -223,7 +223,10 @@ Harness 文档与控制逻辑应按 3 个正交维度组织：
 - `ChangeRequest` —— 目标变更请求
 
 **关键约束**：`Control State` 只保存控制面状态，不承载业务真相。业务真相应分别保存在 `Repo` 与 `Worktrack` 的正式文档里。
-`Engineering Node Map` 属于 Repo 级目标真相；`Node Type` 与 `baseline_form`、`merge_required`、`gate_criteria`、`if_interrupted_strategy` 属于 Worktrack Contract 的执行约束。下游状态、调度、证据、关卡、恢复和收尾交接只能引用或携带这些字段，不应重新发明策略。
+`Engineering Node Map` 属于 Repo 级目标真相。Candidate Worktrack 的 objective、
+acceptance、scope、constraints、branch source 与 close target 由 immutable initial
+requirement 承接；Skills 只能读取，不得重新发明或扩大。尚未迁移的 Node Type/
+legacy Contract 策略不构成 Candidate normal-path authority。
 
 ---
 
@@ -252,28 +255,40 @@ Layer 2: RepoScope / Milestone（慢变量控制）
 
     ↓ 派生 Worktrack ↓
 
-Layer 3: WorktrackScope（快变量控制）
-  ├─ Init: worktrack-init-skill（建立分支、基准、合同）
-  ├─ Observe: worktrack-status-skill（状态估计）
-  ├─ Decide: worktrack-schedule-skill（调度任务队列）
-  ├─ Dispatch: worktrack-dispatch-skill（选择执行载体）
-  ├─ Verify: worktrack-review-evidence-skill + worktrack-test-evidence-skill + worktrack-rule-check-skill
-  ├─ Judge: worktrack-gate-skill（三轴裁决）
-  │   ├─ 通过 → Close → clean up → 回到 Layer 2
-  │   ├─ 失败/阻塞 → Recover（worktrack-recover-skill）
-  │   └─ 恢复 → 回到 Observe/Decide 或回到 Layer 2
-  └─ Close: worktrack-close-skill（收尾：Self-Review → Single-Acceptance → Closeout Gate → PR → Merge → Doc-Catch-Up → Refresh → Cleanup）
+Layer 3: Candidate Worktrack Module（快变量控制）
+  ├─ normal → worktrack-plan-work-skill（setup → plan → work → affected validation）
+  ├─ review_requested → 独立只读 worktrack-review-skill
+  │   ├─ redo → worktrack-plan-work-skill（读取最新 comment 后重新 plan/work）
+  │   ├─ ready_to_close → worktrack-close-skill
+  │   └─ blocked → 上层 handback
+  ├─ approval_required → Programmer handback
+  └─ Close completed → Repo Refresh handoff → 回到 Layer 2
 
     ↓ 任务分解 ↓
 
-Layer 4: Task Matrix（任务执行矩阵）
-  ├─ plan-task-queue（可执行子任务序列）
-  ├─ Dispatch → SubAgent / Generic Worker / Current-Carrier
-  ├─ 具体执行：编码、审查、测试、配置
-  └─ Evidence 产出 → gate-evidence.md
+Layer 4: Role-local bounded execution
+  ├─ .servo/tmp/<worktrack-id>/ round YAML / Review comment chain
+  ├─ PlanWork → bounded SubAgent 或明确的 current-carrier
+  ├─ Review → 与 PlanWork 独立的只读 SubAgent
+  └─ 每轮实现与验证 → 一个非空 implementation commit
 ```
 
-其中 `Close` 绑定到 `worktrack-close-skill`，`Recover` 绑定到 `worktrack-recover-skill`。
+Candidate normal path 没有 Schedule phase、Worktrack Dispatch Skill、Generic
+Worker、独立 Candidate Gate、per-phase PlanWork 重入或通用状态机。上层 Harness
+只根据固定结果选择 PlanWork、独立 Review、redo、Close 或 handback；它不解释
+Review 正文，也不把 PlanWork 结果提升为 `ready_to_close`。
+
+上层只传递以下 ephemeral route，不把它写成长期 Worktrack artifact：
+
+```yaml
+worktrack_route:
+  worktrack_id: string
+  route: normal | redo | ready_to_close | blocked | approval_required
+  payload_ref: string | null
+```
+
+该 route 不包含 legacy selector、Gate authority、carrier identity、next state 或
+mutation approval。Malformed input 直接 blocked，不通过其他 ingress 重试。
 
 `Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
 
@@ -288,21 +303,32 @@ Gate verdict 必须在 `purpose_achieved` 判定前完成。若运行时无法�
 
 若 programmer 在 final acceptance 层手动接受 non-pass Milestone Gate，Harness 写回时必须保留 `milestone_gate_verdict` 原值，并随 `manual_exception` 一起记录 `accepted_gate_verdict_preserved_as`、`anti_cheat_findings_preserved` 与 `manual_exception_followup_ref`。manual exception 只能表示验收层 override，不能删除、降级或改写 anticheat 轴的原始 finding。
 
-当存在活跃 goal-driven milestone 且仍有待执行 worktrack 时，Harness 以逐 worktrack 推进的方式运行当前 milestone：每次只派生一个当前 worktrack，为其建立独立 branch、contract、plan-task-queue、gate evidence、closeout 和 repo-refresh 追踪；完成当前 worktrack 的闭环后，再回到 RepoScope 选择下一个 current worktrack。
+当存在活跃 goal-driven milestone 且仍有待执行 Worktrack 时，Harness 每次只派生
+一个当前 Worktrack。上层提供初始 requirement 数据；PlanWork 创建独立 branch，
+物化 create-only `initial-requirement.yaml`，并在 `.servo/tmp` 维护 round chain；
+Close 成功后创建唯一 `finished-handback.yaml` 并交给 Repo Refresh。完成闭环后再
+回到 RepoScope 选择下一 Worktrack。
 
 **控制目标**：维护 Repo 的长期基线稳定，判断是否需要进入局部执行。
 
-`PR` 只是中间步骤。完整的 closeout pipeline 为：
+Candidate Worktrack normal path 为：
 
 ```text
-Self-Review (self-review-contract) → Single-Acceptance (single-acceptance-contract)
-    → Closeout Gate → PR → Merge → Doc-Catch-Up (worktrack-doc-catch-up-skill)
-    → Refresh (repo-refresh-skill) → Cleanup Report (milestone-cleanup-skill) → return RepoScope
+normal → worktrack-plan-work-skill → review_requested
+    → independent worktrack-review-skill
+        → redo → worktrack-plan-work-skill
+        → ready_to_close → worktrack-close-skill
+            → finished-handback.yaml → repo-refresh-skill → return RepoScope
 ```
 
-> **Closeout Gate vs Worktrack Gate**：Closeout Gate 是 Close 阶段内部的二次检查，消费 Self-Review Record + Single-Acceptance Verdict 后判定是否允许 merge。Worktrack Gate（worktrack-gate-skill，Judge 阶段）在前，基于 implementation/validation/policy 三轴证据裁决是否允许进入 Close。两者不同，详见 §8.1。
+Review 独占 Worktrack 技术验收；`ready_to_close` 只退出 PlanWork/Review loop，
+并不等于完成。Close 只做 freshness、approval、branch/merge legality、merge、
+finished handback 和 Repo Refresh handoff，不运行 Self-Review、Single-Acceptance、
+Closeout Gate 或任何重复技术裁决。
 
-Self-Review 和 Single-Acceptance 的合约定义分别见 Self-Review Contract 和 Single-Acceptance Contract。写回动作使用 repo-writeback-skill 替代 ad-hoc 字段写入。只有这样，Repo 的慢变量才会被真实更新，从而完成从 self-review 到刷新基线状态的全链推进。
+Repo/Milestone 在消费 handoff 后仍可单独绑定 `milestone-cleanup-skill` 生成
+non-destructive cleanup report；它不属于 Candidate Worktrack normal path，
+也不是 Close 与 Repo Refresh 之间的第四个角色。
 
 对于 active milestone，这个闭环以当前 worktrack 为单位反复运行：一个 worktrack 完成一次完整闭环，milestone 才聚合一次已验证进度；下一次派生从新的 current worktrack 重新开始，持续形成清晰的逐项执行轨迹。
 
@@ -317,23 +343,21 @@ Harness 不能只有 `Gate`，必须同时有 `Evidence`。
 
 二者必须分开。
 
-### 8.1 Worktrack 级 Gate
+### 8.1 Candidate Worktrack 技术验收
 
-Worktrack 级有**两层 gate**，分别在不同阶段运行：
+`worktrack-review-skill` 是 Candidate Worktrack 唯一技术验收 owner。它独立读取
+immutable initial requirement、完整 round chain、implementation commits/diffs、
+validation 与 evidence，并返回 `redo | ready_to_close | blocked`。
 
-**Worktrack Gate（Judge 阶段）**：由 `worktrack-gate-skill` 执行，基于三个正交校验面的证据裁决是否允许进入 Close。
+- `redo`：Review 写下一轮 comment，上层再次调用 PlanWork。
+- `ready_to_close`：验收 checkpoint 与当前 implementation checkpoint 一致，
+  上层才可调用 Close。
+- `blocked`：停止角色调用并向上层返回缺口。
 
-Gate 应汇总**正交校验面**的裁决：
-
-| 校验面 | 判定内容 | 对应 Verify 技能 |
-|--------|---------|----------------|
-| `implementation-gate` | 代码正确性、结构合理性 | worktrack-review-evidence-skill |
-| `validation-gate` | 测试、验收条件、运行结果 | worktrack-test-evidence-skill |
-| `policy-gate` | 规则、边界、不变量、治理要求 | worktrack-rule-check-skill |
-
-最后由汇总 `worktrack-gate-skill` 生成最终 verdict。
-
-**Closeout Gate（Close 阶段内部）**：在 Worktrack Gate pass 进入 Close 后，Close 阶段内部的 pre-closeout checks 产出 Self-Review Record + Single-Acceptance Verdict，并由 Closeout Gate 消费后判定是否允许 merge。Closeout Gate 是 Close 阶段的组成部分，不是独立的 Judge 算子。详见 §7 closeout pipeline。
+Candidate normal path 不调用 `worktrack-gate-skill`，也不生产或消费 Worktrack
+Gate authority、Self-Review、Single-Acceptance 或 Closeout Gate。源码中尚未物理
+删除的 legacy Gate surface 不属于 Candidate authority path；其集中删除由后续
+legacy-surface-removal Worktrack 承担。
 
 ### 8.2 Milestone 级 Gate
 
@@ -389,7 +413,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
        --control-state .servo/control-state.md \
        --scope <RepoScope|WorktrackScope> \
        --function <Observe|Decide|Init|Dispatch|Verify|Judge|Close|Refresh|Recover> \
-       [--worktrack-contract .servo/worktrack/contract.md]
+       [--worktrack-id <worktrack-id>]
      ```
 
    - 脚本随本技能包分发，位于 `./scripts/branch_context_check.py`。
@@ -398,7 +422,8 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - `target_branch` 是合法恢复路径，不得从当前分支名反推或写死默认值。
 4. 根据当前 Scope 选择传感器组合：
    - `RepoScope`：读取 `Repo Goal/Charter`、`Repo Snapshot/Status`
-   - `WorktrackScope`：读取 `Worktrack Contract`、`Plan/Task Queue`、当前 evidence
+   - `WorktrackScope`：读取 immutable initial requirement、`.servo/tmp` round
+     chain、当前 implementation checkpoint 与 evidence refs
 5. **Git Commit Hash 基线对比（幂等性守卫）**：
    - 调用 `git_hash_check.py` 执行确定性 hash 对比：
 
@@ -471,19 +496,20 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
        --intake-review .servo/repo/worktrack-intake-{id}.md
      ```
 
-     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许绑定 `worktrack-init-skill`。审查维度含 `repo_fundamentals`（仓库基本面）和 `snapshot_freshness`（快照新鲜度）。`milestone_purpose_alignment` 检查 worktrack 是否与 milestone 目标对齐。`historical_conflict_risk` 评估历史冲突风险。`worktrack_adjustment_recommendations` 和 `add_remove_worktrack_recommendations` 输出调整建议。若 `refresh_required`，必须先刷新基线再继续。若需 `adjust_worktracks`，在继续前调整 worktrack 列表。
+     只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许进入 Candidate `normal` 并绑定一次 `worktrack-plan-work-skill`。审查维度含 `repo_fundamentals`（仓库基本面）和 `snapshot_freshness`（快照新鲜度）。`milestone_purpose_alignment` 检查 worktrack 是否与 milestone 目标对齐。`historical_conflict_risk` 评估历史冲突风险。`worktrack_adjustment_recommendations` 和 `add_remove_worktrack_recommendations` 输出调整建议。若 `refresh_required`，必须先刷新基线再继续。若需 `adjust_worktracks`，在继续前调整 worktrack 列表。
    - **Guard 7: `ChangeGoal`** — 不由常规 Decide 选择。目标变更由外部请求触发，完成后系统重新进入 Observe。
    - **Guard 8: `milestone_brief`** — 当 `repo-whats-next-skill` 建议 create/activate/append_worktracks 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认。
 
-3. 在 `WorktrackScope` 下，评估是否需要：
-   - `Init`（初始化局部状态）
-   - `Observe`（状态估计）
-   - `Decide`（调度）
-   - `Dispatch`（分派执行）
-   - `Verify`（收集证据）
-   - `Judge`（裁决）
-   - `Recover`（恢复）
-   - `Close`（收尾）
+3. 在 Candidate `WorktrackScope` 下，只从当前明确结果推导下一调用：
+   - `normal`：执行 setup guards 后调用一次 `worktrack-plan-work-skill`
+   - `review_requested`：选择独立只读 carrier 调用 `worktrack-review-skill`
+   - `redo`：使用同一 initial mission 和最新 Review comment 再次调用 PlanWork
+   - `ready_to_close`：调用 `worktrack-close-skill`
+   - `blocked`：停止并 handback
+   - `approval_required`：停止并等待 Programmer
+   - Close `completed`：进入 Repo Refresh handoff
+   `review_requested` 是固定内部 handoff，不是 caller route；不存在 Candidate
+   `schedule`、Dispatch Skill、Gate 或通用 recovery route。
 4. 只推荐一个算子，并投影成显式路由、阻塞项集合与审批状态
 
 ### 10.3 技能绑定阶段
@@ -511,7 +537,12 @@ _已合并入 §10.4 前置段落。_
      ```
 
    - 脚本输出 JSON 包含 `recommended_mode`、`confidence`、`reasons`、`needs_llm_review`。
-   - 读取执行载体开关：先看 `.servo/control-state.md` 的 `subagent_dispatch_mode_override_scope`。默认 `worktrack-contract-primary` 表示当前 `Worktrack Contract` 的 `runtime_dispatch_mode` 优先；只有显式 `global-override` 才让 `.servo/control-state.md` 的 `subagent_dispatch_mode` 压过 worktrack。
+   - 读取上层 runtime carrier 配置，但不得把 carrier 选择写入 immutable initial
+     requirement 或暴露给 Review。通用配置仍保留
+     `subagent_dispatch_mode_override_scope`；`worktrack-contract-primary` 与
+     `global-override` 仅是现有非 Candidate 配置的兼容取值，不改变 Candidate
+     role authority。PlanWork 与 Review 的独立性要求优先于通用
+     current-carrier fallback。
    - `runtime_dispatch_mode` / `subagent_dispatch_mode` 支持 `auto` / `delegated` / `current-carrier`
 3. **Dispatch Profile 完整性校验**：
    - 每次分派后调用 `dispatch_profile_check.py` 验证 `runtime_dispatch_profile` 字段完整性：
@@ -523,7 +554,14 @@ _已合并入 §10.4 前置段落。_
 
   - 必填字段包括 `backend_runtime`、`model_family`、`subagent_dispatch_shell`、`runtime_supports_subagent`、`subagent_permission_state`、`permission_allows_delegation`、`dispatch_package_safety`、`delegation_attempted`、`attempted_carrier`、`carrier_decision`、`fallback_reason`。
   - 若 profile 声称 spawned SubAgent 或 `carrier_decision: delegated_subagent`，还必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少 parent runtime dispatch linkage、child SubAgent record 或 concrete carrier instance 时，不得声称 SubAgent 隔离成立。若尝试委派 SubAgent 后实际使用 current-carrier，必须记录 `boundary_violation_recorded: true` 或等价运行时边界缺口。
-4. `auto` 表示按 §2 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier：综合 `task_coupling`、`state_sharing_need`、`parallel_value`、`risk_profile`、`context_budget_fit`、`runtime_supports_subagent`、`permission_allows_delegation` 与 `dispatch_package_safety`；高共享/低并行价值默认 current-carrier，低耦合/高并行价值且运行时允许时优先 SubAgent，高风险实现可保持当前载体但 review/test/policy evidence 应独立验证。运行时没有稳定分派壳层、权限边界禁止委派，或任务包不满足安全分派条件时，必须显式 fallback。
+4. `auto` 表示按 §2 Dispatch Decision Policy 选择 bounded SubAgent、专用 Skill
+   或 current-carrier：综合 `task_coupling`、`state_sharing_need`、
+   `parallel_value`、`risk_profile`、`context_budget_fit`、
+   `runtime_supports_subagent`、`permission_allows_delegation` 与
+   `dispatch_package_safety`。Candidate PlanWork 优先使用一个 bounded carrier，
+   但不得派生 Review；Review 必须由上层选择与 PlanWork 独立的只读 carrier。
+   高共享/低并行价值可使用 current-carrier，运行时不能满足独立 Review 时必须
+   blocked，不得伪造隔离。
 5. `delegated` 表示必须真实创建委派载体；如果无法委派，应返回运行时缺口或权限阻塞，而不是自动改为当前载体执行
 6. `current-carrier` 表示本轮显式关闭 SubAgent 委派，允许当前载体在同一份限定范围约定内执行
 7. 发生当前载体运行时回退时，必须显式记录回退原因、未委派原因和保持的任务/信息边界
@@ -535,24 +573,16 @@ _已合并入 §10.4 前置段落。_
 
 本节合并原 §10.5（证据收集阶段）和 §10.6（裁决阶段）。
 
-**证据收集**：
+**Candidate Worktrack evidence and decision**：
 
-1. 消费子代理返回的结构化输出
-2. 在 `Verify` 阶段，收集三个正交维度的证据：
-   - 审查维度（代码正确性、结构合理性）
-   - 验证维度（测试、验收条件）
-   - 策略维度（规则、边界、不变量）
-3. 证据必须结构化，不能是文字摘要
-
-**裁决**：
-
-1. 基于收集到的证据，执行 Gate 裁决
-2. 在三个校验面上分别判定
-3. 汇总生成最终 verdict：
-   - `通过`
-   - `软失败`
-   - `硬失败`
-   - `阻塞`
+1. PlanWork 返回 `review_requested | blocked | approval_required` 和 concrete
+   evidence refs；它不能产生 `ready_to_close`。
+2. 上层将 immutable requirement、完整 round chain、当前 implementation
+   checkpoint、diff、validation 和 evidence refs 交给独立 Review carrier。
+3. Review 对 objective、acceptance、scope、实现和验证做 LLM 技术判断，返回
+   `redo | ready_to_close | blocked`；只有 Review 可以产生 `ready_to_close`。
+4. 上层只按结果固定路由，不读取 Review 正文重新裁决，也不插入 Candidate Gate。
+5. Close 只消费 Worktrack aggregate 的 `ready_to_close` 状态和已接受事实。
 
 ### 10.6 裁决阶段
 
@@ -560,9 +590,11 @@ _已合并入 §10.5。_
 
 ### 10.7 状态更新阶段
 
-1. 根据裁决结果更新 `Harness Control State`
-2. 如果是 `通过` → 进入 `Close`（内部执行 Self-Review → Single-Acceptance → Closeout Gate → PR → Merge → Doc-Catch-Up → Refresh → Cleanup）→ 回到 RepoScope
-   - **显式绑定 `repo-refresh-skill`**，从已验证 `关卡证据` 刷新 `Repo Snapshot/Status`
+1. 根据 Candidate role result 更新上层控制状态，不复制 Skill 内部流程。
+2. 如果 Review 返回 `ready_to_close`，调用机械 `worktrack-close-skill`；只有
+   Close 返回 `completed` 后才进入 Repo Refresh 并回到 RepoScope。
+   - **显式绑定 `repo-refresh-skill`**，从 `finished-handback.yaml` 刷新
+     Repo Snapshot/Status
    - 刷新完成后，调用 `checkpoint_writeback.py` 写入 observed checkpoint：
 
      ```bash
@@ -572,17 +604,10 @@ _已合并入 §10.5。_
      ```
 
    - 此脚本将当前 `git rev-parse HEAD` hash 写入 `.servo/control-state-repo.md` 的 `Baseline Traceability.latest_observed_checkpoint` 并追加 `verified_at_history` 时间戳。
-3. 如果是 `失败/阻塞` → 进入 `Recover`。以下 5 种 recover mode 对应 control-state 迁移：
-
-   | recover mode | control-state 迁移 | 触发条件 |
-   |-------------|-------------------|---------|
-   | `retry` | worktrack_state → `observing` | 目标与基准仍然有效 |
-   | `rollback` | worktrack_state → `recovering`, 追加 `recovery_baseline_ref` | 当前状态已不可安全继续 |
-   | `split_worktrack` | 当前 worktrack 标记 blocked，派生新 worktrack 并更新 milestone artifact | 范围过宽或多独立验收切片 |
-   | `refresh_baseline` | 更新 `Baseline Traceability.latest_observed_checkpoint` | 上游真相变化使分支比较失效 |
-   | `replan` | scope → `RepoScope`, function → `Observe` | 当前路径整体不可行 |
-
-   恢复动作由 `worktrack-recover-skill` 执行。恢复成功后的收尾由 `worktrack-close-skill` 负责。
+3. 如果 Review 返回 `redo`，上层再次调用 PlanWork；PlanWork 读取最新 comment、
+   创建下一编号 YAML，并从被拒绝 commit 继续。objective、scope 或 acceptance
+   扩大不属于 redo，必须返回 Programmer/Repo/Milestone 层批准。`blocked` 与
+   `approval_required` 均停止，不调用 legacy Recover Skill。
 4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `worktrack-doc-catch-up-skill`。
    调用 `checkpoint_writeback.py` 写入 doc-catch-up checkpoint：
 
@@ -601,6 +626,20 @@ _已合并入 §10.5。_
        --skill <skill_name> \
        --control-state .servo/control-state.md
      ```
+
+   Candidate policy keys只使用：
+   - normal：`init_worktrack::worktrack-plan-work-skill`
+   - redo：`dispatch::worktrack-plan-work-skill`（直接调用 PlanWork，不经过
+     `worktrack-dispatch-skill`，也不创建 Dispatch phase）
+   - fixed Review handoff：`verify::worktrack-review-skill`
+   - ready-to-close：`close::worktrack-close-skill`
+
+   Candidate 不使用 `schedule::worktrack-plan-work-skill`；Close policy 不读取
+   legacy Gate verdict/ref/residual authority。
+
+   `Worktrack Contract` 仍可作为尚未迁移路径的 low-risk autonomy evidence
+   source，但 Candidate policy 只消费 immutable initial requirement、route result
+   和 concrete evidence refs。
 
    - `forbidden` 命中即阻断：
 
@@ -629,7 +668,10 @@ _已合并入 §10.5。_
    - 若 `milestone_gate_verdict != "pass"`：不得把 Milestone 标记为完成，不得自动推进 pipeline。
 7. 如果命中正式停止条件 → 向程序员返回控制权
 8. **证据完整性检查**：
-   - 在 Gate 裁决前，调用 `evidence_completeness_check.py`：
+   - Candidate path 按当前 role result 检查 concrete evidence refs、round chain、
+     checkpoint freshness 和 conditional request；不要求固定 Gate artifact。
+   - 以下 `evidence_completeness_check.py` 调用仅保留给尚未迁移的 legacy
+     Worktrack，不得作为 Candidate Review/Close authority：
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/evidence_completeness_check.py \
@@ -719,7 +761,11 @@ Close/Refresh 完成 → 状态更新阶段
 
 ## 十二、恢复策略
 
-当 Gate 裁决为失败或阻塞时，Harness 必须进入恢复模式。合法恢复算子：
+Candidate Worktrack 的正常返工只有 `redo`：Review 写下一轮 comment，上层再次
+调用 PlanWork。它不是独立 reschedule 或 Recover phase。
+
+以下 legacy 恢复算子仅用于尚未迁移的非 Candidate 路径，不得由 Candidate
+normal path 自动选择：
 
 | 恢复算子 | 适用条件 | 限制 | 对应 §10.7 步骤 3 recover mode |
 |---------|---------|------|------|
@@ -729,7 +775,8 @@ Close/Refresh 完成 → 状态更新阶段
 | `刷新基准` | 上游真相变化使当前分支比较失效 | 不得改写 Repo Snapshot/Status 或目标/章程 | `refresh_baseline` |
 | `重新规划` | 当前路径整体不可行 | 必须回到 RepoScope 重新 Decide | `replan` |
 
-恢复策略由 `worktrack-recover-skill` 实现。Gate 裁决为失败或阻塞时，应绑定 `worktrack-recover-skill` 执行恢复动作；恢复成功后的收尾由 `worktrack-close-skill` 负责。
+这些 legacy 恢复策略的物理删除属于后续 legacy-surface-removal Worktrack；
+保留其源码不构成 Candidate 路由 authority。
 
 ### Milestone Pipeline 恢复
 
@@ -820,7 +867,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 2. **控制结论优先**：影响下一动作决策的信息放在 `Control Signal` 层；完整证据、日志、原始输出放在 `Supporting Detail` 层。
 3. **禁止平铺重复**：已在其他 artifact 中记录的信息，使用引用（文件路径 + section）而不是内联全文复制。
 4. **空值压缩**：无实质内容的字段使用 `N/A`，删除占位符行（如 `-` 或 `待填写`）。
-5. **引用格式**：引用其他 artifact 时使用 `[artifact-path#section]` 格式，例如 `[.servo/worktrack/contract.md#Task Goal]`。
+5. **引用格式**：引用其他 artifact 时使用具体路径；Candidate Worktrack 例如 `.servo/worktrack/<worktrack-id>/initial-requirement.yaml` 或 `finished-handback.yaml`，不得虚构 section 或 legacy handoff。
 6. **压缩不是省略**：`Supporting Detail` 层必须保留完整内容，只是不纳入传递/决策上下文；后续如需查阅细节，可直接读取。
 7. **脚本输出是权威控制信号源**：所有 guard、check 和 routing 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出，不得用 LLM 自行推断替代确定性脚本结果。脚本返回 `blocked == true` 即硬阻断，不得覆盖。
 
@@ -833,15 +880,15 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 本技能特有约束：
 
 - **Harness 输出只能是控制决策结构体**（Scope/Function/Route/Verdict/Evidence 引用）；代码块和直接执行指令禁止出现在 Harness 输出中。
-- **Function 算子必须在控制面上显性化**为 `Observe → Decide → Init → Dispatch → Verify → Judge → Recover → Close → ChangeGoal → SetGoal` 的控制语义；禁止仅通过技能名称隐式传达当前算子。
-- **Harness 仅负责选择算子、绑定技能和裁决 Gate**；具体代码仓库动作、任务列表内容和执行任务的细节由下游技能的算子实现负责。
-- **SubAgent 使用必须是可开关参数，而不是硬编码行为。** 控制态字段 `subagent_dispatch_mode` 与工作追踪约定字段 `runtime_dispatch_mode` 支持 `auto` / `delegated` / `current-carrier`；控制态字段 `subagent_dispatch_mode_override_scope` 默认是 `worktrack-contract-primary`，只有显式 `global-override` 才是全局覆盖；默认 `auto` 表示按 Dispatch Decision Policy 选择载体（调用 `dispatch_mode_recommend.py`），不得把运行时支持 SubAgent 单独当成默认委派理由。未委派时必须将原因记录为 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。
+- **上层路由必须显式记录 Candidate signal**：`normal | redo | ready_to_close | blocked | approval_required`，以及固定的 `review_requested` handoff；不得仅通过技能名称隐式推断。
+- **Harness 仅负责固定路由、carrier 独立性和层级 handoff**；PlanWork 负责实现，Review 负责技术验收，Close 负责机械关闭。Harness 不重新裁决 Review，也不增加 Candidate Gate。
+- **SubAgent 使用必须是可开关参数，而不是硬编码行为。** `auto` / `delegated` / `current-carrier` 只控制执行载体，不改变 Skill authority；默认 `auto` 表示按 Dispatch Decision Policy 选择载体（调用 `dispatch_mode_recommend.py`），不得把运行时支持 SubAgent 单独当成默认委派理由。未委派时仍记录 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。Candidate Review 的独立只读 carrier 是放行前提，不能被普通 fallback 取消。
 - **执行载体选择必须走确定性决策流程**：先调用 `dispatch_mode_recommend.py` 获取推荐模式，再结合 `subagent_dispatch_mode` / `runtime_dispatch_mode` 开关确定最终载体；每轮 Dispatch 后必须调用 `dispatch_profile_check.py` 验证 runtime_dispatch_profile 字段完整性。
 - **`autonomy_policy_check.py` forbidden 命中时必须 handback，不得静默继续。** `forbidden` 命中后即使 `allowed` 字段为 true，也必须将控制权交回 programmer，等待审批或显式解除阻断。
 - **现有 `.servo` 控制配置必须先 hydration 再决策。** Harness 不得忽略上一轮 `.servo/control-state.md` 中的 linked artifact、approval boundary、continuation authority、handback guard、baseline traceability 或 autonomy ledger；缺失字段只能按 artifact 合同默认值降级解释，不能静默扩大权限。
 - **长期权限变更必须写回控制配置。** 程序员授予的持久自动性、分派模式、审批边界或预算变更必须写入 `.servo/control-state.md` 的配置段；若只是本轮一次性批准，必须保留为本轮 evidence / handoff，不得改变长期默认值。
 - **约定后自动工作追踪仅当 `Harness Control State` 明确授予 `约定后自动性：最小委派` 时才可开启**；否则必须保持手动交接模式。
-- **自动继续推进的边界严格等于当前 `Worktrack Contract` 的 scope**；超出 scope 的改动、目标重定义或预算超支必须触发审批门控。
+- **自动继续推进的边界严格等于 immutable initial requirement 的 scope 和 constraints**；超出 scope、objective/acceptance 变化或预算超支必须触发审批门控。
 - **自动切片仅可在当前切片未收束时串接**；一旦切片收束且 `要求自动切片后停止` 为真，必须停止执行并重新交接。
 - **稳定交接达成后，运行时唯一合法状态是 `等待交接`**；仅当观测到显式解锁信号时方可退出此状态。
 - **解锁信号必须是程序员显式发出的新指令或实质性新信息**；裸 `重试`、裸 `继续工作` 或重复文字摘要不构成解锁信号。
