@@ -1,79 +1,148 @@
 ---
 name: worktrack-review-skill
-description: 当 PlanWork 已完成一个 Worktrack round，需要由独立只读载体核查完整 round chain、实现、验收和验证，并决定 ready_to_close 或 redo 时，使用这个技能。
+description: 当 Candidate PlanWork 完成一个 round，需要由独立只读载体读取 immutable initial requirement、完整 round chain、实现和验证，并决定 ready_to_close 或 redo 时，使用这个技能。
 ---
 
 # Worktrack Review Skill
 
 ## Role
 
-This Skill owns technical acceptance for the candidate Worktrack. It is implementation-read-only and runs independently from the PlanWork carrier. It does not implement findings, approve authority expansion, perform Close, issue a legacy Gate verdict, or decide whether the Milestone as a whole is complete.
+This Skill owns technical acceptance for the Candidate Worktrack. It is
+implementation-read-only and runs independently from the PlanWork carrier. It
+does not implement findings, approve authority expansion, perform Close, issue a
+legacy Gate verdict, or decide whether the Milestone is complete.
 
-It is self-contained and does not require source-repo docs. Its only write capability is one next-round Review comment under the current Worktrack's `.servo/tmp` directory when redo is required.
+The upper Orchestrator selects and enforces the independent Review carrier before
+dispatch. Carrier identity or provenance is not Review task input or output.
+
+It is self-contained and requires no source-repo docs. Its only write capability
+is exactly one next-round Review comment under the current Worktrack's
+`.servo/tmp` directory when redo is required.
 
 ## Required Input
 
 - `worktrack_id`
-- accepted Worktrack Contract or initial Milestone contribution authority
+- immutable
+  `.servo/worktrack/<worktrack-id>/initial-requirement.yaml`
 - `.servo/tmp/<worktrack-id>/worktrack-r000.yaml`
 - every later lowercase review-comment/YAML pair in numeric order
-- current implementation checkpoint and diff
-- affected validation and evidence refs
+- latest implementation checkpoint and Git diff
+- fresh affected validation and evidence refs
 - mutation and approval boundaries
-- concrete PlanWork and independent Review carrier provenance
 
-Missing R000, a gapped pair, stale commit/evidence, or unproven independence is non-pass.
+Missing or mutable initial authority, missing R000, a gapped chain, stale
+checkpoint, or stale evidence is non-pass.
 
-## Complete Chain
+## Authority And Complete Chain
 
-Review reads:
+The immutable initial requirement is the original mission owner. Review checks
+its Worktrack/Milestone identity, objective, every acceptance check, included and
+excluded scope, approved write surface, constraints, branch source, and close
+target.
 
-1. R000 as the initial objective, acceptance, scope, constraints, and first implementation checkpoint.
-2. For each rejected round, the matching next-round review comment.
+Review then reads:
+
+1. R000, whose start checkpoint is the confirmed Initial Entry commit.
+2. For every rejected round, the matching next-round Review comment.
 3. The YAML created from that comment.
-4. The current implementation and validation evidence referenced by the latest YAML.
+4. Each referenced implementation commit/diff and affected validation.
+5. The latest implementation and validation evidence referenced by the last YAML.
 
-The chain begins at R000 and is contiguous. Runtime filenames are lowercase; internal `round_id` values are `RNNN`.
+The chain is contiguous from R000. Runtime filenames are lowercase and internal
+round IDs use `RNNN`. Review never treats a later runtime record as permission to
+rewrite the immutable initial requirement.
 
-The Review LLM owns semantic judgment. It combines initial acceptance with later correction requirements and applies the latest relevant correction when work instructions conflict. A later comment or YAML cannot expand objective, acceptance authority, scope, mutation surface, or approval. Apparent expansion blocks and returns upward.
+The comment and YAML for a redo both use the next round index:
+
+```text
+worktrack-r000.yaml
+-> worktrack-r001-review-comment.md
+-> worktrack-r001.yaml
+
+worktrack-r001.yaml
+-> worktrack-r002-review-comment.md
+-> worktrack-r002.yaml
+```
+
+The Review LLM owns semantic judgment. It applies the latest relevant
+mission-preserving clarification or execution constraint when instructions
+conflict. A later comment/YAML cannot reduce acceptance, replace the objective,
+expand scope/write surface, or grant approval. Apparent mission change blocks for
+Repo/Milestone and Programmer judgment.
 
 ## Review Work
 
-1. Identify the actual implementation/artifact changes from Git and evidence.
-2. Confirm the latest round commit matches the implementation checkpoint being reviewed.
-3. Judge the objective and every applicable acceptance condition against the complete chain.
-4. Check scope, constraints, implementation quality, behavior preservation, and approval boundaries.
+1. Identify actual implementation and artifact changes from Git and evidence.
+2. Confirm the latest round commit equals the implementation checkpoint under review.
+3. Judge the original objective and every acceptance check against the complete chain.
+4. Check scope, constraints, implementation quality, behavior preservation, and
+   approval boundaries.
 5. Assess whether affected validation is appropriate and fresh.
-6. Separate blockers from accepted residuals and independently scoped follow-up test needs.
-7. Produce exactly one local signal.
+6. Separate blocking findings from accepted residuals and independently scoped
+   follow-up-test needs.
+7. Produce exactly one signal.
 
 ## Signals
 
-- `ready_to_close`: no blocker remains; includes acceptance evidence refs and optional accepted residuals. Review writes no runtime file on pass.
-- `redo`: current authority can correct the work. Review writes exactly one next expected lowercase `worktrack-rNNN-review-comment.md`.
-- `blocked`: repair requires missing evidence, an external dependency, an independent Test Worktrack, or upper-level authority/scope judgment.
+### `ready_to_close`
 
-Queue changes inside unchanged authority are handled by the next PlanWork redo; Review exposes no second planning route.
+No blocker remains. Review writes no pass artifact. The result includes:
 
-## Review Comment
+- `accepted_checkpoint`
+- `acceptance_summary`, with every initial acceptance check exactly once
+- `evidence_refs`
+- optional concrete `residuals`
 
-For redo, the comment states:
+Stable evidence cannot consist only of `.servo/tmp` refs. A plain pass has no
+residuals; accepted residuals require concrete evidence and cannot hide an unmet
+acceptance condition or mission change.
 
-- the prior round reviewed;
-- blocking findings and why acceptance failed;
-- checks and validations to rerun;
-- evidence refs;
-- what the next PlanWork round must address;
-- any issue that appears to require upper-level approval.
+### `redo`
 
-Review is the only writer of that comment. It never writes implementation, round YAML, canonical docs, control state, Close evidence, or closeout records. If the expected comment already exists, stop as blocked rather than overwrite or skip an index.
+The unchanged authority can correct the work. Review creates exactly one next
+expected lowercase `worktrack-rNNN-review-comment.md`, containing:
+
+```yaml
+---
+worktrack_id: <worktrack-id>
+reviewed_round: R000
+next_round: R001
+---
+```
+
+The filename uses `next_round`. Its frontmatter contains only those three fields;
+it records no Human, LLM, PlanWork, or Review carrier identity. The body contains:
+
+- prior round reviewed
+- blocking findings and why acceptance failed
+- acceptance checks and validation to rerun
+- evidence refs
+- what the next PlanWork round must address
+- any issue that appears to require upper approval
+
+Review is the only writer of this comment. If the target exists, block rather
+than overwrite or skip an index. The filename, `reviewed_round`, and `next_round`
+must form the same contiguous relationship before Review returns `redo`.
+
+### `blocked`
+
+Repair requires missing stable evidence, an external dependency, an independent
+Test Worktrack, unavailable shared state, or upper objective/scope/approval
+judgment. Review does not convert those conditions into redo authority.
+
+## Write Boundary
+
+Review never writes implementation, the immutable requirement, round YAML,
+canonical source/docs, control state, Gate evidence, finished handback, or legacy
+closeout artifacts. It does not invoke PlanWork or Close and does not write upper
+lifecycle state.
 
 ## Validation Boundary
 
 - Static or mock evidence cannot replace runtime proof when acceptance requires behavior.
 - Complex independent proof may block and recommend a separately approved Test Worktrack.
-- Markdown phrase assertions do not prove that an LLM followed a Skill contract.
-- Whole-Skill orchestration behavior remains proof/dogfood.
+- Markdown phrase assertions do not prove LLM contract adherence.
+- Whole-Skill orchestration behavior is accepted by later end-to-end validation.
 
 ## Output
 
@@ -81,7 +150,10 @@ Review is the only writer of that comment. It never writes implementation, round
 - `summary`
 - `findings`
 - `evidence_refs`
-- conditional `review_comment_ref` for redo
-- conditional `residuals` or `follow_up_test_worktrack_brief`
+- conditional `accepted_checkpoint`, `acceptance_summary`, and `residuals` for
+  `ready_to_close`
+- conditional `review_comment_ref` for `redo`
+- conditional `request` or `follow_up_test_worktrack_brief` for `blocked`
 
-This output returns to the upper Orchestrator. Review does not invoke PlanWork or Close and does not write upper lifecycle state.
+The output returns to the upper Orchestrator. Only the Orchestrator changes the
+Worktrack aggregate to `ready_to_close` or dispatches the next redo.
