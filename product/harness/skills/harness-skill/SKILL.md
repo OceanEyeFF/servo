@@ -510,6 +510,11 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - Close `completed`：进入 Repo Refresh handoff
    `review_requested` 是固定内部 handoff，不是 caller route；不存在 Candidate
    `schedule`、Dispatch Skill、Gate 或通用 recovery route。
+   Candidate PlanWork、Review 和 Close 直接返回结构化结果，不调用
+   `autonomy_policy_check.py`。结构化结果缺失或非法时停止并重新调用对应 Skill，
+   不得从 control-state、Review comment 或 legacy evidence 猜测 route。Candidate
+   的确定性边界分别由 setup、branch、round-chain 和 Close legality 专用 guard
+   承担。
 4. 只推荐一个算子，并投影成显式路由、阻塞项集合与审批状态
 
 ### 10.3 技能绑定阶段
@@ -616,8 +621,12 @@ _已合并入 §10.5。_
      --control-state .servo/control-state-repo.md
    ```
 
-5. **长期权限配置写回**：
-   - 调用 `autonomy_policy_check.py` 判定当前操作是否命中 forbidden / stop_condition：
+5. **Autonomy policy 依赖边界**：
+   - Candidate PlanWork、Review 和 Close 不调用 `autonomy_policy_check.py`；Harness
+     直接消费 Skill 的结构化 result，并消费 setup、branch、round-chain 与 Close
+     legality 专用 guard。结果缺失或非法时停止并重新调用对应 Skill。
+   - 只有尚未迁移的 legacy / non-Candidate route 调用
+     `autonomy_policy_check.py` 判定当前操作是否命中 forbidden / stop_condition：
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/autonomy_policy_check.py \
@@ -626,19 +635,9 @@ _已合并入 §10.5。_
        --control-state .servo/control-state.md
      ```
 
-   Candidate policy keys只使用：
-   - normal：`init_worktrack::worktrack-plan-work-skill`
-   - redo：`dispatch::worktrack-plan-work-skill`（直接调用 PlanWork，不经过
-     `worktrack-dispatch-skill`，也不创建 Dispatch phase）
-   - fixed Review handoff：`verify::worktrack-review-skill`
-   - ready-to-close：`close::worktrack-close-skill`
-
-   Candidate 不使用 `schedule::worktrack-plan-work-skill`；Close policy 不读取
-   legacy Gate verdict/ref/residual authority。
-
    `Worktrack Contract` 仍可作为尚未迁移路径的 low-risk autonomy evidence
-   source，但 Candidate policy 只消费 immutable initial requirement、route result
-   和 concrete evidence refs。
+   source。它和 legacy route/evidence fields 都不属于 Candidate Skill result 或
+   Candidate deterministic guard 输入。
 
    - `forbidden` 命中即阻断：
 
@@ -748,7 +747,9 @@ Close/Refresh 完成 → 状态更新阶段
 - **`运行时缺口`**：宿主运行时缺少供下一个执行载体使用的安全分派壳层
 - **`约定边界`**：下一步动作将越出已批准的代码仓库或工作追踪约定
 
-**`autonomy_policy_check.py` 输出 → 停止条件映射**：
+**Legacy / non-Candidate `autonomy_policy_check.py` 输出 → 停止条件映射**：
+
+Candidate PlanWork、Review 和 Close 不进入该 port，因此不使用下表推导 route。
 
 | autonomy_policy_check 输出 | 对应停止条件 | 行为 |
 |---|---|---|
@@ -885,7 +886,7 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 - **Harness 仅负责固定路由、carrier 独立性和层级 handoff**；PlanWork 负责实现，Review 负责技术验收，Close 负责机械关闭。Harness 不重新裁决 Review，也不增加 Candidate Gate。
 - **SubAgent 使用必须是可开关参数，而不是硬编码行为。** `auto` / `delegated` / `current-carrier` 只控制执行载体，不改变 Skill authority；默认 `auto` 表示按 Dispatch Decision Policy 选择载体（调用 `dispatch_mode_recommend.py`），不得把运行时支持 SubAgent 单独当成默认委派理由。未委派时仍记录 `runtime fallback`、`permission blocked` 或 `dispatch package unsafe`。Candidate Review 的独立只读 carrier 是放行前提，不能被普通 fallback 取消。
 - **执行载体选择必须走确定性决策流程**：先调用 `dispatch_mode_recommend.py` 获取推荐模式，再结合 `subagent_dispatch_mode` / `runtime_dispatch_mode` 开关确定最终载体；每轮 Dispatch 后必须调用 `dispatch_profile_check.py` 验证 runtime_dispatch_profile 字段完整性。
-- **`autonomy_policy_check.py` forbidden 命中时必须 handback，不得静默继续。** `forbidden` 命中后即使 `allowed` 字段为 true，也必须将控制权交回 programmer，等待审批或显式解除阻断。
+- **Legacy / non-Candidate route 调用 `autonomy_policy_check.py` 后，forbidden 命中时必须 handback，不得静默继续。** `forbidden` 命中后即使 `allowed` 字段为 true，也必须将控制权交回 programmer，等待审批或显式解除阻断。Candidate PlanWork、Review 和 Close 不调用该脚本。
 - **现有 `.servo` 控制配置必须先 hydration 再决策。** Harness 不得忽略上一轮 `.servo/control-state.md` 中的 linked artifact、approval boundary、continuation authority、handback guard、baseline traceability 或 autonomy ledger；缺失字段只能按 artifact 合同默认值降级解释，不能静默扩大权限。
 - **长期权限变更必须写回控制配置。** 程序员授予的持久自动性、分派模式、审批边界或预算变更必须写入 `.servo/control-state.md` 的配置段；若只是本轮一次性批准，必须保留为本轮 evidence / handoff，不得改变长期默认值。
 - **约定后自动工作追踪仅当 `Harness Control State` 明确授予 `约定后自动性：最小委派` 时才可开启**；否则必须保持手动交接模式。
@@ -938,7 +939,7 @@ Unlock signal 结构化格式：
 
 使用当前 `Harness Control State`、当前 Scope 所需的正式产物，以及下游技能的结构化输出作为本轮的权威依据。
 
-判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。所有 guard 决策必须优先消费当前技能包 `./scripts/` 下对应脚本的结构化 JSON 输出（见 §10.2 的 8 个 guard 脚本调用和 §10.7 的 `autonomy_policy_check.py` 引用）。
+判断下一次合法继续推进是否被允许时，应优先使用下游结构化输出，而不是本地叙述性摘要。确定性 guard 必须消费当前技能包 `./scripts/` 下各自专用脚本的结构化 JSON 输出。Candidate PlanWork、Review 和 Close 使用 setup、branch、round-chain 与 Close legality guard，不调用 `autonomy_policy_check.py`；该脚本只承接尚未迁移的 legacy / non-Candidate policy port。
 
 三轴参考：
 

@@ -343,19 +343,7 @@ def main() -> None:
         guards["git_hash"] = run_guard(
             "git_hash_check.py", ["--control-state", str(control_repo)], repo_root
         )
-        guards["autonomy"] = run_guard(
-            "autonomy_policy_check.py",
-            [
-                "--operation",
-                "init_worktrack",
-                "--skill",
-                "worktrack-plan-work-skill",
-                "--control-state",
-                str(control),
-            ],
-            repo_root,
-        )
-        for name in ("intake", "milestone_review", "branch", "git_hash", "autonomy"):
+        for name in ("intake", "milestone_review", "branch", "git_hash"):
             append_guard_blocker(blockers, missing, name, guards[name])
 
         backfill_missing = guards["runtime_backfill"].get("missing_fields", {})

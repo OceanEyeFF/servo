@@ -262,7 +262,6 @@ def test_setup_diagnostic_is_explicit_and_check_only(tmp_path: Path) -> None:
         "runtime_backfill",
         "branch",
         "git_hash",
-        "autonomy",
     }
     assert repo_snapshot(tmp_path) == before
 
@@ -442,127 +441,6 @@ def test_run_guard_converts_non_object_json_to_structured_block(
     assert payload["blocked"] is True
     assert payload["reason"] == "fixture_guard.py returned non-object JSON"
     assert payload["missing_fields"] == ["fixture_guard.py:object_output"]
-
-
-def write_close_fixture(tmp_path: Path) -> Path:
-    control = tmp_path / ".servo/control-state.md"
-    control.parent.mkdir(parents=True, exist_ok=True)
-    control.write_text(
-        "# Control State\n- route_decision: close ready Candidate Worktrack\n",
-        encoding="utf-8",
-    )
-    return control
-
-
-def close_args(control: Path) -> list[str]:
-    return [
-        "--operation",
-        "close",
-        "--skill",
-        "worktrack-close-skill",
-        "--control-state",
-        str(control),
-    ]
-
-
-def test_candidate_close_policy_does_not_require_legacy_gate_authority(
-    tmp_path: Path,
-) -> None:
-    control = write_close_fixture(tmp_path)
-
-    result = run_script("autonomy_policy_check.py", close_args(control), tmp_path)
-    payload = parse_json(result)
-
-    assert result.returncode == 0, result.stderr
-    assert payload["allowed"] is True
-    assert payload["blocked"] is False
-    assert payload["evidence_required_complete"] is True
-    assert "close_authority" not in payload
-
-
-def test_close_policy_rejects_removed_candidate_authority_flag(tmp_path: Path) -> None:
-    control = write_close_fixture(tmp_path)
-    result = run_script(
-        "autonomy_policy_check.py",
-        [*close_args(control), "--close-authority-json", "{}"],
-        tmp_path,
-    )
-    assert result.returncode == 2
-    assert "unrecognized arguments: --close-authority-json" in result.stderr
-
-
-def test_candidate_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) -> None:
-    control = tmp_path / ".servo/control-state.md"
-    control.parent.mkdir(parents=True)
-    control.write_text(
-        textwrap.dedent(
-            """\
-            # Control State
-            - route_decision: approved route
-            - validation_evidence: focused tests
-            - governance_policy_evidence: policy checks
-            """
-        ),
-        encoding="utf-8",
-    )
-    cases = (
-        ("init_worktrack", "worktrack-plan-work-skill"),
-        ("dispatch", "worktrack-plan-work-skill"),
-        ("verify", "worktrack-review-skill"),
-        ("close", "worktrack-close-skill"),
-    )
-
-    for operation, skill in cases:
-        result = run_script(
-            "autonomy_policy_check.py",
-            [
-                "--operation",
-                operation,
-                "--skill",
-                skill,
-                "--control-state",
-                str(control),
-            ],
-            tmp_path,
-        )
-        payload = parse_json(result)
-
-        assert result.returncode == 0, result.stderr
-        assert payload["allowed"] is True
-        assert payload["blocked"] is False
-        assert payload["needs_approval"] is False
-        assert payload["forbidden_hit"] == []
-        assert payload["stop_condition_hit"] == []
-        assert "未在 POLICY_MAP" not in str(payload["reason"])
-
-
-def test_candidate_redo_policy_does_not_reconstruct_review_route_from_text(
-    tmp_path: Path,
-) -> None:
-    control = tmp_path / ".servo/control-state.md"
-    control.parent.mkdir(parents=True)
-    control.write_text("# Control State\n", encoding="utf-8")
-
-    result = run_script(
-        "autonomy_policy_check.py",
-        [
-            "--operation",
-            "dispatch",
-            "--skill",
-            "worktrack-plan-work-skill",
-            "--control-state",
-            str(control),
-        ],
-        tmp_path,
-    )
-    payload = parse_json(result)
-
-    assert result.returncode == 0, result.stderr
-    assert payload["allowed"] is True
-    assert payload["blocked"] is False
-    assert payload["evidence_required_complete"] is True
-    assert payload["evidence_missing"] == []
-    assert not (tmp_path / ".servo/worktrack/contract.md").exists()
 
 
 def test_generic_legacy_dispatch_policy_keeps_full_evidence_boundary(

@@ -180,15 +180,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         allowed_rules=["bounded_local_verification"],
         description="Gate 裁决：在 allowed 范围内",
     ),
-    "verify::worktrack-review-skill": PolicyProfile(
-        allowed_rules=["bounded_local_verification", "artifact_hydration",
-                       "status_consistency_check"],
-        description=(
-            "worktrack-review-skill 只执行限定范围 review 与 validation "
-            "assessment；不得修改实现或 closeout state"
-        ),
-    ),
-
     # ── dispatch ──
     "dispatch::generic-worker-skill": PolicyProfile(
         allowed_rules=[],
@@ -231,23 +222,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "边界阻断"
         ),
     ),
-    "dispatch::worktrack-plan-work-skill": PolicyProfile(
-        allowed_rules=[
-            "bounded_worktrack_dispatch",
-            "artifact_hydration",
-            "status_consistency_check",
-        ],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-plan-work-skill work/redo phase 只允许在当前 Contract、"
-            "selected task、mutation boundary 与 validation requirements 内执行；"
-            "source mutation、scope expansion、release/deploy/remote/destructive "
-            "动作仍需各自显式审批"
-        ),
-    ),
-
     # ── close ──
     "close::close-worktrack-skill": PolicyProfile(
         allowed_rules=[],
@@ -261,24 +235,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "需要审批。已批准的 closeout 流程可继续"
         ),
     ),
-    "close::worktrack-close-skill": PolicyProfile(
-        allowed_rules=[
-            "bounded_worktrack_close",
-            "artifact_hydration",
-            "status_consistency_check",
-        ],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-close-skill 只处理 ready_to_close Candidate Worktrack，"
-            "执行 freshness/approval/branch legality、merge、finished handback "
-            "和 RepoScope refresh 交接；不消费 legacy Gate authority，"
-            "protected branch mutation、cleanup、release/publish/tag/push/deploy "
-            "仍需独立审批或由 forbidden/stop 边界阻断"
-        ),
-    ),
-
     # ── recover ──
     "recover::recover-worktrack-skill": PolicyProfile(
         allowed_rules=[],
@@ -365,23 +321,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "仍需独立审批"
         ),
     ),
-    "init_worktrack::worktrack-plan-work-skill": PolicyProfile(
-        allowed_rules=[
-            "bounded_worktrack_init",
-            "artifact_hydration",
-            "status_consistency_check",
-            "scaffold_validation",
-        ],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-plan-work-skill setup phase 只在 worktrack_setup_check.py "
-            "can_setup=true 且 intake/branch/baseline/approval guards 全部通过后，"
-            "按 allowed_write_surface 合成 setup；脚本本身保持 check-only"
-        ),
-    ),
-
     # ── cleanup ──
     "cleanup::milestone-cleanup-skill": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
@@ -564,18 +503,6 @@ REQUIRED_EVIDENCE: dict[str, list[str]] = {
     ],
 }
 
-# Candidate roles own their detailed setup, round-chain, and Close legality.
-# Review returns the redo route directly to the Orchestrator, so Candidate
-# PlanWork dispatch does not reconstruct route authority from control-state
-# text. Exact profile overrides still isolate Candidate roles from legacy
-# Contract, Dispatch packet, and Gate evidence requirements.
-PROFILE_REQUIRED_EVIDENCE: dict[str, list[str]] = {
-    "init_worktrack::worktrack-plan-work-skill": ["route_decision"],
-    "dispatch::worktrack-plan-work-skill": [],
-    "close::worktrack-close-skill": ["route_decision"],
-}
-
-
 def resolve_profile(operation: str, skill: str) -> PolicyProfile:
     """按 operation::skill 精确查找策略 profile，fallback 到 operation 默认。"""
     key = f"{operation}::{skill}"
@@ -615,9 +542,7 @@ def check_evidence(
 
     返回 {evidence_required_complete: bool, evidence_missing: [str, ...]}。
     """
-    required = PROFILE_REQUIRED_EVIDENCE.get(
-        f"{operation}::{skill}", REQUIRED_EVIDENCE.get(operation, [])
-    )
+    required = REQUIRED_EVIDENCE.get(operation, [])
     if not required:
         return {
             "evidence_required_complete": True,
