@@ -130,6 +130,7 @@ NORMAL_PATH_REQUIRED_FILES = {
     "harness-skill": {
         "SKILL.md",
         "scripts/autonomy_policy_check.py",
+        "scripts/worktrack_round_chain_check.py",
         "scripts/worktrack_setup_check.py",
     },
     "worktrack-plan-work-skill": {"SKILL.md"},

@@ -23,6 +23,7 @@
     "product/harness/skills/harness-skill/scripts/runtime_backfill_detect.py",
     "product/harness/skills/harness-skill/scripts/split_control_state.py",
     "product/harness/skills/harness-skill/scripts/worktrack_intake_review_check.py",
+    "product/harness/skills/harness-skill/scripts/worktrack_round_chain_check.py",
     "product/harness/skills/harness-skill/scripts/worktrack_setup_check.py",
     "product/harness/skills/harness-skill/scripts/writeback_bridge.py"
   ],
@@ -53,6 +54,7 @@
     "scripts/runtime_backfill_detect.py",
     "scripts/split_control_state.py",
     "scripts/worktrack_intake_review_check.py",
+    "scripts/worktrack_round_chain_check.py",
     "scripts/worktrack_setup_check.py",
     "scripts/writeback_bridge.py",
     "payload.json",

@@ -1,197 +1,161 @@
 ---
 name: repo-refresh-skill
-description: 当 Harness 在工作追踪收尾后回到代码仓库范围，并需要一轮限定范围的代码仓库刷新外加一份已验证的回写交接时，使用这个技能。
+description: 当 Candidate Worktrack 已完成机械 Close，需要把 finished handback 写回 Repo backlog 并刷新对应 Repo 控制事实时，使用这个技能。
 ---
 
-# 代码仓库刷新技能
+# Repo Refresh Skill
 
-## 概览
+## Role
 
-本技能实现 `RepoScope.Close`（`refresh-repo-state`）状态转移算子，对应 Harness 控制回路中的**状态更新**阶段。
+This Skill is the RepoScope consumer of a completed Candidate Worktrack. It
+records the Close-owned result and refreshes Repo control facts. The resulting
+backlog entry is the only Worktrack completion truth consumed by Milestone
+Status. This Skill
+does not reopen Worktrack execution, repeat Review, or audit the Close Git
+transaction.
 
-它是 Worktrack 闭环的**终点和 Repo 闭环的起点**：在 Worktrack 关闭（merge → cleanup）后，必须回到 RepoScope 刷新 repo snapshot，才能让 Repo 的慢变量被真实更新。这是完整控制回路的关键闭合环节。
+Candidate completion has one ingress. There is no fallback to a legacy Gate,
+closeout bundle, Contract, dispatch packet, provenance record, or lane record.
 
-它从已验证证据刷新代码仓库级真相。代码仓库真相产物的写入前提是经过 `Gate` 验证；未经验证的结论不得写入代码仓库真相产物。
+## Candidate Input
 
-它与 `close-worktrack-skill` 的关系：close-worktrack-skill 处理 WorktrackScope 的 Close（PR → merge → cleanup），而 repo-refresh-skill 处理回到 RepoScope 后的状态更新。
+The upper Harness supplies a structured Close result:
 
-当 `Harness` 完成了一轮 `工作追踪范围` 收尾，并需要根据已验证证据刷新代码仓库级慢变量时，使用这个技能。
+```yaml
+worktrack_close_result:
+  worktrack_id: string
+  outcome: completed
+  finished_handback_ref: string
+  closeout_checkpoint_commit: string
+  repo_refresh_handoff: object
+  evidence_refs: [string]
+```
 
-这个技能会为 `通用高能力模型` `SubAgent` 打包一轮限定范围的收尾后刷新，更新代码仓库级评估，并返回一份供程序员审批的结构化回写交接结果，而不是假设代码仓库真相已经被更新。
+The referenced `finished-handback.yaml` is the sole persistent Worktrack
+completion handoff. It carries the Milestone id, `accepted_checkpoint`,
+acceptance summary, residuals, merge result, pre-finalization
+`closeout_checkpoint`, and stable evidence refs. The structured Close result
+carries the final `closeout_checkpoint_commit`.
 
-这个技能只负责代码仓库级回写。它不会维护、修补或重新打开工作追踪本地 `.servo/worktrack/*` 产物。
+## Minimal Consumer Checks
 
-它的主要刷新依据是：
+Before writeback:
 
-- 已验证的 `关卡证据`
-- 当前 `代码仓库目标/章程`
-- 当前 `代码仓库快照/状态`
-- 当前 `Harness 控制状态`
+1. Parse the Close result and resolve `finished_handback_ref`.
+2. Require non-placeholder `worktrack_id`, `finished_handback_ref`,
+   `closeout_checkpoint_commit`, `repo_refresh_handoff`, and `evidence_refs`.
+3. Require result and handback Worktrack ids to match.
+4. Require a concrete handback `milestone_id`; require it to match the
+   Candidate writeback instruction and the Worktrack's existing registered
+   Milestone owner.
+5. Require the selected Worktrack backlog entry to identify that exact
+   Worktrack and its existing registered Milestone owner.
+6. Reject any `repo_refresh_handoff` field that attempts to supply or override
+   Worktrack identity, Milestone identity, backlog ownership, target files,
+   field paths, or write operations.
+7. Require `outcome: completed` in both the result and handback.
+8. Require all referenced persistent evidence to be resolvable. Stable evidence
+   must not consist only of `.servo/tmp/` paths.
 
-已关闭的工作追踪产物只是已完成切片的辅助证据。它们本身不是代码仓库级真相层，仅当有经过验证的证据支撑时，直接向上抄写才合法；否则必须声明证据缺失并阻塞该写入路径。
+Failure blocks Repo Refresh. Missing or malformed Candidate input is never
+retried through a legacy ingress.
 
-## 何时使用
+These checks establish that the Close result is consumable. They do not replay
+Git parent/tree/path checks, recompute merge correctness, re-run Worktrack
+Review, or reinterpret acceptance and residuals.
 
-当需要根据那次已验证收尾刷新代码仓库级真相时，使用这个技能：
+## Candidate Write Capability Boundary
 
-- 某个工作追踪已经进入收尾或合并完成状态
-- `关卡证据` 可用且已经建立了已验证结果
-- `代码仓库快照/状态` 现在需要慢变量刷新
-- 已验证发现可能需要回写到代码仓库级正式产物
-- `Harness` 在决定下一个代码仓库动作前需要限定范围的代码仓库刷新结果
+`repo_refresh_handoff` carries values to record; it is not write authority.
+Candidate completion permits exactly two capabilities:
 
-## 工作流
+1. Upsert the current `worktrack_id` entry in
+   `.servo/repo/worktrack-backlog.md` to `status: done`, with the accepted
+   handback, checkpoint, merge, residual, evidence, and Refresh facts.
+2. Refresh only Repo snapshot/control pointers directly associated with this
+   completed handback.
 
-1. 载入当前 `代码仓库目标/章程`、当前 `代码仓库快照/状态`、当前 `Harness 控制状态`，以及刚刚关闭的工作追踪的已验证 `关卡证据`。
-2. 为一轮限定范围的 `通用高能力模型` `SubAgent` 构建一份 `代码仓库刷新任务简报` 和一份 `代码仓库刷新信息包`。
-3. 从 close-worktrack 交接读取 `baseline_branch`、`branch_source_ref`、`worktrack_branch`、`integration_target_ref`、`closeout_target_ref`、`checkpoint_base_ref`、PR target、merge target 与 checkpoint 基准；这些值的唯一合法来源是原始 `Worktrack Contract` 的 Branch Policy 字段。`baseline_branch` 表示 servo-managed final baseline；Milestone-derived worktrack 的直接 checkpoint/merge target 通常是 `closeout_target_ref` 指向的 Milestone branch。从当前分支名或写死默认分支名推断的行为必须返回 blocked。
-4. 从 close-worktrack 交接读取 `closeout_evidence_bundle_ref`、`closeout_bundle_status` 和 `dispatch_provenance_summary`。该 summary 必须 lossless carry `dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`。如果传入字段缺失、bundle 不可读、record ref 无法 dereference，必须保留为 `missing` / `incomplete` / `historical_gap` / `contaminated`；不得从 closeout prose summary 合成 dispatch evidence。
-5. 根据 `代码仓库目标/章程`、当前 `代码仓库快照/状态` 和已验证收尾证据刷新代码仓库级评估。
-6. 将项目分开：
-   - 已验证回写候选
-   - 推迟或仍未验证的项目
-   - 收尾后仍开放的代码仓库级风险
-7. 将已关闭 worktrack 的条目（worktrack_id / milestone_id / status / node_type / scope / merge_commit / validation / intake_route）写入 `.servo/repo/worktrack-backlog.md`（若 backlog 不存在则创建）。`status` 按以下映射从 gate verdict 转换后写入：gate pass/merge success → `done`，gate blocked → `blocked`，deferred decision → `deferred`，superseded/resolved → `resolved`。按 `worktrack_id` upsert：若同一 `worktrack_id` 已存在则更新（覆盖旧状态），否则追加新条目。`milestone_id` 按以下优先级获取：Worktrack Contract frontmatter `milestone_id` → close handoff 引用 → `null`（无绑定）。`intake_route` 按以下优先级获取：Worktrack Contract frontmatter → close handoff 中的 append request 引用 → `"direct"` fallback。此步骤对每个已验证关闭的 worktrack 无条件执行。若回写条目包含 closeout evidence refs，必须把第 4 步的 provenance 字段作为结构化字段转交给 repo-writeback-skill，不得只写 prose notes。
-8. 如果存在活跃 Milestone，检查已关闭 worktrack 是否在 Milestone 的 `worktrack_list` 中；若在列表中，标记 Milestone progress counter 需要由 milestone-status-skill 在下一轮 Observe 中更新。
-8b. **Milestone Backlog 刷新**：若已关闭 worktrack 携带 `milestone_id`，读取 live `.servo/repo/milestone-backlog.md`，在该 milestone 的 `worktrack_list` 中标记对应 worktrack 完成。不修改 milestone status（该职责属于 `harness-skill` 在收到 `milestone-status-skill` 输出后的状态更新阶段）。若 milestone 已在 `.servo/repo/milestone-history.md` 中，只有在修正 completed/superseded 历史记录的 stale worktrack marker 时才可更新 history，且必须保留 status 为 completed/superseded。
-9. 在一轮限定范围代码仓库刷新后停止，并返回一份固定格式的 `代码仓库刷新报告` 加一份 `已验证回写交接`。
+Every other target or operation is blocked. Candidate completion cannot write
+Milestone Gate verdicts, axis reports/findings, Milestone history, another
+Worktrack backlog entry, any Milestone contribution state, or a legacy
+closeout/Gate/bundle artifact.
+It cannot use paths or operations embedded in the handoff to expand this
+boundary.
 
-## 硬约束
+## Writeback
 
-遵循本包内最小公共约束 C-1 至 C-7：C-1 只在声明的 Scope/Function 内操作；C-2 只有授权的 SetGoal/ChangeGoal/Close/Refresh 路径可变更控制状态，其余技能返回结构化输出；C-3 先生成完整报告再提取 Control Signal，重复上下文用 artifact 引用，空字段用 N/A；C-4 不跨越 Observe/Decide/Init/Dispatch/Verify/Judge/Recover/Close 的角色边界；C-5 只消费已批准上游产物，不凭空发明验收或恢复标准；C-6 缺失证据必须显式暴露，不能当作成功；C-7 保持限定范围，避免不必要的全仓重发现。
+After the minimal checks pass:
 
-- 回写的唯一合法输入是已验证证据；将工作追踪产物直接当成回写依据的行为禁止出现。
-- `工作追踪约定` 和 `计划/任务队列` 的输出角色仅限于工作追踪本地执行记录；将其当成代码仓库回写目标的行为禁止出现。
-- 唯一合法行为是将已验证结论写进代码仓库真相产物；将未经验证结论写入的行为必须返回 blocked。
-- 如果传入的代码仓库刷新交接缺少基线追溯信息，或基线不可验证，标记为基线缺失风险并回写审批请求。
-- 回写目标的唯一合法来源是已验证且可追溯的基线证据；从工作追踪产物直接抄写回写目标的行为必须返回 blocked。
-- Closeout dispatch provenance 是 passthrough evidence，不是 repo-refresh 重新判定项。repo-refresh 只能复制、dereference 并标记 `dispatch_provenance.status`、refs、raw `dispatch_result_status` 与 `resolved_runtime_dispatch_status`；无法读取时必须标记缺口状态，不能合成 `delegated`、`current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe`、`blocked` 或 `historical_gap` 结论。
+1. Ask `repo-writeback-skill` to run the Candidate completion transaction.
+2. Pass the identity facts already checked above; the handoff cannot replace
+   the registered `milestone_id` or select a different backlog entry.
+3. Upsert `.servo/repo/worktrack-backlog.md` for `worktrack_id` with:
+   - `status: done`;
+   - Milestone id and node type when present;
+   - `finished_handback_ref`;
+   - `accepted_checkpoint` and `closeout_checkpoint_commit`;
+   - merge result, residual summary, and stable evidence refs;
+   - Repo Refresh handoff.
+4. Refresh only the Repo snapshot/control pointers allowed by the Candidate
+   capability boundary.
+5. Return the concrete writeback result to the upper Harness.
 
-## 输出协议
+Repo Refresh is not an additional Worktrack stage. It is the RepoScope
+writeback consumer after Close.
 
-- 先生成尽可能长且完整的 `代码仓库刷新报告`，确保所有刷新评估信息被记录
-- 然后从完整报告中提取 `Control Signal` 层（影响下一动作决策的关键结论）
-- `基线验收状态` 必须显式评估 incoming checkpoint 的可追溯性
-- 重复性上下文必须引用文件路径；内联全文的行为必须返回 blocked。
-- 如果某个字段无实质内容，唯一合法行为是使用 `N/A` 或省略；用占位符填充的行为必须返回 blocked。
-- `Supporting Detail` 保留完整内容，只用于后续查阅，不纳入传递上下文
+## Output
 
-## 代码仓库刷新约定
+```yaml
+repo_refresh_result:
+  outcome: completed | blocked
+  worktrack_id: string
+  finished_handback_ref: string | null
+  closeout_checkpoint_commit: string | null
+  backlog_updated: boolean
+  milestone_contribution_exposed: boolean
+  repo_refresh_handoff: object | null
+  evidence_refs: [string]
+  blockers: [string]
+```
 
-每次运行这个技能时，都使用同一套限定范围约定格式。
+`completed` requires successful readback of every declared write target.
+`blocked` preserves the original Close result and reports the exact missing or
+invalid input; it does not synthesize completion.
 
-### 代码仓库刷新任务简报
+`milestone_contribution_exposed` means the completed backlog entry now contains
+the concrete ownership and handback facts that Milestone Status can join with
+its `worktrack_list`. It does not mean Repo Refresh wrote contribution state to
+the Milestone artifact.
 
-- `触发条件`
-- `目标`
-- `已关闭工作追踪`
-- `范围内`
-- `范围外`
-- `约束`
-- `回写目标`
-- `完成信号`
+## Boundaries
 
-### 代码仓库刷新信息包
+- Do not modify `initial-requirement.yaml`, `finished-handback.yaml`, or
+  `.servo/tmp/<worktrack-id>/`.
+- Do not perform technical Review, acceptance judgment, merge verification, or
+  CloseOut transaction repair.
+- Do not dispatch Milestone axis carriers. `milestone-status-skill` prepares
+  common facts and the upper Harness owns sibling dispatch.
+- Do not create a Gate artifact, closeout bundle, dispatch provenance record,
+  composite lane record, or second completion authority.
+- Do not modify Milestone final status/acceptance, `purpose_achieved`, Gate or
+  axis evidence, Milestone history, or any Milestone contribution state.
+- Do not infer values from current branch names or prose summaries.
 
-- `当前代码仓库状态`
-- `参与中的代码仓库产物`
-- `关卡证据摘要`
-- `已接受变更摘要`
-- `验证结果`
-- `基线验收状态`
-  - `baseline_branch`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.baseline_branch`
-  - `branch_source_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.branch_source_ref`
-  - `worktrack_branch`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.worktrack_branch`
-  - `integration_target_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.integration_target_ref`
-  - `closeout_target_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.closeout_target_ref`
-  - `checkpoint_base_ref`: 从 close handoff 接收，原始来源必须是 `Worktrack Contract.checkpoint_base_ref`
-  - `pr_target`: 本轮 PR target
-  - `merge_target`: 本轮 merge target
-  - `incoming_checkpoint_ref`: 从 close-worktrack 交接接收的基线引用
-  - `checkpoint_verified`: yes / no / deferred
-  - `baseline_gap_risk`: 如果基线不可追溯，标记风险等级（low / medium / high）
-  - `closed_worktrack_node_type`: 已关闭 worktrack 的节点类型
-  - `expected_baseline_form`: close handoff 中声明的预期基线形式
-  - `actual_baseline_form`: 实际 checkpoint 形式
-  - `merge_required`: close handoff 中声明的合并要求
-  - `checkpoint_policy_match`: expected 与 actual 是否匹配
-- `closeout_evidence_bundle`
-  - `closeout_evidence_bundle_ref`
-  - `closeout_bundle_status`: complete / incomplete / contaminated / historical_gap / missing
-  - `dispatch_provenance.status`: captured / linked / incomplete / missing / historical_gap / contaminated
-  - `runtime_dispatch_record_ref`
-  - `subagent_dispatch_record_refs`
-  - `missing_dispatch_record_refs`
-  - `dispatch_result_status`
-  - `resolved_runtime_dispatch_status`
-- `已知风险`
-- `所需上下文`
-- `缺失或推迟项目`
+## Legacy Exclusion
 
-### 已验证回写交接
+The following legacy Branch Policy and closeout vocabulary is intentionally not
+Candidate ingress: `baseline_branch`, `branch_source_ref`, `worktrack_branch`,
+`integration_target_ref`, `closeout_target_ref`, `checkpoint_base_ref`,
+`closeout_evidence_bundle_ref`, `closeout_bundle_status`, and
+`dispatch_provenance`. A caller using those fields has not supplied a Candidate
+Close result and must use an explicitly retained legacy deployment until the
+legacy-surface-removal Worktrack removes that path.
 
-- `回写目标`
-- `已验证发现`
-- `建议更新`
-- `证据依据`
-  - `closeout_evidence_bundle_ref`
-  - `closeout_bundle_status`
-  - `dispatch_provenance.status`
-  - `runtime_dispatch_record_ref`
-  - `subagent_dispatch_record_refs`
-  - `missing_dispatch_record_refs`
-  - `dispatch_result_status`
-  - `resolved_runtime_dispatch_status`
-- `推迟项目`
-- `审批请求`
+## Resources
 
-## 预期输出
-
-使用这个技能时，产出一份至少包含以下章节的 `代码仓库刷新报告`：
-
-- `代码仓库刷新触发条件`
-- `代码仓库刷新评估`
-- `已验证回写交接`
-- `推迟或未验证项目`
-- `建议代码仓库范围下一步`
-- `程序员审查请求`
-
-结果中至少应包含以下字段或等价表达：
-
-- `子代理模型`
-- `刷新触发条件`
-- `基准分支`
-- `baseline_branch`
-- `branch_source_ref`
-- `worktrack_branch`
-- `integration_target_ref`
-- `closeout_target_ref`
-- `checkpoint_base_ref`
-- `PR target`
-- `merge target`
-- `已关闭工作追踪`
-- `已关闭工作追踪节点类型`
-- `checkpoint_policy_match`
-- `代码仓库状态变化`
-- `已验证发现`
-- `快照更新`
-- `回写目标`
-- `建议回写`
-- `证据依据`
-- `closeout_evidence_bundle_ref`
-- `closeout_bundle_status`
-- `dispatch_provenance.status`
-- `runtime_dispatch_record_ref`
-- `subagent_dispatch_record_refs`
-- `missing_dispatch_record_refs`
-- `dispatch_result_status`
-- `resolved_runtime_dispatch_status`
-- `推迟项目`
-- `开放风险`
-- `建议下一代码仓库动作`
-- `需要程序员回写审批`
-- `如何审查`
-
-## 资源
-
-使用刚关闭的工作追踪对应的已验证 `关卡证据`、当前 `代码仓库目标/章程`、当前 `代码仓库快照/状态`、当前 `Harness 控制状态`，以及收尾后刷新所需的最小额外代码仓库上下文。读取已关闭的工作追踪产物时，工作追踪产物的输出角色仅限于已验证切片的辅助证据；把它们当成代码仓库真相替代品的行为，或把它们当作工作追踪维护目标的行为禁止出现。
+Use the structured Close result, its `finished_handback_ref`, and current Repo,
+Worktrack ownership, and Milestone control references. The fixed Candidate
+capability boundary selects the write targets; `repo_refresh_handoff` supplies
+recorded values only. Milestone Status derives contribution from the backlog;
+Repo Refresh does not write it separately. This Skill has no runtime dependency
+on source-repo Harness documentation.
