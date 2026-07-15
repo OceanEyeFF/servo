@@ -14,6 +14,8 @@ legacy Gate verdict, or decide whether the Milestone is complete.
 
 The upper Orchestrator selects and enforces the independent Review carrier before
 dispatch. Carrier identity or provenance is not Review task input or output.
+Programmer or Human Review observations may be supplied as evidence, but Review
+independently checks and synthesizes them rather than treating them as a verdict.
 
 It is self-contained and requires no source-repo docs. Its only write capability
 is exactly one next-round Review comment under the current Worktrack's
@@ -29,6 +31,9 @@ is exactly one next-round Review comment under the current Worktrack's
 - latest implementation checkpoint and Git diff
 - fresh affected validation and evidence refs
 - mutation and approval boundaries
+- optional identity-free Human Review observations, either inline in the current
+  invocation payload or through an opaque temporary payload ref under
+  `.servo/tmp/<worktrack-id>/`
 
 Missing or mutable initial authority, missing R000, a gapped chain, stale
 checkpoint, or stale evidence is non-pass.
@@ -70,17 +75,25 @@ conflict. A later comment/YAML cannot reduce acceptance, replace the objective,
 expand scope/write surface, or grant approval. Apparent mission change blocks for
 Repo/Milestone and Programmer judgment.
 
+Human observations are checked against the immutable mission, the complete
+chain, and implementation facts. They may identify findings or clarify existing
+acceptance, but they cannot approve objective, scope, write-surface, or
+acceptance expansion. Mission-changing Human input produces `blocked` with an
+upper approval request. Review records no Human, LLM, PlanWork, or Review carrier
+identity and does not persist the raw observations as a fixed artifact.
+
 ## Review Work
 
 1. Identify actual implementation and artifact changes from Git and evidence.
 2. Confirm the latest round commit equals the implementation checkpoint under review.
-3. Judge the original objective and every acceptance check against the complete chain.
-4. Check scope, constraints, implementation quality, behavior preservation, and
+3. Verify any Human observations against implementation facts and the unchanged authority.
+4. Judge the original objective and every acceptance check against the complete chain.
+5. Check scope, constraints, implementation quality, behavior preservation, and
    approval boundaries.
-5. Assess whether affected validation is appropriate and fresh.
-6. Separate blocking findings from accepted residuals and independently scoped
+6. Assess whether affected validation is appropriate and fresh.
+7. Separate blocking findings from accepted residuals and independently scoped
    follow-up-test needs.
-7. Produce exactly one signal.
+8. Produce exactly one canonical signal.
 
 ## Signals
 
@@ -123,6 +136,8 @@ it records no Human, LLM, PlanWork, or Review carrier identity. The body contain
 Review is the only writer of this comment. If the target exists, block rather
 than overwrite or skip an index. The filename, `reviewed_round`, and `next_round`
 must form the same contiguous relationship before Review returns `redo`.
+Raw Human observations never occupy a canonical round filename; Review verifies
+and rewrites applicable findings into its own comment.
 
 ### `blocked`
 
@@ -135,7 +150,8 @@ judgment. Review does not convert those conditions into redo authority.
 Review never writes implementation, the immutable requirement, round YAML,
 canonical source/docs, control state, Gate evidence, finished handback, or legacy
 closeout artifacts. It does not invoke PlanWork or Close and does not write upper
-lifecycle state.
+lifecycle state. It does not create a pass artifact or a persistent Human Review
+report.
 
 ## Validation Boundary
 

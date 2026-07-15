@@ -564,11 +564,14 @@ REQUIRED_EVIDENCE: dict[str, list[str]] = {
     ],
 }
 
-# Setup preflight runs before the Worktrack Contract exists. The deterministic
-# worktrack setup checker supplies intake/scope/branch evidence, so this profile
-# only requires the upstream route decision at the generic policy layer.
+# Candidate roles own their detailed setup, round-chain, and Close legality.
+# Review returns the redo route directly to the Orchestrator, so Candidate
+# PlanWork dispatch does not reconstruct route authority from control-state
+# text. Exact profile overrides still isolate Candidate roles from legacy
+# Contract, Dispatch packet, and Gate evidence requirements.
 PROFILE_REQUIRED_EVIDENCE: dict[str, list[str]] = {
     "init_worktrack::worktrack-plan-work-skill": ["route_decision"],
+    "dispatch::worktrack-plan-work-skill": [],
     "close::worktrack-close-skill": ["route_decision"],
 }
 

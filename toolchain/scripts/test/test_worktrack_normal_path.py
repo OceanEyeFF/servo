@@ -491,7 +491,7 @@ def test_close_policy_rejects_removed_candidate_authority_flag(tmp_path: Path) -
     assert "unrecognized arguments: --close-authority-json" in result.stderr
 
 
-def test_new_skill_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) -> None:
+def test_candidate_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) -> None:
     control = tmp_path / ".servo/control-state.md"
     control.parent.mkdir(parents=True)
     control.write_text(
@@ -499,18 +499,12 @@ def test_new_skill_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) ->
             """\
             # Control State
             - route_decision: approved route
-            - worktrack_contract_scope: bounded scope
-            - selected_task_dispatch_packet: bounded packet
-            - runtime_dispatch_profile: current-carrier
             - validation_evidence: focused tests
             - governance_policy_evidence: policy checks
             """
         ),
         encoding="utf-8",
     )
-    contract = tmp_path / ".servo/worktrack/contract.md"
-    contract.parent.mkdir(parents=True)
-    contract.write_text("# Worktrack Contract\n", encoding="utf-8")
     cases = (
         ("init_worktrack", "worktrack-plan-work-skill"),
         ("dispatch", "worktrack-plan-work-skill"),
@@ -540,6 +534,66 @@ def test_new_skill_autonomy_profiles_are_explicit_and_bounded(tmp_path: Path) ->
         assert payload["forbidden_hit"] == []
         assert payload["stop_condition_hit"] == []
         assert "未在 POLICY_MAP" not in str(payload["reason"])
+
+
+def test_candidate_redo_policy_does_not_reconstruct_review_route_from_text(
+    tmp_path: Path,
+) -> None:
+    control = tmp_path / ".servo/control-state.md"
+    control.parent.mkdir(parents=True)
+    control.write_text("# Control State\n", encoding="utf-8")
+
+    result = run_script(
+        "autonomy_policy_check.py",
+        [
+            "--operation",
+            "dispatch",
+            "--skill",
+            "worktrack-plan-work-skill",
+            "--control-state",
+            str(control),
+        ],
+        tmp_path,
+    )
+    payload = parse_json(result)
+
+    assert result.returncode == 0, result.stderr
+    assert payload["allowed"] is True
+    assert payload["blocked"] is False
+    assert payload["evidence_required_complete"] is True
+    assert payload["evidence_missing"] == []
+    assert not (tmp_path / ".servo/worktrack/contract.md").exists()
+
+
+def test_generic_legacy_dispatch_policy_keeps_full_evidence_boundary(
+    tmp_path: Path,
+) -> None:
+    control = tmp_path / ".servo/control-state.md"
+    control.parent.mkdir(parents=True)
+    control.write_text("# Control State\n", encoding="utf-8")
+
+    result = run_script(
+        "autonomy_policy_check.py",
+        [
+            "--operation",
+            "dispatch",
+            "--skill",
+            "worktrack-dispatch-skill",
+            "--control-state",
+            str(control),
+        ],
+        tmp_path,
+    )
+    payload = parse_json(result)
+
+    assert result.returncode == 1
+    assert payload["blocked"] is True
+    assert payload["evidence_required_complete"] is False
+    missing = "\n".join(payload["evidence_missing"])
+    assert "route_decision" in missing
+    assert "worktrack_contract_scope" in missing
+    assert "selected_task_dispatch_packet" in missing
+    assert "runtime_dispatch_profile" in missing
 
 
 def write_round_yaml(
@@ -706,3 +760,168 @@ def test_round_chain_rejects_duplicate_case_and_existing_redo_target(
     not_redo_payload = parse_json(not_redo)
     assert not_redo.returncode == 1
     assert "round chain is not ready for redo" in not_redo_payload["blocked_why"]
+
+
+def test_round_chain_rejects_duplicate_and_nested_round_structural_keys(
+    tmp_path: Path,
+) -> None:
+    write_setup_fixture(tmp_path)
+    round_path = write_round_yaml(tmp_path, 0)
+    round_path.write_text(
+        round_path.read_text(encoding="utf-8") + "round_id: R000\n",
+        encoding="utf-8",
+    )
+
+    duplicate = run_script(
+        "worktrack_round_chain_check.py", round_args("review"), tmp_path
+    )
+    duplicate_payload = parse_json(duplicate)
+    assert duplicate.returncode == 1
+    assert any(
+        "duplicate top-level field round_id" in item
+        for item in duplicate_payload["blocked_why"]
+    )
+
+    round_path.write_text(
+        textwrap.dedent(
+            """\
+            identity:
+              worktrack_id: WT-TEST
+            round_id: R000
+            """
+        ),
+        encoding="utf-8",
+    )
+    nested = run_script(
+        "worktrack_round_chain_check.py", round_args("review"), tmp_path
+    )
+    nested_payload = parse_json(nested)
+    assert nested.returncode == 1
+    assert any(
+        "worktrack_id must be a top-level field" in item
+        for item in nested_payload["blocked_why"]
+    )
+    assert any(
+        "missing top-level field worktrack_id" in item
+        for item in nested_payload["blocked_why"]
+    )
+
+    round_path.write_text(
+        textwrap.dedent(
+            """\
+            identities:
+              - worktrack_id: WT-TEST
+            round_id: R000
+            """
+        ),
+        encoding="utf-8",
+    )
+    nested_sequence = run_script(
+        "worktrack_round_chain_check.py", round_args("review"), tmp_path
+    )
+    nested_sequence_payload = parse_json(nested_sequence)
+    assert nested_sequence.returncode == 1
+    assert any(
+        "worktrack_id must be a top-level field" in item
+        for item in nested_sequence_payload["blocked_why"]
+    )
+
+
+def test_round_chain_requires_exact_review_comment_frontmatter(tmp_path: Path) -> None:
+    write_setup_fixture(tmp_path)
+    write_round_yaml(tmp_path, 0)
+    comment = write_review_comment(tmp_path, 1)
+
+    comment.write_text(
+        textwrap.dedent(
+            """\
+            ---
+            worktrack_id: WT-TEST
+            reviewed_round: R000
+            next_round: R001
+            next_round: R001
+            ---
+            Duplicate structural field.
+            """
+        ),
+        encoding="utf-8",
+    )
+    duplicate = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    duplicate_payload = parse_json(duplicate)
+    assert duplicate.returncode == 1
+    assert any(
+        "duplicate top-level field next_round" in item
+        for item in duplicate_payload["blocked_why"]
+    )
+
+    comment.write_text(
+        textwrap.dedent(
+            """\
+            ---
+            worktrack_id: WT-TEST
+            reviewed_round: R000
+            next_round: R001
+            source: human
+            ---
+            Extra frontmatter field.
+            """
+        ),
+        encoding="utf-8",
+    )
+    extra = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    extra_payload = parse_json(extra)
+    assert extra.returncode == 1
+    assert any(
+        "unexpected frontmatter field source" in item
+        for item in extra_payload["blocked_why"]
+    )
+
+    comment.write_text(
+        textwrap.dedent(
+            """\
+            ---
+            identity:
+              worktrack_id: WT-TEST
+            reviewed_round: R000
+            next_round: R001
+            ---
+            Nested structural field.
+            """
+        ),
+        encoding="utf-8",
+    )
+    nested = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    nested_payload = parse_json(nested)
+    assert nested.returncode == 1
+    assert any(
+        "worktrack_id must be a top-level field" in item
+        for item in nested_payload["blocked_why"]
+    )
+
+    comment.write_text(
+        textwrap.dedent(
+            """\
+            ---
+            worktrack_id: WT-TEST
+            reviewed_round: R000
+            ---
+            Missing structural field.
+            """
+        ),
+        encoding="utf-8",
+    )
+    missing = run_script(
+        "worktrack_round_chain_check.py", round_args("redo"), tmp_path
+    )
+    missing_payload = parse_json(missing)
+    assert missing.returncode == 1
+    assert any(
+        "missing top-level field next_round" in item
+        for item in missing_payload["blocked_why"]
+    )

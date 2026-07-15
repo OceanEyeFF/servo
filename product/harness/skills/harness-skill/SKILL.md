@@ -361,7 +361,7 @@ legacy-surface-removal Worktrack 承担。
 
 ### 8.2 Milestone 级 Gate
 
-对 milestone 而言，所有 worktrack 各自通过 closeout gate 后，还存在一个独立的 **Milestone Gate**。它是 goal-driven milestone 的 RepoScope 集成验收层，位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
+对 milestone 而言，所有 required worktrack contribution 真实关闭后，还存在一个独立的 **Milestone Gate**。Candidate Worktrack 由独立 Review 退出执行循环并由机械 Close 完成关闭，不经过 Worktrack Closeout Gate；尚未迁移路径中的 per-Worktrack Closeout Gate 仅属于 legacy。Milestone Gate 位于"全部 worktrack 关闭"之后、"`purpose_achieved` 判定"之前。
 
 Milestone Gate 拆分为两层，但不再由 `milestone-gate` skill 统一承载：
 
@@ -436,7 +436,7 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
    - 脚本输出 JSON 包含 `status`、`current_head`、`checkpoint`、`repo_baseline_unchanged`、`repo_baseline_changed`。
    - 若 `repo_baseline_unchanged == true`，跳过 `repo-refresh-skill` 绑定。
    - 若 `repo_baseline_changed == true`（或 checkpoint 缺失），必须在本轮合适阶段绑定 `repo-refresh-skill`。
-6. **文档 Freshness 基线对比**：如果发现本轮涉及 release、deploy、adapter、package、VCS baseline、CLI 版本或 operator-facing docs，且文档版本事实可能落后于代码/registry/VCS 证据，应标记 `doc_catch_up_needed: true`，并在合适阶段绑定 `worktrack-doc-catch-up-skill`；如果上次 `doc-catch-up` 执行时的 git hash 与当前 HEAD 一致且无新的文档变更，可跳过重复追平
+6. **文档 Freshness 基线对比**：Candidate Worktrack 所需的 source/docs 同步属于 PlanWork affected work、明确的 follow-up Worktrack 或 Repo Refresh owner，不在 Close 与 Repo Refresh 之间插入 `worktrack-doc-catch-up-skill`。仅对尚未迁移的 legacy route，如果文档版本事实可能落后于 release、deploy、adapter、package、VCS、CLI 或 operator-facing 事实，才标记 `doc_catch_up_needed: true` 并绑定该 Skill；legacy 上次追平 checkpoint 与当前 HEAD 一致且无文档变化时可跳过重复追平。
 7. 如果标准快照缺失、过期或明显不足，只收集解释缺口所需的最小探查证据
 8. 产出结构化状态估计结果，而不是文字摘要
 
@@ -608,8 +608,7 @@ _已合并入 §10.5。_
    创建下一编号 YAML，并从被拒绝 commit 继续。objective、scope 或 acceptance
    扩大不属于 redo，必须返回 Programmer/Repo/Milestone 层批准。`blocked` 与
    `approval_required` 均停止，不调用 legacy Recover Skill。
-4. **文档追平收口**：在 Close、handback 或 release/post-smoke 收口前，如果本轮改变了代码版本、package/release 事实、git/SVN baseline、deploy/adapter 行为、验证命令或 operator-facing 文档，必须调用或显式安排 `worktrack-doc-catch-up-skill`。
-   调用 `checkpoint_writeback.py` 写入 doc-catch-up checkpoint：
+4. **文档同步边界**：Candidate 的必要 source/docs 同步必须作为 PlanWork affected work、明确 follow-up Worktrack 或 Repo Refresh owner 的工作处理，不形成 mandatory doc-catch-up happy-path stage。以下 `worktrack-doc-catch-up-skill` 与 checkpoint 写回只保留给尚未迁移的 legacy route：
 
    ```bash
    PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/checkpoint_writeback.py \
@@ -679,8 +678,9 @@ _已合并入 §10.5。_
      ```
 
    - 脚本输出 JSON 包含 `complete`、`missing`、`present`、`checked_items`。检查 9 项必需证据：`route_decision`、`worktrack_contract_scope`、`selected_task_dispatch_packet`、`runtime_dispatch_profile`、`validation_evidence`、`governance_policy_evidence`、`gate_verdict`、`closeout_record`、`repo_refresh_checkpoint`。
-9. **项目基本面刷新触发**：以下 5 个条件任意满足时触发刷新：
-   - **Worktrack closeout 后**：merge → doc-catch-up → refresh → cleanup report → 返回到 RepoScope 时刷新 Repo 级慢变量
+9. **项目基本面刷新触发**：以下条件任意满足时触发刷新：
+   - **Candidate Worktrack closeout 后**：`finished-handback.yaml` → Repo Refresh → 返回 RepoScope
+   - **Legacy Worktrack closeout 后**：merge → doc-catch-up → refresh → cleanup report → 返回 RepoScope；该链不得覆盖 Candidate route
    - **Milestone closeout 后**：Goal-driven milestone 被 programmer 接受后刷新全部 backlog 和 control-state
    - **Git hash 变更后**：`latest_observed_checkpoint` 与当前 HEAD 不一致时标记 `repo_baseline_changed: true`
    - **Pipeline 不一致检测**：milestone-backlog、worktrack-backlog、control-state 之间不一致时触发 pipeline 恢复
@@ -693,7 +693,7 @@ _（保留）_
 
 ### 10.9 Git Commit Hash 幂等性守卫
 
-Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill` 和 `worktrack-doc-catch-up-skill`。
+Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基线重复执行 `repo-refresh-skill`。本节的 `worktrack-doc-catch-up-skill` 与 `last_doc_catch_up_checkpoint` 仅适用于尚未迁移的 legacy route；Candidate 不因此增加 doc-catch-up stage。
 
 **存储位置**：`.servo/control-state-repo.md` 的 `Baseline Traceability` 段。`.servo/control-state.md` 只保留 root control fields、路径指针与控制面记忆。
 
@@ -702,7 +702,7 @@ Harness 使用 git commit hash 作为幂等性锚点，避免对同一代码基�
 | 字段 | 含义 | 更新时机 |
 |------|------|---------|
 | `latest_observed_checkpoint` | 上次 `repo-refresh-skill` 执行后记录的 git HEAD hash | `RepoScope.Refresh` 完成后由 `checkpoint_writeback.py --checkpoint-type observed` 写入 |
-| `last_doc_catch_up_checkpoint` | 上次 `worktrack-doc-catch-up-skill` 执行后记录的 git HEAD hash | 文档追平完成后由 `checkpoint_writeback.py --checkpoint-type doc-catch-up` 写入 |
+| `last_doc_catch_up_checkpoint` | legacy 上次 `worktrack-doc-catch-up-skill` 执行后记录的 git HEAD hash | legacy 文档追平完成后由 `checkpoint_writeback.py --checkpoint-type doc-catch-up` 写入 |
 | `verified_at_history` | 最近一次 checkpoint 验证时间列表 | 每次 `checkpoint_writeback.py` 调用自动追加 |
 
 **工作逻辑**：
@@ -713,14 +713,15 @@ Harness 启动 → 状态估计阶段
   ├─ 读取 latest_observed_checkpoint
   │   ├─ hash 一致 → repo_baseline_unchanged: true → 跳过 repo-refresh-skill
   │   └─ hash 不一致/缺失 → repo_baseline_changed: true → 绑定 repo-refresh-skill
-  ├─ 读取 last_doc_catch_up_checkpoint
+  ├─ Candidate：文档同步由 PlanWork / follow-up / Repo Refresh owner 承接
+  ├─ Legacy only：读取 last_doc_catch_up_checkpoint
   │   ├─ hash 一致且本轮无文档变更 → 跳过 worktrack-doc-catch-up-skill
   │   └─ hash 不一致或有文档变更 → doc_catch_up_needed: true → 绑定 worktrack-doc-catch-up-skill
   └─ 继续正常控制回路
 
 Close/Refresh 完成 → 状态更新阶段
   ├─ checkpoint_writeback.py --checkpoint-type observed → 写入 latest_observed_checkpoint = HEAD hash
-  └─ checkpoint_writeback.py --checkpoint-type doc-catch-up → 写入 last_doc_catch_up_checkpoint = HEAD hash
+  └─ Legacy only：checkpoint_writeback.py --checkpoint-type doc-catch-up → 写入 last_doc_catch_up_checkpoint = HEAD hash
 ```
 
 **脚本引用**：
@@ -733,7 +734,7 @@ Close/Refresh 完成 → 状态更新阶段
 **硬约束**：
 
 - git hash 对比仅作为"跳过重复刷新"的条件，不得作为"跳过首次验证"的借口
-- `doc-catch-up` 的 hash 对比只能跳过"代码未变且文档未变"的重复追平；如果本轮明确修改了文档，即使 hash 未变也必须触发文档追平检查
+- legacy `doc-catch-up` 的 hash 对比只能跳过"代码未变且文档未变"的重复追平；Candidate 不使用该规则创建新的 happy-path hop
 
 ---
 
@@ -836,12 +837,12 @@ work-collection milestone（`milestone_kind == "work-collection"`）在以下场
 |----------|---------|
 | `Observe` | `estimated_state`, `sensor_readings`, `branch_context`, `repo_baseline_changed`, `repo_baseline_unchanged`, `doc_catch_up_needed`, `config_hydration_gaps` |
 | `Decide` | `selected_operator`, `blocked_routes`, `approval_status`, `guard_results`（8 guards） |
-| `Init` | `initialized_worktrack`, `branch_created`, `baseline_ref`, `contract_ref` |
+| `Init` | Candidate：`initialized_worktrack`, `branch_created`, `initial_requirement_ref`, `initial_entry_checkpoint`；legacy only：`baseline_ref`, `contract_ref` |
 | `Dispatch` | `dispatch_mode`, `execution_carrier`, `runtime_dispatch_profile`, `carrier_decision`, `decision_inputs` |
 | `Verify` | `evidence_collected`, `review_findings`, `test_results`, `policy_check_results` |
 | `Judge` | `gate_verdict`, `per_axis_verdict`, `blocking_findings` |
 | `Recover` | `recover_mode`, `recovery_target`, `recovery_constraints` |
-| `Close` | `closeout_commit`, `merge_target`, `cleanup_done`, `snapshot_refreshed` |
+| `Close` | Candidate：`finished_handback_ref`, `merge_result`, `repo_refresh_handoff`；legacy only：`closeout_commit`, `cleanup_done`, `snapshot_refreshed` |
 | `ChangeGoal` | `goal_diff`, `impact_analysis`, `approval_status` |
 | `SetGoal` | `goal_charter_created`, `initialization_status` |
 

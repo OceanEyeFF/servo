@@ -14,6 +14,16 @@ from pathlib import Path
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 ROUND_YAML = re.compile(r"^worktrack-r(\d{3})\.yaml$")
 REVIEW_COMMENT = re.compile(r"^worktrack-r(\d{3})-review-comment\.md$")
+KEY_VALUE_LINE = re.compile(
+    r"^([ \t]*)(?:(-[ \t]+))?([A-Za-z_][A-Za-z0-9_-]*):"
+    r"(?:[ \t]*(.*?))?[ \t]*$"
+)
+ROUND_STRUCTURAL_FIELDS = frozenset(
+    {"worktrack_id", "round_id", "previous_round", "review_comment_ref"}
+)
+COMMENT_STRUCTURAL_FIELDS = frozenset(
+    {"worktrack_id", "reviewed_round", "next_round"}
+)
 
 
 def resolve_repo_root() -> tuple[Path | None, str]:
@@ -32,15 +42,73 @@ def resolve_repo_root() -> tuple[Path | None, str]:
     return Path(completed.stdout.strip()).resolve(), ""
 
 
-def scalar(content: str, field: str) -> str:
-    match = re.search(
-        rf"^\s*{re.escape(field)}:\s*([^#\n\r]+?)\s*$",
-        content,
-        re.MULTILINE,
-    )
-    if not match:
-        return ""
-    return match.group(1).strip().strip("`\"'")
+def clean_scalar(raw: str) -> str:
+    return raw.split("#", 1)[0].strip().strip("`\"'")
+
+
+def structural_values(
+    content: str,
+    *,
+    required_fields: tuple[str, ...],
+    structural_fields: frozenset[str],
+    context: str,
+    blockers: list[str],
+    exact_fields: bool = False,
+) -> dict[str, str]:
+    values: dict[str, str] = {}
+    seen_top_level: set[str] = set()
+
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        match = KEY_VALUE_LINE.fullmatch(line)
+        if match is None:
+            if exact_fields:
+                append_unique(
+                    blockers,
+                    f"{context}: invalid frontmatter line {line_number}",
+                )
+            continue
+
+        indent, sequence_marker, field, raw_value = match.groups()
+        if exact_fields and field not in structural_fields:
+            append_unique(
+                blockers,
+                f"{context}: unexpected frontmatter field {field}",
+            )
+            continue
+        if field not in structural_fields:
+            continue
+        if indent or sequence_marker:
+            append_unique(
+                blockers,
+                f"{context}: {field} must be a top-level field",
+            )
+            continue
+        if field in seen_top_level:
+            append_unique(
+                blockers,
+                f"{context}: duplicate top-level field {field}",
+            )
+            continue
+
+        seen_top_level.add(field)
+        value = clean_scalar(raw_value or "")
+        if not value:
+            append_unique(blockers, f"{context}: {field} must not be empty")
+            continue
+        values[field] = value
+
+    for field in required_fields:
+        if field not in seen_top_level:
+            append_unique(
+                blockers,
+                f"{context}: missing top-level field {field}",
+            )
+
+    return values
 
 
 def frontmatter(content: str) -> str:
@@ -87,23 +155,37 @@ def validate_round_yaml(
         append_unique(blockers, f"cannot read {path.name}: {exc}")
         return
 
+    required_fields = ("worktrack_id", "round_id")
+    if index > 0:
+        required_fields += ("previous_round", "review_comment_ref")
+    values = structural_values(
+        content,
+        required_fields=required_fields,
+        structural_fields=ROUND_STRUCTURAL_FIELDS,
+        context=path.name,
+        blockers=blockers,
+    )
+
     expected_round = round_name(index)
-    if scalar(content, "worktrack_id") != worktrack_id:
+    if values.get("worktrack_id") and values["worktrack_id"] != worktrack_id:
         append_unique(blockers, f"{path.name}: worktrack_id mismatch")
-    if scalar(content, "round_id") != expected_round:
+    if values.get("round_id") and values["round_id"] != expected_round:
         append_unique(blockers, f"{path.name}: round_id must be {expected_round}")
 
     if index == 0:
         return
 
     expected_previous = round_name(index - 1)
-    if scalar(content, "previous_round") != expected_previous:
+    if values.get("previous_round") and values["previous_round"] != expected_previous:
         append_unique(
             blockers,
             f"{path.name}: previous_round must be {expected_previous}",
         )
     expected_comment = runtime_ref(worktrack_id, review_comment_name(index))
-    if scalar(content, "review_comment_ref") != expected_comment:
+    if (
+        values.get("review_comment_ref")
+        and values["review_comment_ref"] != expected_comment
+    ):
         append_unique(
             blockers,
             f"{path.name}: review_comment_ref must be {expected_comment}",
@@ -127,17 +209,25 @@ def validate_review_comment(
     if not metadata:
         append_unique(blockers, f"{path.name}: YAML frontmatter is required")
         return
-    if scalar(metadata, "worktrack_id") != worktrack_id:
+    values = structural_values(
+        metadata,
+        required_fields=("worktrack_id", "reviewed_round", "next_round"),
+        structural_fields=COMMENT_STRUCTURAL_FIELDS,
+        context=path.name,
+        blockers=blockers,
+        exact_fields=True,
+    )
+    if values.get("worktrack_id") and values["worktrack_id"] != worktrack_id:
         append_unique(blockers, f"{path.name}: worktrack_id mismatch")
 
     expected_reviewed = round_name(index - 1)
     expected_next = round_name(index)
-    if scalar(metadata, "reviewed_round") != expected_reviewed:
+    if values.get("reviewed_round") and values["reviewed_round"] != expected_reviewed:
         append_unique(
             blockers,
             f"{path.name}: reviewed_round must be {expected_reviewed}",
         )
-    if scalar(metadata, "next_round") != expected_next:
+    if values.get("next_round") and values["next_round"] != expected_next:
         append_unique(
             blockers,
             f"{path.name}: next_round must be {expected_next}",
