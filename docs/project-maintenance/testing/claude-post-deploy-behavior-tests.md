@@ -167,7 +167,7 @@ EOF
 
 2026-06-02 real dogfood 观察（证据摘要）：
 
-- Evidence refs: `.servo/worktrack/gate-evidence.md` and `.servo/worktrack/closeout-record.md` for `WT-20260602-claude-real-dogfood-gate-validation`; formal docs commit `d8a47ff6ea9b8ee67a462fe25c4a658221685592`.
+- Historical evidence for `WT-20260602-claude-real-dogfood-gate-validation` predates the Candidate Worktrack model; it is retained only as an old deployment observation and is not a current artifact contract.
 - Claude Code version: `2.1.119`.
 - Backend smoke: `claude --bare --no-session-persistence --max-budget-usd 0.03 --tools "" --permission-mode dontAsk --output-format json -p ...` returned `CLAUDE_REAL_BACKEND_OK`, cost `$0.00275`, with no permission denials.
 - Skill invocation: `/harness-skill` invocation required `--tools default` with file/execution tools disallowed; `--tools ""`, `--tools Skill`, and `--tools SlashCommand` were not sufficient for this probe.
@@ -184,7 +184,7 @@ EOF
 
 读取每轮完整产物：`session.log`、Claude 最终输出、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、源码与测试结果。
 
-观察点：是否从 `.servo/` 缺失进入 `repo-init-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `worktrack-dispatch-skill`、产生 review/test/rule-check/gate evidence、策略表现一致。
+观察点：是否从 `.servo/` 缺失进入 `repo-init-goal-skill`、建立 goal/snapshot/control state，并通过 PlanWork → 独立 Review → Close 只完成一个 bounded Worktrack；完成后应产生 finished handback，而非 rolling Contract/Dispatch/Gate artifacts。
 
 ## 十一、继续与停止
 
@@ -198,4 +198,4 @@ EOF
 - [Codex Post-Deploy Behavior Tests](./codex-post-deploy-behavior-tests.md)
 - [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
 - [Claude Repo-local Usage Help](../usage-help/claude.md)
-- [Harness 运行协议](../../harness/foundations/Harness运行协议.md)
+- [Harness 指导思想](../../harness/foundations/Harness指导思想.md)

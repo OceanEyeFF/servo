@@ -28,9 +28,9 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 不使用的情况：
 
 - 已经明确是修改 `Goal Charter`，且用户要求直接进入目标变更流程（用 `repo-change-goal-skill`）
-- 已经有批准过的 worktrack contract，且当前任务只是在其中调度下一步（用 `schedule-worktrack-skill`）
+- 已经有 active Worktrack，且请求不改变 initial mission（交回当前 PlanWork/Review loop）
 - 已经确定要初始化新的 milestone，且 milestone brief 已确认、无需先分类路由（用 `milestone-init-skill`）
-- 已经确定要初始化新的 worktrack，且无需先分类路由（用 `worktrack-init-skill`）
+- 已经批准新的 Worktrack initial requirement，且无需先分类路由（由上层 Orchestrator 调用 PlanWork normal entry）
 - 只是 repo 下一步优先级判断，没有具体追加请求（用 `repo-whats-next-skill`）
 
 ## 输入
@@ -42,9 +42,9 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 - 当前 `Repo Goal / Charter`
 - 当前 `Repo Snapshot / Status`
 - 当前 `Harness Control State`
-- 如当前存在活跃 worktrack，读取判断边界所需的最小 `Worktrack Contract` 摘要
+- 如当前存在活跃 Worktrack，读取其 immutable initial requirement 和当前 round/review handoff 摘要
 
-只在判断"scope expansion"是否成立时读取活跃 worktrack 产物。活跃 worktrack 产物的唯一合法角色是判定 scope expansion 边界；将 worktrack 队列当成 repo 级待办列表的行为禁止出现。
+只在判断 scope expansion 是否成立时读取这些输入；不得把 round plan 当成 Repo 级待办列表。
 
 ## 分类规则
 
@@ -95,10 +95,10 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 路由结果：
 
-- `recommended_next_route: worktrack-init-skill`
+- `recommended_next_route: worktrack-plan-work-skill:normal`
 - `recommended_next_scope: WorktrackScope`
 - `approval_required` 取决于该追加请求是否已经获得 programmer 授权
-- 输出 `suggested_node_type` 与理由，最终绑定由 `worktrack-init-skill` 完成
+- 输出 `suggested_node_type` 与理由；最终 entry synthesis 由上层 Repo/Milestone Orchestrator 完成
 
 ### 4. scope expansion
 

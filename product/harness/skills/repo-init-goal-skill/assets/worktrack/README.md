@@ -1,9 +1,7 @@
 # Harness Init Assets / Worktrack
 
-这里承接 `repo-init-goal-skill` 自带的 `.servo/worktrack/` worktrack 级初始化模板。
+这里承接 `repo-init-goal-skill` 自带的 Worktrack control-state seed。
 
-当前入口：
-
-- [contract.md](./contract.md)
-- [plan-task-queue.md](./plan-task-queue.md)
-- [gate-evidence.md](./gate-evidence.md)
+Repo init 不预建 Worktrack 运行 artifact。Candidate PlanWork 按具体
+`worktrack_id` create-only 物化 `initial-requirement.yaml`，Close 成功后生成
+`finished-handback.yaml`；临时 round chain 位于 `.servo/tmp/`。

@@ -17,7 +17,7 @@ last_verified: 2026-06-13
 
 - [.servo_template/README.md](./.servo_template/README.md)：repo-local execution template layer，承接 `.servo/` 运行目录的 scaffold 模板，不承接 canonical truth
 
-`docs/harness/` 继续承接 Harness doctrine 与运行协议真相层。
+`docs/harness/foundations/Harness指导思想.md` 承接最小跨模块 doctrine。
 `product/harness/` 只承接 Harness executable source。
 `memory-side`、`task-interface` 与 `docs/harness/adjacent-systems/` 已退役，不再保留 repo 内独立源码根或合同层。
 
@@ -26,6 +26,6 @@ last_verified: 2026-06-13
 - 业务源码只改这里，不直接改 `.claude/` 或 `.agents/`
 - `.claude/` 与 `.agents/` 只作为 repo-local deploy target
 - package/local operator 部署主路径走 `servo-installer`（Node-only distribution）
-- 新的 Harness ontology 仍落在 `docs/harness/`
+- Skill 的 operational contract 直接落在对应 `product/harness/skills/*/SKILL.md`
 - 新的 Harness executable source 应进入 `product/harness/`
 - `.servo_template/` 只承接 `.servo/` scaffold templates，不是第四个源码根，也不是 artifact 模板的长期 owner

@@ -144,8 +144,9 @@ WT_FIELDS = [
     ("active_worktrack_branch", "wt", "active_worktrack_branch"),
     ("active_worktrack_node_type", "wt", "active_worktrack_node_type"),
     ("active_worktrack_status", "wt", "active_worktrack_status"),
-    ("worktrack_contract_ref", "wt", "worktrack_contract_ref"),
-    ("worktrack_plan_ref", "wt", "worktrack_plan_ref"),
+    ("initial_requirement_ref", "wt", "initial_requirement_ref"),
+    ("finished_handback_ref", "wt", "finished_handback_ref"),
+    ("implementation_checkpoint", "wt", "implementation_checkpoint"),
     ("worktrack_autonomy_policy", "wt", "worktrack_autonomy_policy"),
     ("recommended_next_route", "wt", "recommended_next_route"),
     ("recommended_next_scope", "wt", "recommended_next_scope"),
@@ -207,10 +208,6 @@ SLIM_FIELDS = [
     ("reason", "slim", "reason"),
     ("approval_scope", "slim", "approval_scope"),
     ("approval_persistence", "slim", "approval_persistence"),
-    # Linked Formal Documents
-    ("worktrack_contract", "slim", "worktrack_contract"),
-    ("plan_task_queue", "slim", "plan_task_queue"),
-    ("gate_evidence", "slim", "gate_evidence"),
     # Autonomy Ledger
     ("autonomy_budget_remaining", "slim", "autonomy_budget_remaining"),
     ("autonomous_worktracks_opened", "slim", "autonomous_worktracks_opened"),
@@ -226,6 +223,12 @@ for src_field, target_file, out_field in (
 SKIP_FIELDS = {
     # Frontmatter-only fields (not control fields)
     "status",
+    # Retired rolling Worktrack interface. Never copy it into split output.
+    "worktrack_contract",
+    "worktrack_contract_ref",
+    "worktrack_plan_ref",
+    "plan_task_queue",
+    "gate_evidence",
     # Handled via derived logic (read from all_fields in map_fields_to_outputs)
     "current_next_action",
     # runtime_dispatch_profile and all 12 sub-fields (all empty, schema preserved in docs)
@@ -873,8 +876,9 @@ status: "active"
 {_fmt_field("active_worktrack_branch", fields.get("active_worktrack_branch", ""))}
 {_fmt_field("active_worktrack_node_type", fields.get("active_worktrack_node_type", ""))}
 {_fmt_field("active_worktrack_status", fields.get("active_worktrack_status", "none"))}
-{_fmt_field("worktrack_contract_ref", fields.get("worktrack_contract_ref", ""))}
-{_fmt_field("worktrack_plan_ref", fields.get("worktrack_plan_ref", ""))}
+{_fmt_field("initial_requirement_ref", fields.get("initial_requirement_ref", ""))}
+{_fmt_field("finished_handback_ref", fields.get("finished_handback_ref", ""))}
+{_fmt_field("implementation_checkpoint", fields.get("implementation_checkpoint", ""))}
 {_fmt_field("worktrack_autonomy_policy", fields.get("worktrack_autonomy_policy", "manual-only"))}
 
 ## Branch Environment Guard — WT Level
@@ -1052,14 +1056,14 @@ status: "active"
 {_fmt_field("approval_scope", fields.get("approval_scope", ""))}
 {_fmt_field("approval_persistence", fields.get("approval_persistence", "one-shot"))}
 
-## Linked Formal Documents
+## Worktrack Pointers
 
-> 跨层文档路径指针。只是引用，不含业务真相。
-> 无活跃 Worktrack 时三个字段均为空。
+> Candidate Worktrack 持久入口、完成交接与当前实现 checkpoint 指针。
+> 无活跃或已完成 Worktrack 时，对应字段可以为空。
 
-{_fmt_field("worktrack_contract", fields.get("worktrack_contract", ""))}
-{_fmt_field("plan_task_queue", fields.get("plan_task_queue", ""))}
-{_fmt_field("gate_evidence", fields.get("gate_evidence", ""))}
+{_fmt_field("initial_requirement_ref", fields.get("initial_requirement_ref", ""))}
+{_fmt_field("finished_handback_ref", fields.get("finished_handback_ref", ""))}
+{_fmt_field("implementation_checkpoint", fields.get("implementation_checkpoint", ""))}
 
 ## Autonomy Ledger
 

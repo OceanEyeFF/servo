@@ -21,7 +21,7 @@ last_verified: 2026-06-13
 
 | 内容 | 权威位置 |
 |------|---------|
-| Harness 思路层（doctrine/runtime） | [../../harness/foundations/README.md](../../harness/foundations/README.md) |
+| Harness 跨模块指导思想 | [../../harness/foundations/Harness指导思想.md](../../harness/foundations/Harness指导思想.md) |
 | 治理规则与检查 | [../governance/README.md](../governance/README.md) |
 | Deploy runbook | [../deploy/README.md](../../servo-installer/README.md) |
 | 测试执行 | [../testing/README.md](../testing/README.md) |

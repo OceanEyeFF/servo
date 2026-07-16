@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> 这是当前仓库的 Claude Code 入口文件。若与 `docs/project-maintenance/` 或 `docs/harness/` 冲突，以对应承接层文档为准。`AGENTS.md` 是 agent-facing 通用规则入口，本文件是 Claude Code 专用适配层。
+> 这是当前仓库的 Claude Code 入口文件。`AGENTS.md` 是通用规则入口，本文件是 Claude Code 专用适配层；Skill 运行合同以 canonical `SKILL.md` 为准。
 
 ## 项目定位
 
@@ -15,7 +15,7 @@
 
 | 目录 | 性质 |
 |------|------|
-| `docs/` | 真相层：project-maintenance / harness / analysis / ideas / archive |
+| `docs/` | 跨模块文档层：project-maintenance 与最小 Harness doctrine |
 | `product/` | 业务代码唯一源码根：harness skills + adapters |
 | `toolchain/` | 脚本、评测、测试、打包、部署工具 |
 | `.servo/` | runtime control-plane state（非长期真相层） |
@@ -31,12 +31,9 @@
 4. `docs/project-maintenance/foundations/root-directory-layering.md`
 5. `docs/project-maintenance/governance/review-verify-handbook.md`
 6. `toolchain/toolchain-layering.md`
-7. `docs/harness/README.md`
-8. `docs/harness/foundations/Harness指导思想.md`
-9. `docs/harness/foundations/Harness运行协议.md`
-10. `docs/harness/artifact/worktrack/contract.md`
-11. `docs/harness/artifact/worktrack/plan-task-queue.md`
-12. `docs/harness/artifact/worktrack/gate-evidence.md`
+7. `docs/harness/foundations/Harness指导思想.md`
+8. `product/harness/skills/README.md`
+9. 当前任务对应的 canonical `SKILL.md`
 
 `do_not_read_yet`：`.agents/` `.claude/` `.autoworkflow/` `.spec-workflow/` `.nav/`
 
@@ -46,7 +43,7 @@
 2. `implement`：只做当前任务，不顺手扩边界
 3. `verify`：先跑与改动面匹配的检查和测试
 4. `review`：把 diff、计划和验收标准对齐
-5. `writeback`：把已验证事实写回 `docs/project-maintenance/` 或 `docs/harness/`，清理失效上下文
+5. `writeback`：项目治理写回 `docs/project-maintenance/`；Skill 运行事实写回 canonical package；Harness docs 只接收稳定 doctrine
 
 ## 验证命令
 
@@ -70,7 +67,7 @@ Python 命令默认使用 `PYTHONDONTWRITEBYTECODE=1 python3 ...`，避免生成
 - 根目录分层、一级子目录、hidden/state/mount 层或 `.nav/` 规则变化 → 必须同步更新 foundations 文档和对应治理检查
 - `AGENTS.md`、review/verify 流程或退出标准变化 → 必须同步更新 `review-verify-handbook.md`
 - deployment / adapter 行为变化 → 必须同步更新相关 `deploy/` 文档和 verify 命令
-- Harness doctrine、workflow family、artifact 合同或 canonical skill 入口变化 → 必须同步更新 `docs/harness/`、`product/*/skills/` 入口与对应治理检查
+- Harness doctrine 变化 → 同步唯一 doctrine 文件；canonical Skill 入口或运行合同变化 → 同步 package inventory、对应 `SKILL.md` 与治理检查
 - 只有已验证结果才可以回写为长期真相
 
 ## 文档治理基线
@@ -88,8 +85,8 @@ Python 命令默认使用 `PYTHONDONTWRITEBYTECODE=1 python3 ...`，避免生成
 - 不要把 deploy target、`.agents/` `.claude/` 或 `.servo/` 写成源码真相
 - 不要把未验证结论写回长期 truth layer
 - 不要在普通 Decide 中修改 repo 目标；目标变更必须走 ChangeGoal
-- Evidence 与 Gate 必须分开；Evidence 证明状态，Gate 判断推进
-- PR 不是闭环终点；完整 closeout = merge → refresh repo snapshot → cleanup → return RepoScope
+- Worktrack 技术判断由独立 Review 承担，Close 只做机械关闭与 Repo Refresh handoff
+- PR 不是闭环终点；Candidate Worktrack 完成以 merge、finished handback 和 Repo Refresh 为准
 - 修复类任务不得只压住当前症状；必须检查相邻状态、恢复路径和 operator-facing 语义
 
 ## 外部参考

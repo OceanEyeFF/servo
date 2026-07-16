@@ -11,7 +11,7 @@ last_verified: 2026-06-13
 
 ## 一、快速试用路径
 
-**新用户先读 [quickstart.md](./quickstart.md) 10 分钟快速入门**，再回到本页了解 `agents` backend 细节。
+通用流程先读 [recommended-usage.md](./recommended-usage.md)，再回到本页了解 `agents` backend 细节。
 
 public/stable 主路径是 `agents`，推荐 `servo-installer` selector：
 

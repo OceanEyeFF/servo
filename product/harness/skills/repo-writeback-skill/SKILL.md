@@ -13,8 +13,7 @@ description: 当需要在 .servo/ artifact 中执行事务化写回时使用此�
 
 Candidate Worktrack completion uses the dedicated
 `candidate-worktrack-completion` mode below. That mode consumes the structured
-Close result and `finished-handback.yaml`; it never falls back to the legacy
-closeout-progress shape and never revalidates Worktrack Review or Close.
+Close result and `finished-handback.yaml`; it never revalidates Worktrack Review or Close.
 
 ## 何时使用
 
@@ -79,7 +78,7 @@ Candidate pre-validation is intentionally mechanical:
 - the requested effects fit the Candidate capability boundary below.
 
 This mode does not inspect Git parent/tree/path relationships, redo Worktrack
-acceptance, judge the merge, or normalize legacy authority. Invalid Candidate
+acceptance or judge the merge. Invalid Candidate
 input returns `writeback_blocked`; it is not retried through another mode.
 
 Candidate completion permits exactly two capabilities:
@@ -91,15 +90,15 @@ Candidate completion permits exactly two capabilities:
 
 It cannot set Milestone final status, final acceptance, or `purpose_achieved`;
 write Gate verdicts, axis reports/findings, or Milestone history; touch another
-Worktrack backlog entry or any Milestone contribution state; or create a legacy
-closeout/Gate/bundle artifact. General `target_file`, `operations`,
+Worktrack backlog entry or any Milestone contribution state; or create another
+Worktrack completion artifact. General `target_file`, `operations`,
 `move_entry`, and archive capabilities are unavailable in
 `candidate-worktrack-completion` mode. A handoff value cannot expand this
 allowlist.
 
 ## General Writeback Instruction Format
 
-This format belongs to general and retained legacy modes. Candidate M0 does not
+This format belongs to general Repo/Milestone writeback. Candidate M0 does not
 accept its arbitrary `target_file` or `operations` fields.
 
 ```yaml
@@ -120,16 +119,6 @@ writeback_instruction:
     - check: "file_parseable"
     - check: "field_value_equals"
     - check: "no_extra_fields_modified"
-  evidence_passthrough: # legacy-only; forbidden in Candidate completion mode
-    closeout_evidence_bundle_ref: string | N/A
-    closeout_bundle_status: complete | incomplete | contaminated | historical_gap | missing | N/A
-    dispatch_provenance:
-      status: captured | linked | incomplete | missing | historical_gap | contaminated | N/A
-      runtime_dispatch_record_ref: string | N/A
-      subagent_dispatch_record_refs: []
-      missing_dispatch_record_refs: []
-      dispatch_result_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | N/A
-      resolved_runtime_dispatch_status: delegated | current_carrier_fallback | permission_blocked | runtime_gap | dispatch_package_unsafe | blocked | historical_gap | incomplete | missing | contaminated | N/A
 ```
 
 ### 支持的操作
@@ -150,7 +139,7 @@ writeback_instruction:
    b. 字段路径合法（在目标文件 schema 范围内）
    c. 值类型与目标字段匹配
    d. 非破坏性操作（不删除关键字段、不修改 protected sections）
-   e. Candidate completion validates its structured Close result, finished handback, registered Milestone ownership, selected Worktrack backlog entry, and exact capability allowlist as defined above. It rejects any identity/target override before the first write. Explicit legacy closeout writes continue to require the legacy `evidence_passthrough`; the two ingress shapes must not be mixed.
+   e. Candidate completion validates its structured Close result, finished handback, registered Milestone ownership, selected Worktrack backlog entry, and exact capability allowlist as defined above. It rejects any identity/target override before the first write.
 3. 执行写入：
    a. 读取目标文件全文
    b. 定位目标 YAML block
@@ -180,14 +169,6 @@ writeback_instruction:
   - `completed/blocked/deferred`: integer
   - `pipeline_summary`: string pattern `planned=N / active=N / completed=N / superseded=N`
   - `latest_closed_worktrack_commit`: string
-  - `closeout_evidence_bundle_ref`: string
-  - `closeout_bundle_status`: string enum (`complete` / `incomplete` / `contaminated` / `historical_gap` / `missing`)
-  - `dispatch_provenance.status`: string enum (`captured` / `linked` / `incomplete` / `missing` / `historical_gap` / `contaminated`)
-  - `runtime_dispatch_record_ref`: string
-  - `subagent_dispatch_record_refs`: list
-  - `missing_dispatch_record_refs`: list
-  - `dispatch_result_status`: string enum (`delegated` / `current_carrier_fallback` / `permission_blocked` / `runtime_gap` / `dispatch_package_unsafe` / `blocked` / `historical_gap` / `N/A`)
-  - `resolved_runtime_dispatch_status`: string enum (`delegated` / `current_carrier_fallback` / `permission_blocked` / `runtime_gap` / `dispatch_package_unsafe` / `blocked` / `historical_gap` / `incomplete` / `missing` / `contaminated`)
   - `finished_handback_ref`: concrete repo-relative path
   - `closeout_checkpoint_commit`: concrete Git commit ref supplied by Close
   - `repo_refresh_handoff`: object
@@ -199,9 +180,7 @@ writeback_instruction:
 - 不得修改 `status: completed` → `status: planned`（不可逆状态变更需 programmer 审批）
 - Candidate completion must preserve `finished_handback_ref`, `closeout_checkpoint_commit`, `repo_refresh_handoff`, and stable `evidence_refs` exactly as supplied by Repo Refresh.
 - Candidate completion must preserve instruction/handback/registered-owner identity and must not accept identity, target, or operation overrides from `repo_refresh_handoff`.
-- Candidate completion must block final Milestone status/acceptance, `purpose_achieved`, Gate/axis, Milestone-history, every Milestone-contribution, and legacy-artifact write.
-- Explicit legacy closeout mode 不得删除或降级已有的 `closeout_evidence_bundle_ref`、`closeout_bundle_status`、`dispatch_provenance.status`、`runtime_dispatch_record_ref`、`subagent_dispatch_record_refs`、`missing_dispatch_record_refs`、`dispatch_result_status`、`resolved_runtime_dispatch_status`。
-- 若调用方只提供 prose closeout summary 或 carrier 自述，writeback 必须返回 `writeback_blocked: dispatch_provenance_missing` 或保留上游明确的 `historical_gap`；不得合成 `delegated`、`current_carrier_fallback`、`permission_blocked`、`runtime_gap`、`dispatch_package_unsafe` 或 `blocked`。
+- Candidate completion must block final Milestone status/acceptance, `purpose_achieved`, Gate/axis, Milestone-history, every Milestone-contribution, and any write outside its two allowed capabilities.
 
 ## 后校验规则
 
@@ -288,69 +267,9 @@ targets/operations.
 M0 does not set final Milestone status/acceptance or `purpose_achieved`, create
 or modify Gate/axis evidence, archive Milestone history, touch another
 Worktrack backlog entry or any Milestone contribution state, or write any
-legacy Worktrack closeout artifact. Failure returns
+additional Worktrack completion artifact. Failure returns
 `writeback_blocked` or `writeback_incomplete` with the exact target and leaves
 later operations unclaimed.
-
-### M1: worktrack-closeout-progress (legacy-only)
-
-更新 milestone progress_counter 并追加 latest_closed_worktrack_commit。
-
-```yaml
-writeback_instruction:
-  mode: "worktrack-closeout-progress"
-  params:
-    milestone_id: "MS-20260623-002"
-    worktrack_id: "WT-xxx"
-    commit_ref: "wt-xxx@abc1234"
-    merge_target: "ms/MS-20260623-002-worktrack-lifecycle-complete"
-    closeout_evidence_bundle_ref: ".servo/...#closeout-evidence-bundle"
-    closeout_bundle_status: "complete"
-    dispatch_provenance:
-      status: "linked"
-      runtime_dispatch_record_ref: ".servo/...#runtime-dispatch-WT-xxx"
-      subagent_dispatch_record_refs: []
-      missing_dispatch_record_refs: []
-      dispatch_result_status: "delegated"
-      resolved_runtime_dispatch_status: "delegated"
-```
-
-自动执行：
-
-- milestone artifact: `progress_counter.completed += 1`, `updated = now`
-- control-state: 追加 `latest_closed_worktrack_commit`, 更新 `active_milestone_progress`
-- worktrack-backlog: upsert 条目 status = `done`；若写入 evidence refs，同步保留 `closeout_evidence_bundle_ref`、`closeout_bundle_status` 与完整 `dispatch_provenance` passthrough 字段
-
-### M2: worktrack-init-register
-
-注册新 worktrack 到 control-state 和 worktrack-backlog。
-
-```yaml
-writeback_instruction:
-  mode: "worktrack-init-register"
-  params:
-    worktrack_id: "WT-xxx"
-    milestone_id: "MS-xxx"
-    node_type: "docs"
-    branch: "wt-xxx"
-    status: "active"
-```
-
-### M3: worktrack-closeout-clean
-
-Worktrack closeout 后清理 control-state 中的 active worktrack 指针。
-
-```yaml
-writeback_instruction:
-  mode: "worktrack-closeout-clean"
-  params:
-    worktrack_id: "WT-xxx"
-    next_function: "RepoScope.Observe"
-```
-
-自动执行：
-
-- control-state: `active_worktrack = none`, `worktrack_scope = closed`, `current_function = next_function`
 
 ### M4: milestone-backlog-upsert
 
@@ -460,31 +379,6 @@ writeback_instruction:
 ## 手动写回模式（高级）
 
 当内置模式不覆盖时，使用原始 instruction 格式：
-
-### 模式 A: Worktrack closeout 后更新 progress
-
-```yaml
-writeback_instruction:
-  target_file: ".servo/milestone/MS-20260623-002.md"
-  operations:
-    - action: "set"
-      field_path: "progress_counter.completed"
-      value: 2
-    - action: "set"
-      field_path: "updated"
-      value: "2026-06-23T15:00:00+08:00"
-```
-
-### 模式 B: 追加 latest_closed_worktrack_commit
-
-```yaml
-writeback_instruction:
-  target_file: ".servo/control-state.md"
-  operations:
-    - action: "append_entry"
-      list_path: "Active Worktrack.latest_closed_worktrack_commit"
-      value: "wt-xxx@abc1234 (merged to ms/MS-xxx)"
-```
 
 ### 模式 C: Milestone completion 事务
 

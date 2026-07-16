@@ -21,10 +21,7 @@
     "product/harness/skills/repo-init-goal-skill/assets/template/README.md",
     "product/harness/skills/repo-init-goal-skill/assets/template/goal-charter.template.md",
     "product/harness/skills/repo-init-goal-skill/assets/worktrack/README.md",
-    "product/harness/skills/repo-init-goal-skill/assets/worktrack/control-state-wt.md",
-    "product/harness/skills/repo-init-goal-skill/assets/worktrack/contract.md",
-    "product/harness/skills/repo-init-goal-skill/assets/worktrack/gate-evidence.md",
-    "product/harness/skills/repo-init-goal-skill/assets/worktrack/plan-task-queue.md"
+    "product/harness/skills/repo-init-goal-skill/assets/worktrack/control-state-wt.md"
   ],
   "target_dir": "repo-init-goal-skill",
   "target_entry_name": "SKILL.md",
@@ -52,9 +49,6 @@
     "assets/template/goal-charter.template.md",
     "assets/worktrack/README.md",
     "assets/worktrack/control-state-wt.md",
-    "assets/worktrack/contract.md",
-    "assets/worktrack/gate-evidence.md",
-    "assets/worktrack/plan-task-queue.md",
     "payload.json",
     "aw.marker"
   ],

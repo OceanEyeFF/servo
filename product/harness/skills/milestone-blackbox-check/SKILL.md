@@ -31,7 +31,7 @@ description: 当 milestone gate 需要按 target_type 从外部视角（用户�
 - 需要逐行代码审查 → 应使用 `milestone-whitebox-check`
 - 需要检测证据伪造（mock abuse / self-review bias 等）→ 应使用 `milestone-anticheat-check`
 - 需要复合验收 lane 评估（code-review / feature-completeness 等）→ 应使用 `milestone-composite-check`
-- 需要对单个 WT 做 gate 判定 → 应使用 `worktrack-gate-skill`
+- 需要对单个 Worktrack 做技术验收 → 应由独立 `worktrack-review-skill` 在 Worktrack 内完成
 - 当前处于 worktrack scope 而非 milestone scope → 不适用
 
 ## Target-Type 路由
@@ -430,9 +430,9 @@ blackbox_verdict:
 
 - 本技能的设计依据：Milestone Gate 四轴 Skills 与两层编排设计稿 — 定义四轴架构、Skill 层级、输入/输出合同
 - Milestone Gate 聚合合同 — 定义 aggregation_rules 和 Layer 2 输入格式（本技能是 Layer 2 的输入来源之一）
-- Single-Acceptance Contract — 定义被消费的 WT verdict 格式
-- Worktrack Contract — 定义 WT 的 scope、node_type、completion_signals_trace 等字段
+- Candidate `initial-requirement.yaml` — 定义 WT 的 objective、scope 与 acceptance
+- Candidate `finished-handback.yaml` — 提供完成 checkpoint 与稳定 evidence refs
 - Skill 公共约束 C-1 至 C-8（已内联于 §硬约束）
 - 路径分层规则 — B4 检查所需的 repo 目录分层定义
 
-以上 docs 引用为源侧 authoring trace。本技能作为 canonical skill package 自洽分发时，不依赖这些路径的运行时可用性（C-8）。
+本技能作为 canonical package 自洽分发，不依赖 source-repo docs 的运行时可用性（C-8）。

@@ -17,11 +17,7 @@
 4. `install --backend agents`
 5. 如需只读复验，再跑 `diagnose --backend agents --json` 或 `verify --backend agents`
 
-`.servo_template` legacy scaffold profile 相关说明：
-
-`first-wave-minimal` 是 legacy profile，生成 `control-state.md`、`goal-charter.md`、`repo/analysis.md`、`repo/snapshot-status.md`、`worktrack/contract.md` 和 `worktrack/plan-task-queue.md`。`worktrack/gate-evidence.md` 可通过单独 template 生成。
-
-生成结果会写入 provenance frontmatter 与非空 placeholder；`control-state.md` 链接字段在同一轮生成目标存在时写相对路径，否则保留 placeholder。模板结构校验不替代 `docs/harness/artifact/` 的 canonical artifact contract。
+`.servo_template` 只生成当前 control/repo scaffold 和 Candidate Worktrack pointer surface。PlanWork 在具体 Worktrack branch 上物化 per-id `initial-requirement.yaml`，Close 物化 `finished-handback.yaml`；installer 不生成 rolling Contract、queue 或 Gate evidence。
 
 额外说明：
 
@@ -61,6 +57,6 @@ GitHub CI 的 `Governance Checks` workflow 也会运行同一组 deploy regressi
 - `diagnose --backend agents --json` 在发现 issue 时仍以 0 退出，并输出结构化摘要
 - `verify` 的 missing / broken symlink / wrong root type 结构错误
 - `verify` 的 source drift、missing payload files、target payload drift 与 conflict / unrecognized 目录
-- `.servo_template` 到 `.servo/` 的 legacy scaffold profile 生成
+- `.servo_template` 到 `.servo/` 的当前 scaffold 生成
 - `.servo_template` 的最小结构校验与 overwrite guard
 - `.servo_template` 的 `Engineering Node Map` / `Node Type` 字段漂移校验

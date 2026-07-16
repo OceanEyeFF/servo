@@ -32,16 +32,16 @@ last_verified: 2026-06-18
 - runbook/usage-help/testing/Harness 长文变更需说明当前页类型（入口/runbook/合同/指导）并清理重复正文
 - 新增、移动、重命名、删除或改为 `status: superseded` 的 `docs/` markdown 文档必须维护 `docs/book.md` spine：先更新最近章节 `README.md`，再更新 `docs/book.md` 的 Full Reading Order；确认除 `docs/book.md` 自身外，所有 `docs/**/*.md` 都有直接有序链接；最后修复旧路径引用，并检查 `docs/book.md` 的 markdown 链接与反引号 inline path 都指向当前 checkout 真实存在的 docs 路径或 owner 边界。superseded 文档只能通过显式 `Retained Historical References` 区块暴露，并应说明当前 owner 或接管路径。
 - deploy/adapter 变更需同步对应 runbook、maintenance 与 usage-help，口径保持 destructive reinstall model
-- package/release/version/VCS baseline 事实变更需调用 `worktrack-doc-catch-up-skill` 做 version fact sync；pre-publish 只同步 source version facts 与 VCS tracking facts，post-publish registry verification 后才能同步 published version facts；canonical skill source baseline 由 repo snapshot 的 `source_baselines.product_harness_skills` 和 control-state Baseline Traceability 承接，长期 docs 不手写分散 git hash
-- docs/harness/、product/harness/skills/ 或 adapters 变更需保持合同层与 executable layer 分工
-- branch/PR/baseline 规则变更需从 `origin/HEAD` 或 Worktrack Contract 的 `baseline_branch` 取值，不写死默认分支名
+- package/release/version/VCS baseline 事实变更由 owning PlanWork 或明确 follow-up 同步；pre-publish 只同步 source facts，post-publish registry verification 后才能同步 published facts
+- Harness 指导思想与 `product/harness/skills/` 或 adapters 变更需保持 doctrine 与 executable contract 分工
+- branch/PR/baseline 规则变更需从 `origin/HEAD` 或已批准 `branch_source` / `close_target` 取值，不写死默认分支名
 - 新功能若改变 Harness 控制流、canonical skill 行为、adapter/deploy 行为、CLI/operator runbook 或用户实际操作路径，必须把真实 Claude Code dogfood 作为验证策略的一层；mock、fixture、generator smoke 和单元测试只能证明回归面，不能单独替代真实 backend 行为观察。若本轮不跑 Claude dogfood，closeout 必须写明不适用理由或延期 Worktrack。
 - 单人维护模式下，release PR 不要求外部 reviewer；GitHub 不允许 PR author approve 自己的 PR，因此 self-approval 不作为本仓库治理要求；owner/admin self-merge 前需记录 checks、PR head SHA、release tuple 和后续 release/tag/publish 动作；`reviewDecision` 为空不是失败，draft、required check failure、pending/skipped required check 或 release-readiness 证据缺失才是阻断信号
 - release PR 正文只能声明实际运行且有本地输出或 CI run/job URL 支撑的验证结果；被 CI 跳过、尚未运行或只计划运行的检查必须标成 pending/not-run，不能写成 passed
 - 退役/删除文档域需同步入口页、旧路径引用和治理检查
 - SKILL.md 变更需保持最小 executable body；已退役 references 需同步清理
 - product/.servo_template/ 变更只承接 scaffold 模板，不生长 canonical truth 或运行状态
-- docs/harness/workflow-families/ 变更需明确文档真相层定位，对 product/harness/ 只能当下游 executable root
+- Harness 跨模块思想只写入 `docs/harness/foundations/Harness指导思想.md`；Skill 私有流程只写入对应 `SKILL.md`
 
 ### 3. 验证结果
 
@@ -57,8 +57,8 @@ last_verified: 2026-06-18
 - deploy mapping/payload contract 变更：`test_agents_adapter_contract.py`；改 gate 链路再补 `closeout_acceptance_gate.py --json`
 - adapter/deploy 变更：`test_agents_adapter_contract.py` + npm test + smoke + 双端 `npm pack --dry-run --json` + publish dry-run + tarball 全命令 smoke（diagnose/update/install/verify）+ 隔离 target repo full smoke
 - Harness runtime 观察或 operator-facing runbook 变更：先跑对应 deploy/adapter 最小验证，再按 [Codex Post-Deploy Behavior Tests](../testing/codex-post-deploy-behavior-tests.md) 和 [Claude Post-Deploy Behavior Tests](../testing/claude-post-deploy-behavior-tests.md) 做真实观察；Claude dogfood 是新功能影响实际使用路径时的默认真实 backend 验证层，不用 mock smoke 替代
-- **intake route guard 与 complexity assessment 新增/变更**：先跑 `governance_semantic_check.py` + `path_governance_check.py`；再检查 `pre_milestone_intake_review` 的 `milestone_task_complexity_assessment` 字段是否在 `docs/harness/artifact/control/milestone.md` 中有合同定义、在 milestone-pre-intake-skill SKILL.md 和模板中有对应段、在 milestone-init-skill SKILL.md 中有 blocking check。仅 `intake_status = ready` + `programmer_confirmed = true` + `ready_for_init_milestone = true` 允许 milestone create/upsert/activate；`skipped` 必须 handback；`questions_required`/`blocked`/`missing` 必须 blocked。Intake 5-status 路由矩阵见 harness-skill §10.2
-- **closeout pipeline / cleanup 合约变更**：先跑 `governance_semantic_check.py`。Legacy harness-skill §10.7 仍检查 `Self-Review → Single-Acceptance → Closeout Gate → PR → Merge → Doc-Catch-Up → Refresh → Cleanup → return to RepoScope` 及对应 legacy artifact；candidate mechanical Close 则核查 [worktrack-close-skill](../../../product/harness/skills/worktrack-close-skill/SKILL.md) 的 ready-to-close、freshness、approval、merge-or-no-merge 和 handoff 边界。Cleanup 不碰 remote、不删 unmerged 分支、不删 baseline。
+- **intake route guard 与 complexity assessment 新增/变更**：核对 milestone-pre-intake、milestone-init 与上层 Harness 的同一 approved input；问题、阻塞或未确认状态不得 create/upsert/activate。
+- **Candidate Close / cleanup 合约变更**：核查 [worktrack-close-skill](../../../product/harness/skills/worktrack-close-skill/SKILL.md) 的 ready-to-close、freshness、approval、merge 和 finished handback 边界。Cleanup 不碰 remote、不删 unmerged 分支、不删 baseline。
 - **docs-only milestone 的 dogfood 例外**：纯 docs/skills/templates milestone 如不改变 executable behavior（不新增/修改 deploy、gate、scanner、CLI、installer 执行路径），可在 closeout 中声明 dogfood 不适用，不需跑 Claude dogfood
 
 ### 3.1 真实 Claude Dogfood 准入
@@ -86,7 +86,7 @@ bugfix/review 响应/回归修复需覆盖根因或相邻执行链状态，检�
 
 ### 4. 回写要求
 
-已验证结果写进 `docs/harness/` 或 `docs/project-maintenance/`；不把临时推理写成长期真相；优先复用现有模板；文档精简时需说明保留内容、删除内容、以及入口与合同是否清晰。
+已验证的跨模块思想写进唯一 Harness 指导思想，项目维护事实写进 `docs/project-maintenance/`，Skill 运行事实写进对应 `SKILL.md`；不把临时推理写成长期真相。
 
 ### 4.1 Docs 重构收口
 

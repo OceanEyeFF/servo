@@ -84,7 +84,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 6. **生成 `goal-charter.md`**
    - 将分析结果填入标准 `Goal Charter` 格式
    - 包含：Project Vision、Core Product Goals、Technical Direction、Engineering Node Map、Success Criteria、System Invariants
-   - **不**在 goal charter 中指定具体的 worktrack 拆分方式；worktrack 拆分属于 `worktrack-init-skill` 的职责
+   - **不**在 goal charter 中指定具体的 Worktrack 拆分方式；拆分属于 Repo/Milestone 编排职责
 
 7. **生成 `control-state.md`**
    - 设置初始控制面状态：`repo_scope: active`、`worktrack_scope: closed`
@@ -94,14 +94,14 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
      - `default_servo_work_branch`
      - `protected_branch_policy`
      - `branch_mutation_policy`
-   - 不询问 Servo 自动维护的 runtime facts，并在 `auto_maintained_runtime_facts_not_asked` 中保留禁止提问清单：`active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint`、`milestone_pipeline_summary`
+   - 不询问 Servo 自动维护的 runtime facts，并在 `auto_maintained_runtime_facts_not_asked` 中保留禁止提问清单：`active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`milestone_pipeline_summary`
    - 设置合理的默认 `Continuation Authority`：
      - `post_contract_autonomy: delegated-minimal`
      - `autonomy_scope: current-goal-only`
      - `max_auto_new_worktracks: 1`
      - `stop_after_autonomous_slice: yes`
      - `subagent_dispatch_mode: auto`
-     - `subagent_dispatch_mode_override_scope: worktrack-contract-primary`
+     - `subagent_dispatch_mode_override_scope: worktrack-entry-primary`
      - `subagent_default_model:` 留空，除非运行环境或用户明确给出默认模型
    - 设置 `Handback Guard` 初始值：`handoff_state: none`
 
@@ -131,10 +131,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
      │   ├── README.md              ← 从 assets/template/README.md 复制
      │   └── goal-charter.template.md  ← 从 assets/template/goal-charter.template.md 复制
      └── worktrack/
-         ├── README.md              ← 从 assets/worktrack/README.md 复制
-         ├── contract.md            ← 从 assets/worktrack/contract.md 复制
-         ├── gate-evidence.md       ← 从 assets/worktrack/gate-evidence.md 复制
-         └── plan-task-queue.md     ← 从 assets/worktrack/plan-task-queue.md 复制
+         └── README.md              ← 从 assets/worktrack/README.md 复制
      ```
    - `assets/` 目录遵循 Codex Skills 标准，存放本技能所需的模板、资源和参考文档
    - `scripts/deploy_servo.js` 是本技能的标准 `.servo` deploy helper；它接收 `--deploy-path <目标 repo / worktree 根>`，并固定在 `<deploy-path>/.servo/` 下生成模板。在 canonical source 与 deployed target 中都应可直接读取本技能自带的 `assets/`
@@ -171,7 +168,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - 本技能是**系统初始化**层；只在 `.servo/` 不存在或 `goal-charter.md` 缺失时运行。
 - 唯一合法行为是仅在 `goal-charter.md` 不存在时创建初始目标章程；当 `goal-charter.md` 已存在时，覆盖行为必须返回 blocked，且必须路由到 `repo-change-goal-skill`。
 - 唯一合法行为是展示生成的 goal charter 摘要并等待用户确认后才写入；代替用户设定目标的行为必须返回 blocked。
-- goal charter 的内容仅限目标定义与节点类型约束；指定具体 worktrack 拆分方式的行为必须返回 blocked 并路由到 `worktrack-init-skill`。
+- goal charter 的内容仅限目标定义与节点类型约束；指定具体 Worktrack 拆分方式的行为必须返回 blocked 并路由到 Repo/Milestone 编排。
 - **但必须在 goal charter 中定义 Engineering Node Map，为 worktrack 初始化提供类型化约束。**
 - 唯一合法行为是仅基于用户明确说明的需求设定目标；猜测用户未明确说明的需求的行为必须返回 blocked；有歧义时必须显式暴露并请求用户确认。
 - Existing Code Project Adoption 中，`discovery-input.md` 只能保存只读事实输入和候选信号；唯一合法行为是经用户确认后才将 discovery 信号纳入 `goal-charter.md`。
@@ -182,9 +179,9 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict。
 - `complex_project_entry_gate` 的生成样例不得预授权高风险命令模式；未确认样例默认阻断 Worktrack derivation，直到 programmer confirmation 或 reinforcement evidence 写入。
 - 设置默认 autonomy 参数时，优先选择"小步推进、逐层验证"的保守策略；`max_auto_new_worktracks` 默认值必须与 `Harness Control State` artifact 和 control-state 模板保持一致。
-- 初始化问题必须只覆盖用户可定义 Servo 控制变量：continuous progression permission、per-Milestone automatic Worktrack budget、default Servo work branch、protected branch policy 和 branch mutation policy。不得把 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint`、`last_doc_catch_up_checkpoint` 或 `milestone_pipeline_summary` 作为用户问题；这些 runtime facts 由 Harness 控制回路自动维护。
+- 初始化问题必须只覆盖用户可定义 Servo 控制变量：continuous progression permission、per-Milestone automatic Worktrack budget、default Servo work branch、protected branch policy 和 branch mutation policy。不得把 `active_milestone`、`active_worktrack`、`observed_git_hash`、`progress_counters`、`runtime_dispatch_profile`、`latest_observed_checkpoint` 或 `milestone_pipeline_summary` 作为用户问题；这些 runtime facts 由 Harness 控制回路自动维护。
 - 用户在初始化或单轮执行中授予的一次性权限只能写入 evidence / handoff / Autonomy Ledger，不得伪装成长期默认。只有用户明确表达持久偏好时，才可更新 `User-Defined Servo Controls` 或长期 `Continuation Authority` 字段。
-- 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-contract-primary`，使 worktrack 级 `runtime_dispatch_mode` 在默认 scaffold 中可生效；只有操作者显式改为 `global-override` 时，control-state 才压过 worktrack 合同。`auto` 是保守默认值，表示按 Dispatch Decision Policy 选择 SubAgent、专用 skill、generic worker 或 current-carrier；运行时在无安全分派壳层、权限边界阻断或 `dispatch package unsafe` 时显式记录 `runtime fallback`。
+- 设置默认 SubAgent 分派参数时，必须把是否使用 SubAgent 表达为可开关字段：`subagent_dispatch_mode: auto | delegated | current-carrier`，并写入 `subagent_dispatch_mode_override_scope: worktrack-entry-primary`。Candidate PlanWork 使用 bounded carrier，Review 使用独立只读 carrier；上层只负责选择载体，不插入额外执行阶段。
 - **不依赖外部 scaffold 脚本**；所有模板来自本技能自带的 `assets/` 目录，遵循 Codex Skills 标准。
 - 如果需要 repo-local operator 帮助脚本，唯一合法来源是本技能自带的 `scripts/deploy_servo.js`。
 - 写入文件后，控制权返回 Harness；由 Harness 根据新的 control state 决定下一步。
@@ -243,9 +240,6 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 | `assets/template/README.md` | 模板目录说明 | `.servo/template/README.md`（直接复制） |
 | `assets/template/goal-charter.template.md` | 目标章程复用模板 | `.servo/template/goal-charter.template.md`（直接复制） |
 | `assets/worktrack/README.md` | 工作追踪目录说明 | `.servo/worktrack/README.md`（直接复制） |
-| `assets/worktrack/contract.md` | 工作追踪契约模板骨架 | `.servo/worktrack/contract.md`（直接复制） |
-| `assets/worktrack/gate-evidence.md` | 关卡证据模板骨架 | `.servo/worktrack/gate-evidence.md`（直接复制） |
-| `assets/worktrack/plan-task-queue.md` | 计划任务队列模板骨架 | `.servo/worktrack/plan-task-queue.md`（直接复制） |
 | `scripts/deploy_servo.js` | `.servo` 初始化 deploy helper | 由操作者或测试直接运行，传入 `--deploy-path <repo/worktree 根>`，脚本在 `<deploy-path>/.servo/` 下生成/复制上述资产；可选把本技能安装到由 deploy helper 管理的 Claude skill target root 下 |
 
 这些资产在 deploy 阶段随本技能一并安装到宿主运行环境。执行时，本技能从自身的 `assets/` 目录读取模板；如需 repo-local operator 工具面，则直接运行本技能自带的 `scripts/deploy_servo.js`，把目标 worktree / repo 根通过 `--deploy-path` 传入。若需要让 Claude Code 在目标 repo 内发现同一技能，可使用 `--install-claude-skill` 或 `install-claude-skill` 子命令；`--claude-root` 可覆盖 Claude skill target root，并允许该 root 是 symlink / mount，但目标 skill 目录及其内部不能是 symlink；如果目标目录经允许的 root symlink / mount 解析后就是当前运行的技能包，则安装 no-op。唯一合法的 scaffold 来源是本技能自带的 `scripts/deploy_servo.js` 和 `assets/` 目录；依赖外部 scaffold 脚本或独立的 `.servo` 模板源码根的行为必须返回 blocked。

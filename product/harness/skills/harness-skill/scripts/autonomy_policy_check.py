@@ -8,7 +8,7 @@
 
 用法:
   PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/autonomy_policy_check.py \
-    --operation {observe|schedule|dispatch|verify|close|recover|change_goal|init_milestone|init_worktrack|cleanup|doc_catch_up} \
+    --operation {observe|change_goal|init_milestone|cleanup} \
     --skill {skill_name} \
     --control-state .servo/control-state.md
 
@@ -63,25 +63,14 @@ ALLOWED: dict[str, str] = {
     "read_only_observation":       "只读观察",
     "artifact_hydration":          "Artifact 水合",
     "status_consistency_check":    "状态一致性检查",
-    "worktrack_queue_scheduling":  "Worktrack 内队列调度",
-    "bounded_worktrack_init":      "限定范围 Worktrack 初始化",
-    "bounded_worktrack_dispatch":  "限定范围 Worktrack 分派",
-    "bounded_worktrack_close":     "限定范围 Worktrack 收尾",
     "non_destructive_docs_edits":  "非破坏性文档编辑",
     "bounded_local_verification":  "限定范围本地验证",
-    "post_gate_repo_refresh":      "Gate 后 repo 刷新写回",
+    "repo_refresh":                "Repo 刷新写回",
     "scaffold_validation":         "脚手架验证无外部副作用",
 }
 
 EVIDENCE_REQUIRED: dict[str, str] = {
     "route_decision":              "路由决策",
-    "worktrack_contract_scope":    "Worktrack Contract 范围",
-    "selected_task_dispatch_packet": "选中任务/分派包",
-    "runtime_dispatch_profile":    "运行时 dispatch profile",
-    "validation_evidence":         "验证证据",
-    "governance_policy_evidence":  "治理策略证据",
-    "gate_verdict":                "Gate 裁决",
-    "closeout_record":             "收尾记录",
     "repo_refresh_checkpoint":     "Repo 刷新 checkpoint",
 }
 
@@ -95,7 +84,6 @@ PLACEHOLDER_VALUES = {
     "tbd",
     "unknown",
 }
-LEGACY_GATE_VALUES = {"pass", "pass_with_residuals"}
 
 
 # ──────────────────────────────────────────────
@@ -146,11 +134,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
                         "status_consistency_check"],
         description="RepoScope 只读观察：安全，在 allowed 范围内",
     ),
-    "observe::worktrack-status-skill": PolicyProfile(
-        allowed_rules=["read_only_observation", "artifact_hydration",
-                        "status_consistency_check"],
-        description="WorktrackScope 只读观察：安全，在 allowed 范围内",
-    ),
     "observe::milestone-status-skill": PolicyProfile(
         allowed_rules=["read_only_observation", "artifact_hydration",
                         "status_consistency_check"],
@@ -158,96 +141,10 @@ POLICY_MAP: dict[str, PolicyProfile] = {
     ),
 
     # ── schedule ──
-    "schedule::schedule-worktrack-skill": PolicyProfile(
-        allowed_rules=["worktrack_queue_scheduling", "artifact_hydration",
-                        "status_consistency_check"],
-        description="Worktrack 内队列调度：在 allowed 范围内",
-    ),
     # ── verify ──
-    "verify::review-evidence-skill": PolicyProfile(
-        allowed_rules=["bounded_local_verification"],
-        description="审查证据收集：限定范围本地验证，在 allowed 范围内",
-    ),
-    "verify::test-evidence-skill": PolicyProfile(
-        allowed_rules=["bounded_local_verification"],
-        description="测试证据收集：限定范围本地验证，在 allowed 范围内",
-    ),
-    "verify::rule-check-skill": PolicyProfile(
-        allowed_rules=["bounded_local_verification"],
-        description="规则检查证据收集：限定范围本地验证，在 allowed 范围内",
-    ),
-    "verify::gate-skill": PolicyProfile(
-        allowed_rules=["bounded_local_verification"],
-        description="Gate 裁决：在 allowed 范围内",
-    ),
     # ── dispatch ──
-    "dispatch::generic-worker-skill": PolicyProfile(
-        allowed_rules=[],
-        forbidden_hit=[],
-        stop_condition_hit=[
-            "needs_programmer_judgment",
-            "authority_boundary_unclear",
-        ],
-        needs_approval=True,
-        description=(
-            "generic-worker-skill 无策略感知，可能执行任何 forbidden 操作。"
-            "需要人工检查 forbidden 全列表（14 项），标记为 needs_approval: true"
-        ),
-    ),
-    "dispatch::dispatch-skills": PolicyProfile(
-        allowed_rules=[],
-        forbidden_hit=[],
-        stop_condition_hit=[
-            "authority_boundary_unclear",
-        ],
-        needs_approval=True,
-        description=(
-            "dispatch-skills 分派：限定范围但可能触及边界，需要审批"
-        ),
-    ),
-    "dispatch::worktrack-dispatch-skill": PolicyProfile(
-        allowed_rules=[
-            "bounded_worktrack_dispatch",
-            "artifact_hydration",
-            "status_consistency_check",
-        ],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-dispatch-skill 只允许在当前 Worktrack Contract 与"
-            "已选 dispatch packet 范围内执行非破坏性分派；cleanup apply/"
-            "delete/move/archive、release/publish/tag/push/deploy、受保护"
-            "分支 mutation、secret/database/external quota 仍由 forbidden/stop"
-            "边界阻断"
-        ),
-    ),
     # ── close ──
-    "close::close-worktrack-skill": PolicyProfile(
-        allowed_rules=[],
-        forbidden_hit=[],
-        stop_condition_hit=[
-            "protected_branch_policy_hit",
-        ],
-        needs_approval=True,
-        description=(
-            "close-worktrack-skill 涉及 merge/rebase 触达受保护分支策略，"
-            "需要审批。已批准的 closeout 流程可继续"
-        ),
-    ),
     # ── recover ──
-    "recover::recover-worktrack-skill": PolicyProfile(
-        allowed_rules=[],
-        forbidden_hit=[],
-        stop_condition_hit=[
-            "needs_programmer_judgment",
-            "authority_boundary_unclear",
-        ],
-        needs_approval=True,
-        description=(
-            "恢复操作涉及重试/回滚/拆分等决策，需要审批"
-        ),
-    ),
 
     # ── change_goal ──
     "change_goal::repo-change-goal-skill": PolicyProfile(
@@ -298,29 +195,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
     ),
 
     # ── init_worktrack ──
-    "init_worktrack::init-worktrack-skill": PolicyProfile(
-        allowed_rules=[],
-        forbidden_hit=[],
-        stop_condition_hit=["contract_scope_expansion"],
-        needs_approval=True,
-        description="Worktrack 初始化可能扩大 scope，需要审批",
-    ),
-    "init_worktrack::worktrack-init-skill": PolicyProfile(
-        allowed_rules=[
-            "bounded_worktrack_init",
-            "artifact_hydration",
-            "status_consistency_check",
-        ],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-init-skill 只允许初始化已在当前 active milestone "
-            "worktrack_list 中且 intake review ready 的 Worktrack；新增/"
-            "移除/重排 Worktrack、目标变更或 Contract scope expansion "
-            "仍需独立审批"
-        ),
-    ),
     # ── cleanup ──
     "cleanup::milestone-cleanup-skill": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
@@ -333,48 +207,8 @@ POLICY_MAP: dict[str, PolicyProfile] = {
             "cleanup apply/delete/move/archive 仍需独立显式审批"
         ),
     ),
-    "cleanup::worktrack-cleanup-skill": PolicyProfile(
-        allowed_rules=["non_destructive_docs_edits"],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "worktrack-cleanup-skill 为 legacy cleanup 入口，语义等同"
-            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
-            "move/archive 仍需独立显式审批"
-        ),
-    ),
-    "cleanup::servo-cleanup-skill": PolicyProfile(
-        allowed_rules=["non_destructive_docs_edits"],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "servo-cleanup-skill 为 legacy cleanup 入口，语义等同"
-            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
-            "move/archive 仍需独立显式审批"
-        ),
-    ),
-    "cleanup::cleanup-skill": PolicyProfile(
-        allowed_rules=["non_destructive_docs_edits"],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description=(
-            "cleanup-skill 为 legacy cleanup 入口，语义等同"
-            "非破坏性 cleanup report/dry-run；cleanup apply/delete/"
-            "move/archive 仍需独立显式审批"
-        ),
-    ),
 
     # ── doc_catch_up ──
-    "doc_catch_up::doc-catch-up-worker-skill": PolicyProfile(
-        allowed_rules=["non_destructive_docs_edits"],
-        forbidden_hit=[],
-        stop_condition_hit=[],
-        needs_approval=False,
-        description="文档追平：非破坏性文档编辑，在 allowed 范围内",
-    ),
 }
 
 
@@ -387,34 +221,6 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
         allowed_rules=["read_only_observation"],
         needs_approval=False,
         description="observe 默认：只读观察，安全",
-    ),
-    "schedule": PolicyProfile(
-        allowed_rules=["worktrack_queue_scheduling"],
-        needs_approval=False,
-        description="schedule 默认：队列调度，在允许范围内",
-    ),
-    "verify": PolicyProfile(
-        allowed_rules=["bounded_local_verification"],
-        needs_approval=False,
-        description="verify 默认：限定范围本地验证",
-    ),
-    "dispatch": PolicyProfile(
-        allowed_rules=[],
-        stop_condition_hit=["needs_programmer_judgment"],
-        needs_approval=True,
-        description="dispatch 默认：需要审批",
-    ),
-    "close": PolicyProfile(
-        allowed_rules=[],
-        stop_condition_hit=["protected_branch_policy_hit"],
-        needs_approval=True,
-        description="close 默认：涉及 protected branch，需要审批",
-    ),
-    "recover": PolicyProfile(
-        allowed_rules=[],
-        stop_condition_hit=["needs_programmer_judgment"],
-        needs_approval=True,
-        description="recover 默认：需要审批",
     ),
     "change_goal": PolicyProfile(
         allowed_rules=[],
@@ -431,12 +237,6 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
         needs_approval=True,
         description="init_milestone 默认：可能扩大 scope，需要审批",
     ),
-    "init_worktrack": PolicyProfile(
-        allowed_rules=[],
-        stop_condition_hit=["contract_scope_expansion"],
-        needs_approval=True,
-        description="init_worktrack 默认：可能扩大 scope，需要审批",
-    ),
     "cleanup": PolicyProfile(
         allowed_rules=["non_destructive_docs_edits"],
         needs_approval=False,
@@ -444,11 +244,6 @@ DEFAULT_OPERATION_PROFILES: dict[str, PolicyProfile] = {
             "cleanup 默认：仅允许非破坏性 cleanup report/dry-run；"
             "cleanup apply/delete/move/archive 需独立显式审批"
         ),
-    ),
-    "doc_catch_up": PolicyProfile(
-        allowed_rules=["non_destructive_docs_edits"],
-        needs_approval=False,
-        description="doc_catch_up 默认：非破坏性编辑",
     ),
 }
 
@@ -462,45 +257,13 @@ REQUIRED_EVIDENCE: dict[str, list[str]] = {
     "observe": [
         "repo_refresh_checkpoint",
     ],
-    "schedule": [
-        "route_decision",
-        "worktrack_contract_scope",
-    ],
-    "dispatch": [
-        "route_decision",
-        "worktrack_contract_scope",
-        "selected_task_dispatch_packet",
-        "runtime_dispatch_profile",
-    ],
-    "verify": [
-        "validation_evidence",
-        "governance_policy_evidence",
-    ],
-    "close": [
-        "gate_verdict",
-        "closeout_record",
-        "repo_refresh_checkpoint",
-    ],
-    "recover": [
-        "route_decision",
-        "worktrack_contract_scope",
-    ],
     "change_goal": [
         "route_decision",
     ],
     "init_milestone": [
         "route_decision",
     ],
-    "init_worktrack": [
-        "route_decision",
-        "worktrack_contract_scope",
-    ],
-    "cleanup": [
-        "closeout_record",
-    ],
-    "doc_catch_up": [
-        "repo_refresh_checkpoint",
-    ],
+    "cleanup": [],
 }
 
 def resolve_profile(operation: str, skill: str) -> PolicyProfile:
@@ -587,35 +350,6 @@ def _check_evidence_item(item: str, control_state_content: str,
             bool(re.search(r"route_decision|recommended_next_route",
                           control_state_content, re.IGNORECASE))
         ),
-        "worktrack_contract_scope": lambda: (
-            os.path.exists(os.path.join(servo_dir, "worktrack", "contract.md"))
-        ),
-        "selected_task_dispatch_packet": lambda: (
-            bool(re.search(r"dispatch_packet|selected_task",
-                          control_state_content, re.IGNORECASE))
-        ),
-        "runtime_dispatch_profile": lambda: (
-            bool(re.search(r"runtime_dispatch_profile|dispatch_profile",
-                          control_state_content, re.IGNORECASE))
-        ),
-        "validation_evidence": lambda: (
-            os.path.exists(os.path.join(servo_dir, "evidence"))
-            or bool(re.search(r"validation_evidence|test_evidence",
-                             control_state_content, re.IGNORECASE))
-        ),
-        "governance_policy_evidence": lambda: (
-            bool(re.search(r"governance_policy|rule_check|policy_check",
-                          control_state_content, re.IGNORECASE))
-        ),
-        "gate_verdict": lambda: (
-            bool(re.search(r"gate_verdict|gate_result|verdict",
-                          control_state_content, re.IGNORECASE))
-        ),
-        "closeout_record": lambda: (
-            bool(re.search(r"closeout_record|closeout",
-                          control_state_content, re.IGNORECASE))
-            or os.path.exists(os.path.join(servo_dir, "closeout"))
-        ),
         "repo_refresh_checkpoint": lambda: (
             bool(re.search(r"latest_observed_checkpoint|repo_refresh_checkpoint",
                           control_state_content, re.IGNORECASE))
@@ -645,46 +379,6 @@ def _meaningful(value: object) -> bool:
     return isinstance(value, str) and value.strip().lower() not in PLACEHOLDER_VALUES
 
 
-def validate_legacy_close_authority(control_state_path: str) -> dict[str, Any]:
-    """Validate the exact legacy Gate authority used by the current default route."""
-    missing: list[str] = []
-    try:
-        with open(control_state_path, encoding="utf-8") as handle:
-            content = handle.read()
-    except OSError:
-        content = ""
-
-    value = _control_field(content, "worktrack_gate_verdict")
-    authority_ref = _control_field(content, "worktrack_gate_verdict_ref")
-    residual_ref = _control_field(
-        content, "worktrack_gate_residual_acceptance_ref"
-    )
-
-    if value not in LEGACY_GATE_VALUES:
-        missing.append("eligible_legacy_gate_verdict")
-    if not _meaningful(authority_ref):
-        missing.append("legacy_gate_verdict_ref")
-    if value == "pass_with_residuals" and not _meaningful(residual_ref):
-        missing.append("legacy_gate_residual_acceptance_ref")
-
-    complete = not missing
-    return {
-        "complete": complete,
-        "source": "legacy_gate_contract",
-        "authority": {
-            "worktrack_gate_verdict": value,
-            "worktrack_gate_verdict_ref": authority_ref,
-            "worktrack_gate_residual_acceptance_ref": residual_ref,
-        },
-        "missing": missing,
-        "reason": (
-            "eligible legacy Gate authority"
-            if complete
-            else "legacy Gate authority is not eligible"
-        ),
-    }
-
-
 # ──────────────────────────────────────────────
 # 主逻辑
 # ──────────────────────────────────────────────
@@ -696,10 +390,7 @@ def main() -> None:
     parser.add_argument(
         "--operation", required=True,
         choices=[
-            "observe", "schedule", "dispatch", "verify",
-            "close", "recover", "change_goal",
-            "init_milestone", "init_worktrack",
-            "cleanup", "doc_catch_up",
+            "observe", "change_goal", "init_milestone", "cleanup",
         ],
         help="当前 Harness Function 算子",
     )

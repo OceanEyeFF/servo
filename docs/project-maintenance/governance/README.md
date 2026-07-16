@@ -52,7 +52,8 @@ servo-installer 发布治理已归入独立子目录，入口见 [servo-installe
 | 测试执行、smoke、行为观察 | [../testing/README.md](../testing/README.md) |
 | Backend 使用差异与场景路由 | [../usage-help/README.md](../usage-help/README.md) |
 | 根目录分层规则 | [../foundations/README.md](../foundations/README.md) |
-| Harness doctrine 与 artifact 合同 | [../../harness/README.md](../../harness/README.md) |
+| Harness 跨模块指导思想 | [../../harness/foundations/Harness指导思想.md](../../harness/foundations/Harness指导思想.md) |
+| Skill operational contract | [../../../product/harness/skills/README.md](../../../product/harness/skills/README.md) |
 
 ## 已移除的内容
 

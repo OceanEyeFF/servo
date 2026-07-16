@@ -49,7 +49,7 @@ node toolchain/scripts/deploy/bin/servo-installer.js install --backend agents --
 node toolchain/scripts/deploy/bin/servo-installer.js verify --backend agents --agents-root "$TMP_AGENTS_ROOT"
 ```
 
-当前 `agents` install 已包含全部 32 个 skills；`repo-init-goal-skill` 自带 `.servo/` 初始化资产。具体 canonical package inventory 以 `product/harness/skills/README.md` 与 adapter completeness check 为准，本运行手册不复制 Worktrack Skill 内部合同。
+安装后的 package inventory 以 `product/harness/skills/README.md` 与 adapter payload discovery 为准；`repo-init-goal-skill` 自带 `.servo/` 初始化资产。本运行手册不复制 Worktrack Skill 内部合同。
 
 ## 五、选择观察策略
 
@@ -97,7 +97,7 @@ codex exec --cd "$TMP_REPO" --skip-git-repo-check --output-last-message "$TMP_RU
 
 读取每轮完整产物：`session.log`、`final.txt`、`.servo/control-state.md`、`.servo/repo/*`、`.servo/worktrack/*`、`git status --short`、`git diff --stat`、相关源码与测试结果。
 
-观察点：是否从 `.servo/` 缺失进入 `repo-init-goal-skill`、建立 goal/snapshot/control state、进入 `RepoScope -> WorktrackScope`、只打开 bounded subsystem worktrack、使用 `worktrack-dispatch-skill`、产生 review/test/rule-check/gate evidence、在 handback/continuous-autonomy 下表现一致。
+观察点：是否从 `.servo/` 缺失进入 `repo-init-goal-skill`、建立 goal/snapshot/control state，并通过 PlanWork → 独立 Review → Close 只完成一个 bounded Worktrack；完成后应产生 finished handback，而非 rolling Contract/Dispatch/Gate artifacts。
 
 ## 九、继续与停止
 
@@ -110,4 +110,4 @@ codex exec --cd "$TMP_REPO" --skip-git-repo-check --output-last-message "$TMP_RU
 - [Testing Runbooks](./README.md)
 - [Deploy Runbook](../../servo-installer/runbooks/deploy-runbook.md)
 - [Skill Deployment 维护流](../../servo-installer/runbooks/skill-deployment-maintenance.md)
-- [Harness 运行协议](../../harness/foundations/Harness运行协议.md)
+- [Harness 指导思想](../../harness/foundations/Harness指导思想.md)

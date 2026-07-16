@@ -49,7 +49,6 @@ npx servo-installer verify --backend agents
 
 进阶安装、TUI、文件软连接和 Claude Code backend 见：
 
-- [快速入门教程](docs/project-maintenance/usage-help/quickstart.md) — **新用户先读这里**
 - [推荐使用流程](docs/project-maintenance/usage-help/recommended-usage.md)
 - [Codex / agents 后端](docs/project-maintenance/usage-help/codex.md)
 - [Claude Code 后端](docs/project-maintenance/usage-help/claude.md)
@@ -65,6 +64,8 @@ npx servo-installer verify --backend agents
 ```txt
 $harness-skill 初始化当前工作目录的 harness 环境，初始化当前工作目录的 git 环境。
 ```
+
+Worktrack 正常路径由 `worktrack-plan-work-skill`、独立 `worktrack-review-skill` 和 `worktrack-close-skill` 承接；每个 Skill 的运行合同随 Skill package 分发。
 
 ### 设置仓库 Final State
 
@@ -94,10 +95,8 @@ Harness 会把请求分类为 new worktrack、scope expansion、design-only、de
 
 | 场景 | 文档 |
 |------|------|
-| **新用户快速入门** | [quickstart.md](docs/project-maintenance/usage-help/quickstart.md) |
+| **新用户与常规流程** | [recommended-usage.md](docs/project-maintenance/usage-help/recommended-usage.md) |
 | 已有代码项目初始化 Harness | [init-with-code.md](docs/project-maintenance/usage-help/init-with-code.md) |
-| 空项目从零开始 | [init-greenfield.md](docs/project-maintenance/usage-help/init-greenfield.md) |
-| 推荐使用流程 | [recommended-usage.md](docs/project-maintenance/usage-help/recommended-usage.md) |
 | 调整目标 / 追加需求 | [goal-change-guide.md](docs/project-maintenance/usage-help/goal-change-guide.md) |
 
 ## 仓库维护者

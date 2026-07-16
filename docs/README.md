@@ -14,15 +14,15 @@ last_verified: 2026-06-13
 ## 核心定位
 
 - 构建 `Codex-first` 的 AI coding harness 平台，作为 repo-side contract layer 分发到多个项目
-- `Harness` 是一级文档域，负责 repo 演进控制面的 doctrine、artifact、catalog 与 workflow family
-- 退役的 `memory-side`、`task-interface`、adjacent-system 文档域的执行边界由 `AGENTS.md`、`docs/harness/artifact/`、`docs/project-maintenance/governance/` 承接
+- `Harness` 文档域只保留跨模块指导思想；Skill operational contract 由对应 `SKILL.md` 承接
+- 运行入口、字段和 Worktrack 内部流程不在 docs 中维护第二份副本
 - canonical skills 与 adapters 在 `product/`，部署/评测/治理脚本在 `toolchain/`
 
 ## 当前结构
 
 - [book.md](./book.md)：`docs/` canonical book-style spine，说明完整阅读顺序、章节边界、分组关系与路径维护规则
 - [project-maintenance/README.md](./project-maintenance/README.md)：项目维护、治理、部署与 backend usage
-- [harness/README.md](./harness/README.md)：Harness 主线 doctrine、scope、artifact、catalog 与 workflow families
+- [harness/foundations/Harness指导思想.md](./harness/foundations/Harness指导思想.md)：唯一 Harness 跨模块思想文档
 
 ## 阅读顺序
 

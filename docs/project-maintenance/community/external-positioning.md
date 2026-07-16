@@ -7,7 +7,7 @@ last_verified: 2026-06-18
 ---
 # Servo 对外技术定位与适用场景
 
-本文用于统一 Servo 面向外部社区、潜在试用者和开源读者时的基础表达。它服务推广文案、发布帖和项目介绍，不替代 release governance、安装 runbook 或 Harness artifact contract。
+本文用于统一 Servo 面向外部社区、潜在试用者和开源读者时的基础表达。它服务推广文案、发布帖和项目介绍，不替代 release governance、安装 runbook、Harness 指导思想或 Skill operational contract。
 
 ## 一句话定位
 
@@ -25,16 +25,16 @@ Servo 主要面向 AI coding 中的过程失控问题：
 - 做完一个阶段后缺少证据、验收和下一步状态交接。
 - 不同模型/runtime 的执行行为不同，但项目需要稳定的工作合同。
 
-Servo 的回答是给模型外面加一层控制回路：先固定目标和边界，再把工作拆成 Milestone / Worktrack，按证据和 gate 推进，遇到验收或风险边界时 handback 给 programmer。
+Servo 的回答是给模型外面加一层控制回路：先固定目标和边界，再把工作拆成 Milestone / Worktrack，由独立 Review 判断技术完成，遇到验收或风险边界时 handback 给 programmer。
 
 ## 技术表达口径
 
 推荐使用以下表达：
 
-- **Repo-side contract layer**：Servo 把目标、计划、任务窗口、证据、gate 和控制状态写成仓库内可追踪 artifact。
+- **Repo-side contract layer**：Servo 把目标、控制状态、初始要求和最终 handback 写成仓库内可追踪对象，round 工作留在临时执行面。
 - **Codex-first, multi-runtime compatible**：当前 public / near-public 主路径是 `agents` backend，也就是 Codex 使用的 `.agents/skills/` payload；Claude Code 走 `.claude/skills/` 兼容路径。Deepseek、Pi、Claude、GPT/CodeX 等 runtime 的兼容性是已观察支持，不是永久认证。
 - **分层控制**：Repo 层管理长期目标和 Milestone pipeline，Milestone 层管理阶段目标和完成信号，Worktrack 层承接具体实现、文档、测试或验证任务。
-- **证据驱动收口**：每个 Worktrack 需要 contract、task queue、gate evidence 和验证结果，不能只靠模型自述完成。
+- **证据驱动收口**：每个 Worktrack 通过 PlanWork commits、独立 Review 和 finished handback 收口，不能只靠模型自述完成。
 - **显式 handback**：Milestone 级最终验收仍由 programmer 决定；“继续”不是有效的验收输入。
 
 ## 适用场景
@@ -79,7 +79,7 @@ npx servo-installer verify --backend agents
 - 需要 Node.js >= 18。
 - 目标目录应是 Git 仓库根目录。
 - `agents` backend 是当前主路径；Claude Code 用户可使用 `--backend claude`。
-- 安装后从 quickstart 和 recommended usage 进入，不把推广帖当成安装 runbook。
+- 安装后从 recommended usage 和 backend usage 进入，不把推广帖当成安装 runbook。
 
 ## 文案边界
 

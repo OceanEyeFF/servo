@@ -7,7 +7,7 @@ last_verified: 2026-06-13
 ---
 # Claude Repo-local Usage Help
 
-> 目的：保留 `claude` backend 的 runtime 侧差异（skill root、smoke verify、支持边界）。**新用户先读 [quickstart.md](./quickstart.md) 10 分钟快速入门**，再读本页了解 Claude backend 细节。
+> 目的：保留 `claude` backend 的 runtime 侧差异（skill root、smoke verify、支持边界）。通用流程先读 [recommended-usage.md](./recommended-usage.md)。
 
 ## 一、快速试用路径
 

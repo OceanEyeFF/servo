@@ -7,7 +7,7 @@ last_verified: 2026-06-13
 ---
 # 使用流程示例
 
-本页列出已经观察到的项目，帮助 operator 理解 Servo 在真实仓库中的使用方式。示例只作为参考材料，不替代本仓库的 Harness artifact contracts、review / verify gates 或 release approval flow。
+本页列出已经观察到的项目，帮助 operator 理解 Servo 在真实仓库中的使用方式。示例只作为参考材料，不替代 canonical Skills、review/verify 边界或 release approval flow。
 
 阅读本页时按三层权重理解：
 
@@ -43,8 +43,8 @@ last_verified: 2026-06-13
 
 应把示例当作具体项目历史，而不是可直接搬运的 policy。把其他仓库的模式应用到目标仓库时：
 
-1. 先从 [quickstart.md](./quickstart.md) 或 [recommended-usage.md](./recommended-usage.md) 进入当前支持的 operator path。
-2. 复制任何结构前，先把示例中的 `.servo/` state shape 与当前 [Harness artifact contracts](../../harness/artifact/README.md) 对照。对仍包含 `.aw/` 的 legacy 示例，除非目标仓库明确记录当前 `.aw` compatibility boundary，否则应把它视为迁移历史。
+1. 先从 [recommended-usage.md](./recommended-usage.md) 进入当前支持的 operator path。
+2. 复制任何结构前，先与当前 canonical Skill package 和 `.servo` template 对照。对仍包含 `.aw/` 的示例，应把它视为迁移历史。
 3. 在目标仓库重新运行 local install、governance 和 worktrack verification，不继承示例仓库中的 evidence。
 4. 除非已经单独验证为可复用 Harness 行为，否则不要把项目特定的产品决策、UI 选择、技术栈选择和数据库布局写进 Servo-level 文档。
 

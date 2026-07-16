@@ -103,7 +103,7 @@ description: 当 Harness 处于 RepoScope 且需要创建或注册一个新的 M
    c. 输出 `coverage_verdict` ∈ {`fully_covered`, `partially_covered`, `not_covered`}
    d. 分支处理：
       - `fully_covered`：append + programmer 确认。"新 worktrack [X] 的验收已被已有 signals 覆盖，确认追加？"。标记 `signals_coverage_reviewed = true`
-        追加完成后，该 worktrack 作为当前 milestone 中一个独立执行单元推进，建立自己的 branch、contract、queue、evidence、closeout 和 repo-refresh 追踪。
+        追加完成后，该 Worktrack 作为当前 Milestone 中一个独立执行单元推进，由 PlanWork 建立 branch 与 immutable initial requirement，独立 Review 验收，Close 生成 finished handback 并交给 Repo Refresh。
       - `partially_covered`：提示补充 signals → programmer 确认 → append。建议追加 signal 的自动推导内容。programmer 确认后更新 signals，并设置 `milestone_reevaluation_required = true`
         追加完成后，该 worktrack 同样以独立执行单元形式推进，并在新的 milestone 定义下形成清晰的单项追踪。
       - `not_covered`：拒绝归入。"新 worktrack [X] 与当前 milestone 的 purpose 不匹配。建议：创建新 milestone、归入其他已存在 milestone，或归入 work-collection milestone"

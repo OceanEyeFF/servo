@@ -11,16 +11,16 @@
 - [repo/README.md](./repo/README.md)
 - [worktrack/README.md](./worktrack/README.md)
 - [template/README.md](./template/README.md)
-- [docs/node-type-registry.md](./docs/node-type-registry.md) — Worktrack 节点类型默认规则（Gate 阶段引用，与 `.servo/` 一并分发）
+- [docs/node-type-registry.md](./docs/node-type-registry.md) — 上层规划使用的节点类型默认提示，与 `.servo/` 一并分发
 - [MANIFEST.md](./MANIFEST.md) — 文件清单跟踪，记录每个 template 与 canonical source 的同步状态
 
 规则：
 
 - 这里优先承接 `.servo/` 目录结构，以及直接属于 `.servo/` 运行管理面的文档模板
-- 当前建议通过 `toolchain/scripts/deploy/aw_scaffold.py` 生成 `.servo/` 样例，而不是手工复制这些文件
+- 当前由 `servo-installer` 或 package-local `repo-init-goal-skill/scripts/deploy_servo.js` 生成 `.servo/` 样例
 - 明显属于某个 skill 产物的模板，应优先归到 owning skill，而不是长期留在这里
 - goal 修正文档不进入 `.servo/` 路径，只作为 Codex 对话回答流模板存在
 - 这里可以暂时保留待迁移模板，但当前所在位置不代表最终 owner
 - 不要把 doctrine、运行协议或 backend wrapper 写到这里
 - 不要把模板层误当成 deploy source 或 docs truth
-- 真正的定义以上游 `docs/harness/` 为准
+- Skill 私有运行定义以随包分发的 `SKILL.md` 和 package-local assets/scripts 为准

@@ -52,16 +52,16 @@ last_verified: 2026-06-13
 |------|------|
 | `README.md` | 对外使用入口：skills 使用说明、安装方法、快速试用路径 |
 | `INDEX.md` | 按任务目标导向正确入口 |
-| `AGENTS.md` | agent-facing 最小工作规则入口；若冲突，以 `docs/project-maintenance/` + `docs/harness/` 为准 |
+| `AGENTS.md` | agent-facing 最小工作规则入口；项目维护规则与 Harness 指导思想分别由其明确 owner 承接 |
 
 ## 典型工作链路
 
 ```text
 目标 / 需求
   ↓
-Worktrack Contract
+Approved Worktrack entry
   ↓
-Plan / Task Queue
+PlanWork round plan
   ↓
 AI 执行
   ↓
@@ -82,10 +82,11 @@ Review / Verify / Writeback
 1. [`AGENTS.md`](../../AGENTS.md)
 2. [`INDEX.md`](../../INDEX.md)
 3. 按任务进入：
-   - Harness 主线与 artifact 合同：[`docs/harness/README.md`](../harness/README.md)
+   - Harness 跨模块思想：[`Harness指导思想.md`](../harness/foundations/Harness指导思想.md)
+   - Skill operational contracts：[`product/harness/skills/README.md`](../../product/harness/skills/README.md)
    - 业务源码：[`product/README.md`](../../product/README.md)
    - 工具层：[`toolchain/README.md`](../../toolchain/README.md)
-4. 仅当任务命中分层、治理或 Harness artifact 边界时，再扩读 [`docs/README.md`](../README.md)、[`docs/project-maintenance/README.md`](README.md) 或 [`root-directory-layering.md`](foundations/root-directory-layering.md)。
+4. 仅当任务命中分层、治理或跨模块 Harness 思想时，再扩读 [`docs/README.md`](../README.md)、[`docs/project-maintenance/README.md`](README.md) 或 [`root-directory-layering.md`](foundations/root-directory-layering.md)。
 
 ## 非目标
 

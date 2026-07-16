@@ -45,7 +45,7 @@ last_verified: 2026-06-13
   ↓
 $repo-append-request-skill 分类路由
   ├─ goal change → repo-change-goal-skill（需审批）
-  ├─ new worktrack → worktrack-init-skill
+  ├─ new worktrack → approved entry → worktrack-plan-work-skill
   ├─ scope expansion → 审批 → 更新 contract
   ├─ design-only → design worktrack
   └─ design-then-implementation → 两阶段 worktrack

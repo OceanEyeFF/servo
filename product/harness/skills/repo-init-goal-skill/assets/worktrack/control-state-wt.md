@@ -16,9 +16,9 @@
 - current_worktrack:
 - last_closed_worktrack:
 - worktrack_branch:
-- worktrack_contract:
-- plan_task_queue:
-- gate_evidence:
+- initial_requirement_ref:
+- finished_handback_ref:
+- implementation_checkpoint:
 
 ## Current Next Action
 

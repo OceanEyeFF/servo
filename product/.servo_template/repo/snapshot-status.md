@@ -1,6 +1,6 @@
 # Repo Snapshot / Status
 
-> 这是 `.servo/repo/snapshot-status.md` 的模板来源，用来记录当前 repo 的慢变量观测面。最终内容应与 `docs/harness/artifact/repo/snapshot-status.md` 的定义一致。
+> 这是 `.servo/repo/snapshot-status.md` 的 template-owned seed，用来记录当前 repo 的慢变量观测面。
 
 ## Metadata
 

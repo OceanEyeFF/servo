@@ -39,9 +39,9 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 1. 确认这是一轮 Milestone 状态分析轮次，不是工作追踪分派、下一步决策或直接执行。
 2. 识别当前活跃 Milestone：从 Harness 控制状态或 repo snapshot 中获取当前 active milestone_id。
 3. 读取 Milestone artifact（`.servo/milestone/{milestone_id}.md`），解析其字段结构（worktrack_list、completion_signals、acceptance_criteria、completion_threshold_pct、progress_counter、depends_on_milestones、milestone_review_gate 等）。若 `completion_threshold_pct` 缺失，按默认值 `100` 解释。
-3a. 检查 Milestone Review Gate：goal-driven milestone 在进入 Worktrack Init/Dispatch 前必须存在至少一次有效复核。该复核来自 `pre_milestone_intake_review` 的 `milestone_review_gate_handoff`。只有 `milestone_review_count >= 1`、`latest_review_status = effective_pass`、`effective_review_pass = true` 且 `latest_review_checkpoint` 非空时才算通过。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 `proceed_blockers`，不得当成 review pass。若 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化导致 `review_invalidated_by` 非空，必须要求 fresh `pre_milestone_intake_review`。旧 `.servo` artifact 缺少 additive review/backfill 字段时，执行 conservative runtime backfill：默认 `milestone_review_count = 0`、`latest_review_status = missing`、`effective_review_pass = false`、`latest_review_checkpoint = N/A`，状态为 `blocked` / `not ready`；backfill forward-only，preserve existing observed facts，must not grant permissions，must not infer programmer confirmation，must not increment counters，must not create `effective_pass`，must not enable Worktrack Init/Dispatch。
-4. 读取 worktrack backlog（`.servo/repo/worktrack-backlog.md`）：若文件不存在（首个 worktrack 尚未 closeout），视为空 backlog（completed/blocked/deferred 均为 0），`total` 仍取自 Milestone artifact 的 `worktrack_list` 长度，继续正常分析，不触发停止条件。若文件存在但无法按 Worktrack Backlog 合同解析为包含 `worktrack_id` 与 `status` 的条目，或出现无法归一化的状态值、损坏 frontmatter / markdown 结构、同一条目缺少必需字段等 present-but-damaged / unparseable 情况，必须命中正式停止条件，不得把损坏 backlog 当成空 backlog，也不得用部分解析结果继续计算。若文件存在且可解析，按 `worktrack_id` 去重并保留最新条目。Candidate progress 只做 `done → completed`、`blocked → blocked`、`deferred → deferred` 映射。`resolved` 是可识别的 legacy-only 状态，不是损坏输入，但不得归一化为 Candidate `completed`；当前 active Candidate Milestone 的声明 Worktrack 出现 `resolved` 时，必须返回 `legacy_non_candidate_input_gap`，且该条目不参与 completed progress。
-5. 读取并派生 Candidate contribution：以 active Milestone 的 `worktrack_list` 为 membership truth，按精确 `worktrack_id` 连接 backlog 中的最新条目。只有条目 `milestone_id` 与 active Milestone 一致、原始状态为 `done`，且具有 concrete `finished_handback_ref`、`accepted_checkpoint` 和 `closeout_checkpoint_commit` 时，才建立 completed contribution。解析 handback，仅确认 identity、`outcome: completed`、acceptance summary、residuals、merge result 和 stable evidence refs 可读。Worktrack 不在 `worktrack_list`、backlog `milestone_id` 不匹配、必需 refs 缺失或 malformed input 时阻塞；`resolved` 不得绕过此检查，不得回退读取 Worktrack Gate、closeout bundle、dispatch provenance、per-Worktrack lane record 或 `.servo/tmp` round chain。这里不读取或写入第二份 Milestone contribution 状态，不重放 Close transaction，也不重新判断 Worktrack acceptance。
+3a. 检查 Milestone Review Gate：goal-driven milestone 在调用 Candidate PlanWork normal entry 前必须存在至少一次有效复核。该复核来自 `pre_milestone_intake_review` 的 `milestone_review_gate_handoff`。只有 `milestone_review_count >= 1`、`latest_review_status = effective_pass`、`effective_review_pass = true` 且 `latest_review_checkpoint` 非空时才算通过。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 `proceed_blockers`，不得当成 review pass。若 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化导致 `review_invalidated_by` 非空，必须要求 fresh `pre_milestone_intake_review`。旧 `.servo` artifact 缺少 additive review/backfill 字段时，执行 conservative runtime backfill：默认 `milestone_review_count = 0`、`latest_review_status = missing`、`effective_review_pass = false`、`latest_review_checkpoint = N/A`，状态为 `blocked` / `not ready`；backfill forward-only，preserve existing observed facts，must not grant permissions，must not infer programmer confirmation，must not increment counters，must not create `effective_pass`，must not enable PlanWork。
+4. 读取 Worktrack backlog（`.servo/repo/worktrack-backlog.md`）：若文件不存在，视为空 backlog，`total` 仍取自 Milestone artifact 的 `worktrack_list`。若文件存在但不能解析为包含 `worktrack_id` 与 `status` 的条目，或状态不是 `done / blocked / deferred`，必须命中正式停止条件，不得使用部分解析结果。可解析时按 `worktrack_id` 去重并保留最新条目，Candidate progress 只做 `done → completed`、`blocked → blocked`、`deferred → deferred` 映射。
+5. 读取并派生 Candidate contribution：以 active Milestone 的 `worktrack_list` 为 membership truth，按精确 `worktrack_id` 连接 backlog 中的最新条目。只有条目 `milestone_id` 与 active Milestone 一致、原始状态为 `done`，且具有 concrete `finished_handback_ref`、`accepted_checkpoint` 和 `closeout_checkpoint_commit` 时，才建立 completed contribution。解析 handback，仅确认 identity、`outcome: completed`、acceptance summary、residuals、merge result 和 stable evidence refs 可读。membership、identity 或必需 refs 不一致时阻塞；不得读取 `.servo/tmp` round chain，也不重放 Close transaction或重新判断 Worktrack acceptance。
 6. 读取 repo snapshot（`.servo/repo/snapshot-status.md`），获取当前 repo 基准状态和治理信号。
 7. 检查前置 Milestone 依赖：若 `depends_on_milestones` 非空，验证前置 Milestone 是否已完成。
 8. 计算 Milestone 进度计数器：
@@ -100,8 +100,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 - 当前无活跃 Milestone（Milestone artifact 不存在或 status 非 active）
 - Milestone artifact 关键字段缺失或损坏，无法执行有效分析
-- Worktrack backlog 文件存在但损坏、不可读或不可按合同解析；包括无法提取 `worktrack_id` / `status`、状态值不在 `done / deferred / blocked / resolved`、frontmatter / markdown 结构损坏，或只能得到部分可信条目的情况
-- active Candidate Milestone 的声明 Worktrack 使用 legacy-only `resolved` 状态，因缺少 `done + finished-handback` Candidate completion authority 而产生 `legacy_non_candidate_input_gap`
+- Worktrack backlog 文件存在但损坏、不可读或不可按合同解析；包括无法提取 `worktrack_id` / `status`、状态值不在 `done / deferred / blocked`、frontmatter / markdown 结构损坏，或只能得到部分可信条目的情况
 - Worktrack backlog 与 Milestone 声明的 worktrack_list 之间存在不可自动解决的矛盾
 - 前置 Milestone 依赖未完成，且无法自动判定是否应阻塞当前 Milestone
 - Milestone Review Gate 缺失、`milestone_review_count < 1`、`latest_review_status` 不是 `effective_pass`、`latest_review_checkpoint` 为空，或 intake 状态为 `skipped` / `questions_required` / `blocked` / `missing` / `stale` / `invalidated`
@@ -127,8 +126,8 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - 序列化格式：构造一个 JSON 对象，使用 UTF-8 编码、字典键按字典序排序、紧凑分隔符（无多余空白）序列化后取 SHA-256。所有 repo 内路径必须规范化为 repo-relative POSIX path；不得使用绝对路径。
 - 顶层字段：`schema_version` 固定为 `milestone-input-checkpoint/v1`，并包含 `active_milestone_id`、`milestone_artifact`、`worktrack_backlog`、`worktrack_contributions`、`milestone_axis_reports`、`repo_snapshot`。
 - `milestone_artifact` 输入字段：artifact path、`milestone_id`、`status`、`worktrack_list`（保持 Milestone 声明顺序）、`completion_signals`、`acceptance_criteria`、`completion_threshold_pct`、`depends_on_milestones`、Milestone-owned stable evidence refs。不得纳入由本技能或上游刷新产生的 `progress_counter`、前次 `milestone_input_checkpoint` 或分析时间戳。
-- `worktrack_backlog` 输入字段：backlog path、`state`（`missing` / `present`）、以及按 `worktrack_id` 字典序排列的最新有效条目。文件缺失时写入 `state: missing` 与空 entries；文件存在时必须先完成解析、Candidate 状态分类和按 `worktrack_id` 去重，条目字段至少包括 `worktrack_id`、分类后的 `status`（completed / blocked / deferred / legacy_resolved）、`node_type`、`milestone_id`、`finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit` 和 Repo Refresh handoff summary。`legacy_resolved` 只用于暴露输入缺口，不计入 completed progress；backlog 存在但损坏或不可解析时不得生成 partial checkpoint，必须停止并返回 `proceed_blockers`。
-- `worktrack_contributions` 输入字段：它是从 active Milestone `worktrack_list` 与 matching-`milestone_id` backlog entry 只读派生的集合，不是 Milestone artifact 中的第二份状态。只纳入原始状态为 `done` 且通过 Candidate handback 检查的 Worktrack，按 Worktrack id 排序，包含 `finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit`、acceptance summary、residuals、merge result 和 stable evidence refs。Candidate 不使用 `.servo/worktrack/gate-evidence.md` fallback。`milestone_axis_reports` 仅在四个 sibling runs 完成后纳入各自 report ref、verdict、applicability 和 evidence refs；任一 contribution 或 axis report 变化都触发完整重算。
+- `worktrack_backlog` 输入字段：backlog path、`state`（`missing` / `present`）、以及按 `worktrack_id` 字典序排列的最新有效条目。文件缺失时写入 `state: missing` 与空 entries；文件存在时必须先完成解析、Candidate 状态分类和按 `worktrack_id` 去重，条目字段至少包括 `worktrack_id`、分类后的 `status`（completed / blocked / deferred）、`node_type`、`milestone_id`、`finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit` 和 Repo Refresh handoff summary。backlog 存在但损坏或不可解析时不得生成 partial checkpoint，必须停止并返回 `proceed_blockers`。
+- `worktrack_contributions` 输入字段：它是从 active Milestone `worktrack_list` 与 matching-`milestone_id` backlog entry 只读派生的集合，不是 Milestone artifact 中的第二份状态。只纳入原始状态为 `done` 且通过 Candidate handback 检查的 Worktrack，按 Worktrack id 排序，包含 `finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit`、acceptance summary、residuals、merge result 和 stable evidence refs。`milestone_axis_reports` 仅在四个 sibling runs 完成后纳入各自 report ref、verdict、applicability 和 evidence refs；任一 contribution 或 axis report 变化都触发完整重算。
 - `repo_snapshot` 输入字段：snapshot path、`baseline_branch`、`last_verified_checkpoint`、`checkpoint_type`、`checkpoint_ref`、当前 active milestone 指针（如有）、治理状态、已知问题与风险标识。不得纳入纯展示性更新时间、文件 mtime 或本轮分析时间。
 - Markdown 解析规范：从 frontmatter、表格、列表和 keyed lines 中提取字段时，字段名应先规范化为小写 snake_case；字符串 trim 首尾空白；列表中本来有业务顺序的字段保持原顺序，其余 map/object 键排序；缺失可选字段用 `null`，不得省略同一 schema 下的键。
 - 重算时机：每次 RepoScope.Observe 至少重新计算该输入指纹；若已存 `milestone_input_checkpoint` 与新指纹一致，且 `latest_observed_checkpoint` 与当前 `git rev-parse HEAD` 一致，才允许跳过 progress counter 和 purpose evidence 的完整重算。任一输入源的存在状态、路径集合、上述纳入字段、active milestone、schema_version 或 stored checkpoint 变化时，都必须完整重算并返回新的 checkpoint。
@@ -176,7 +175,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `conservative_runtime_backfill`：若发生缺字段降级，记录 `false` / `unknown` / `missing` / `blocked` / `not ready` / `N/A` 默认值、gap 证据与未扩大权限结论
 - `progress`：
   - `total`：声明的 worktrack 总数
-  - `completed`：原始 backlog 状态为 `done` 且具有有效 Candidate handback 的 worktrack 数；legacy `resolved` 不计入
+  - `completed`：原始 backlog 状态为 `done` 且具有有效 Candidate handback 的 Worktrack 数
   - `blocked`：被阻塞的 worktrack 数
   - `deferred`：被明确推迟的 worktrack 数
   - `completion_pct`：完成百分比
@@ -207,7 +206,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 - `recommendations`：array of strings
 - `depends_on_status`：前置 Milestone 检查结果（如有）
 - `aggregated_evidence_summary`：聚合 evidence 摘要
-- `missing_finished_handback_refs`：状态为 `done` 但缺失或不可解析 Candidate handback 的 Worktrack 列表；`resolved` 单独报告为 legacy input gap
+- `missing_finished_handback_refs`：状态为 `done` 但缺失或不可解析 Candidate handback 的 Worktrack 列表
 - `analysis_timestamp`：分析时间戳
 - `input_artifacts_used`：使用的输入 artifact 列表及各自的时效性
 - `observation_ready`：当前观察是否足以支撑下游判定
@@ -223,7 +222,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 ## 资源
 
-使用当前活跃 Milestone、Worktrack backlog、Candidate finished handbacks、Repo snapshot 和 Milestone-owned axis reports 作为主要输入。不得读取 `.servo/tmp` round chain、legacy Worktrack Gate/bundle/provenance/lane artifacts，或 sibling axis outputs来准备另一个 axis 的输入。
+使用当前活跃 Milestone、Worktrack backlog、Candidate finished handbacks、Repo snapshot 和 Milestone-owned axis reports 作为主要输入。不得读取 `.servo/tmp` round chain或 sibling axis outputs 来准备另一个 axis 的输入。
 
 结果应保持聚焦于 Milestone 级别的聚合分析，而不是扩张成单个 worktrack 的逐条审查或下一 worktrack 的选择规划。输出应可直接作为 `RepoScope.Decide` 和 `harness-skill` continuous execution 流程中的 handback 判断依据。
 
@@ -248,7 +247,7 @@ description: 当 Harness 处于 RepoScope 且需要分析当前活跃 Milestone 
 
 **本技能不直接运行 Milestone Gate，也不分派四个 axis carrier**。当 `worktrack_list_finished == true` 时，本技能负责：
 
-1. 准备 common factual base：`milestone_id`、objective/configuration、target-type hints、`aggregation_rules`，以及每个由 `worktrack_list` 和 matching-`milestone_id` backlog entry 只读派生、原始状态为 `done` 且通过 Candidate handback 检查的 completed contribution 的 initial requirement ref、`finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit`、stable evidence refs 和必要 repo/source read scope。Legacy `resolved` 条目不得进入该事实基础。
+1. 准备 common factual base：`milestone_id`、objective/configuration、target-type hints、`aggregation_rules`，以及每个由 `worktrack_list` 和 matching-`milestone_id` backlog entry 只读派生、原始状态为 `done` 且通过 Candidate handback 检查的 completed contribution 的 initial requirement ref、`finished_handback_ref`、`accepted_checkpoint`、`closeout_checkpoint_commit`、stable evidence refs 和必要 repo/source read scope。
 2. 对每个 contribution 执行最小 identity/completion/ref 可读性检查。不得重放 Worktrack Review、merge 或 Close transaction。
 3. 向 Harness 暴露 `milestone_gate_axis_dispatch_required: true`，并列出四个 required axes：blackbox / whitebox / anticheat / composite。
 4. 等 Harness 顶层为每个 axis 构建独立输入包并分别分派 sibling carriers。每份包只含共同事实基础和该 axis 允许读取的 source/evidence categories，不含 sibling report、verdict、finding 或 conclusion。

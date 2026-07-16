@@ -18,22 +18,18 @@ last_verified: 2026-06-15
 | canonical skill source | 更新 `product/harness/skills/README.md` 的技能索引和文档追溯链；确认技能包内不依赖包外的运行时文档；若技能名称容易误用，采用带控制域前缀的规范名称 |
 | adapter payload | 同步 `agents` 和 `claude` 两个后端的 `payload.json`，核对 `skill_id`、`canonical_paths`、`required_payload_files`、`target_dir` 和 `legacy_*` 字段；重命名时旧名只能保留为旧版别名，不可作为推荐入口 |
 | `.servo` template | 同步 `product/.servo_template/`、`repo-init-goal-skill/assets/`、`deploy_servo.js` 的生成和迁移路径，并补齐预览、执行和幂等性验证证据 |
-| Harness artifact contract | 同步 `docs/harness/artifact/` 规范合同、技能模板、`.servo_template` 模板和对应的治理检查 |
+| Harness / Skill contract | 跨模块思想同步唯一 Harness 指导思想；运行合同同步 owning `SKILL.md`、package assets 和 `.servo_template` |
 | operator-facing installer behavior | 同步 `docs/servo-installer/contracts/`、`docs/servo-installer/runbooks/`、`toolchain/scripts/deploy/README.md` 以及 CLI、TUI、包体烟测的命令说明 |
 | package and release program | 同步 npm 打包和发布预览、tarball 和 npx 烟测、发布通道不发版边界，以及必要的收尾证据 |
-| governance checks | 跑 `governance_semantic_check.py`、`path_governance_check.py`、`npm test --prefix toolchain/scripts/deploy` |
+| verification | 核对 payload/package inventory、parse、disposable-target install/verify 和独立 source Review |
 
 ## no-publish boundary
 
 本文档中的检查清单不授权任何 npm publish、GitHub Release、git tag、dist-tag mutation、或外部 repo mutation。所有发布操作需要独立的 Release Milestone 授权。
 
-## 最小本地检查
+## 重构期检查
 
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/governance_semantic_check.py
-PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py
-npm test --prefix toolchain/scripts/deploy
-```
+旧 Python governance/test tree 暂不作为 passing authority；外围验证系统由 `MS-20260716-001` 在核心接口稳定后重建。当前不得对本仓库执行 installer apply。
 
 ## 相关文档
 

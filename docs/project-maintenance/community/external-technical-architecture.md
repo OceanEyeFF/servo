@@ -31,9 +31,9 @@ Servo 把 LLM 当成一个能力很强但不完全稳定的执行组件。系统
 
 | 工程手段 | 在 Servo 中的体现 | 解决的问题 |
 |----------|------------------|------------|
-| 明确输入边界 | Goal、Milestone、Worktrack contract | 防止模型把模糊需求直接扩写成大范围改动 |
+| 明确输入边界 | Goal、Milestone、immutable initial requirement | 防止模型把模糊需求直接扩写成大范围改动 |
 | 状态估计 | Repo / Worktrack observe | 先看当前仓库、分支、backlog 和证据，再决定下一步 |
-| 任务分解 | Milestone / Worktrack / task queue | 把长任务压成可验证的小窗口 |
+| 任务分解 | Milestone / Worktrack / round plan | 把长任务压成可验证的小窗口 |
 | 反馈回路 | Verify / Judge / Recover | 输出后必须回到检查、裁决和恢复路径 |
 | 证据记录 | gate evidence、review evidence、test evidence | 避免“模型说完成了”直接等于完成 |
 | 权限边界 | handback、approval、policy gate | 高风险动作必须显式授权 |
@@ -48,7 +48,7 @@ Servo 的架构核心是快慢变量分层。不同层级的状态变化速度�
 |------|----------|----------|----------|
 | Repo | 慢 | 长期目标、系统不变量、Milestone pipeline、治理状态 | 这个仓库接下来应该推进什么？当前目标是否还成立？ |
 | Milestone | 中 | 阶段目标、完成信号、验收标准、多个 Worktrack 的组合 | 这个阶段是否完成？是否满足使用者最终验收？ |
-| Worktrack | 快 | 单个受控执行单元、分支、任务队列、局部证据 | 当前小任务是否实现、验证并能合入？ |
+| Worktrack | 快 | 单个受控执行单元、分支、round chain、局部证据 | 当前小任务是否实现、验证并能合入？ |
 
 这种分层的意义，是让不同粒度的问题在不同控制 tick 上处理：
 
@@ -56,19 +56,19 @@ Servo 的架构核心是快慢变量分层。不同层级的状态变化速度�
 - Worktrack tick 不应该重新定义整个项目目标。
 - Milestone tick 不应该只看某个文件 diff，而应该看多个 Worktrack 汇总后是否达成阶段目标。
 
-每层都有自己的 Observe / Decide / Init / Dispatch / Verify / Judge / Recover / Close 行为。Scope 决定当前在哪一层控制，Function 决定此刻做什么，Artifact 决定依据哪些正式对象判断。
+Repo/Milestone 层负责观察、决策与编排；Candidate Worktrack 内部使用 PlanWork、独立 Review、redo 和机械 Close。上层不重放下层技术判断。
 
 ## 为什么这样能降低偏差
 
 ### 1. 收紧上下文，避免注意力过散
 
-长上下文会稀释注意力，也会让早期约束更容易被遗漏。Servo 用 Worktrack 把任务压缩成局部窗口：当前分支、当前 contract、当前 task queue、当前 evidence。模型不需要同时记住整个项目的所有目标，只需要在限定范围内完成一个受控切片。
+长上下文会稀释注意力，也会让早期约束更容易被遗漏。Servo 用 Worktrack 把任务压缩成局部窗口：immutable initial requirement、当前分支、round chain 和 evidence。模型只需在限定范围内完成一个受控切片。
 
 ### 2. 多层验收更科学
 
 不同层级的验收对象不同：
 
-- Worktrack 验收局部实现是否满足 contract。
+- Worktrack 独立 Review 验收局部实现是否满足 initial requirement。
 - Milestone 验收多个 Worktrack 合起来是否满足阶段目标。
 - Repo 刷新验收慢变量是否需要更新，比如 backlog、snapshot、下一步路线。
 
@@ -76,12 +76,12 @@ Servo 的架构核心是快慢变量分层。不同层级的状态变化速度�
 
 ### 3. Review 成本和风险匹配
 
-Servo 的 Review 不追求所有任务都用同一强度。小任务可以用轻量 Review 和局部检查；合并到 Milestone、涉及 release、治理、部署或高风险变更时，再使用更完整的 Review / Gate。
+Servo 的 Review 不追求所有任务都用同一强度。Worktrack 使用独立 Review；Milestone、release、治理、部署或高风险变更由各自层级增加相应验收。
 
 这带来一个更合理的成本结构：
 
 - 低风险文档或小修补：轻量检查、快速闭环。
-- 普通 Worktrack：implementation / validation / policy 三面 gate。
+- 普通 Worktrack：PlanWork affected validation + 独立技术 Review。
 - Milestone 汇总：看完成信号、验收标准和跨 Worktrack 证据。
 - Release / publish / deploy：需要更强的准入、真实 smoke、dogfood 或人工审批。
 
@@ -93,9 +93,9 @@ Servo 不是只靠对话推进。它把控制状态写成 repo-side artifacts，
 
 - Goal Charter：仓库长期目标和非目标。
 - Milestone Backlog：当前 pipeline 中 planned / active / completed 的阶段。
-- Worktrack Contract：当前执行单元的目标、范围、分支和验收标准。
-- Plan / Task Queue：当前局部任务窗口。
-- Gate Evidence：实现、验证和策略层面的证据。
+- Initial Requirement：当前执行单元最初批准的目标、范围、分支和验收标准。
+- Round Chain：当前 PlanWork/Review 循环的临时任务与验证记录。
+- Finished Handback：Close 后返回上层的完成摘要、checkpoint 和稳定证据引用。
 - Control State：当前控制回路处于哪一层、哪一步、下一步是什么。
 
 这些 artifact 的价值在于降低隐式上下文依赖。即使换窗口、换模型或经历 handback，控制系统仍然有可追踪的状态。

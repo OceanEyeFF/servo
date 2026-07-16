@@ -8,8 +8,7 @@ last_verified: 2026-06-13
 
 # CodingAgent Skills 使用教程
 
-> 本文档面向已读过 [quickstart.md](./quickstart.md) 的 operator，深入介绍 Harness Skills 在 CodingAgent 中的调用方式、backend 差异和常见工作流。
-> **新用户先读 [quickstart.md](./quickstart.md) 10 分钟快速入门。**
+> 本文档是当前 operator 主入口，介绍 Harness Skills 在 CodingAgent 中的调用方式、backend 差异和常见工作流。
 
 ## Skill 调用方式
 
@@ -23,7 +22,7 @@ Harness Skills 在 CodingAgent 中通过 slash command 调用：
 | `repo-change-goal-skill` | 修改仓库目标（Goal Charter 变更） | `/repo-change-goal-skill` |
 | `repo-append-request-skill` | 追加临时任务或补充需求 | `/repo-append-request-skill` |
 
-`harness-skill` 的标准调用模板见 [quickstart.md 第三步](./quickstart.md#第三步启动-harness-执行-worktrack)。
+`harness-skill` 先读取最小仓库入口，再按当前 scope 选择对应 canonical Skill。
 
 ## Backend 差异
 
@@ -48,7 +47,7 @@ npx servo-installer install --backend agents
 npx servo-installer verify --backend agents
 /repo-init-goal-skill
 ```
-→ 完整步骤见 [init-greenfield.md](./init-greenfield.md)
+→ 初始化完成后由 Repo/Milestone Orchestrator 形成第一个 approved Worktrack entry
 
 ### 工作流二：已有代码接入 Harness
 
@@ -64,10 +63,10 @@ npx servo-installer diagnose --backend agents --json
 /repo-whats-next-skill                    # 分析候选 Milestone
 （手动确认 Milestone brief 和 Worktrack 列表）
 /harness-skill                            # 启动 Harness 逐项推进
-  （Harness 自动执行 Init → Dispatch → Verify → Judge → Close）
+  （Harness 路由 PlanWork → 独立 Review → Close）
 （Milestone 验收边界：programmer 做最终决定）
 ```
-→ Harness 控制回路详解见 [docs/harness/README.md](../../harness/README.md)
+→ 跨模块原则见 [Harness指导思想.md](../../harness/foundations/Harness指导思想.md)，具体运行合同见对应 `SKILL.md`
 
 ### 工作流四：追加需求或调整方向
 
@@ -83,7 +82,7 @@ npx servo-installer diagnose --backend agents --json
 
 | 场景 | 文档 |
 |------|------|
-| 新仓库从零初始化 | [init-greenfield.md](./init-greenfield.md) |
+| 新仓库从零初始化 | 本页的初始化与 approved Worktrack entry 流程 |
 | 已有代码接入 Harness | [init-with-code.md](./init-with-code.md) |
 | 调整目标 / 追加需求 | [goal-change-guide.md](./goal-change-guide.md) |
 | Codex backend 细节 | [codex.md](./codex.md) |

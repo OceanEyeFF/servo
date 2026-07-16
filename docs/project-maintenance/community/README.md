@@ -13,7 +13,7 @@ last_verified: 2026-06-19
 
 `community/` 承接 Servo 对外技术叙事、适用场景说明和社区平台文案样例。它的读者是外部社区读者、潜在试用者和维护对外文案的 contributor。
 
-本目录不承接 release truth、publish flow、Harness doctrine 或 artifact contract。版本、安装、发布和 runtime 事实变化时，先回到对应 owner 文档校准，再同步到本目录的对外表达。
+本目录不承接 release truth、publish flow、Harness doctrine 或 Skill operational contract。版本、安装、发布和 runtime 事实变化时，先回到对应 owner 校准，再同步到本目录的对外表达。
 
 ## 推荐阅读顺序
 
@@ -45,6 +45,6 @@ last_verified: 2026-06-19
 
 - 本目录只承载外部社区推广文案、对外技术叙事和发布公告草案
 - 不承载 release channel、publish flow 或 pre-publish governance（这些归 `../governance/servo-installer/`）
-- 不承载 Harness doctrine、artifact contract 或 workflow policy（这些归 `../../harness/`）
+- 不承载 Harness doctrine 或 Skill workflow contract（分别归唯一 Harness 指导思想和 canonical `SKILL.md`）
 - 帖子正文以社区实际发布版本为准；仓内副本作为维护参考
 - 平台派生文案应复用技术/架构骨架，再按平台重写表达；不要把某个平台的正文当成全平台模板

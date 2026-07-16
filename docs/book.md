@@ -40,97 +40,18 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 #### 1.3 使用帮助
 
 1. [project-maintenance/usage-help/README.md](./project-maintenance/usage-help/README.md)
-2. [project-maintenance/usage-help/quickstart.md](./project-maintenance/usage-help/quickstart.md)
-3. [project-maintenance/usage-help/recommended-usage.md](./project-maintenance/usage-help/recommended-usage.md)
-4. [project-maintenance/usage-help/usage-flow-examples.md](./project-maintenance/usage-help/usage-flow-examples.md)
-5. [project-maintenance/usage-help/init-greenfield.md](./project-maintenance/usage-help/init-greenfield.md)
-6. [project-maintenance/usage-help/init-with-code.md](./project-maintenance/usage-help/init-with-code.md)
-7. [project-maintenance/usage-help/goal-change-guide.md](./project-maintenance/usage-help/goal-change-guide.md)
-8. [project-maintenance/usage-help/codex.md](./project-maintenance/usage-help/codex.md)
-9. [project-maintenance/usage-help/claude.md](./project-maintenance/usage-help/claude.md)
+2. [project-maintenance/usage-help/recommended-usage.md](./project-maintenance/usage-help/recommended-usage.md)
+3. [project-maintenance/usage-help/usage-flow-examples.md](./project-maintenance/usage-help/usage-flow-examples.md)
+4. [project-maintenance/usage-help/init-with-code.md](./project-maintenance/usage-help/init-with-code.md)
+5. [project-maintenance/usage-help/goal-change-guide.md](./project-maintenance/usage-help/goal-change-guide.md)
+6. [project-maintenance/usage-help/codex.md](./project-maintenance/usage-help/codex.md)
+7. [project-maintenance/usage-help/claude.md](./project-maintenance/usage-help/claude.md)
 
 ---
 
 ### Part 2：Harness 内核
 
-理解 Harness 控制系统的思想、架构和运行机制。
-
-#### 2.0 Harness 入口
-
-1. [harness/README.md](./harness/README.md)
-
-#### 2.1 思想层（Foundations）
-
-1. [harness/foundations/README.md](./harness/foundations/README.md)
-2. [harness/foundations/Harness指导思想.md](./harness/foundations/Harness指导思想.md)
-3. [harness/foundations/Harness运行协议.md](./harness/foundations/Harness运行协议.md)
-4. [harness/foundations/runtime-control-loop.md](./harness/foundations/runtime-control-loop.md)
-5. [harness/foundations/runtime-dispatch-contract.md](./harness/foundations/runtime-dispatch-contract.md)
-6. [harness/foundations/runtime-evidence-gate-recovery.md](./harness/foundations/runtime-evidence-gate-recovery.md)
-7. [harness/foundations/runtime-closeout-refresh.md](./harness/foundations/runtime-closeout-refresh.md)
-8. [harness/foundations/runtime-state-hydration.md](./harness/foundations/runtime-state-hydration.md)
-9. [harness/foundations/dispatch-decision-policy.md](./harness/foundations/dispatch-decision-policy.md)
-10. [harness/foundations/model-runtime-support.md](./harness/foundations/model-runtime-support.md)
-11. [harness/foundations/skill-common-constraints.md](./harness/foundations/skill-common-constraints.md)
-
-#### 2.2 控制范围（Scope）
-
-1. [harness/scope/README.md](./harness/scope/README.md)
-2. [harness/scope/repo-scope.md](./harness/scope/repo-scope.md)
-3. [harness/scope/worktrack-scope.md](./harness/scope/worktrack-scope.md)
-
-#### 2.3 正式对象（Artifact）
-
-1. [harness/artifact/README.md](./harness/artifact/README.md)
-2. [harness/artifact/runtime-artifact-lifecycle.md](./harness/artifact/runtime-artifact-lifecycle.md)
-3. [harness/artifact/standard-fields.md](./harness/artifact/standard-fields.md)
-4. [harness/artifact/repo/README.md](./harness/artifact/repo/README.md)
-5. [harness/artifact/repo/discovery-input.md](./harness/artifact/repo/discovery-input.md)
-6. [harness/artifact/repo/complex-project-entry-gate.md](./harness/artifact/repo/complex-project-entry-gate.md)
-7. [harness/artifact/repo/goal-charter.md](./harness/artifact/repo/goal-charter.md)
-8. [harness/artifact/repo/repo-analysis.md](./harness/artifact/repo/repo-analysis.md)
-9. [harness/artifact/repo/snapshot-status.md](./harness/artifact/repo/snapshot-status.md)
-10. [harness/artifact/repo/worktrack-backlog.md](./harness/artifact/repo/worktrack-backlog.md)
-11. [harness/artifact/repo/decision-log.md](./harness/artifact/repo/decision-log.md)
-12. [harness/artifact/repo/milestone-backlog.md](./harness/artifact/repo/milestone-backlog.md)
-13. [harness/artifact/repo/milestone-history.md](./harness/artifact/repo/milestone-history.md)
-14. [harness/artifact/worktrack/contract.md](./harness/artifact/worktrack/contract.md)
-15. [harness/artifact/worktrack/self-review-contract.md](./harness/artifact/worktrack/self-review-contract.md)
-16. [harness/artifact/worktrack/single-acceptance-contract.md](./harness/artifact/worktrack/single-acceptance-contract.md)
-17. [harness/artifact/worktrack/closeout-evidence-bundle.md](./harness/artifact/worktrack/closeout-evidence-bundle.md)
-18. [harness/artifact/worktrack/dispatch-evidence-records.md](./harness/artifact/worktrack/dispatch-evidence-records.md)
-19. [harness/artifact/worktrack/composite-lane-records.md](./harness/artifact/worktrack/composite-lane-records.md)
-20. [harness/artifact/worktrack/plan-task-queue.md](./harness/artifact/worktrack/plan-task-queue.md)
-21. [harness/artifact/worktrack/dispatch-packet.md](./harness/artifact/worktrack/dispatch-packet.md)
-22. [harness/artifact/worktrack/gate-evidence.md](./harness/artifact/worktrack/gate-evidence.md)
-23. [harness/artifact/worktrack/debug-evidence.md](./harness/artifact/worktrack/debug-evidence.md)
-24. [harness/artifact/control/README.md](./harness/artifact/control/README.md)
-25. [harness/artifact/control/control-state.md](./harness/artifact/control/control-state.md)
-26. [harness/artifact/control/milestone.md](./harness/artifact/control/milestone.md)
-27. [harness/artifact/control/milestone-gate-aggregation.md](./harness/artifact/control/milestone-gate-aggregation.md)
-28. [harness/artifact/control/composite-milestone-acceptance.md](./harness/artifact/control/composite-milestone-acceptance.md)
-29. [harness/artifact/control/append-request.md](./harness/artifact/control/append-request.md)
-30. [harness/artifact/control/goal-change-request.md](./harness/artifact/control/goal-change-request.md)
-31. [harness/artifact/control/node-type-registry.md](./harness/artifact/control/node-type-registry.md)
-
-#### 2.4 技能目录（Catalog）
-
-1. [harness/catalog/README.md](./harness/catalog/README.md)
-2. [harness/catalog/supervisor.md](./harness/catalog/supervisor.md)
-3. [harness/catalog/repo.md](./harness/catalog/repo.md)
-4. [harness/catalog/milestone/README.md](./harness/catalog/milestone/README.md)
-5. [harness/catalog/milestone/milestone-init-skill.md](./harness/catalog/milestone/milestone-init-skill.md)
-6. [harness/catalog/milestone/milestone-status-skill.md](./harness/catalog/milestone/milestone-status-skill.md)
-
-#### 2.5 工作流族（Workflow Families）
-
-1. [harness/workflow-families/README.md](./harness/workflow-families/README.md)
-2. [harness/workflow-families/repo-evolution/README.md](./harness/workflow-families/repo-evolution/README.md)
-3. [harness/workflow-families/repo-evolution/append-request-routing.md](./harness/workflow-families/repo-evolution/append-request-routing.md)
-4. [harness/workflow-families/large-undocumented-repo-onboarding.md](./harness/workflow-families/large-undocumented-repo-onboarding.md)
-5. [harness/workflow-families/multi-repo-project-workflow.md](./harness/workflow-families/multi-repo-project-workflow.md)
-
----
+1. [harness/foundations/Harness指导思想.md](./harness/foundations/Harness指导思想.md)
 
 ### Part 3：维护治理
 
@@ -222,13 +143,6 @@ Owner：`servo-kernel`。边界：只覆盖当前 `docs/` 文档分层与阅读�
 
 ---
 
-### Retained Historical References
-
-These links are kept for explicit reading-order coverage and historical traceability only. They are `status: superseded` and do not act as current Harness truth owners.
-
-1. [harness/workflow-families/repo-evolution/standard-worktrack.md](./harness/workflow-families/repo-evolution/standard-worktrack.md)
-2. [harness/workflow-families/repo-evolution/policy-profiles.md](./harness/workflow-families/repo-evolution/policy-profiles.md)
-
 ## Chapter Boundaries
 
 ### Part 1：项目基础
@@ -237,17 +151,7 @@ These links are kept for explicit reading-order coverage and historical traceabi
 
 ### Part 2：Harness 内核
 
-`docs/harness/` 承接 Harness-first 主线，分成思路层、架构层和实现映射层。未升格的方案分析、迁移比较或实现前设计不作为当前 docs truth 层长期保留。
-
-Harness 子章节放置规则：
-
-- **Foundations**：Harness 指导思想、runtime protocol、跨 skill 公共约束和执行载体选择策略。
-- **Scope**：`RepoScope`、`WorktrackScope` 与状态闭环。
-- **Artifact**：Harness 正式对象合同，包括 repo/worktrack/control artifact 与标准字段。
-- **Catalog**：Codex skill catalog、控制层级映射；可执行源仍归 `product/harness/skills/`。
-- **Workflow Families**：可复用 workflow family policy；superseded historical references 不作为当前主线 owner。
-
-新文档属于 Part 2，当它回答的是"Harness 如何思考、调度、记录证据、判定、交接或沉淀 workflow"。
+`docs/harness/foundations/Harness指导思想.md` 是唯一长期 Harness 思想文档。Skill 的入口、运行步骤、字段和停止边界由对应 `product/harness/skills/*/SKILL.md` 自己维护，不在 docs 中建立镜像。
 
 ### Part 3：维护治理
 
@@ -277,7 +181,7 @@ Harness 子章节放置规则：
 新增或移动文档前，按顺序判断：
 
 1. 是项目基础/使用帮助吗？放 Part 1（`project-maintenance/foundations/` 或 `project-maintenance/usage-help/`）。
-2. 是 Harness doctrine、runtime、scope、artifact、catalog 或 workflow 吗？放 Part 2（`harness/` 的最近子章节）。
+2. 是跨模块 Harness 指导思想吗？收敛进 Part 2 的唯一文档；若是 Skill 运行合同，写入对应 `SKILL.md`。
 3. 是维护治理/测试验证吗？放 Part 3（`project-maintenance/governance/` 或 `project-maintenance/testing/`）。
 4. 是部署/发布/分发吗？放 Part 4（`project-maintenance/deploy/`、`servo-installer/` 或 `project-maintenance/governance/servo-installer/`）。
 5. 如果它无法归入当前存在的四个 Part，不要把它写入 `docs/`；先明确当前 owner 和实际承接路径，再同步最近入口和本页。
@@ -293,7 +197,7 @@ Harness 子章节放置规则：
 3. 更新本页的 Full Reading Order，确保除 `docs/book.md` 自身外的每个当前 docs markdown 文件都有直接有序链接。
 4. 检查本页正文中的反引号路径：只保留当前 checkout 中真实存在的路径；不要用不存在目录表达预留章节，也不要创建空目录或占位文档来让旧表述成立。
 5. 修复旧路径引用；若旧入口仍有读者价值，写清迁移目标。
-6. 运行 `PYTHONDONTWRITEBYTECODE=1 python3 toolchain/scripts/test/path_governance_check.py`，确认 book reachability、explicit reading-order coverage 和 inline path coverage 均通过。
+6. 在外围治理工具重构完成前，通过实际路径扫描和独立内容 Review 确认 book 不含悬空链接。
 7. 若变更影响 review/verify、路径治理或 closeout 规则，同步更新 `docs/project-maintenance/governance/` 的对应文档。
 
 删除或重命名文档时，不只删除文件；必须同步删除或替换本页、最近 README、相关正文和治理文档中的旧链接。

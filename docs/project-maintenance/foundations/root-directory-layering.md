@@ -55,7 +55,7 @@ Repo-local execution config。允许 tracked：`.codex/config.toml`、`.codex/ru
 
 ### 5. `.servo/`
 
-Repo-local Harness runtime control-plane state，可被治理检查识别为合法根目录对象，但必须保持 ignored。运行合同、队列和 evidence 仅用于控制回路，不替代 `docs/`、`product/`、`toolchain/` 中的正式真相与源码。
+Repo-local Harness runtime control-plane state，可被治理检查识别为合法根目录对象，但必须保持 ignored。Worktrack 的 initial requirement、finished handback 与临时 round chain 不替代 `docs/`、`product/`、`toolchain/` 中的正式真相与源码。
 
 ### 6. `package.json`
 
@@ -63,7 +63,7 @@ Repo-local Harness runtime control-plane state，可被治理检查识别为合�
 
 ### 7. `.test/`
 
-Repo-local dogfood test execution state。允许作为 ignored 根目录对象存在，用于本地 freeze repo specimen、规则草案、测试用例草案和后续派生执行工作区；不得入库，不得承接长期真相、canonical source、发布产物或远程副作用凭据。需要长期化的规则、流程或结论必须回写到 `docs/project-maintenance/`、`docs/harness/`、`product/` 或 `toolchain/` 的正式承接层。
+Repo-local dogfood test execution state。允许作为 ignored 根目录对象存在，用于本地 freeze repo specimen、规则草案、测试用例草案和后续派生执行工作区；不得入库，不得承接长期真相、canonical source、发布产物或远程副作用凭据。需要长期化的项目维护事实写回 `docs/project-maintenance/`，Harness 思想写入唯一指导思想，Skill 运行合同写入 `product/`。
 
 ## 四、新增根目录对象规则
 
@@ -71,7 +71,7 @@ Repo-local dogfood test execution state。允许作为 ignored 根目录对象�
 
 ## 五、文档域补充
 
-当前 `docs/` 一级文档域：`book.md`、`project-maintenance/`、`harness/`。`book.md` 是 docs 书式章节 spine，只承接当前阅读顺序、章节边界和新增文档放置判断；长期规则正文仍进入最近的 `project-maintenance/` 或 `harness/` 承接文档。`product/` 一级源码根：`harness/`；`product/` 下允许 `.servo_template/`（repo-local execution template layer，非 artifact 模板长期 owner）。
+当前 `docs/` 一级文档域：`book.md`、`project-maintenance/`、`harness/`。`harness/` 只保留唯一指导思想；Skill operational contract 归 `product/harness/skills/`。`product/` 下允许 `.servo_template/` 作为 repo-local execution template layer。
 
 ## 六、相关文档
 

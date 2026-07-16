@@ -19,16 +19,16 @@ Decision time: 2026-04-25
 
 ## 二、分支约定
 
-- `baseline branch`：由 `origin/HEAD` 动态解析的远端默认分支（当前为 `origin/HEAD -> master`），是 Worktrack 默认比较基准与 PR target 来源
+- `baseline branch`：由 `origin/HEAD` 动态解析的远端默认分支（当前为 `origin/HEAD -> master`），是 Repo/PR 默认比较基准
 - `protected baseline`：被远端保护规则覆盖的 baseline 分支，只允许 PR 合并
 - `worktrack branch`：围绕单个 Worktrack 的限定范围工作分支，不替代或改写 baseline
 - `current branch`：当前本地分支，需显式确认角色，不自动等同 baseline 或 worktrack
-- Worktrack Contract 的 `baseline_branch` 是 PR target/merge target/checkpoint 判定的权威字段，不在 skill/hook/runbook 中写死
+- Candidate Worktrack 的 `branch_source.branch` 与 `close_target.branch` 由上层批准入口提供，不在 Skill、hook 或 runbook 中写死
 - 推荐分支命名：`work/<topic>`、`fix/<topic>`、`docs/<topic>`
 
 ## 三、PR 规则
 
-变更必须通过 PR 提交，target 由 Worktrack Contract 的 `baseline_branch` 决定（合同缺失时，用 `origin/HEAD` 解析结果补齐或阻断 closeout）；PR 必须包含变更摘要、验证结果与风险说明，默认遵循 `.github/pull_request_template.md`。
+变更必须通过 PR 提交，target 由当前 Repo/Milestone branch policy 决定；PR 必须包含变更摘要、验证结果与风险说明，默认遵循 `.github/pull_request_template.md`。
 
 发布开发分支到 `master` 的 release PR 只承接已完成 candidate 的合并，不在 PR 合并后继续改 candidate tuple。当前 release development branch 是 `develop`；所有进入 `master` 的 release、post-publish docs sync 和发布事实修正 PR 都必须使用 `develop -> master`。发布型 PR 打开或更新前必须确认：
 
@@ -84,7 +84,7 @@ hook 通过 `origin/HEAD` 动态解析 baseline（当前解析为 `origin/master
 
 ## 九、发布后分支同步
 
-发布后若 `worktrack-doc-catch-up-skill` 写回 registry facts，应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
+发布后的 registry fact sync 应通过单独的 docs PR 合入 `master`，不要修改已发布 tag target。该 docs PR 合并后，把发布开发分支 fast-forward 到 `origin/master` 并推回远端，使下一轮开发基线与发布后文档事实一致。
 
 ## 十、相关文档
 

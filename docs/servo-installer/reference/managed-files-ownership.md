@@ -150,15 +150,16 @@ target repo root/
 servo/           ← 用户自有（target repo 本身）
 │
 ├── .agents/skills/                ← deploy target（installer 管理）
-│   ├── servo-harness-skill/          ← 受管 skill payload
-│   ├── servo-worktrack-close-skill/  ← 受管 skill payload
-│   ├── worktrack-gate-skill/             ← 受管 skill payload
-│   └── servo-*                       ← 当前 agents 受管 skill payload
+│   ├── harness-skill/             ← 受管 skill payload
+│   ├── worktrack-plan-work-skill/ ← 受管 skill payload
+│   ├── worktrack-review-skill/    ← 受管 skill payload
+│   └── worktrack-close-skill/     ← 受管 skill payload
 │
 ├── .claude/skills/                ← deploy target（installer 管理）
 │   ├── harness-skill/             ← 受管 skill payload
+│   ├── worktrack-plan-work-skill/ ← 受管 skill payload
+│   ├── worktrack-review-skill/    ← 受管 skill payload
 │   ├── worktrack-close-skill/     ← 受管 skill payload
-│   ├── worktrack-gate-skill/                ← 受管 skill payload
 │   └── *                          ← 所有目录均为受管
 │
 ├── .servo/                           ← 运行时控制状态（非 installer payload）
@@ -168,7 +169,8 @@ servo/           ← 用户自有（target repo 本身）
 │   ├── control-state-wt.md        ← Worktrack 级控制状态
 │   ├── goal-charter.md            ← Repo 目标章程
 │   ├── repo/                      ← 仓库级快照与 backlog
-│   ├── worktrack/                 ← 当前 worktrack artifacts
+│   ├── worktrack/<id>/            ← initial requirement 与 finished handback
+│   ├── tmp/<id>/                  ← ignored round-chain runtime handoff
 │   └── milestone/                 ← Milestone artifacts
 ├── .aw/                              ← 旧版运行时控制状态（仅显式升级路径处理）
 │

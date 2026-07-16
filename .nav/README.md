@@ -27,7 +27,8 @@ last_verified: 2026-05-06
 |------|------|
 | 文档主线 | [docs/README.md](../docs/README.md) |
 | 项目维护、deploy、testing、usage help | [docs/project-maintenance/README.md](../docs/project-maintenance/README.md) |
-| Harness doctrine、artifact、catalog、workflow family | [docs/harness/README.md](../docs/harness/README.md) |
+| Harness 跨模块指导思想 | [Harness指导思想.md](../docs/harness/foundations/Harness指导思想.md) |
+| Canonical Skill contracts | [product/harness/skills/README.md](../product/harness/skills/README.md) |
 | Codex / Claude backend 使用差异 | [usage-help/README.md](../docs/project-maintenance/usage-help/README.md) |
 | `servo-installer` deploy 主流程 | [deploy/README.md](../docs/project-maintenance/deploy/README.md) |
 | npx / package smoke 与部署后行为观察 | [testing/README.md](../docs/project-maintenance/testing/README.md) |

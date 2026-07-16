@@ -14,8 +14,7 @@ Status. This Skill
 does not reopen Worktrack execution, repeat Review, or audit the Close Git
 transaction.
 
-Candidate completion has one ingress. There is no fallback to a legacy Gate,
-closeout bundle, Contract, dispatch packet, provenance record, or lane record.
+Candidate completion has one ingress. Missing or malformed input blocks.
 
 ## Candidate Input
 
@@ -57,8 +56,7 @@ Before writeback:
 8. Require all referenced persistent evidence to be resolvable. Stable evidence
    must not consist only of `.servo/tmp/` paths.
 
-Failure blocks Repo Refresh. Missing or malformed Candidate input is never
-retried through a legacy ingress.
+Failure blocks Repo Refresh; no alternate ingress is inferred.
 
 These checks establish that the Close result is consumable. They do not replay
 Git parent/tree/path checks, recompute merge correctness, re-run Worktrack
@@ -77,8 +75,7 @@ Candidate completion permits exactly two capabilities:
 
 Every other target or operation is blocked. Candidate completion cannot write
 Milestone Gate verdicts, axis reports/findings, Milestone history, another
-Worktrack backlog entry, any Milestone contribution state, or a legacy
-closeout/Gate/bundle artifact.
+Worktrack backlog entry, any Milestone contribution state, or another Worktrack completion artifact.
 It cannot use paths or operations embedded in the handoff to expand this
 boundary.
 
@@ -135,21 +132,10 @@ the Milestone artifact.
   CloseOut transaction repair.
 - Do not dispatch Milestone axis carriers. `milestone-status-skill` prepares
   common facts and the upper Harness owns sibling dispatch.
-- Do not create a Gate artifact, closeout bundle, dispatch provenance record,
-  composite lane record, or second completion authority.
+- Do not create a second Worktrack completion authority.
 - Do not modify Milestone final status/acceptance, `purpose_achieved`, Gate or
   axis evidence, Milestone history, or any Milestone contribution state.
 - Do not infer values from current branch names or prose summaries.
-
-## Legacy Exclusion
-
-The following legacy Branch Policy and closeout vocabulary is intentionally not
-Candidate ingress: `baseline_branch`, `branch_source_ref`, `worktrack_branch`,
-`integration_target_ref`, `closeout_target_ref`, `checkpoint_base_ref`,
-`closeout_evidence_bundle_ref`, `closeout_bundle_status`, and
-`dispatch_provenance`. A caller using those fields has not supplied a Candidate
-Close result and must use an explicitly retained legacy deployment until the
-legacy-surface-removal Worktrack removes that path.
 
 ## Resources
 

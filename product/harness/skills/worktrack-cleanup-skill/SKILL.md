@@ -14,7 +14,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 1. **backlog 过期引用清理**：将 worktrack-backlog 中已完成条目归档到 worktrack-history，保持 backlog 精简。
 2. **已完成 milestone/worktrack 的本地分支清理**：删除已闭环的 `ms/*` 和 `wt/*` 本地分支。
 3. **control-state 安全压缩**：在 dry-run、字段保留校验和恢复证据齐备时，压缩 `.servo/control-state.md` 中的重复历史行。
-4. **runtime artifact 维护扫描**：报告 `.servo` stale refs、orphan artifact、rolling evidence reuse、临时 discovery 生命周期缺口和执行输出引用缺口，不执行清理。
+4. **runtime artifact 维护扫描**：报告 `.servo` stale refs、orphan artifact、Candidate handback 缺口、临时 discovery 生命周期缺口和执行输出引用缺口，不执行清理。
 
 本技能设计为低风险、可复核的 cleanup report / dry-run 操作；不执行 `git push --delete`、不修改 remote、不删除 `.servo/` artifact 文件、不触碰 protected 分支。任何 backlog apply、branch delete、archive、move、delete 或 compact apply 都必须经过后续显式批准。
 
@@ -72,7 +72,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 
 输出结构化清理报告，至少包含：
 
-1. 读取 `.servo/control-state.md`、当前 `.servo/worktrack/contract.md`、`.servo/worktrack/plan-task-queue.md`、`.servo/repo/worktrack-backlog.md` 和 `.servo/repo/milestone-backlog.md`。
+1. 读取 `.servo/control-state.md`、`.servo/control-state-wt.md`、`.servo/repo/worktrack-backlog.md` 和 `.servo/repo/milestone-backlog.md`；active Worktrack 还应读取其 `initial-requirement.yaml`，已完成 Worktrack 读取其 `finished-handback.yaml`。
 2. 执行 dry-run，输出：
    - 必须保留的 hydration-critical 字段组
    - 将折叠的历史重复行
@@ -96,7 +96,7 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
    - `PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/runtime_maintenance_sweep.py --servo-root .servo --json`
 3. 报告至少覆盖：
    - 指向缺失 `.servo` artifact 的 stale reference
-   - 已关闭 Worktrack 仍引用 rolling `.servo/worktrack/gate-evidence.md` 且缺少 stable closeout / bundle / snapshot / archive ref
+   - Candidate Worktrack backlog 已标记 `done`，但缺少 concrete `finished_handback_ref` 或必要 checkpoint refs
    - 不在已知 `.servo` 层级且没有引用链的 orphan artifact
    - 未晋升、未退役、未归档、未保留且无人引用的 temporary discovery / evidence
    - 只有 prose summary、没有具体 SubAgent 或 command-output runtime artifact ref 的执行证据
@@ -128,8 +128,8 @@ description: 当需要对 repo 执行限定范围的清理操作（stale backlog
 - **操作后必须验证**：执行后重新读取 backlog 和 branch list，确认清理结果与预期一致。
 - **control-state compact 不得改变权限语义**：压缩不得改变 approval、autonomy、dispatch、review gate、branch guard、protected branch 或 milestone/worktrack routing 语义。
 - **history source 必须由 compact 操作生成**：installer-generated backup/update artifacts 只能作为排除对象或恢复线索，不能作为 canonical history reference。
-- **active worktrack 场景更严格**：存在 active worktrack 时，Worktrack Contract、Plan / Task Queue 和当前 branch guard 必须可读；否则 compact 返回 blocked。
-- **maintenance sweep 不授权 cleanup**：stale、orphan、expired、rolling evidence reuse 等 finding 只能进入报告；删除、移动或归档必须另走 approval。
+- **active worktrack 场景更严格**：存在 active worktrack 时，`initial-requirement.yaml`、当前 round chain 和 branch guard 必须可读；否则 compact 返回 blocked。
+- **maintenance sweep 不授权 cleanup**：stale、orphan、expired、Candidate handback gap 等 finding 只能进入报告；删除、移动或归档必须另走 approval。
 
 ## 预期输出
 

@@ -89,8 +89,10 @@ artifact, plan, runtime round, or commit.
 - Unexpected concurrency or unavailable shared workspace blocks. No locks,
   replay protocol, workflow engine, or multi-writer recovery is added.
 
-Candidate PlanWork does not create rolling Worktrack Contract, queue, dispatch,
-Gate, report, recovery, closeout Markdown, or closeout-evidence-bundle artifacts.
+Candidate PlanWork writes only the approved implementation surface,
+`.servo/worktrack/<worktrack-id>/initial-requirement.yaml`, and its own
+`.servo/tmp/<worktrack-id>/worktrack-rNNN.yaml` round records. Any additional
+persistent or runtime write requires explicit approval from the upper owner.
 
 ## Normal Entry And Initial Entry
 

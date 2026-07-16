@@ -28,11 +28,11 @@
 - approval_scope:
 - approval_persistence: one-shot
 
-## Linked Formal Documents
+## Worktrack Pointers
 
-- worktrack_contract:
-- plan_task_queue:
-- gate_evidence:
+- initial_requirement_ref:
+- finished_handback_ref:
+- implementation_checkpoint:
 
 ## Autonomy Ledger
 
@@ -70,7 +70,7 @@
 
 ## Runtime Dispatch Profile
 
-> 运行时分派配置文件。运行时字段在 gate-evidence.md 中记录，此处保留以满足 governance semantic check。
+> 运行时载体信息仅用于上层调度观察，不是 Candidate Worktrack route authority。
 
 - runtime_dispatch_profile: N/A
 - backend_runtime: N/A

@@ -13,7 +13,7 @@ last_verified: 2026-06-13
 
 ## 推荐入口
 
-- [quickstart.md](./quickstart.md)：**初次接触 Harness 先读这里**。10 分钟快速教程：安装（TUI 推荐 / CLI 备选）、初始化、第一个 Worktrack、handback 和显式 unlock 边界。
+- [recommended-usage.md](./recommended-usage.md)：当前 operator 主入口，覆盖安装后的 Harness 调用与正常 Worktrack 路径。
 - [recommended-usage.md](./recommended-usage.md)：Skills 使用教程，覆盖 skill 调用方式、backend 差异（agents vs claude）、常见工作流和场景速查。
 - [usage-flow-examples.md](./usage-flow-examples.md)：已观察的 Servo 使用流程实例，用于理解真实项目中的 Harness state、docs 和应用代码如何并存。
 - [TUI/CLI 合同](../../servo-installer/tui/human-cli-contract.md)：TUI 是人类推荐路径；CLI 是 AI/CI/脚本接口。理解两者的职责边界和引导流程。
@@ -22,11 +22,11 @@ last_verified: 2026-06-13
 
 | backend | 页面 | 主要差异 |
 |---|---|---|
-| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、[quickstart 快速入门](./quickstart.md)、source 变更决策、Codex Harness manual run |
-| `claude` | [claude.md](./claude.md) | Claude runtime 路径、[quickstart 快速入门](./quickstart.md)、source 变更决策、冷启动 runbook |
+| `agents` | [codex.md](./codex.md) | 默认 `.agents/skills/`、source 变更决策、Codex Harness manual run |
+| `claude` | [claude.md](./claude.md) | Claude runtime 路径、source 变更决策、冷启动 runbook |
 
 关于 Deepseek V4 Pro/Lite、Claude、Pi、GPT-5.5、GPT-5.4/CodeX 等
-模型与 runtime 的兼容性实测记录，见 [Model Runtime Support Boundary](../../harness/foundations/model-runtime-support.md)。
+模型与 runtime 的选择遵循 [Harness 指导思想](../../harness/foundations/Harness指导思想.md) 的 carrier 独立性与边界原则；具体能力由当前 backend 实测确认。
 这些记录基于本项目的实测经验，不一定具有泛用性。建议使用者结合自身仓库的
 任务情况，自行测试选择适合的 Agent 壳子和模型。
 
@@ -35,7 +35,7 @@ last_verified: 2026-06-13
 | 场景 | 文档 |
 |------|------|
 | 已有代码项目初始化 Harness | [init-with-code.md](./init-with-code.md) |
-| 空项目从零开始 | [init-greenfield.md](./init-greenfield.md) |
+| 空项目从零开始 | [recommended-usage.md](./recommended-usage.md) 的初始化入口 |
 | 调整目标/追加需求 | [goal-change-guide.md](./goal-change-guide.md) |
 
 ## 和 servo-installer 文档的分工

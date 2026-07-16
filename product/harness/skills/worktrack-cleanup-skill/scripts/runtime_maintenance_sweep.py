@@ -40,7 +40,6 @@ LIFECYCLE_TERMS = (
     "closeout",
     "evidence_ref",
 )
-ROLLING_GATE_EVIDENCE_REF = ".servo/worktrack/gate-evidence.md"
 ENTRYPOINT_FILES = {
     ".servo/goal-charter.md",
     ".servo/control-state.md",
@@ -87,15 +86,11 @@ def normalize_ref(raw_ref: str) -> str:
     return ref
 
 
-def is_rolling_gate_evidence_ref(raw_ref: str) -> bool:
-    return normalize_ref(raw_ref) == ROLLING_GATE_EVIDENCE_REF
-
-
 def is_stable_runtime_ref(raw_ref: str) -> bool:
     ref = normalize_ref(raw_ref)
     if not ref or ref.lower() in {"n/a", "na", "none", "null", "[]", "-"}:
         return False
-    return not is_rolling_gate_evidence_ref(ref)
+    return True
 
 
 def looks_like_file_ref(ref: str) -> bool:
@@ -357,40 +352,36 @@ def find_stale_refs(
     return findings
 
 
-def find_rolling_evidence_reuse(entries: Sequence[dict[str, object]]) -> list[Finding]:
+def find_candidate_handback_gaps(entries: Sequence[dict[str, object]]) -> list[Finding]:
     findings: list[Finding] = []
     for entry in entries:
         status = str(entry.get("status", "")).strip().lower()
-        evidence_ref = str(entry.get("evidence_ref", "")).strip()
-        if status not in DONE_STATUSES:
+        if status != "done":
             continue
-        if not is_rolling_gate_evidence_ref(evidence_ref):
-            continue
-
-        stable_refs = (
-            str(entry.get("closeout_record_ref", "")).strip(),
-            str(entry.get("closeout_evidence_bundle_ref", "")).strip(),
-            str(entry.get("snapshot_ref", "")).strip(),
-            str(entry.get("archive_ref", "")).strip(),
-        )
-        has_stable_ref = any(is_stable_runtime_ref(ref) for ref in stable_refs)
-        if not has_stable_ref:
+        required_refs = {
+            "finished_handback_ref": str(entry.get("finished_handback_ref", "")).strip(),
+            "accepted_checkpoint": str(entry.get("accepted_checkpoint", "")).strip(),
+            "closeout_checkpoint_commit": str(
+                entry.get("closeout_checkpoint_commit", "")
+            ).strip(),
+        }
+        missing = [
+            name for name, ref in required_refs.items() if not is_stable_runtime_ref(ref)
+        ]
+        if missing:
             findings.append(
                 Finding(
-                    finding_type="rolling_evidence_reuse",
+                    finding_type="candidate_handback_gap",
                     severity="high",
                     path=".servo/repo/worktrack-backlog.md",
                     message=(
-                        "Closed Worktrack references rolling .servo/worktrack/gate-evidence.md "
-                        "without a stable closeout record, bundle, snapshot, or archive ref."
+                        "Candidate Worktrack is done without its concrete finished handback "
+                        "and checkpoint references."
                     ),
                     evidence={
                         "worktrack_id": entry.get("worktrack_id", "unknown"),
-                        "evidence_ref": evidence_ref,
-                        "stable_refs": list(stable_refs),
-                        "closeout_bundle_status": str(
-                            entry.get("closeout_bundle_status", "")
-                        ).strip(),
+                        "missing_fields": missing,
+                        "required_refs": required_refs,
                     },
                 )
             )
@@ -861,7 +852,7 @@ def sweep(servo_root: Path) -> dict[str, object]:
 
     findings: list[Finding] = []
     findings.extend(find_stale_refs(repo_root=repo_root, refs_by_file=refs_by_file))
-    findings.extend(find_rolling_evidence_reuse(worktrack_entries))
+    findings.extend(find_candidate_handback_gaps(worktrack_entries))
     findings.extend(find_orphans(inventory=inventory, referenced=referenced))
     findings.extend(find_temporary_lifecycle_gaps(file_texts=file_texts, referenced=referenced))
     findings.extend(find_prose_only_execution_evidence(file_texts))
@@ -904,7 +895,7 @@ def sweep(servo_root: Path) -> dict[str, object]:
         "findings": finding_dicts,
         "recommendations": [
             "Review findings before any archive, move, or deletion action.",
-            "Generate stable snapshots or closeout bundles before relying on rolling Worktrack evidence.",
+            "Repair any done Worktrack that lacks a concrete finished handback and checkpoint refs.",
             "Promote only verified long-term facts into docs; keep runtime records under .servo lifecycle control.",
         ],
     }

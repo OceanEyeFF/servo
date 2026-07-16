@@ -120,7 +120,7 @@ Use full remote mode when the release window requires cross-target evidence; `--
 
 ## 8. Sync Version Facts
 
-After registry verification and before final release handback, invoke [worktrack-doc-catch-up-skill](../../../../product/harness/skills/worktrack-doc-catch-up-skill/SKILL.md) in `version fact sync` mode.
+After registry verification and before final release handback, complete the owning release Worktrack's version-fact sync or open an explicit follow-up; do not add a separate Candidate happy-path Skill stage.
 
 The handoff must include:
 

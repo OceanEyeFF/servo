@@ -7,14 +7,14 @@ last_verified: 2026-07-02
 ---
 # servo-installer Documentation
 
-> servo-installer 的独立文档体系。与 `docs/harness/`（Harness 控制面）和 `docs/project-maintenance/`（项目维护治理）分层，专注于 operator 视角的安装、配置、卸载和维护。
+> servo-installer 的独立文档体系。它与唯一 Harness 指导思想和 `docs/project-maintenance/` 分层，专注于 operator 视角的安装、配置、卸载和维护。
 
 ## 文档分层原则
 
 | 文档层 | 目录 | 受众 | 内容边界 |
 |--------|------|------|---------|
 | **servo-installer** | `docs/servo-installer/` | operator（人类、AI、CI） | 安装/卸载/维护 runbook、合同规范、参考说明 |
-| **Harness** | `docs/harness/` | Harness 开发者、平台维护者 | 控制回路、artifact 合同、skill 目录 |
+| **Harness** | `docs/harness/foundations/Harness指导思想.md` + `product/harness/skills/` | Harness 开发者、平台维护者 | 跨模块思想与 canonical Skill contracts |
 | **Project Maintenance** | `docs/project-maintenance/` | 项目维护者 | 治理规则、分支/PR 策略、release channel |
 
 **关键边界：** servo-installer 文档描述"如何使用 servo-installer"，Harness 文档描述"Harness 如何运行"。operator 不应该需要读 Harness 文档才能完成安装。
@@ -111,7 +111,7 @@ TUI 是推荐的人类 operator 交互路径。合同定义职责分离、屏幕
 | operator（理解行为） | contracts/distribution-entrypoint-contract → reference/managed-files-ownership |
 | CI/脚本集成 | contracts/distribution-entrypoint-contract → contracts/deploy-mapping-spec |
 | 人类 operator（TUI 交互） | tui/human-cli-contract → runbooks/deploy-runbook |
-| Harness 开发者 | contracts/ (全部) → 回到 docs/harness/ |
+| Harness 开发者 | contracts/ (全部) → 回到 canonical Skill package 或唯一 Harness 指导思想 |
 
 ### 按问题
 
