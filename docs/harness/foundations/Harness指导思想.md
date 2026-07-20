@@ -1,9 +1,9 @@
 ---
 title: Harness 指导思想
 status: active
-updated: 2026-07-16
+updated: 2026-07-20
 owner: servo-kernel
-last_verified: 2026-07-16
+last_verified: 2026-07-20
 ---
 
 # Harness 指导思想
@@ -23,6 +23,18 @@ Harness 不是直接编码的主体，不是 backend wrapper，不是把 Skills 
 - `Worktrack`：承接一个清楚的任务入口，在独立 branch 上完成 PlanWork、Review、redo 和 Close，再把完成结果交回上层。
 
 上层负责提供清楚的输入和消费模块结果；下层负责自己的 operational contract。任何一层都不应为了兼容旧调用方而吸收另一层的 mapping、判断或恢复逻辑。
+
+## Milestone 文档原则
+
+每个已规划 Milestone 只有一份 canonical document，负责保存 `milestone_id`、revision、`draft | planned` maturity、`open | finished | superseded` planned disposition、目标与范围、跨 Worktrack 决定、Milestone-level acceptance、声明式 Worktrack TodoList、amendment、Harness 接受的稳定 Worktrack result refs，以及最终 Gate 与验收 refs。完整对话、未采用方案、Agent 推理、backlog、snapshot、progress counter 和 status projection 都不是 Milestone 真相或恢复前提；`active` 与 `current` 只由 Harness 的 `active_milestone_ref` 表达。
+
+planned Milestone 可以声明稳定 branch contract：`milestone_branch` 是其集成分支，`baseline_ref` 是不可变的创建来源，`close_target` 是最终集成目标。该合同不表示当前 checkout 或 live HEAD。Harness 负责观察当前 Git 状态、选择每次 Worktrack 的确切 source checkpoint 并把它冻结进 immutable initial requirement；Worktrack 完成后回到声明的 Milestone branch。planned 后改变 branch contract 与改变其他业务语义一样，必须形成更高 revision 和 amendment，且不得改写已有 Worktrack requirement 或 verdict。
+
+Milestone TodoList entry 只声明 `worktrack_id`、一句话 outcome、依赖或执行条件、`required | conditional | deferred | superseded` condition、覆盖的 acceptance IDs、`result_ref`，以及确有冲突风险时的一条简短 boundary hint。它不保存 branch、queue、round、carrier 或执行阶段。`[x]` 当且仅当同一 entry 已登记 Harness 接受的稳定 `result_ref`；执行、Review、redo 或 Close 本身不会改变 checkbox。
+
+draft 可以丢弃；planned 业务真相的变化必须使用下一 revision，并在 amendment 中记录改动、原因、受影响 Worktracks、仍有效与需要重验的 evidence，以及 approval ref。对同一 ID、revision 和 canonical content 的重复提交是零写入 `already_applied`；同一 ID/revision 的不同内容是 conflict；更低或跳号 revision 必须拒绝。
+
+Harness 只把接受的稳定 Worktrack 结果登记回 Milestone，并通过直接读取 canonical TodoList、当前 acceptance、amendments 和稳定 result/final refs 回答普通状态问题。该观察零写入，不选择下一 Worktrack，也不允许 projection 或 cache 成为第二套裁决真相。Milestone Init 的具体交互、验证、原子写入和 handoff 合同由 canonical Skill package 自己承接。
 
 ## 控制与执行
 
