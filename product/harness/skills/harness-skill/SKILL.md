@@ -516,7 +516,7 @@ TodoList 与每个 accepted stable `result_ref` 准备 closed contribution facts
 
      只有 `intake_review_verdict == ready_for_worktrack_init` 且 `ready_for_worktrack_init == true` 才允许进入 Candidate `normal` 并绑定一次 `worktrack-plan-work-skill`。审查维度含 `repo_fundamentals`（仓库基本面）和 `snapshot_freshness`（快照新鲜度）。`milestone_purpose_alignment` 检查 worktrack 是否与 milestone 目标对齐。`historical_conflict_risk` 评估历史冲突风险。`worktrack_adjustment_recommendations` 和 `add_remove_worktrack_recommendations` 输出调整建议。若 `refresh_required`，必须先刷新基线再继续。若需 `adjust_worktracks`，在继续前调整 worktrack 列表。
    - **Guard 7: `ChangeGoal`** — 不由常规 Decide 选择。目标变更由外部请求触发，完成后系统重新进入 Observe。
-   - **Guard 8: `milestone_brief`** — 当 `repo-whats-next-skill` 建议 create/activate/append_worktracks 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认。
+   - **Guard 8: `milestone_brief`** — 统一使用 `create/amend/select` 动作词汇：当 `repo-whats-next-skill` 建议 create/amend 时，Harness 必须先把结构化 `milestone brief` 交给 programmer 确认，再由 `milestone-init-skill` 承接 create/amend；select 仍由 Harness 独占，不得转交 Init。
 
 3. 在 Candidate `WorktrackScope` 下，只从当前明确结果推导下一调用：
    - `normal`：执行 setup guards 后调用一次 `worktrack-plan-work-skill`

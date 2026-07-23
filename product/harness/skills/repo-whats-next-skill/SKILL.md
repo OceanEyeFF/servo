@@ -144,7 +144,7 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
       - RepoScope.Decide / Milestone-level scheduler 每轮一次只输出一个 `selected_worktrack_id`；不得把整个 Worktrack Tasklist 批量转成 round plan
       - 将选中的 Worktrack 组织成 approved PlanWork normal entry；它拥有自己的 branch、initial requirement、round chain、independent Review、finished handback 和 Repo Refresh 追踪
       - 若 Worktrack Tasklist 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
-      - 若 Worktrack Tasklist 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `goal_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
+      - 若 Worktrack Tasklist 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `purpose_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
       - 仅当仍存在合法待执行 worktrack，且 `milestone_gate_verdict` 未形成上层阻断时，才从 canonical Goal/Scope/design 与选中 entry 的 outcome/covers 推导 `suggested_node_type`，fallback 到 Goal Charter 的 Engineering Node Map
       - 仅当上述条件成立时，必须先生成结构化 `worktrack_intake_review`，作为形成 PlanWork normal entry 的前置判定：
         - `repo_fundamentals`：当前 active milestone、目标/非目标、baseline branch、已关闭 worktrack、release/package/deploy 禁止项是否仍一致

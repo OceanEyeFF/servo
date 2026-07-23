@@ -363,6 +363,22 @@ def test_autonomy_policy_allows_unified_milestone_init_with_embedded_approval_bo
     assert "未在 POLICY_MAP" not in str(payload["reason"])
 
 
+def test_milestone_callers_use_preserved_lifecycle_and_authority_vocabulary() -> None:
+    whats_next = (
+        REPO_ROOT / "product/harness/skills/repo-whats-next-skill/SKILL.md"
+    ).read_text(encoding="utf-8")
+    harness = (
+        REPO_ROOT / "product/harness/skills/harness-skill/SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    assert "goal_achieved" not in whats_next
+    assert "purpose_achieved" in whats_next
+    assert "create/activate/append_worktracks" not in harness
+    assert "`create/amend/select`" in harness
+    assert "milestone-init-skill` 承接 create/amend" in harness
+    assert "select 仍由 Harness 独占" in harness
+
+
 def test_dispatch_mode_recommend_uses_delegated_vocabulary(tmp_path: Path) -> None:
     result = run_script(
         "dispatch_mode_recommend.py",

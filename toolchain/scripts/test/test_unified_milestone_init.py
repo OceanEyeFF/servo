@@ -453,6 +453,59 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
         self.assertEqual(self.repo.target().read_bytes(), raw)
         self.assertNotIn("repaired_document", result)
 
+    def test_fenced_markdown_is_opaque_to_all_document_controls(self) -> None:
+        raw = milestone_bytes(
+            self.repo.baseline,
+            tasklist_commentary=(
+                "```markdown\n"
+                "## Goal\n"
+                "### [x] WT-GHOST\n\n"
+                "- worktrack_id: `WT-GHOST`\n"
+                "- depends_on: `[]`\n"
+                "- condition: `required`\n"
+                "- covers: `MS-TEST-AC-99`\n"
+                "- result_ref: `.servo/worktrack/WT-GHOST/finished-handback.yaml`\n"
+                "```"
+            ),
+        )
+        raw = raw.replace(
+            b"MS-TEST-AC-01 must be independently adjudicable.\n",
+            (
+                b"MS-TEST-AC-01 must be independently adjudicable.\n\n"
+                b"~~~markdown\n"
+                b"### MS-TEST-AC-99 - fenced example\n\n"
+                b"This is not a declared acceptance criterion.\n"
+                b"~~~\n"
+            ),
+        ).replace(
+            b"- final_acceptance_ref: `null`\n",
+            (
+                b"- final_acceptance_ref: `null`\n\n"
+                b"```yaml\n"
+                b"- milestone_gate_ref: `.servo/milestone/fenced-example.md`\n"
+                b"```\n"
+            ),
+        )
+        completed, payload = worker_call(
+            self.repo,
+            "validate",
+            raw,
+            mode="create",
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["control_summary"]["worktrack_ids"], ["WT-A"])
+        self.assertEqual(
+            payload["control_summary"]["acceptance_ids"],
+            ["MS-TEST-AC-01"],
+        )
+        self.assertEqual(payload["writes"], [])
+
+        canonical = milestone_bytes(self.repo.baseline)
+        prefix, separator, body = canonical.partition(b"---\n# ")
+        self.assertEqual(separator, b"---\n# ")
+        fenced_only = prefix + b"---\n```markdown\n# " + body + b"```\n"
+        self.assert_failure(fenced_only, "invalid_document_envelope")
+
     def test_markdown_code_span_lists_are_control_equivalent(self) -> None:
         raw = milestone_bytes(
             self.repo.baseline,
@@ -731,14 +784,30 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
         self.assertEqual(result["writes"], [".servo/milestone/MS-TEST-001.md"])
         self.assertEqual(self.repo.target().read_bytes(), revision2)
 
-        replayed, replay = worker_call(
+        wrong_prior, wrong_prior_result = worker_call(
             self.repo,
             "apply",
             revision2,
             mode="amend",
             approval_ref="approval-r2",
             expected_revision=1,
-            expected_digest=revision1_digest,
+            expected_digest="sha256:" + "0" * 64,
+            name="revision2-wrong-prior-replay.md",
+        )
+        self.assertEqual(wrong_prior.returncode, 2)
+        self.assertEqual(wrong_prior_result["signal"], "conflict")
+        self.assertEqual(wrong_prior_result["status"], "stale_compare_and_swap")
+        self.assertEqual(wrong_prior_result["writes"], [])
+        self.assertEqual(self.repo.target().read_bytes(), revision2)
+
+        replayed, replay = worker_call(
+            self.repo,
+            "apply",
+            revision2,
+            mode="amend",
+            approval_ref="approval-r2",
+            expected_revision=2,
+            expected_digest=digest(revision2),
             name="revision2-replay.md",
         )
         self.assertEqual(replayed.returncode, 0, replayed.stderr)
@@ -1011,8 +1080,8 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
             revision2,
             mode="amend",
             approval_ref="approval-r2",
-            expected_revision=1,
-            expected_digest=revision1_digest,
+            expected_revision=2,
+            expected_digest=digest(revision2),
             name="amend-safe-repeat.md",
         )
         self.assertEqual(replayed.returncode, 0, replayed.stderr)

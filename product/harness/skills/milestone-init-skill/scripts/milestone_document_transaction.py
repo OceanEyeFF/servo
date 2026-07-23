@@ -298,11 +298,50 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
     return fields, body
 
 
+def mask_fenced_markdown(text: str) -> str:
+    """Hide fenced code from control parsing while preserving source offsets."""
+
+    masked: list[str] = []
+    fence_character: str | None = None
+    fence_length = 0
+    opener = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})([^\r\n]*)$")
+
+    def mask_line(line: str) -> str:
+        return "".join(character if character in "\r\n" else " " for character in line)
+
+    for line in text.splitlines(keepends=True):
+        content = line.rstrip("\r\n")
+        if fence_character is None:
+            match = opener.fullmatch(content)
+            if match is None:
+                masked.append(line)
+                continue
+            fence = match.group(1)
+            info = match.group(2)
+            if fence[0] == "`" and "`" in info:
+                masked.append(line)
+                continue
+            fence_character = fence[0]
+            fence_length = len(fence)
+            masked.append(mask_line(line))
+            continue
+
+        masked.append(mask_line(line))
+        if re.fullmatch(
+            rf"[ ]{{0,3}}{re.escape(fence_character)}{{{fence_length},}}[ \t]*",
+            content,
+        ):
+            fence_character = None
+            fence_length = 0
+    return "".join(masked)
+
+
 def split_sections(body: str, title: str) -> dict[str, str]:
+    control_body = mask_fenced_markdown(body)
     h1_matches = list(
         re.finditer(
             r"^[ \t]{0,3}#(?!#)[ \t]+([^\r\n]+?)[ \t]*\r?$",
-            body,
+            control_body,
             flags=re.MULTILINE,
         )
     )
@@ -318,7 +357,7 @@ def split_sections(body: str, title: str) -> dict[str, str]:
     headings = list(
         re.finditer(
             r"^[ \t]{0,3}##(?!#)[ \t]+([^\r\n]+?)[ \t]*\r?$",
-            body,
+            control_body,
             flags=re.MULTILINE,
         )
     )
@@ -373,7 +412,10 @@ def parse_known_bullets(
     pattern = re.compile(
         r"^[ \t]*-[ \t]+([a-z][a-z0-9_]*)[ \t]*:[ \t]*(.*?)[ \t]*$"
     )
-    for line_number, line in enumerate(block.splitlines(), start=1):
+    for line_number, line in enumerate(
+        mask_fenced_markdown(block).splitlines(),
+        start=1,
+    ):
         match = pattern.fullmatch(line)
         if match is None:
             continue
@@ -392,10 +434,11 @@ def parse_known_bullets(
 
 
 def parse_criteria(section: str) -> tuple[str, ...]:
+    control_section = mask_fenced_markdown(section)
     headings = list(
         re.finditer(
             r"^[ \t]{0,3}###[ \t]+([^\s]+)(?:\s|$)",
-            section,
+            control_section,
             flags=re.MULTILINE,
         )
     )
@@ -433,10 +476,11 @@ def parse_worktrack_entries(
     section: str,
     criteria: Iterable[str],
 ) -> dict[str, WorktrackEntry]:
+    control_section = mask_fenced_markdown(section)
     headings = list(
         re.finditer(
             r"^[ \t]{0,3}###[ \t]+\[([ xX])\][ \t]+([^\r\n]+?)[ \t]*\r?$",
-            section,
+            control_section,
             flags=re.MULTILINE,
         )
     )
@@ -578,10 +622,11 @@ def parse_amendments(
     revision: int,
     worktrack_ids: Iterable[str],
 ) -> tuple[dict[int, dict[str, str]], dict[int, str]]:
+    control_section = mask_fenced_markdown(section)
     headings = list(
         re.finditer(
             r"^[ \t]{0,3}###[ \t]+Revision[ \t]+(\d+)[ \t]+Amendment[ \t]*\r?$",
-            section,
+            control_section,
             flags=re.MULTILINE,
         )
     )
@@ -1253,9 +1298,11 @@ def validate_expected_state(
                 actual_digest=current.digest,
             )
         return
-    # Safe repeat accepts either the now-current state or the immediately prior
-    # state used by the original create/amend invocation. Exact candidate/current
-    # equality and approval authority make this a zero-write convergence path.
+    # Safe repeat accepts a verifiable now-current state. Revision-1 create may
+    # also replay its only legal prior state (absence). A prior amend digest is
+    # not retained by this stateless exact-byte worker, so accepting one by shape
+    # alone would bypass expected-state validation; callers must reread current
+    # state before an amend roll-forward retry.
     current_state = (
         expected_revision == current.revision
         and expected_digest == current.digest
@@ -1265,12 +1312,7 @@ def validate_expected_state(
         and expected_revision == 0
         and expected_digest == "absent"
     )
-    amend_prior = (
-        current.revision > 1
-        and expected_revision == current.revision - 1
-        and DIGEST_RE.fullmatch(expected_digest) is not None
-    )
-    if not (current_state or create_prior or amend_prior):
+    if not (current_state or create_prior):
         fail(
             "stale_compare_and_swap",
             expected_revision=expected_revision,
