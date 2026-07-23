@@ -25,15 +25,21 @@
 - `repo-change-goal-skill`
 - `repo-refresh-skill`
 - `repo-writeback-skill`
-- `milestone-pre-intake-skill`
 - `milestone-init-skill`
-- `milestone-status-skill`
 - `milestone-cleanup-skill`
 - `milestone-blackbox-check`
 - `milestone-whitebox-check`
 - `milestone-anticheat-check`
 - `milestone-composite-check`
 - `milestone-gate`
+
+`milestone-init-skill` is the single Milestone create/amend capability:
+stateless discussion-sufficiency admission, complete LLM-authored canonical
+document/acceptance/TodoList output, exact approval, deterministic checking,
+single-writer roll-forward persistence, and `init_not_ready` or
+`milestone_ready` handoff. Harness answers ordinary Milestone status questions
+by directly reading that canonical document and stable references with zero
+writes; there is no separate Pre-intake or Status package.
 
 ### Candidate Worktrack Module
 

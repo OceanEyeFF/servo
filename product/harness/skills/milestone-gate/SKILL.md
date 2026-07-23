@@ -149,8 +149,8 @@ round data or create a new persistent Worktrack artifact.
   technical checks.
 - Do not accept Candidate/legacy fallback, Worktrack Gate authority, or a
   legacy closeout transport.
-- Stop immediately after returning the structured result. Milestone Status and
-  the upper Harness own purpose evaluation and writeback.
+- Stop immediately after returning the structured result. The upper Harness
+  owns direct canonical observation, purpose evaluation, and authorized writeback.
 
 ## Resources
 

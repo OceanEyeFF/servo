@@ -43,11 +43,12 @@
 ## Milestone Pipeline 影响
 
 - 是否属于 milestone 级追加：
-- suggested_milestone_action：create / activate / append_worktracks / upsert / N/A
+- suggested_milestone_action：create / amend / select / N/A
 - 目标 milestone_id：
-- milestone brief boundary：
+- milestone_route_owner：Milestone Init / Harness / N/A
+- unified Init discussion input boundary：
 - 是否需要 milestone-init-skill：
-- milestone approval boundary：
+- approval_boundary：exact-document-digest / selection-currentness / N/A
 
 ## 路由判定
 
@@ -83,6 +84,7 @@
 - recommended_next_route：
 - recommended_next_scope：
 - suggested_milestone_action：
+- milestone_route_owner：
 - 不执行声明：
 
 填写规则：
@@ -90,3 +92,4 @@
 - 如果 `approval_required` 为 true 且输入事实没有明确审批结果，`continuation_ready` 填 false，并在 `continuation_blockers` 写明待审批项。
 - 如果存在阻塞性缺失信息，`continuation_ready` 填 false，并在 `continuation_blockers` 写明缺失信息。
 - 只有无待审批项、无阻塞性缺失信息时，`continuation_ready` 才可填 true；即便如此，本结果也只返回路由，不执行后续 route。
+- `suggested_milestone_action = select` 时，`milestone_route_owner` 必须是 Harness，`recommended_next_route` 必须是 `harness-select-milestone`，且“是否需要 milestone-init-skill”必须为 false。

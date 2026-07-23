@@ -245,7 +245,7 @@ Layer 1: Human (Programmer)
 Layer 2: RepoScope / Milestone（慢变量控制）
   ├─ Observe: 传感器读取 Repo 级状态
   │   ├─ repo-status-skill
-  │   ├─ milestone-status-skill（若有 active milestone）
+  │   ├─ Harness 直接零写读取 canonical Milestone document（若有 active_milestone_ref）
   │   └─ milestone-gate skill（若 worktrack_list_finished）
   ├─ Decide: repo-whats-next-skill 判定下一步
   │   ├─ 保持并观察 ──────────────→ 回到 Observe
@@ -289,9 +289,25 @@ worktrack_route:
 该 route 不包含 compatibility selector、Gate authority、carrier identity、next state 或
 mutation approval。Malformed input 直接 blocked，不通过其他 ingress 重试。
 
-`Observe` 阶段的默认绑定为 `repo-status-skill`。当 `repo-status-skill` 输出 `active_milestone` 非空时，Harness 必须在 Observe→Decide 之间追加绑定 `milestone-status-skill`，获取 `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers`、`handback_required`、`milestone_input_checkpoint` 等 Milestone 级裁决字段后再进入 `repo-whats-next-skill` 的 Decide 判定。收到 `milestone_input_checkpoint` 后应将其写回 control-state 的 `Baseline Traceability.milestone_input_checkpoint` 供下一轮幂等性对比。
+`Observe` 阶段的默认绑定为 `repo-status-skill`。当 Harness 的
+`active_milestone_ref` 非空时，Harness 在 Observe→Decide 之间直接读取该 ref
+指向的唯一 canonical Milestone document；不绑定第二个 Milestone 状态 Skill，
+也不写 input checkpoint、progress counter 或 status projection。确定性派生规则为：
 
-当 `milestone-status-skill` 输出 `worktrack_list_finished == true` 且 milestone_kind 为 goal-driven 时，Harness 必须在 Observe 阶段运行扁平化 Milestone Gate：
+- 先验证 planned document 的 revision、disposition、TodoList entry、`covers`、
+  amendment 与 checkbox/result_ref 一致性；冲突成为 `proceed_blockers`，不得由
+  backlog/snapshot 覆盖。
+- `required` entry 在存在 Harness-accepted stable `result_ref` 时才完成；
+  `conditional` entry 在有 result 时完成，在没有 result 且没有 Harness 明确的
+  condition resolution 时保持 unresolved；`deferred` 与 `superseded` 不阻断当前
+  tasklist closure。
+- 从当前 acceptance IDs、non-blocking entries 的 `covers`、stable result refs、
+  final refs 与 Gate ref 在内存中派生 `worktrack_list_finished`、acceptance coverage、
+  `milestone_acceptance_verdict`、`milestone_gate_verdict`、`proceed_blockers` 和
+  `handback_required`。普通 Observe 无语义变化时必须零写入。
+
+当该直接观察派生 `worktrack_list_finished == true` 且 milestone_kind 为
+goal-driven 时，Harness 必须在 Observe 阶段运行扁平化 Milestone Gate：
 
 1. 顶层 Harness 准备四份 sibling axis input package，并先执行 clean-room lint。每份 package 必须列出 `context_refs`、`allowed_ref_categories`、`forbidden_ref_categories` 和 `input_gap_classification`。若 `context_refs` 包含 prior control-state axis labels、broad backlog reads、prior milestone Gate reports 或 sibling axis reports，必须拒绝该 package 或将对应轴标记为 `input_gap` / non-pass；不得把污染输入交给 sibling axis carrier。
 2. 顶层 Harness 分别绑定 `milestone-blackbox-check`、`milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check`，作为互相不可见的 sibling axis carriers 执行，并记录每轴 `runtime_dispatch_profile`。
@@ -365,7 +381,10 @@ Milestone Gate 拆分为两层，但不再由 `milestone-gate` skill 统一承�
 - **Layer 1（四轴隔离检查）**：由顶层 Harness 将 `milestone-blackbox-check` / `milestone-whitebox-check` / `milestone-anticheat-check` / `milestone-composite-check` 作为 sibling axis carriers 分派，轴间不可见。
 - **Layer 2（可配置聚合器）**：由 `milestone-gate` skill 消费显式 `axis_reports`，按 milestone 的 `aggregation_rules` 执行 target_type → weight → contradiction → composite_lane → degenerate，产出 `milestone_gate_verdict`。
 
-Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis skills，再绑定 `milestone-gate` skill 聚合。`milestone-status-skill` 负责观察 finished 状态并准备 closed worktrack 输入事实；Harness 负责 axis carrier dispatch；`milestone-gate` 负责 aggregation。
+Harness 在直接观察到 `worktrack_list_finished == true` 时，先从 canonical
+TodoList 与每个 accepted stable `result_ref` 准备 closed contribution facts，再调度
+四个 axis skills，最后绑定 `milestone-gate` skill 聚合。Harness 负责观察、事实准备
+与 sibling carrier dispatch；`milestone-gate` 只负责 aggregation。
 
 ---
 
@@ -453,19 +472,21 @@ Harness 在观察到 `worktrack_list_finished == true` 时先调度四个 axis s
        --milestone .servo/milestone/{milestone_id}.md
      ```
 
-   - **Guard 2: `pre_milestone_intake_guard`** — Goal-driven milestone 的 create/upsert/activate/append_worktracks 前，调用 `pre_milestone_intake_guard.py`。
-
-     ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/pre_milestone_intake_guard.py \
-       --intake-review .servo/repo/pre-milestone-intake-{id}.md
-     ```
-
-     只有 `intake_status == "ready"` 且各字段满足放行条件，或 `intake_status == "skipped"` 且 programmer 显式接受风险时，才允许继续。
+   - **Guard 2: `canonical_milestone_ready`** — Milestone create/amend 时，
+     Harness 向 `milestone-init-skill` 显式转交 create/amend 意图、自然语言目标与
+     相关讨论文本/摘要/候选材料；amend 另带现有 canonical ref，并提供必要 repo、
+     branch、expected-state 与 authority 上下文，但不预先代替 Init 提取完整 Goal、
+     Scope、Acceptance 或 TodoList。若 Init 返回零写 `init_not_ready`，Harness
+     立即停止该调用并回到普通讨论；之后只以新的显式上下文重新调用，不恢复 Init
+     discussion state。只有与 Programmer approval digest 绑定的
+     `milestone_ready` 才允许继续。派生 Worktrack 前，Harness 验证
+     `active_milestone_ref` 指向该已批准 planned/open canonical revision，document
+     digest 与 handoff 一致，且没有 unresolved amendment/entry invariant。
    - **Guard 3: `complex_project_entry_gate_check`** — 调用 `complex_project_entry_gate_check.py` 检查 entry gate blocking。
 
      ```bash
      PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/complex_project_entry_gate_check.py \
-       --gate-source .servo/repo/pre-milestone-intake-{id}.md
+       --gate-source <current-complex-project-entry-gate-ref>
      ```
 
      canonical guard term: not fixed heavy mode。scanner output is evidence, not verdict。这是一个 Milestone-side blocking gate；若 `reinforcement_milestone_recommendation.needed == true`，必须建议 reinforcement milestone 并阻断实现型 milestone 的 create/activate。gate 缺失、blank、placeholder、pending、incomplete 时，unresolved gate blocking default 强制返回 blocked，不得当作 not_applicable。Worktrack execution modes `normal`、`autoreview`、`yolo` 是 user-owned safety policy，不替代 Milestone-side blocker。`milestone_blocking_decision` 输出值含 `block_create`、`block_upsert`、`block_activate`、`block_derive_worktrack`。`operator_safety_policy` 记录 operator 自定义安全策略。`complexity_signals` 列出检测到的复杂度信号。`scanner_evidence_ref` 引用 scanner 输出的 JSON 证据路径。`dialog_review_questions` 包含需要 reviewer 确认的问题列表。
@@ -632,23 +653,22 @@ _已合并入 §10.5。_
    - 连续执行或低风险 Worktrack 自批必须同时满足：`allowed` 命中、`forbidden` 未命中、`stop_condition` 未命中、`evidence_required` 已能满足或已安排。
    - 如果本轮经程序员明确批准了持久权限、自动性或分派策略变更，必须把配置事实写回 `.servo/control-state.md` 的 `Approval Boundary`、`Continuation Authority` 或 `Autonomy Ledger`，并记录审批理由；一次性审批只能写入本轮 evidence / handoff，不得伪装成长期默认配置。
 6. **Milestone 状态写回**：
-   - 调用 `writeback_bridge.py` 桥接 milestone-status-skill 输出到 repo-writeback-skill 期望格式：
-
-     ```bash
-     PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/writeback_bridge.py \
-       --milestone-id <id> \
-       --instructions-json '<json>'
-     ```
-
-   - `writeback_bridge.py` 将 `writeback_instructions` 翻译为 `repo-writeback-skill` 可消费的多步指令格式。
-   - 写回动作使用 repo-writeback-skill 作为 orchestrator 执行，不再使用 ad-hoc 字段写入。
-   - 收到 `milestone-status-skill` 输出后，`harness-skill` 必须执行以下写回动作（按 `milestone_kind` 分化）：
-
-   **Gate 状态透传**：`milestone-status-skill` 输出中的 gate 特定字段来自 `milestone-gate` skill 产出，由 sensor skill 透传到 writeback_instructions。Harness 按 writeback_instructions 逐字段写入，不自行解释 gate 语义。
+   - 普通 Observe 只直接读取 canonical Milestone document 并在内存中派生状态；
+     没有语义变化时 `writes: []`，不得写 progress counter、snapshot 或第二套
+     Milestone status truth。
+   - 只有显式生命周期动作、Harness 接受的 stable result registration、Milestone
+     Gate/final acceptance 或其他已有 owner 路径可以形成写回。写回动作使用
+     `repo-writeback-skill` 执行经过 owner 验证的结构化 instruction；Harness 不从
+     普通观察结果发明写回。
+   - **Gate 状态透传**：Gate 特定字段只来自 `milestone-gate` 聚合结果。
+     Harness 在写回前保留原始 verdict、axis refs 和 manual-exception 边界，不自行
+     改写 Gate 语义。
 
    - **Final Acceptance 事务边界**：goal-driven milestone handback 前必须存在 composite acceptance report。goal-driven milestone 的最终验收由 programmer 决定。programmer 明确接受后，acceptance writeback 必须作为一个逻辑事务处理。该事务的最小写入集合为 `.servo/milestone/{milestone_id}.md`、`.servo/repo/milestone-backlog.md`、`.servo/repo/milestone-history.md`、`.servo/control-state.md`。写回后必须校验一致性。
    - **Post-Acceptance Managed-Branch Merge 边界**：final acceptance writeback 不等同于已经合回 `develop-servo` 或其他 managed branch。writeback 成功后，Harness 必须提示 programmer 是否要把已接受结果合回 managed branch；提示至少列出 accepted source ref、默认 managed branch、可指定 managed branch、skip for now 选项，以及 release/publish/tag/push/protected/deploy/destructive 边界不被授权。若 programmer 在提示中明确要求合回，或 repo / milestone operator config 明确声明已接受结果需要合回 managed branch，Harness 必须选择独立的 post-acceptance managed-branch merge 路线。该路线进入前必须记录 accepted source ref、managed merge target、merge authority source、branch context、clean worktree、final acceptance record、Gate verdict / manual exception preservation、checkpoint/writeback plan 和 failure recovery path。任何缺失、target branch 不被 branch policy 允许、受保护分支策略命中、或 release/publish/tag/push/deploy/destructive/跨 repo 副作用信号命中，均必须 stop before merge。若 programmer 选择 skip for now，记录 accepted-but-not-merged 和恢复该 route 所需 facts。该路线不解决并行 Worktrack git commit 编排或 git worktree 支持。
-   - **Milestone Artifact 更新**、**Control State 更新**、**Pipeline 推进**：按 `milestone-status-skill` 输出的 `writeback_instructions` 执行。
+   - **Milestone Artifact 更新**、**Control State 更新**、**Pipeline 推进**：
+     只按当前 lifecycle/result/Gate owner 生成并验证的结构化
+     `writeback_instructions` 执行。
    - 若 `milestone_gate_verdict != "pass"`：不得把 Milestone 标记为完成，不得自动推进 pipeline。
 7. 如果命中正式停止条件 → 向程序员返回控制权
 8. **证据完整性检查**：Candidate path 按当前 role result 检查 concrete evidence refs、round chain、checkpoint freshness 和 conditional request，不要求固定 Worktrack Gate artifact。
@@ -741,10 +761,13 @@ acceptance 变化必须停止并交回拥有权限的 Repo/Milestone 层。
 |---------|---------|------|
 | `rebuild-pipeline` | milestone-backlog 损坏或与 `.servo/milestone/` 目录不一致 | 重新扫描 `.servo/milestone/` 目录，从 artifact 文件重建 milestone-backlog |
 | `reconcile-active` | control-state `active_milestone` 指向不存在的 milestone | 清空 `active_milestone`，标记 `milestone_pipeline_stale: true`，触发 pipeline 重新评估 |
-| `repair-binding` | worktrack-backlog 中存在 milestone_id 但对应 milestone 不存在 | 标记为 orphan binding，在 milestone-status-skill 输出中暴露，等待 programmer 决策 |
+| `repair-binding` | worktrack-backlog 中存在 milestone_id 但对应 milestone 不存在 | 标记为 orphan binding，在 Harness 直接观察结果中暴露，等待 programmer 决策 |
 | `clear-stale-reference` | milestone artifact 文件存在但不在 backlog 中 | 按 artifact 文件重建 backlog 条目（保留原始 created_at/created_by） |
 
-检测到以上任一情况时，`harness-skill` 应标记为 `pipeline_corruption_detected` 并执行相应恢复动作。恢复后重新绑定 `milestone-status-skill` 做完整状态评估。若自动恢复失败（如 artifact 文件本身损坏），必须 handback 等待 programmer 介入。
+检测到以上任一情况时，`harness-skill` 应标记为
+`pipeline_corruption_detected` 并执行相应恢复动作。恢复后重新直接读取
+canonical Milestone document 做完整零写状态评估。若自动恢复失败（如 artifact
+文件本身损坏），必须 handback 等待 programmer 介入。
 
 > 注：当前这些恢复动作由 harness-skill 以 LLM 推断方式检测。未来可考虑添加 `milestone_pipeline_check.py` 脚本提供确定性检测，与 §10.2 的 8-guard 链保持一致模式。
 

@@ -29,7 +29,7 @@ description: 当 Harness 系统尚未初始化，或 `.servo/goal-charter.md` �
 **不**使用的情况：
 - `goal-charter.md` 已存在且用户要求修改它 → 路由到 `repo-change-goal-skill`
 - 已有活跃 worktrack 且需要判断下一步 → 路由到 `repo-status-skill` + `repo-whats-next-skill`
-- 用户希望规划下一个 Milestone / Worktrack → 路由到 `repo-whats-next-skill`、`repo-append-request-skill` 或 `milestone-pre-intake-skill`
+- 用户希望规划、讨论或创建下一个 Milestone / Worktrack → 路由到 `repo-whats-next-skill`、`repo-append-request-skill` 或统一的 `milestone-init-skill`
 - 只需要刷新 repo 快照 → 路由到 `repo-refresh-skill`
 
 ## 工作流

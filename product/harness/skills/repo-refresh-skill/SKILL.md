@@ -120,9 +120,10 @@ repo_refresh_result:
 invalid input; it does not synthesize completion.
 
 `milestone_contribution_exposed` means the completed backlog entry now contains
-the concrete ownership and handback facts that Milestone Status can join with
-its `worktrack_list`. It does not mean Repo Refresh wrote contribution state to
-the Milestone artifact.
+the concrete ownership and handback facts that Harness can compare with the
+canonical Milestone TodoList before any separately authorized result_ref
+registration. It does not mean Repo Refresh wrote contribution state to the
+Milestone document.
 
 ## Boundaries
 
@@ -130,8 +131,9 @@ the Milestone artifact.
   `.servo/tmp/<worktrack-id>/`.
 - Do not perform technical Review, acceptance judgment, merge verification, or
   CloseOut transaction repair.
-- Do not dispatch Milestone axis carriers. `milestone-status-skill` prepares
-  common facts and the upper Harness owns sibling dispatch.
+- Do not dispatch Milestone axis carriers. The upper Harness directly reads the
+  canonical TodoList and accepted stable refs, prepares common facts, and owns
+  sibling dispatch.
 - Do not create a second Worktrack completion authority.
 - Do not modify Milestone final status/acceptance, `purpose_achieved`, Gate or
   axis evidence, Milestone history, or any Milestone contribution state.
@@ -142,6 +144,7 @@ the Milestone artifact.
 Use the structured Close result, its `finished_handback_ref`, and current Repo,
 Worktrack ownership, and Milestone control references. The fixed Candidate
 capability boundary selects the write targets; `repo_refresh_handoff` supplies
-recorded values only. Milestone Status derives contribution from the backlog;
-Repo Refresh does not write it separately. This Skill has no runtime dependency
-on source-repo Harness documentation.
+recorded values only. Harness may later accept and register the stable result
+through a separate Milestone transaction; Repo Refresh does not write it or
+derive canonical completion. This Skill has no runtime dependency on
+source-repo Harness documentation.

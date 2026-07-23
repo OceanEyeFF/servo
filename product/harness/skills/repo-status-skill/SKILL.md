@@ -92,12 +92,12 @@ description: 当 Harness 处于代码仓库范围，且需要一轮限定范围�
 - `使用的目标引用`
 - `goal_node_map_status`
 - `refresh_signals`：`{ repo_baseline_changed, doc_catch_up_needed, analysis_stale, refresh_actions }` — 按 harness-skill §10.7 项目基本面刷新触发规则收集的刷新信号集合
-- `active_milestone`：当前活跃的 Milestone ID（如存在）
-- `milestone_status`：当前活跃 Milestone 的状态（planned / active / completed / superseded / N/A）
+- `active_milestone_ref`：Harness 当前选择的 canonical Milestone document ref（如存在）
+- `milestone_disposition`：从该 planned document 读取的领域状态（open / finished / superseded / N/A）；`active` 不是 Milestone 状态
 - `milestone_pipeline_planned_count`：Pipeline 中处于 planned 状态的 milestone 数量
 - `milestone_pipeline_ready_count`：Pipeline 中满足前置条件、可激活的 planned milestone 数量
 - `milestone_pipeline_stale`：Pipeline 是否需要重新评估（backlog 与 active milestone 状态不一致时标记）
-- `milestone_acceptance_verdict`、`proceed_blockers`、`handback_required`：当 active_milestone 非空时，这些字段由 `milestone-status-skill` 产出；`repo-status-skill` 仅标记 Milestone 存在性，Harness 应在 Observe→Decide 之间追加调用 `milestone-status-skill` 获取裁决细节
+- `milestone_acceptance_verdict`、`proceed_blockers`、`handback_required`：当 `active_milestone_ref` 非空时，`repo-status-skill` 只标记该 ref 的存在性；Harness 在 Observe→Decide 之间直接零写读取 canonical TodoList、acceptance、amendments 与 stable refs 后确定性派生这些字段，不调用第二个 Milestone 状态 Skill
 - `主线状态`
 - `活动分支`
 - `治理信号`

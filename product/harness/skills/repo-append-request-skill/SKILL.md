@@ -29,7 +29,7 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 - 已经明确是修改 `Goal Charter`，且用户要求直接进入目标变更流程（用 `repo-change-goal-skill`）
 - 已经有 active Worktrack，且请求不改变 initial mission（交回当前 PlanWork/Review loop）
-- 已经确定要初始化新的 milestone，且 milestone brief 已确认、无需先分类路由（用 `milestone-init-skill`）
+- 已经确定要创建或 amendment 一个 milestone，且无需先分类路由（直接把显式目标/讨论文本交给统一 `milestone-init-skill` 做 discussion-sufficiency admission；任何 brief 都仍需 exact preview/digest approval）
 - 已经批准新的 Worktrack initial requirement，且无需先分类路由（由上层 Orchestrator 调用 PlanWork normal entry）
 - 只是 repo 下一步优先级判断，没有具体追加请求（用 `repo-whats-next-skill`）
 
@@ -70,18 +70,26 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 
 当追加请求位于当前 repo 目标内，并且应在 Milestone Pipeline 层承接时，分类为 `new milestone`：
 
-- 它要创建、注册或激活一个 milestone
+- 它要创建一个 milestone、amend 已有 planned document，或请求 Harness 选择一个 planned milestone
 - 它要把多个已确认 worktrack 合并到一个 milestone 级功能迭代
-- 它要向已有 milestone 追加 worktrack，且应由 `milestone-init-skill` 做 coverage review
-- 它需要 milestone brief、priority、depends_on、completion_signals、acceptance_criteria 或 activation intent
+- 它要向已有 milestone 追加 Worktrack entry，且应由统一 Init 形成下一 revision 的 acceptance/TodoList amendment
+- 它需要 candidate goal/scope/non-goals/design/acceptance/TodoList/branch-contract 输入
 - 它不是对当前活跃 worktrack 的必要修正或验收缺口
 
 路由结果：
 
-- `recommended_next_route: milestone-init-skill`
 - `recommended_next_scope: RepoScope`
-- `approval_required: true`，除非输入事实已明确包含 programmer 对 milestone brief 的确认
-- 输出 `suggested_milestone_action`（create / activate / append_worktracks / upsert）与 milestone brief 所需最小字段
+- 按 `suggested_milestone_action` 使用下表决定 route、owner 与审批边界；不得先输出 `select` 再统一绑定 Init：
+
+  | `suggested_milestone_action` | `recommended_next_route` | `milestone_route_owner` | `approval_boundary` |
+  | --- | --- | --- | --- |
+  | `create` | `milestone-init-skill` | `Milestone Init` | `exact-document-digest` |
+  | `amend` | `milestone-init-skill` | `Milestone Init` | `exact-document-digest` |
+  | `select` | `harness-select-milestone` | `Harness` | `selection-currentness` |
+
+- `create` / `amend` 的 `approval_required: true` 表示后续 exact document apply 仍需 Programmer digest approval；Append Request 的任何确认都不能替代它
+- `select` 的 `approval_required: true` 只表示 Harness selection/currentness 审批，不进入 Init admission、validate 或 apply
+- 输出 `suggested_milestone_action`（create / amend / select）与 unified Init 准入所需的显式自然语言事实/讨论摘要；不预先代替 Init 编排完整 Goal、Scope、Acceptance 或 TodoList
 - 不写入 milestone artifact、milestone-backlog 或 control-state；只返回路由和审批边界
 
 ### 3. new worktrack
@@ -163,7 +171,7 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 1. 确认 mode 是 `append-feature`、`append-design` 或 `append-milestone`。
 2. 读取最小 repo truth 与当前控制状态。
 3. 判断追加请求是否改变长期目标；若是，分类为 `goal change`。
-4. 判断追加请求是否属于 Milestone Pipeline 层；若是，分类为 `new milestone` 并路由到 `milestone-init-skill`。
+4. 判断追加请求是否属于 Milestone Pipeline 层；若是，分类为 `new milestone`，再按 `suggested_milestone_action` 分支：`create` / `amend` 路由到 `milestone-init-skill`，`select` 返回 `harness-select-milestone`，由 Harness 单独处理 selection/currentness。
 5. 判断是否存在活跃 worktrack，以及追加请求是否越过当前 worktrack contract。
 6. 判断请求是 implementation、design-only，还是 design-then-implementation。
 7. 对 worktrack 级请求从 `Engineering Node Map` 提取候选节点类型；对 milestone 级请求提取 `suggested_milestone_action` 与 milestone brief 边界；无法提取时暴露缺口。
@@ -180,7 +188,8 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 - 唯一合法行为是输出路由结果；创建 milestone artifact、写 milestone-backlog、创建 branch、contract、plan 或 design artifact 的行为必须返回 blocked。
 - `append-feature` 的输出仅限于分类路由结果；将其自动解释为已批准的新 worktrack 的行为禁止出现。
 - `append-design` 的输出仅限于分类路由结果；将其自动解释为已批准的实现工作的行为禁止出现。
-- `append-milestone` 的输出仅限于分类路由结果；将其自动解释为已确认 milestone brief、已创建 milestone 或已激活 milestone 的行为禁止出现。
+- `append-milestone` 的输出仅限于分类路由结果；将其自动解释为 exact document approval、已创建/amend milestone 或已设置 Harness currentness 的行为禁止出现。
+- `suggested_milestone_action = select` 时，绑定 `milestone-init-skill` 或进入其 admission/validate/apply 的行为必须返回 blocked；该动作只返回 Harness selection/currentness 路由。
 - scope expansion 必须显式暴露审批边界；将其包装成普通 scheduling 的行为禁止出现。
 - 唯一合法行为是由本技能统一处理三个 mode（append-feature / append-design / append-milestone）；用多个 skill 分别处理的行为必须返回 blocked。
 - 如果路由需要 programmer authority，必须设置 `approval_required: true` 并说明审批范围。
@@ -203,6 +212,7 @@ description: 当 RepoScope 收到 append-feature、append-design 或 append-mile
 - `建议下一范围`
 - `suggested_node_type`
 - `suggested_milestone_action`
+- `milestone_route_owner`
 - `milestone_brief_boundary`
 - `设计阶段边界`
 - `实现阶段边界`

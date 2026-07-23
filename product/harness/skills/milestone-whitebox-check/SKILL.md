@@ -11,7 +11,7 @@ description: 当 Milestone Gate 需要按 target_type 从内部实现视角检�
 
 它是四个轴检查中的实现深度审查者——不同于 blackbox 轴的外部视角（只看合约和用户可见产出），whitebox 轴在 `program_code` 或 `mixed` 的程序切片中可以并且必须阅读完整实现代码来完成分析。外部行为场景属于 blackbox 轴；whitebox 只在需要追踪验收条件到内部结构时引用其上游声明，不把外部可观察行为测试当作本轴通过依据。
 
-当 Milestone Gate orchestrator（`milestone-status-skill`）确认所有 worktrack 已闭环、需要收集 whitebox 轴证据以输入 Layer 2 aggregator 时，使用这个技能。
+当顶层 Harness 直接从 canonical Milestone document 与 accepted stable refs 确认所有 required Worktrack contribution 已闭环、需要收集 whitebox 轴证据以输入 Layer 2 aggregator 时，使用这个技能。
 
 这个技能设计为在**隔离 SubAgent** 中运行。轴间隔离是架构上的硬约束：whitebox SubAgent 只能接收 whitebox 轴独享的输入材料，不能接收、看到或读取其他轴（blackbox / anticheat / composite）的 verdict。如果因为运行时限制必须在当前载体内执行，必须显式标记 `carrier_isolation_broken: true`。
 
@@ -314,4 +314,4 @@ whitebox_verdict:
 
 - Milestone Gate 聚合合同 — 四轴检查架构总设计与 whitebox 轴定义
 - 路径分层规则 — 用于 W4 架构对齐检查
-- milestone-status-skill — Layer 2 orchestrator（消费本轴输出）
+- 顶层 Harness — 准备 closed contribution facts、隔离分派 sibling axes，并把本轴输出交给 Layer 2 aggregator

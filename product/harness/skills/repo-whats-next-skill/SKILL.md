@@ -17,7 +17,7 @@ description: 当 Harness 处于代码仓库范围，且需要一轮不变更控�
 
 它实现一轮限定范围的 `代码仓库范围.决策`，采用 **Milestone-First** 推理策略：先在 Milestone 层级锚定（是否需要创建/激活/关闭 milestone），再下沉到 Worktrack 层级派生执行单元。它的工作是选出一个代码仓库动作，然后把这个决策投影成显式的继续路由、审批状态与阻塞项集合，让 `Harness` 无需重新解释文字就能消费。
 
-当本轮是 pre-milestone 讨论、任务点归纳或“还有什么可推进”查询时，本技能可以输出 candidate milestone recommendation。该 recommendation 是 RepoScope.Decide 的建议，须经 programmer 批准后才能成为正式 milestone，也不等同于 Worktrack task queue。推荐必须先列 `observed_facts`、`inferred_assumptions`、`unknowns`，再给出 `primary_contradiction` 与 `main_aspect_now`；candidate milestone brief 必须包含目标、证据、预期改变、验收信号、主要风险和 programmer confirmation requirement。通常只给 1 到 3 个候选；证据不足时应输出调研问题或保持观察。
+当本轮是 pre-milestone 讨论、任务点归纳或“还有什么可推进”查询时，本技能可以输出 candidate milestone recommendation。该 recommendation 是 RepoScope.Decide 的建议，可直接作为统一 `milestone-init-skill` 的讨论输入，但不是正式 Milestone、不是 exact document approval，也不等同于 Worktrack task queue。推荐必须先列 `observed_facts`、`inferred_assumptions`、`unknowns`，再给出 `primary_contradiction` 与 `main_aspect_now`；candidate brief 必须包含目标、证据、预期改变、验收信号、主要风险和仍待 Init 讨论的问题。通常只给 1 到 3 个候选；证据不足时应输出调研问题或保持观察。
 
 当已有新鲜的 `代码仓库状态摘要`，或者 `Harness` 明确希望先拿到稳定观察包时，这个技能可以消费该摘要。但在没有现成 `代码仓库状态技能` 输出时，它仍必须能直接基于代码仓库真相运行。
 
@@ -106,23 +106,32 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 1. 把标准动作集合与当前活动路由边界取交集。如果边界比标准集合更窄，就只把不受支持的动作保留为阻塞或范围外上下文。
 2. 如果前一个工作追踪刚关闭，且 `约定后自动性：最小委派` 正在生效，那么任何自动 `进入工作追踪` 建议都必须被限制在已批准的低风险类别中的一个同目标限定范围切片。
 3. 执行 Milestone-First 判定：
-    若 `active_milestone` 为空（无活跃 Milestone）：
-      a. 读取 milestone-backlog，检查所有 planned/active milestone
-      b. 语义匹配：将当前待处理的工作与已有 milestone 的 purpose/worktrack_list 进行语义匹配
-         - 全部匹配某个 milestone → `suggested_milestone_action = "append_worktracks"`，输出 `suggested_milestone_id`，并要求下游 `milestone-init-skill` 执行 `coverage_verdict` 检查
+    Milestone 建议必须先按动作分支路由；不得把 `select` 仅作为一个术语差异，随后仍统一绑定 Init：
+
+    | `suggested_milestone_action` | `recommended_next_route` | `milestone_route_owner` | `approval_boundary` |
+    | --- | --- | --- | --- |
+    | `create` | `milestone-init-skill` | `Milestone Init` | `exact-document-digest` |
+    | `amend` | `milestone-init-skill` | `Milestone Init` | `exact-document-digest` |
+    | `select` | `harness-select-milestone` | `Harness` | `selection-currentness` |
+
+    若 `active_milestone_ref` 为空（Harness 未选择 Milestone）：
+      a. 只把 milestone-backlog 当作可重建索引来发现候选 `canonical_ref`；逐一解析 canonical Milestone document 的 `maturity: planned`、`disposition: open`，不得采信 backlog 自带的 maturity/disposition/currentness 投影作为裁决真相
+      b. 语义匹配：将当前待处理的工作与 canonical document 的 Goal、Scope/Non-Goals、Cross-Worktrack Design Decisions、Worktrack Tasklist、Milestone-Level Acceptance Criteria 和稳定 refs 进行语义匹配
+         - 全部匹配某个 milestone → `suggested_milestone_action = "amend"`，同时输出 `suggested_milestone_id` 与 `suggested_milestone_ref`，把显式事实、讨论摘要与现有 canonical ref 交给统一 Init 做 discussion-sufficiency admission；充分时才形成下一 revision 的 Milestone acceptance/Worktrack Tasklist amendment
          - 拆分匹配（分别归入不同 milestone）→ 分别输出匹配结果，建议 programmer 确认
          - 无匹配 → 进入步骤 c
       c. 内聚性判断：评估待处理工作之间是否存在语义内聚（是否服务于同一可表述的目的）
-         - 有内聚 → `suggested_milestone_action = "create"`，路由到 goal-driven 路径：暂停，要求 programmer 定义 milestone（purpose/completion_signals/acceptance_criteria/completion_threshold_pct）
-         - 无内聚 → `suggested_milestone_action = "create"`，路由到 work-collection 路径：harness 自动创建 work-collection milestone（`milestone_kind = "work-collection"`，名称 = `工作集合 MS-YYYYMMDD-NNN`，priority = 最低，直接激活）
-      d. 读取 milestone-backlog，检查是否存在满足激活条件的 planned milestone
-         - 若存在：`suggested_milestone_action = "activate"`，输出 `suggested_milestone_id`
-      e. `suggested_next_scope = "RepoScope"`，绑定 `milestone-init-skill`
-      f. 若本轮建议 `create` / `activate` / `append_worktracks`，必须同时输出结构化 `milestone_brief`，并将 `需要审批 = true`、`审批理由 = "milestone brief 待 programmer 确认"`
-      f1. 当输出 candidate milestone recommendation 时，必须显式标记 `candidate_only = true`，并区分 `observed_facts` / `inferred_assumptions` / `unknowns`。candidate brief 不得写入 live milestone-backlog，不得增加 progress counter，不得把 candidate worktracks 写入 `.servo/worktrack/*`。只有 programmer confirmation 后，才可把该 brief 交给 `milestone-init-skill`。
-      f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。`milestone_blocking_decision` 包含 `block_create`、`block_upsert` 或 `block_activate` 时，推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定 `milestone-init-skill` 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement documentation / project-understanding Milestone brief，且不能把 implementation-oriented create / activate / append_worktracks 投影为可绑定路由。若 gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved gate blocking default 处理，不得把 create / activate / append_worktracks 建议投影成可绑定的 `milestone-init-skill` 路由。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
-      g. **禁止在此分支建议"进入工作追踪"**（work-collection 路径是合法例外：work-collection milestone 激活后可直接进入 WorktrackScope）
+         - 有内聚 → `suggested_milestone_action = "create"`，把事实、候选目标和相关文本交给统一 Init 判断是否足以忠实编排 Goal、Scope/Non-Goals、Cross-Worktrack Design Decisions、Milestone-Level Acceptance Criteria、Worktrack Tasklist 和 stable branch contract
+         - 无内聚 → 保持多个 candidate 或建议 `milestone_kind = "work-collection"` 作为 Init admission 输入；Harness 不自动创建或直接激活 Milestone
+      d. 经索引发现并读取 canonical document，检查是否存在满足选择条件的 planned/open Milestone
+         - 若存在：`suggested_milestone_action = "select"`，同时输出 canonical `suggested_milestone_id` 与 `suggested_milestone_ref`；选择/currentness 由 Harness 单独审批和执行，不进入 Init apply
+      e. `suggested_next_scope = "RepoScope"`；仅当动作是 `create` / `amend` 时绑定 `milestone-init-skill`。动作是 `select` 时必须设置 `recommended_next_route = "harness-select-milestone"` 与 `milestone_route_owner = "Harness"`，返回 Harness 单独处理 selection/currentness，禁止进入 Init admission、validate 或 apply
+      f. 若本轮建议 `create` / `amend`，必须同时输出结构化 candidate brief，并标记其仍需统一 Init discussion-sufficiency admission 和 exact document digest approval；Repo Decide 的推荐或确认不能替代该 admission 或 apply approval
+      f1. 当输出 candidate milestone recommendation 时，必须显式标记 `candidate_only = true`，并区分 `observed_facts` / `inferred_assumptions` / `unknowns`。candidate brief 不得写入 live milestone-backlog、canonical Milestone、progress counter 或 `.servo/worktrack/*`；它可以零写交给 `milestone-init-skill` 做准入判断，不得被解释成信息已充分或 apply authority。
+      f2. 若命中 complex-project trigger，必须同时输出或消费 `complex_project_entry_gate`。既有 guard 的 `block_create`、`block_upsert`、`block_activate` 分别阻断对应 create/amend/select 推荐。命中时推荐 `保持并观察` 或 reinforcement documentation / project-understanding Milestone，不得绑定统一 Init 执行被阻断动作。若 `entry_verdict = needs_reinforcement_milestone`、`reinforcement_milestone_recommendation.needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true`，只能推荐 reinforcement Milestone candidate，不能把 implementation-oriented create/amend/select 投影为可继续路由。gate 缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全时按 unresolved gate blocking default 处理。Canonical terms: missing, blank, placeholder, pending, incomplete, not_applicable。
+      g. **禁止在此分支建议"进入工作追踪"**；任何 Milestone kind 都必须先完成 canonical document、Harness selection 与合法 Worktrack derivation
       h. 输出 `milestone_kind` 字段，供下游 skill 分派
+      i. `suggested_milestone_id` / `suggested_milestone_ref` 始终成对输出：create candidate 的 ref 为 `null`，amend/select 必须给出解析后的 canonical ID/ref，none 时二者均为 `null`
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `not_achieved`（未完成）：
       - 若 active milestone 或当前候选 worktrack 命中 complex-project trigger，先消费 `complex_project_entry_gate`
       - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；scanner output is evidence, not verdict
@@ -131,31 +140,31 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
       - 若入口审批缺失、空白、placeholder、`pending_programmer_confirmation` 或字段不全，按 unresolved blocking default 处理，不得把候选 Worktrack 派生为 ready。
       - 检查 Milestone Review Gate route guard：goal-driven active milestone 必须有 `milestone_review_gate_ready = true`、`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 无阻断项。其他状态必须设置 `intake_review_verdict = blocked`，不得形成 PlanWork normal entry。
       - 若 `.servo` runtime artifact 缺少必要字段，只能保守解释为 missing/blocked；不得推断 programmer confirmation 或扩大权限。
-      - 先从活跃 Milestone 的 `worktrack_list` 中选取下一个待执行的 worktrack，并对照 worktrack-backlog 过滤已完成/已阻塞/已推迟的 worktrack
-      - RepoScope.Decide / Milestone-level scheduler 每轮一次只输出一个 `selected_worktrack_id`；不得把整个 `worktrack_list` 批量转成 round plan
+      - 先从 `active_milestone_ref` 所指 canonical document 的 Worktrack Tasklist 中选取下一个待执行 entry；只用 entry condition、depends_on/execution_condition 和稳定 `result_ref` 裁决，worktrack-backlog 仅作可重建索引且不得覆盖 document truth
+      - RepoScope.Decide / Milestone-level scheduler 每轮一次只输出一个 `selected_worktrack_id`；不得把整个 Worktrack Tasklist 批量转成 round plan
       - 将选中的 Worktrack 组织成 approved PlanWork normal entry；它拥有自己的 branch、initial requirement、round chain、independent Review、finished handback 和 Repo Refresh 追踪
-      - 若 `worktrack_list` 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
-      - 若 `worktrack_list` 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `purpose_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
-      - 仅当仍存在合法待执行 worktrack，且 `milestone_gate_verdict` 未形成上层阻断时，才从 milestone 上下文推导 `suggested_node_type`（优先使用 milestone 声明的，fallback 到 Goal Charter 的 Engineering Node Map）
+      - 若 Worktrack Tasklist 为空或全部完成但 `milestone_gate_verdict != "pass"`：不得自动创建补救 worktrack；应触发 handback，要求先处理 `Milestone Gate`
+      - 若 Worktrack Tasklist 为空或全部完成且 `milestone_gate_verdict == "pass"` 但 `goal_achieved == false`：触发 milestone 重新评估（handback），不得通过静默追加 worktrack 扩边界
+      - 仅当仍存在合法待执行 worktrack，且 `milestone_gate_verdict` 未形成上层阻断时，才从 canonical Goal/Scope/design 与选中 entry 的 outcome/covers 推导 `suggested_node_type`，fallback 到 Goal Charter 的 Engineering Node Map
       - 仅当上述条件成立时，必须先生成结构化 `worktrack_intake_review`，作为形成 PlanWork normal entry 的前置判定：
         - `repo_fundamentals`：当前 active milestone、目标/非目标、baseline branch、已关闭 worktrack、release/package/deploy 禁止项是否仍一致
         - `snapshot_freshness`：`Repo Snapshot/Status`、`Harness Control State`、milestone-backlog、worktrack-backlog 与当前 git HEAD 是否足够新鲜，是否需要先 `refresh_required`
-        - `milestone_purpose_alignment`：候选 worktrack 是否仍服务于 active milestone 的 purpose、completion_signals 和 acceptance_criteria
+        - `milestone_purpose_alignment`：保留 fixed intake-review 接口字段名，但其判定只读取 canonical Goal、Scope/Non-Goals、entry outcome/covers、Milestone-Level Acceptance Criteria 和稳定 refs；不得回退到旧 purpose schema
         - `historical_conflict_risk`：候选 worktrack 是否与刚关闭 worktrack、历史决策、既有文档真相、待处理阻塞项或 handback 边界冲突
         - `worktrack_adjustment_recommendations`：是否建议保持、拆分、合并、改写、推迟、阻塞当前候选 worktrack
         - `add_remove_worktrack_recommendations`：是否需要新增、移除或重排 worktrack；若不需要必须显式写 `none`
         - `intake_review_verdict`：`ready_for_worktrack_init` / `refresh_required` / `adjust_worktracks` / `blocked`
         - `ready_for_worktrack_init`：布尔值，只能在 verdict 为 `ready_for_worktrack_init` 且无阻塞时为 true
       - 若 `intake_review_verdict == "refresh_required"`：`suggested_next_scope = "RepoScope"`，推荐刷新/观察，不得进入 PlanWork
-      - 若 `intake_review_verdict == "adjust_worktracks"`：返回 `suggested_milestone_action = "append_worktracks"` 或结构化调整建议；需要 programmer 确认的范围变更必须设置 `需要审批 = true`
+      - 若 `intake_review_verdict == "adjust_worktracks"`：返回 `suggested_milestone_action = "amend"` 与结构化调整建议，交给统一 Init 形成 exact next revision；需要 Programmer digest approval
       - 若 `intake_review_verdict == "blocked"`：推荐 `保持并观察`，在继续阻塞项中写明原因，不得形成 PlanWork normal entry
       - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`suggested_next_scope = "WorktrackScope"`，绑定 `worktrack-plan-work-skill` 的 `normal` entry
-      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`derived_from_milestone = true`，`target_milestone_id = <active_milestone>`，并把已批准任务 facts 交给上层 Orchestrator 合成 PlanWork entry
+      - 仅当 `worktrack_intake_review.ready_for_worktrack_init == true` 时：`derived_from_milestone = true`，同时输出从同一 canonical document 解析的 `target_milestone_id` 与 `target_milestone_ref = <active_milestone_ref>`，并把已批准任务 facts 交给上层 Orchestrator 合成 PlanWork entry
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `achieved`（已完成）：
       - `suggested_milestone_action = "closeout"`
       - `recommended_repo_action = "保持并观察"`
       - 设置 `需要审批 = true`（milestone closeout 需 programmer 验收）
-      - 检查 pipeline 下一个可激活的 planned milestone，输出 `pipeline_advancement_hint`
+      - 经索引解析 canonical document，检查下一个可由 Harness 选择的 planned/open Milestone，输出 `pipeline_advancement_hint`
       - `handback_required = true`
     若存在活跃 Milestone 且 `milestone_acceptance_verdict` 为 `blocked`：
       - 在 `继续阻塞项` 中反映 Milestone 阻塞状态
@@ -163,9 +172,9 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
       - 阻止自动 `进入工作追踪`（即使存在剩余 autonomy budget）
       - 返回控制权等待 developer 决策
 4. 当建议 `进入工作追踪` 且 `derived_from_milestone == true` 时，从活跃 Milestone 的上下文推导 `suggested_node_type`：
-    - 优先使用 Milestone 的 `worktrack_list` 中该 worktrack 声明的 node_type
+    - 从 canonical Goal、Scope、Cross-Worktrack Design Decisions 和选中 entry 的 outcome/covers 推导，不得向最小 Worktrack entry 添加 node_type
     - Fallback 到 Goal Charter 的 `Engineering Node Map` 匹配
-    - 在输出中携带 `target_milestone_id` 和 `derived_from_milestone`，供上层 Orchestrator 绑定 Milestone 关联
+    - 在输出中携带同一 canonical document 的 `target_milestone_id`、`target_milestone_ref` 和 `derived_from_milestone`，供上层 Orchestrator 绑定 Milestone 关联
     - 在输出中携带 approved objective、acceptance、scope、constraints、branch source/checkpoint 和 close target，供 PlanWork 创建专属 branch 与 initial requirement
     - 如果无法建议节点类型，应把缺口暴露为初始化风险
 5. 只推荐一个代码仓库动作，解释为什么它是当前最高优先级，并把该决策投影成显式继续路由、阻塞项集合与审批状态。
@@ -235,7 +244,7 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 - 停留在当前部署配置的活动路由边界内。如果活动路由边界比标准动作集合更窄，唯一合法行为是在边界内推荐路由；推荐不受支持路由的行为必须返回 blocked。
 - 仅当默认模式和优先级重构模式都找不到可信的下一步时，`overview fallback` 启用才合法；默认模式或优先级重构模式已有明确下一步时，启用 `overview fallback` 的行为必须返回 blocked。
 - `overview fallback` 只能生成未来 worktrack 候选建议，不能直接创建或执行 worktrack。
-- **Milestone-First**：无 active milestone 时，"进入工作追踪" 路由必须 blocked，必须优先建议创建或激活 milestone。work-collection milestone 路径是合法例外：无内聚任务可由 harness 自动创建 work-collection milestone 后进入 WorktrackScope。
+- **Milestone-First**：无 `active_milestone_ref` 时，"进入工作追踪" 路由必须 blocked，必须优先建议统一 Init create/amend canonical Milestone 或由 Harness select 已有 planned document；不存在自动创建/激活 work-collection 后直接进入 WorktrackScope 的例外。
 - `Milestone Gate` 是 goal-driven milestone 的上层集成验收，不替代 worktrack gate；`milestone_gate_verdict != "pass"` 时不得自动继续派生新 worktrack 来“补过”集成失败。
 - `complex_project_entry_gate` 是 Milestone-side blocking gate, not fixed heavy mode；在 create / upsert / activate / derive-worktrack 前必须尊重 `milestone_blocking_decision`。
 - 缺失、空白、placeholder、pending 或 incomplete `complex_project_entry_gate` 不得被解释为 `clear` 或 `not_applicable`；必须阻断 derive-worktrack 并返回 `保持并观察` 或 reinforcement documentation / project-understanding Milestone 建议。
@@ -244,13 +253,13 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 - 弱文档命中且当前理解不足时，优先推荐 reinforcement documentation / project-understanding Milestone，并通过 `reinforcement_milestone_recommendation` 暴露。
 - `reinforcement_milestone_recommendation` 必须保留 `needed`、`recommendation_status`、`recommendation_type`、`suggested_title` 或 `suggested_purpose`、`reason` 或 `recommendation_reason`、`temporary_understanding_ref`、`evidence_refs`、`confirmation_required` 与 `blocks_implementation_until_resolved`；`needed = true`、`recommendation_status = recommended|required|pending_operator_review` 或 `blocks_implementation_until_resolved = true` 阻断实现型 Worktrack 派生，`needed = false` 且 `recommendation_status = not_needed` 不应阻断低风险 `clear` / `not_applicable` gate。
 - milestone closeout（`milestone_acceptance_verdict == achieved`）需 programmer 审批（`需要审批 = true`），不得自动推进。
-- 建议 `create` / `activate` / `append_worktracks` 时必须附带结构化 `milestone brief`；在 programmer 确认前不得把该建议伪装成已获准的自动路由。
+- 建议 `create` / `amend` 时必须附带结构化 candidate brief；它只进入统一 Init 讨论，在 Programmer 批准 exact document digest 前不得伪装成 apply authority。
 - Candidate milestone recommendation 必须是 fact-first / field-research：先 `observed_facts`，再 `inferred_assumptions`，再 `unknowns`，再 `primary_contradiction` 与 `main_aspect_now`。候选 brief 是 recommendation，不是 live backlog truth；不得自动 create / activate / append。
 - 若追加 worktrack 只有在确认归属当前 milestone 且不触发 `coverage_verdict = not_covered` 时才可继续；否则应建议其他 milestone，避免静默 scope creep。
-- 从 Milestone 派生 Worktrack 时必须携带 `target_milestone_id` 供上层 Orchestrator 绑定。
+- 从 Milestone 派生 Worktrack 时必须成对携带同一 canonical document 的 `target_milestone_id` 与 `target_milestone_ref`，供上层 Orchestrator 绑定；不得只传其中一个。
 - 从 active milestone 派生 worktrack 时必须携带唯一 `selected_worktrack_id` / current worktrack。一次 RepoScope.Decide 不得选择多个 worktrack；若需要新增、移除、重排或批量调整 worktrack，必须返回 RepoScope.Decide / append-worktrack 路由和必要的 programmer approval。
 - 从 active milestone 派生 Worktrack 时必须携带 `worktrack_intake_review`，且只有 intake ready 才能形成 approved PlanWork normal entry。必要审查字段缺失时必须返回 blocked。
-- 从 active goal-driven milestone 派生 worktrack 时还必须满足 Milestone Review Gate route guard：`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 `worktrack_list`、`completion_signals`、`acceptance_criteria`、scope/non-goals 或 risk boundary 变化。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 blocked，不得当成 ready。
+- 从 active goal-driven milestone 派生 worktrack 时还必须满足 Milestone Review Gate route guard：`latest_review_status = effective_pass`、`milestone_review_count >= 1`、`effective_review_pass = true`、`latest_review_checkpoint` 非空，且 `review_invalidated_by` 未标记 canonical Goal、Worktrack Tasklist、Milestone-Level Acceptance Criteria、Scope/Non-Goals 或 risk boundary 变化。`skipped`、`questions_required`、`blocked`、`missing`、`stale`、`invalidated` 或字段不全必须返回 blocked，不得当成 ready。
 - 缺少 additive `.servo` 字段时必须保守回填为 blocked/not ready；forward-only，且不得推断 programmer confirmation、增加 counter 或启用 PlanWork normal entry。
 
 ## 预期输出
@@ -313,10 +322,12 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 - `审批理由`
 - `需要程序员审批`
 - `如何审查`
-- `active_milestone_id`
+- `active_milestone_ref`
 - `milestone_pipeline_state`
-- `suggested_milestone_action`：activate / create / continue / closeout / none / append_worktracks
+- `suggested_milestone_action`：create / amend / select / continue / closeout / none
 - `suggested_milestone_id`
+- `suggested_milestone_ref`
+- `milestone_route_owner`：create/amend 为 Milestone Init；select 为 Harness
 - `milestone_kind`：goal-driven / work-collection / N/A（与 suggested_milestone_action 联动）
 - `milestone_brief`
 - `milestone_brief_required`
@@ -324,6 +335,7 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 - `milestone_reevaluation_reason`
 - `derived_from_milestone`
 - `target_milestone_id`
+- `target_milestone_ref`
 - `selected_worktrack_id`
 - `current_worktrack`
 - `pipeline_advancement_hint`
@@ -337,7 +349,7 @@ Worktrack initial requirement、finished handback 和临时 round chain 不是�
 - `reinforcement_milestone_recommendation`
 - `repo_fundamentals`
 - `snapshot_freshness`
-- `milestone_purpose_alignment`
+- `milestone_purpose_alignment`（fixed intake-review 字段名；canonical Goal 语义）
 - `historical_conflict_risk`
 - `worktrack_adjustment_recommendations`
 - `add_remove_worktrack_recommendations`

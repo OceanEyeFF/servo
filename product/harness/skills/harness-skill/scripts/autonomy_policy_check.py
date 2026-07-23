@@ -134,11 +134,6 @@ POLICY_MAP: dict[str, PolicyProfile] = {
                         "status_consistency_check"],
         description="RepoScope 只读观察：安全，在 allowed 范围内",
     ),
-    "observe::milestone-status-skill": PolicyProfile(
-        allowed_rules=["read_only_observation", "artifact_hydration",
-                        "status_consistency_check"],
-        description="Milestone 状态观察：只读传感器，在 allowed 范围内",
-    ),
 
     # ── schedule ──
     # ── verify ──
@@ -184,13 +179,13 @@ POLICY_MAP: dict[str, PolicyProfile] = {
         stop_condition_hit=[],
         needs_approval=False,
         description=(
-            "milestone-init-skill 只允许在 pre-milestone intake、complex "
-            "entry gate、Milestone Review Gate、branch guard 与 programmer "
-            "activation approval 均已通过后，对既有 planned milestone 执行"
-            "非 release/non-destructive 的 bounded create/upsert/activate；"
-            "新增目标、范围扩张、release/publish/tag/push/deploy、protected "
-            "branch mutation 和 destructive cleanup 仍由前置 guards 与 "
-            "forbidden/stop 边界阻断"
+            "milestone-init-skill 在自然语言 discussion-sufficiency admission "
+            "通过后，由 LLM 完整 author candidate，在 exact preview/digest、"
+            "expected canonical revision/digest、explicit approval 与 branch "
+            "contract 下执行 bounded create/amend；它不拥有 Harness currentness、"
+            "selection、Worktrack、Gate 或 result/final refs。"
+            "release/publish/tag/push/deploy、protected branch mutation、scope "
+            "expansion 和 destructive cleanup 仍由 forbidden/stop 边界阻断"
         ),
     ),
 

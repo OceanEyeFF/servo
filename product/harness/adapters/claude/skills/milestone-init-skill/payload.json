@@ -4,7 +4,9 @@
   "skill_id": "milestone-init-skill",
   "canonical_dir": "product/harness/skills/milestone-init-skill",
   "canonical_paths": [
-    "product/harness/skills/milestone-init-skill/SKILL.md"
+    "product/harness/skills/milestone-init-skill/SKILL.md",
+    "product/harness/skills/milestone-init-skill/scripts/milestone_document_transaction.py",
+    "product/harness/skills/milestone-init-skill/templates/milestone.template.md"
   ],
   "target_dir": "milestone-init-skill",
   "target_entry_name": "SKILL.md",
@@ -15,6 +17,8 @@
   "reference_distribution": "copy-listed-canonical-paths",
   "required_payload_files": [
     "SKILL.md",
+    "scripts/milestone_document_transaction.py",
+    "templates/milestone.template.md",
     "payload.json",
     "aw.marker"
   ],

@@ -355,7 +355,6 @@ ANTICHEAT_HISTORICAL_GAP_REQUIRED_TERMS = [
 ]
 CONTRACT_SCHEMA_FILES = [
     "product/harness/skills/milestone-gate/SKILL.md",
-    "product/harness/skills/milestone-status-skill/SKILL.md",
     "product/harness/skills/harness-skill/SKILL.md",
     "docs/harness/artifact/standard-fields.md",
     "docs/harness/artifact/control/milestone.md",
@@ -2125,13 +2124,17 @@ def test_gate_skill_exists():
     print("  PASS: gate_skill_exists")
 
 
-def test_sensor_references_gate():
-    text = read_skill("milestone-status-skill")
-    assert "milestone-gate" in text, "sensor skill does not reference gate skill"
-    assert "不直接运行 Milestone Gate" in text or "调用" in text, (
-        "sensor skill should delegate Gate"
+def test_harness_direct_observation_prepares_gate():
+    text = read_skill("harness-skill")
+    required_terms = (
+        "直接零写读取 canonical Milestone document",
+        "accepted stable `result_ref`",
+        "closed contribution facts",
+        "milestone-gate",
     )
-    print("  PASS: sensor_references_gate")
+    for term in required_terms:
+        assert term in text, f"harness direct observation is missing {term!r}"
+    print("  PASS: harness_direct_observation_prepares_gate")
 
 
 def test_harness_has_conditional_binding():
@@ -2212,7 +2215,7 @@ def main() -> int:
     print("\n--- Routing validation tests ---")
     for test in [
         test_gate_skill_exists,
-        test_sensor_references_gate,
+        test_harness_direct_observation_prepares_gate,
         test_harness_has_conditional_binding,
     ]:
         try:

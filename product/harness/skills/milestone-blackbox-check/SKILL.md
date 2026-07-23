@@ -13,14 +13,14 @@ description: 当 milestone gate 需要按 target_type 从外部视角（用户�
 
 本技能与 `milestone-whitebox-check`、`milestone-anticheat-check`、`milestone-composite-check` 共同构成 Milestone Gate 的四轴检查层。四轴之间**严格隔离**——每个轴的 SubAgent 任务包不得包含其他轴的 verdict。
 
-当 `milestone-status-skill`（Layer 2 orchestrator）需要在 milestone 所有 WT 闭环后，从外部集成视角检查 milestone 的交付质量时，使用这个技能。它产出一份结构化的 `blackbox_verdict`，供 Layer 2 aggregator 聚合到 milestone_gate_verdict。
+当顶层 Harness 直接从 canonical Milestone TodoList 与 accepted stable refs 确认所有 required WT contribution 已闭环，并从外部集成视角检查 milestone 的交付质量时，使用这个技能。它产出一份结构化的 `blackbox_verdict`，供独立 Layer 2 aggregator 聚合到 milestone_gate_verdict。
 
 ## 何时使用
 
 当满足以下条件时使用这个技能：
 
 - 当前 milestone 下所有 active WT 已闭环（每个 WT 有 single-acceptance verdict + closeout record）
-- `milestone-status-skill` 确认 worktrack 列表 finished，可以进入 milestone gate 检查
+- 顶层 Harness 的 canonical zero-write observation 确认 Worktrack list finished，可以进入 Milestone Gate 检查
 - 需要按 `target_type` 从外部用户或 operator 视角评估：跨 WT 集成是否一致、completion_signals 是否有对应产出、是否有回归风险
 - 检查必须隔离运行，不能看到其他轴的 verdict
 - 不需要阅读完整实现代码——如果检查需要理解代码内部，应委托给 whitebox 轴
@@ -291,7 +291,7 @@ Milestone artifact 中的 `completion_signals` 声明了"用户能看到什么�
    - 标记 `carrier_isolation_broken: true`（因为 current-carrier 可能在同进程中看到了其他轴的输出）
    - 在 `isolation_guarantee` 中记录降级原因
    - 若声称已 spawned SubAgent，必须记录 `parent_runtime_dispatch_record_ref`、`spawned_subagent_record_ref`、`carrier_instance_id` 和 `isolation_boundary`。缺少这些 linkage 的 spawned-axis claim 必须标记为 ambiguous/non-pass；current-carrier 不得 masquerade 为 SubAgent，除非同时记录具体 runtime boundary violation。
-5. **不得进入后续阶段**：本技能产出 verdict 后立即停止。从本技能直接跳到 aggregator 计算、gate 判定、恢复决策、worktrack 创建或代码修改的行为必须返回 `blocked`。唯一合法的下一步是将输出交给 orchestrator（milestone-status-skill）。
+5. **不得进入后续阶段**：本技能产出 verdict 后立即停止。从本技能直接跳到 aggregator 计算、gate 判定、恢复决策、worktrack 创建或代码修改的行为必须返回 `blocked`。唯一合法的下一步是将输出交给拥有 sibling dispatch authority 的顶层 Harness。
 6. **缺失输入必须暴露**：缺少完成检查所必需的任何输入（如 milestone 无 completion_signals、WT 无 closeout record 等）时，唯一合法行为是将对应检查项标记为 `blocked` 并说明缺失内容。假定缺失数据为 pass 的行为必须返回 `blocked`。
 6a. **input_gap 不等于行为失败**：当缺少 `target_type`、`aggregation_rules`、`completion_signals_trace` 或 behavior scenario inputs 时，必须在 `input_gap_classification` 中标记 `input_gap_status: input_gap` 或 `mixed_input_gap_and_behavior_failure`，并列出对应布尔字段。未执行或无法构造场景时，不得把结果描述为外部行为 hard_fail；只有已经构造并执行/观察到 scenario 的实际不符合，才可标记 `behavior_failure_present: true`。
 7. **证据引用必须具体**：每条 finding 的 `evidence_refs` 必须是可追溯的文件路径或 artifact ref（如 `WT-xxx/closeout-record.md`、`milestone-artifact.md#completion_signals`）。不得出现无法定位的模糊引用（如"综合所有 WT 来看"）。

@@ -327,11 +327,13 @@ def test_autonomy_policy_cleanup_copies_reject_stale_safe_delete_wording() -> No
         assert "安全删除" not in default_block
 
 
-def test_autonomy_policy_allows_canonical_milestone_init_after_route_guards(tmp_path: Path) -> None:
+def test_autonomy_policy_allows_unified_milestone_init_with_embedded_approval_boundary(
+    tmp_path: Path,
+) -> None:
     control_state = tmp_path / ".servo" / "control-state.md"
     control_state.parent.mkdir(parents=True)
     control_state.write_text(
-        "# control\n\n- route_decision: activate planned milestone after guards\n",
+        "# control\n\n- route_decision: discuss and apply one exact approved Milestone revision\n",
         encoding="utf-8",
     )
 
@@ -355,7 +357,8 @@ def test_autonomy_policy_allows_canonical_milestone_init_after_route_guards(tmp_
     assert payload["needs_approval"] is False
     assert payload["forbidden_hit"] == []
     assert payload["stop_condition_hit"] == []
-    assert "pre-milestone intake" in str(payload["reason"])
+    assert "exact preview" in str(payload["reason"])
+    assert "expected canonical revision/digest" in str(payload["reason"])
     assert "release/publish/tag/push/deploy" in str(payload["reason"])
     assert "未在 POLICY_MAP" not in str(payload["reason"])
 
