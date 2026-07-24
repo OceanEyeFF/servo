@@ -5,7 +5,10 @@
   "canonical_dir": "product/harness/skills/milestone-init-skill",
   "canonical_paths": [
     "product/harness/skills/milestone-init-skill/SKILL.md",
+    "product/harness/skills/milestone-init-skill/scripts/milestone_document_check.py",
     "product/harness/skills/milestone-init-skill/scripts/milestone_document_transaction.py",
+    "product/harness/skills/milestone-init-skill/scripts/milestone_exact_persistence.py",
+    "product/harness/skills/milestone-init-skill/scripts/milestone_repository.py",
     "product/harness/skills/milestone-init-skill/templates/milestone.template.md"
   ],
   "target_dir": "milestone-init-skill",
@@ -17,7 +20,10 @@
   "reference_distribution": "copy-listed-canonical-paths",
   "required_payload_files": [
     "SKILL.md",
+    "scripts/milestone_document_check.py",
     "scripts/milestone_document_transaction.py",
+    "scripts/milestone_exact_persistence.py",
+    "scripts/milestone_repository.py",
     "templates/milestone.template.md",
     "payload.json",
     "aw.marker"

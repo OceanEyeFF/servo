@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused Revision-4 tests for the single Milestone Init capability."""
+"""Integrated tests for the single Milestone Init capability."""
 
 from __future__ import annotations
 
@@ -19,6 +19,9 @@ PACKAGE_DIR = REPO_ROOT / "product" / "harness" / "skills" / "milestone-init-ski
 SKILL = PACKAGE_DIR / "SKILL.md"
 TEMPLATE = PACKAGE_DIR / "templates" / "milestone.template.md"
 WORKER = PACKAGE_DIR / "scripts" / "milestone_document_transaction.py"
+CHECKER = PACKAGE_DIR / "scripts" / "milestone_document_check.py"
+REPOSITORY = PACKAGE_DIR / "scripts" / "milestone_repository.py"
+PERSISTENCE = PACKAGE_DIR / "scripts" / "milestone_exact_persistence.py"
 
 
 def run(
@@ -1185,6 +1188,9 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
         self.assertTrue(SKILL.is_file())
         self.assertTrue(TEMPLATE.is_file())
         self.assertTrue(WORKER.is_file())
+        self.assertTrue(CHECKER.is_file())
+        self.assertTrue(REPOSITORY.is_file())
+        self.assertTrue(PERSISTENCE.is_file())
         template = TEMPLATE.read_text(encoding="utf-8")
         for section in (
             "## Goal",
@@ -1199,6 +1205,13 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
             self.assertIn(section, template)
         self.assertNotIn(".agents/", SKILL.read_text(encoding="utf-8"))
         self.assertNotIn(".claude/", WORKER.read_text(encoding="utf-8"))
+        worker_source = WORKER.read_text(encoding="utf-8")
+        for component in (
+            "milestone_document_check",
+            "milestone_repository",
+            "milestone_exact_persistence",
+        ):
+            self.assertIn(f"import {component}", worker_source)
 
 
 if __name__ == "__main__":
