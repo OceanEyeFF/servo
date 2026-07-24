@@ -309,6 +309,73 @@ def worker_call(
     return completed, payload
 
 
+def worker_call_with_final_read_race(
+    repo: DisposableRepo,
+    raw: bytes,
+    replacement: bytes,
+) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
+    candidate = repo.candidate_path(raw, "already-applied-race-candidate.md")
+    replacement_path = repo.candidate_path(
+        replacement,
+        "already-applied-race-replacement.bin",
+    )
+    launcher = """
+import os
+import runpy
+import sys
+from pathlib import Path
+
+sys.path.insert(0, os.environ["MILESTONE_INIT_SCRIPTS"])
+import milestone_exact_persistence as exact_persistence
+
+verify_exact_bytes = exact_persistence.verify_exact_bytes
+
+def replace_before_final_read(target, approved_bytes, *, mismatch_code):
+    Path(target).write_bytes(Path(os.environ["RACE_REPLACEMENT"]).read_bytes())
+    return verify_exact_bytes(target, approved_bytes, mismatch_code=mismatch_code)
+
+exact_persistence.verify_exact_bytes = replace_before_final_read
+sys.argv[0] = os.environ["MILESTONE_INIT_WORKER"]
+runpy.run_path(os.environ["MILESTONE_INIT_WORKER"], run_name="__main__")
+"""
+    completed = run(
+        [
+            sys.executable,
+            "-c",
+            launcher,
+            "apply",
+            "--mode",
+            "create",
+            "--candidate",
+            str(candidate),
+            "--repo-root",
+            str(repo.root),
+            "--approval-ref",
+            "approval-test",
+            "--approved-digest",
+            digest(raw),
+            "--expected-current-revision",
+            "0",
+            "--expected-current-digest",
+            "absent",
+        ],
+        cwd=repo.root,
+        env={
+            "MILESTONE_INIT_SCRIPTS": str(WORKER.parent),
+            "MILESTONE_INIT_WORKER": str(WORKER),
+            "RACE_REPLACEMENT": str(replacement_path),
+        },
+    )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise AssertionError(
+            f"raced worker did not emit JSON:\nstdout={completed.stdout}\n"
+            f"stderr={completed.stderr}"
+        ) from exc
+    return completed, payload
+
+
 class UnifiedMilestoneInitTest(unittest.TestCase):
     def setUp(self) -> None:
         self.repo = DisposableRepo()
@@ -742,6 +809,35 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
         self.assertFalse(
             list((self.repo.root / ".servo" / "milestone").glob(".*.tmp"))
         )
+
+    def test_already_applied_final_read_race_reports_no_durable_candidate_write(
+        self,
+    ) -> None:
+        raw = milestone_bytes(self.repo.baseline)
+        applied, result = worker_call(
+            self.repo,
+            "apply",
+            raw,
+            mode="create",
+        )
+        self.assertEqual(applied.returncode, 0, applied.stderr)
+        self.assertEqual(result["status"], "created")
+
+        replacement = b"canonical target changed before final exact readback\n"
+        raced, failure = worker_call_with_final_read_race(
+            self.repo,
+            raw,
+            replacement,
+        )
+
+        self.assertEqual(raced.returncode, 2, raced.stderr)
+        self.assertEqual(failure["signal"], "conflict")
+        self.assertEqual(failure["status"], "stale_compare_and_swap")
+        self.assertEqual(failure["writes"], [])
+        self.assertEqual(failure["details"]["commit_point"], "before_replace")
+        self.assertFalse(failure["details"]["roll_forward_required"])
+        self.assertEqual(self.repo.target().read_bytes(), replacement)
+        self.assertNotEqual(self.repo.target().read_bytes(), raw)
 
     def test_digest_and_expected_state_fail_before_persistence(self) -> None:
         raw = milestone_bytes(self.repo.baseline)

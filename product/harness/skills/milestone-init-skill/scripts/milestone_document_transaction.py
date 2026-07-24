@@ -290,11 +290,13 @@ def _attach_failure_context(
     branch_created: bool,
     branch_baseline: str,
     document_replaced: bool,
-    document_durable: bool,
 ) -> NoReturn:
     if isinstance(exc, PUBLIC_ERRORS):
         details = exc.details
-        durable = bool(details.pop("document_written", document_durable))
+        if "document_written" in details:
+            document_durable = bool(details.pop("document_written"))
+        else:
+            document_durable = exact_persistence.observed_exact_bytes(target, candidate.raw)
         details.setdefault("commit_point", "after_replace" if document_replaced else "before_replace")
         details.setdefault("roll_forward_required", document_replaced)
         details["writes"] = _durable_writes_after_failure(
@@ -303,9 +305,10 @@ def _attach_failure_context(
             candidate,
             branch_created=branch_created,
             branch_baseline=branch_baseline,
-            document_durable=durable,
+            document_durable=document_durable,
         )
         raise exc
+    document_durable = exact_persistence.observed_exact_bytes(target, candidate.raw)
     fail(
         "transaction_failure",
         error=str(exc),
@@ -354,7 +357,6 @@ def apply_command(args: argparse.Namespace) -> int:
     original_checkout = repository.current_branch(repo_root)
     branch = repository.BranchResolution("not_attempted", False, contract.baseline)
     document_replaced = False
-    document_durable = action == "already_applied" and previous_raw == candidate.raw
     try:
         branch = _resolve_branch(
             repo_root,
@@ -375,7 +377,6 @@ def apply_command(args: argparse.Namespace) -> int:
                 failure_point=args.test_failure_point,
             )
             document_replaced = persisted.replaced
-            document_durable = persisted.exact_readback
         require(repository.current_branch(repo_root) == original_checkout, "checkout_changed")
         recheck_current = candidate if action == "already_applied" else current
         _resolve_branch(
@@ -395,7 +396,6 @@ def apply_command(args: argparse.Namespace) -> int:
             branch_created=branch.created,
             branch_baseline=branch.baseline,
             document_replaced=document_replaced,
-            document_durable=document_durable,
         )
 
     outcome = {"create": "created", "amend": "revised"}.get(action, "already_applied")
