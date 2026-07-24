@@ -1,6 +1,6 @@
 ---
 name: milestone-init-skill
-description: 当 Harness 需要判断自然语言目标与讨论材料是否足以形成 Milestone，并在充分时由 LLM 编写、预览、批准和安全创建或 amendment 唯一 canonical Milestone document 时使用；它不负责持续漫谈、Harness currentness、Worktrack runtime 或 Milestone 状态投影。
+description: 当 Harness 需要把自然语言目标与讨论材料初始化或 amendment 为 Milestone 时使用；Skill 先判断讨论充分性，不足则零写入返回 init_not_ready，充分则由 LLM 完整编写并在 preview 前规范化 candidate，经 exact preview 与 SHA-256 approval 后由 worker 确定性检查并 exact-byte 持久化，返回 milestone_ready，产出唯一 canonical `.servo/milestone/{milestone_id}.md`；不负责持续漫谈、Harness currentness、Worktrack runtime 或状态投影。
 ---
 
 # Milestone Init

@@ -334,6 +334,24 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
 
     def test_skill_contract_keeps_admission_and_authorship_with_llm(self) -> None:
         text = SKILL.read_text(encoding="utf-8")
+        frontmatter = text.split("---", 2)[1]
+        description = next(
+            line.removeprefix("description:").strip()
+            for line in frontmatter.splitlines()
+            if line.startswith("description:")
+        )
+        for phrase in (
+            "讨论充分性",
+            "LLM",
+            "preview",
+            "SHA-256 approval",
+            "worker",
+            "exact-byte",
+            "init_not_ready",
+            "milestone_ready",
+            ".servo/milestone/{milestone_id}.md",
+        ):
+            self.assertIn(phrase, description)
         self.assertIn("signal: init_not_ready", text)
         self.assertIn("The LLM writes the complete document", text)
         self.assertIn("must not", text)
@@ -349,6 +367,7 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
         self.assertNotIn("restore_document", worker_text)
         self.assertNotIn("time.sleep", worker_text)
         self.assertNotIn("repaired_document", worker_text)
+        self.assertLessEqual(len(worker_text.splitlines()), 1300)
 
     def test_template_style_candidate_validates_without_writes(self) -> None:
         raw = milestone_bytes(self.repo.baseline)
