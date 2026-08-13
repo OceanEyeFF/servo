@@ -763,6 +763,141 @@ class UnifiedMilestoneInitTest(unittest.TestCase):
             "final_acceptance_authority_violation",
         )
 
+    def test_undeclared_worktrack_entry_field_rejects_before_any_mutation(self) -> None:
+        original_branch = git(self.repo.root, "branch", "--show-current")
+        original_head = git(self.repo.root, "rev-parse", "HEAD")
+        for marker, field_name in (("-", "branch"), ("*", "branch"), ("+", "phase")):
+            raw = milestone_bytes(self.repo.baseline).replace(
+                b"- result_ref: `null`\n",
+                (
+                    f"- result_ref: `null`\n"
+                    f"{marker} {field_name}: forbidden\n"
+                ).encode(),
+            )
+            preview = self.assert_failure(
+                raw,
+                "undeclared_worktrack_entry_field",
+            )
+            self.assertEqual(preview["details"]["field"], field_name)
+            self.assertEqual(
+                preview["details"]["context"],
+                "Worktrack WT-A",
+            )
+            self.assertEqual(preview["details"]["line"], 9)
+            self.assertFalse(self.repo.target().exists())
+            branch_probe = subprocess.run(
+                [
+                    "git",
+                    "show-ref",
+                    "--verify",
+                    "--quiet",
+                    f"refs/heads/{self.repo.milestone_branch()}",
+                ],
+                cwd=self.repo.root,
+                check=False,
+            )
+            self.assertEqual(branch_probe.returncode, 1)
+            self.assertEqual(
+                git(self.repo.root, "branch", "--show-current"),
+                original_branch,
+            )
+            self.assertEqual(
+                git(self.repo.root, "rev-parse", "HEAD"),
+                original_head,
+            )
+
+            applied, failure = worker_call(
+                self.repo,
+                "apply",
+                raw,
+                mode="create",
+                name=f"undeclared-{marker}.md",
+            )
+            self.assertEqual(applied.returncode, 2, applied.stderr)
+            self.assertEqual(failure["signal"], "invalid")
+            self.assertEqual(
+                failure["status"],
+                "undeclared_worktrack_entry_field",
+            )
+            self.assertEqual(failure["details"]["field"], field_name)
+            self.assertEqual(
+                failure["details"]["context"],
+                "Worktrack WT-A",
+            )
+            self.assertEqual(failure["details"]["line"], 9)
+            self.assertEqual(failure["writes"], [])
+            self.assertFalse(self.repo.target().exists())
+            branch_probe = subprocess.run(
+                [
+                    "git",
+                    "show-ref",
+                    "--verify",
+                    "--quiet",
+                    f"refs/heads/{self.repo.milestone_branch()}",
+                ],
+                cwd=self.repo.root,
+                check=False,
+            )
+            self.assertEqual(branch_probe.returncode, 1)
+            self.assertEqual(
+                git(self.repo.root, "branch", "--show-current"),
+                original_branch,
+            )
+            self.assertEqual(
+                git(self.repo.root, "rev-parse", "HEAD"),
+                original_head,
+            )
+
+    def test_opaque_entry_prose_and_non_machine_shapes_remain_accepted(self) -> None:
+        raw = milestone_bytes(
+            self.repo.baseline,
+            tasklist_commentary=(
+                "branch: illustrative-only\n"
+                "- `current_phase: example`\n"
+                "* Branch: example\n"
+                "+ current-phase: example\n"
+            ),
+        )
+        checked, preview = worker_call(
+            self.repo,
+            "validate",
+            raw,
+            mode="create",
+        )
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        self.assertEqual(preview["signal"], "proposal_ready")
+        self.assertEqual(
+            preview["control_summary"]["worktrack_ids"],
+            ["WT-A"],
+        )
+        self.assertEqual(preview["writes"], [])
+
+    def test_fenced_undeclared_machine_bullets_are_opaque(self) -> None:
+        raw = milestone_bytes(self.repo.baseline).replace(
+            b"- result_ref: `null`\n",
+            (
+                b"- result_ref: `null`\n\n"
+                b"```markdown\n"
+                b"- branch: fenced-dash\n"
+                b"* branch: fenced-star\n"
+                b"+ branch: fenced-plus\n"
+                b"```\n"
+            ),
+        )
+        checked, preview = worker_call(
+            self.repo,
+            "validate",
+            raw,
+            mode="create",
+        )
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        self.assertEqual(preview["signal"], "proposal_ready")
+        self.assertEqual(
+            preview["control_summary"]["worktrack_ids"],
+            ["WT-A"],
+        )
+        self.assertEqual(preview["writes"], [])
+
     def test_create_and_safe_repeat_use_exact_bytes_and_zero_write_replay(self) -> None:
         raw = milestone_bytes(self.repo.baseline)
         original_checkout = git(self.repo.root, "branch", "--show-current")

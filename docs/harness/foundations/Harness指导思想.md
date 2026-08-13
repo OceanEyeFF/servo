@@ -1,9 +1,9 @@
 ---
 title: Harness 指导思想
 status: active
-updated: 2026-07-20
+updated: 2026-08-11
 owner: servo-kernel
-last_verified: 2026-07-20
+last_verified: 2026-08-11
 ---
 
 # Harness 指导思想
@@ -15,6 +15,14 @@ last_verified: 2026-07-20
 Harness 是对 Repo 演进过程的分层闭环控制系统。它维护目标与当前状态之间的可观察差异，选择合法的下一步，把工作交给有边界的执行载体，并依据独立证据决定是否允许状态推进。
 
 Harness 不是直接编码的主体，不是 backend wrapper，不是把 Skills 固定串联起来的开环流程，也不在普通工作中自行改写 Programmer 已批准的目标。
+
+## Agent 灰盒测试边界（规划原则）
+
+Pi 等 Agent 的灰盒测试是独立的 operator-testing 能力：它把模型内部决策保持为黑盒，只对工具、权限、目标状态、worker 结果和证据链等执行边界建立可观察、可复核的事实。它不是普通 Repo / Milestone / Worktrack Harness 的隐含实现细节，也不应由每个已规划工作重新临时搭建。
+
+该能力应在独立项目与明确 owner 下演进，拥有可版本化的场景格式、冻结输入、隔离 runner、事件适配、证据封存、结果判定和恢复合同。当前实验 Lab 只产生该抽取方向的诊断证据；在形成稳定、可发布的独立合同前，不得把某次实验的通过结论泛化为通用 Skill、Pi、worker 或 sandbox 结论。
+
+对日常 Worktrack，只消费已发布的灰盒测试能力及其稳定 result ref；是否启动、扩展场景、改变判定语义或重新执行付费测试，必须由对应 operator 显式批准。
 
 ## 分层
 

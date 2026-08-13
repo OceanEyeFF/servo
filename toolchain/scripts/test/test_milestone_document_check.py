@@ -203,6 +203,61 @@ class MilestoneDocumentCheckTests(unittest.TestCase):
             "amendment_history_change",
         )
 
+    def test_undeclared_worktrack_entry_fields_fail_closed(self) -> None:
+        for marker, field_name in (("-", "branch"), ("*", "branch"), ("+", "phase")):
+            raw = milestone_bytes("a" * 40).replace(
+                b"- result_ref: `null`\n",
+                (
+                    f"- result_ref: `null`\n"
+                    f"{marker} {field_name}: forbidden\n"
+                ).encode(),
+            )
+            with self.assertRaises(
+                document_check.DocumentCheckError
+            ) as raised:
+                document_check.parse_document(raw, "create")
+            error = raised.exception
+            self.assertEqual(
+                error.code,
+                "undeclared_worktrack_entry_field",
+            )
+            self.assertEqual(error.details["field"], field_name)
+            self.assertEqual(
+                error.details["context"],
+                "Worktrack WT-A",
+            )
+            self.assertEqual(error.details["line"], 9)
+
+    def test_opaque_entry_prose_and_non_machine_shapes_stay_accepted(self) -> None:
+        raw = milestone_bytes(
+            "a" * 40,
+            tasklist_commentary=(
+                "branch: illustrative-only\n"
+                "- `current_phase: example`\n"
+                "* Branch: example\n"
+                "+ current-phase: example\n"
+            ),
+        )
+        parsed = document_check.parse_document(raw, "create")
+        self.assertEqual(list(parsed.entries), ["WT-A"])
+        self.assertEqual(parsed.raw, raw)
+
+    def test_fenced_undeclared_bullets_stay_opaque(self) -> None:
+        raw = milestone_bytes("a" * 40).replace(
+            b"- result_ref: `null`\n",
+            (
+                b"- result_ref: `null`\n\n"
+                b"```markdown\n"
+                b"- branch: fenced-dash\n"
+                b"* branch: fenced-star\n"
+                b"+ branch: fenced-plus\n"
+                b"```\n"
+            ),
+        )
+        parsed = document_check.parse_document(raw, "create")
+        self.assertEqual(list(parsed.entries), ["WT-A"])
+        self.assertEqual(parsed.raw, raw)
+
     def test_checker_has_no_repository_or_persistence_dependency(self) -> None:
         source = Path(document_check.__file__).read_text(
             encoding="utf-8"

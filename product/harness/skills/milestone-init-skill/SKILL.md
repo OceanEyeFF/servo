@@ -151,6 +151,11 @@ The checker deterministically enforces:
   may amend only open truth;
 - unique acceptance and Worktrack IDs;
 - every entry has valid non-empty `covers`;
+- no undeclared entry-local machine field: a non-fenced bullet with marker
+  `-`, `*`, or `+`, a lower-ASCII `[a-z][a-z0-9_]*` token, and a `:` value
+  that is not a declared entry field fails closed with
+  `undeclared_worktrack_entry_field`; plain prose, inline code spans, fenced
+  examples, and uppercase/hyphenated field-like text stay opaque;
 - valid dependency IDs, one dependency form, no self-edge or cycle;
 - checkbox/result agreement and stable result/final ref shapes and targets;
 - contiguous amendment history through the current revision;

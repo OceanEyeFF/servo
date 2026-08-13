@@ -293,6 +293,36 @@ def parse_known_bullets(block: str, known_fields: set[str], context: str) -> dic
     return result
 
 
+MACHINE_FIELD_BULLET_RE = re.compile(
+    r"^[ \t]*([-*+])[ \t]+([a-z][a-z0-9_]*)[ \t]*:[ \t]*(.*?)[ \t]*$"
+)
+
+
+def reject_undeclared_entry_fields(
+    block: str,
+    declared_fields: set[str],
+    context: str,
+) -> None:
+    """Fail closed when an entry bullet is machine-shaped but not declared.
+
+    A bullet outside fenced code with a CommonMark unordered marker `-`, `*`,
+    or `+`, a lower-ASCII `[a-z][a-z0-9_]*` field token, and a `:` value is a
+    structured machine field. Declared fields keep their exact prior parsing;
+    any other machine-shaped bullet is a deterministic validation failure.
+    """
+
+    for line_number, line in enumerate(mask_fenced_markdown(block).splitlines(), start=1):
+        match = MACHINE_FIELD_BULLET_RE.fullmatch(line)
+        if match is None or match.group(2) in declared_fields:
+            continue
+        fail(
+            "undeclared_worktrack_entry_field",
+            field=match.group(2),
+            context=context,
+            line=line_number,
+        )
+
+
 def parse_criteria(section: str) -> tuple[str, ...]:
     control_section = mask_fenced_markdown(section)
     headings = list(
@@ -340,7 +370,9 @@ def parse_worktrack_entries(section: str, criteria: Iterable[str]) -> dict[str, 
         checked = heading.group(1).lower() == "x"
         heading_id = clean_markdown_value(heading.group(2))
         block = section[heading.end() : end]
-        fields = parse_known_bullets(block, ENTRY_ALLOWED_FIELDS, f"Worktrack {heading_id}")
+        context = f"Worktrack {heading_id}"
+        reject_undeclared_entry_fields(block, ENTRY_ALLOWED_FIELDS, context)
+        fields = parse_known_bullets(block, ENTRY_ALLOWED_FIELDS, context)
         missing = sorted(ENTRY_REQUIRED_FIELDS - fields.keys())
         dependency_fields = {"depends_on", "execution_condition"} & fields.keys()
         if not dependency_fields:
